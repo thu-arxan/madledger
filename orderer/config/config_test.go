@@ -124,6 +124,6 @@ func TestGetConsensusConfig(t *testing.T) {
 
 func getTestConfigFilePath() string {
 	gopath := os.Getenv("GOPATH")
-	cfgFilePath, _ := util.MakeFileAbs("src/madledger/orderer/config/.config.yaml", gopath)
+	cfgFilePath, _ := util.MakeFileAbs("src/madledger/orderer/config/.orderer.yaml", gopath)
 	return cfgFilePath
 }

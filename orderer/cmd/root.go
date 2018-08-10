@@ -15,6 +15,8 @@ var (
 		Use:  "orderer",
 		Long: "This is the cli of MadLedger orderer.",
 	}
+	homeDir, _ = os.Getwd()
+	// ordererHome, _ = util.MakeFileAbs(".orderer", homeDir)
 )
 
 func init() {

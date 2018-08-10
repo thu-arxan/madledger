@@ -1,4 +1,7 @@
-#############################################################################
+package cmd
+
+const (
+	cfgTemplate = `#############################################################################
 #   This is a configuration file for the MadLedger orderer.
 #############################################################################
 
@@ -27,3 +30,5 @@ BlockChain:
 Consensus:
   # will support solo, raft, pbft. Only support solo yet.
   Type: solo
+`
+)
