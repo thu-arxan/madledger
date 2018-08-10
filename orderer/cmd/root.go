@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"madledger/orderer/server"
 	"os"
 	"os/signal"
 	"syscall"
@@ -31,14 +32,23 @@ func Execute() {
 	}
 }
 
-func setLog() error {
+func setLog(debug bool) error {
 	// log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	if debug {
+		log.Logger.Level(zerolog.DebugLevel)
+	} else {
+		log.Logger.Level(zerolog.InfoLevel)
+	}
 	return nil
 }
 
-func registerStop() {
+func registerStop(s *server.Server) {
+	if s == nil {
+		return
+	}
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	<-sigs
+	s.Stop()
 	return
 }
