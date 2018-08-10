@@ -20,6 +20,9 @@ type Config struct {
 	Address    string           `yaml:"Address"`
 	Debug      bool             `yaml:"Debug"`
 	BlockChain BlockChainConfig `yaml:"BlockChain"`
+	Consensus  struct {
+		Type string `yaml:"Type"`
+	} `yaml:"Consensus"`
 }
 
 // ServerConfig is the config of server
@@ -70,6 +73,24 @@ type BlockChainConfig struct {
 	Verify       bool   `yaml:"Verify"`
 }
 
+// ConsensusType is the type of consensus
+type ConsensusType int
+
+const (
+	_ ConsensusType = iota
+	// SOLO is the solo
+	SOLO
+	// RAFT is the raft
+	RAFT
+	// PBFT is the pbft
+	PBFT
+)
+
+// ConsensusConfig is the config of consensus
+type ConsensusConfig struct {
+	Type ConsensusType `yaml:"Type"`
+}
+
 // GetBlockChainConfig return the BlockChainConfig
 func (cfg *Config) GetBlockChainConfig() (*BlockChainConfig, error) {
 	var storePath = cfg.BlockChain.Path
@@ -92,6 +113,24 @@ func (cfg *Config) GetBlockChainConfig() (*BlockChainConfig, error) {
 		Path:         storePath,
 		Verify:       cfg.BlockChain.Verify,
 	}, nil
+}
+
+// GetConsensusConfig return the ConsensusConfig
+func (cfg *Config) GetConsensusConfig() (*ConsensusConfig, error) {
+	var consensus ConsensusConfig
+	switch cfg.Consensus.Type {
+	case "solo":
+		consensus.Type = SOLO
+	case "raft":
+		consensus.Type = RAFT
+		return nil, errors.New("Raft is not supported yet")
+	case "pbft":
+		consensus.Type = PBFT
+		return nil, errors.New("Pbft is not supported yet")
+	default:
+		return nil, fmt.Errorf("Unsupport consensus type: %s", cfg.Consensus.Type)
+	}
+	return &consensus, nil
 }
 
 func getDefaultChainPath() string {

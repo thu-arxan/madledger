@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func Test_getServerConfig(t *testing.T) {
+func TestGetServerConfig(t *testing.T) {
 	cfg, err := LoadConfig(getTestConfigFilePath())
 	if err != nil {
 		t.Fatal(err)
@@ -57,7 +57,7 @@ func Test_getServerConfig(t *testing.T) {
 	}
 }
 
-func Test_getBlockChainConfig(t *testing.T) {
+func TestGetBlockChainConfig(t *testing.T) {
 	cfg, err := LoadConfig(getTestConfigFilePath())
 	if err != nil {
 		t.Fatal(err)
@@ -95,6 +95,30 @@ func Test_getBlockChainConfig(t *testing.T) {
 	_, err = cfg.GetBlockChainConfig()
 	if err == nil || err.Error() != "The path of blockchain is not provided" {
 		t.Fatal(err)
+	}
+}
+
+func TestGetConsensusConfig(t *testing.T) {
+	cfg, err := LoadConfig(getTestConfigFilePath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	consensusCfg, err := cfg.GetConsensusConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if consensusCfg.Type != SOLO {
+		t.Fatal(fmt.Errorf("The type of consensus if %d", consensusCfg.Type))
+	}
+	cfg.Consensus.Type = "raft"
+	consensusCfg, err = cfg.GetConsensusConfig()
+	if err == nil || err.Error() != "Raft is not supported yet" {
+		t.Fatal(errors.New("Should be 'Raft is not supported yet' error"))
+	}
+	cfg.Consensus.Type = "unknown"
+	consensusCfg, err = cfg.GetConsensusConfig()
+	if err == nil || err.Error() != "Unsupport consensus type: unknown" {
+		t.Fatal(errors.New("Should be 'Unsupport consensus type: unknown' error"))
 	}
 }
 

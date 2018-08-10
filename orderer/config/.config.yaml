@@ -22,3 +22,8 @@ BlockChain:
   Path: 
   # If verify the rightness of blocks (default: false)
   Verify: false
+
+# Consensus mechanism configuration
+Consensus:
+  # will support solo, raft, pbft. Only support solo yet.
+  Type: solo
