@@ -20,10 +20,10 @@ type Server struct {
 }
 
 // NewServer is the constructor of server
-func NewServer(config *config.ServerConfig) (*Server, error) {
+func NewServer(cfg *config.ServerConfig, dbCfg *config.DBConfig) (*Server, error) {
 	server := new(Server)
-	server.config = config
-	channelManager, err := NewChannelManager()
+	server.config = cfg
+	channelManager, err := NewChannelManager(dbCfg.LevelDB.Dir)
 	if err != nil {
 		return nil, err
 	}

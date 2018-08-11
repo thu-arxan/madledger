@@ -44,7 +44,11 @@ func runStart(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	s, err := server.NewServer(serverCfg)
+	dbCfg, err := cfg.GetDBConfig()
+	if err != nil {
+		return err
+	}
+	s, err := server.NewServer(serverCfg, dbCfg)
 	if err != nil {
 		return err
 	}

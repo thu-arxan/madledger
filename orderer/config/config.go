@@ -23,6 +23,12 @@ type Config struct {
 	Consensus  struct {
 		Type string `yaml:"Type"`
 	} `yaml:"Consensus"`
+	DB struct {
+		Type    string `yaml:"Type"`
+		LevelDB struct {
+			Dir string `yaml:"Dir"`
+		} `yaml:"LevelDB"`
+	} `yaml:"DB"`
 }
 
 // ServerConfig is the config of server
@@ -88,7 +94,7 @@ const (
 
 // ConsensusConfig is the config of consensus
 type ConsensusConfig struct {
-	Type ConsensusType `yaml:"Type"`
+	Type ConsensusType
 }
 
 // GetBlockChainConfig return the BlockChainConfig
@@ -133,7 +139,48 @@ func (cfg *Config) GetConsensusConfig() (*ConsensusConfig, error) {
 	return &consensus, nil
 }
 
+// DBType is the type of DB
+type DBType int
+
+const (
+	_ DBType = iota
+	// LEVELDB is the leveldb
+	LEVELDB
+)
+
+// DBConfig is the config of db
+type DBConfig struct {
+	Type    DBType
+	LevelDB LevelDBConfig
+}
+
+// LevelDBConfig is the config of leveldb
+type LevelDBConfig struct {
+	Dir string
+}
+
+// GetDBConfig return the DBConfig
+func (cfg *Config) GetDBConfig() (*DBConfig, error) {
+	var config DBConfig
+	switch cfg.DB.Type {
+	case "leveldb":
+		config.Type = LEVELDB
+		config.LevelDB.Dir = cfg.DB.LevelDB.Dir
+		if config.LevelDB.Dir == "" {
+			config.LevelDB.Dir = getDefaultLevelDBPath()
+		}
+	default:
+		return nil, fmt.Errorf("Unsupport db type: %s", cfg.DB.Type)
+	}
+	return &config, nil
+}
+
 func getDefaultChainPath() string {
 	storePath, _ := util.MakeFileAbs("src/madledger/orderer/data/blocks", gopath)
+	return storePath
+}
+
+func getDefaultLevelDBPath() string {
+	storePath, _ := util.MakeFileAbs("src/madledger/orderer/data/leveldb", gopath)
 	return storePath
 }

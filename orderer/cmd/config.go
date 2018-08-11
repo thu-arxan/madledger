@@ -30,5 +30,14 @@ BlockChain:
 Consensus:
   # will support solo, raft, pbft. Only support solo yet.
   Type: solo
+
+# DB only support leveldb now
+DB:
+  Type: leveldb
+  # LevelDB
+  LevelDB:
+    # default: $GOPATH/src/madledger/orderer/data/leveldb
+    # But in the production environment, you must provide a path
+    Dir: 
 `
 )

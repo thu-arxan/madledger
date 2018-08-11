@@ -108,7 +108,7 @@ func TestGetConsensusConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	if consensusCfg.Type != SOLO {
-		t.Fatal(fmt.Errorf("The type of consensus if %d", consensusCfg.Type))
+		t.Fatal(fmt.Errorf("The type of consensus is %d", consensusCfg.Type))
 	}
 	cfg.Consensus.Type = "raft"
 	consensusCfg, err = cfg.GetConsensusConfig()
@@ -118,7 +118,29 @@ func TestGetConsensusConfig(t *testing.T) {
 	cfg.Consensus.Type = "unknown"
 	consensusCfg, err = cfg.GetConsensusConfig()
 	if err == nil || err.Error() != "Unsupport consensus type: unknown" {
-		t.Fatal(errors.New("Should be 'Unsupport consensus type: unknown' error"))
+		t.Fatal(fmt.Errorf("Should be 'Unsupport consensus type: unknown' error other than '%s'", err))
+	}
+}
+
+func TestGetDBConfig(t *testing.T) {
+	cfg, err := LoadConfig(getTestConfigFilePath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	dbCfg, err := cfg.GetDBConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dbCfg.Type != LEVELDB {
+		t.Fatal(fmt.Errorf("The type of db is %d", dbCfg.Type))
+	}
+	if dbCfg.LevelDB.Dir == "" {
+		t.Fatal(errors.New("The dir of leveldb should not be empty"))
+	}
+	cfg.DB.Type = "unknown"
+	dbCfg, err = cfg.GetDBConfig()
+	if err == nil || err.Error() != "Unsupport db type: unknown" {
+		t.Fatal(fmt.Errorf("Should be 'Unsupport db type: unknown' error other than '%s'", err))
 	}
 }
 
