@@ -14,14 +14,20 @@ import (
 
 // Server provide the serve of orderer
 type Server struct {
-	config    *config.ServerConfig
-	rpcServer *grpc.Server
+	config         *config.ServerConfig
+	rpcServer      *grpc.Server
+	ChannelManager *ChannelManager
 }
 
 // NewServer is the constructor of server
 func NewServer(config *config.ServerConfig) (*Server, error) {
 	server := new(Server)
 	server.config = config
+	channelManager, err := NewChannelManager()
+	if err != nil {
+		return nil, err
+	}
+	server.ChannelManager = channelManager
 	return server, nil
 }
 
