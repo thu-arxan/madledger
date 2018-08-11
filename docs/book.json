@@ -1,0 +1,13 @@
+{
+    "title": "MadLedger文档",
+    "author": "liuyihua <i@liuyihua.com>",
+    "language": "zh-hans",
+    "root": ".",
+    "gitbook": "3.2.3",
+    "plugins": [
+        "-lunr", "-search", "search-plus"
+    ],
+    "styles": {
+        "website": "styles/website.css"
+    }
+}
