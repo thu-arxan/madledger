@@ -7,32 +7,28 @@
     "plugins": [
         "-lunr", "-search", "search-plus", 
         "theme-comscore",
-        "copy-code-button",
         "-sharing", "sharing-plus"
     ],
     "pluginsConfig": {
         "sharing": {
            "douban": false,
-           "facebook": true,
-           "google": true,
+           "facebook": false,
+           "google": false,
            "hatenaBookmark": false,
            "instapaper": false,
            "line": false,
            "linkedin": false,
            "messenger": false,
            "pocket": false,
-           "qq": true,
+           "qq": false,
            "qzone": false,
-           "stumbleupon": false,
            "twitter": false,
-           "viber": false,
-           "vk": false,
-           "weibo": true,
+           "weibo": false,
            "whatsapp": false,
            "all": [
                "facebook", "google", "twitter",
-               "weibo", "instapaper", "linkedin",
-               "pocket", "stumbleupon"
+               "weibo", "qq", "whatsapp",
+               "messenger"
            ]
        }
     },
