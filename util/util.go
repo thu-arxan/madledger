@@ -1,6 +1,8 @@
 package util
 
 import (
+	"encoding/binary"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -49,4 +51,49 @@ func FileExists(name string) bool {
 		}
 	}
 	return true
+}
+
+// Int64ToBytes turn int64 to []byte
+func Int64ToBytes(i int64) []byte {
+	return Uint64ToBytes(uint64(i))
+}
+
+// Uint64ToBytes turn int64 to []byte
+func Uint64ToBytes(i uint64) []byte {
+	var buf = make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, i)
+	return buf
+}
+
+// Int32ToBytes turn int64 to []byte
+func Int32ToBytes(i int32) []byte {
+	return Uint32ToBytes(uint32(i))
+}
+
+// Uint32ToBytes turn int64 to []byte
+func Uint32ToBytes(i uint32) []byte {
+	var buf = make([]byte, 4)
+	binary.BigEndian.PutUint32(buf, i)
+	return buf
+}
+
+// BytesToUint32 turn b[0:4] to uint32, if less than 4, panic error
+func BytesToUint32(b []byte) uint32 {
+	return binary.BigEndian.Uint32(b)
+}
+
+// BytesToUint64 turn b[0:4] to uint64
+func BytesToUint64(b []byte) (uint64, error) {
+	if len(b) != 8 {
+		return 0, errors.New("Wrong lengtg")
+	}
+	return binary.BigEndian.Uint64(b), nil
+}
+
+// BoolToBytes turn bool to []byte
+func BoolToBytes(b bool) []byte {
+	if b {
+		return []byte{1}
+	}
+	return []byte{0}
 }

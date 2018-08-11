@@ -40,15 +40,7 @@ func runStart(cmd *cobra.Command, args []string) error {
 	}
 	// set the log
 	setLog(cfg.Debug)
-	serverCfg, err := cfg.GetServerConfig()
-	if err != nil {
-		return err
-	}
-	dbCfg, err := cfg.GetDBConfig()
-	if err != nil {
-		return err
-	}
-	s, err := server.NewServer(serverCfg, dbCfg)
+	s, err := server.NewServer(cfg)
 	if err != nil {
 		return err
 	}
