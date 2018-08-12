@@ -7,7 +7,13 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"time"
 )
+
+// Now returns the time now
+func Now() int64 {
+	return time.Now().Unix()
+}
 
 // Contain return if the target which is a map or slice contains the obj
 func Contain(target interface{}, obj interface{}) bool {

@@ -10,7 +10,7 @@ type Block struct {
 	// Header of Block
 	Header BlockHeader
 	// Transactions of Block
-	// Transactions []*Tx
+	Transactions []*Tx
 }
 
 // BlockHeader is the header of Block
