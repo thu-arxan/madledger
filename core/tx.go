@@ -8,24 +8,40 @@ import (
 
 // Tx is the transaction, which structure is not decided yet
 type Tx struct {
-	Data txData
-	Time uint64
+	Data TxData
+	Time int64
 }
 
-// txData is the data of Tx
-type txData struct {
+// TxData is the data of Tx
+type TxData struct {
 	AccountNonce uint64
 	Recipient    Address
 	Payload      []byte
-	Version      int
-	Sig          *txSig
+	Version      int32
+	Sig          *TxSig
 }
 
-// txSig is the sig of tx
-type txSig struct {
+// TxSig is the sig of tx
+type TxSig struct {
 	// maybe change to bytes is better
 	V    *big.Int
 	R, S *big.Int
+}
+
+// NewTx is the constructor of Tx
+// TODO: AccountNonce & sig
+func NewTx(recipient Address, payload []byte) (*Tx, error) {
+	var tx = Tx{
+		Data: TxData{
+			AccountNonce: 0,
+			Recipient:    recipient,
+			Payload:      payload,
+			Version:      1,
+			Sig:          nil,
+		},
+		Time: util.Now(),
+	}
+	return &tx, nil
 }
 
 // Hash return the hash of tx
@@ -40,19 +56,19 @@ func (tx *Tx) HashWithoutSig() []byte {
 
 // hash implementation different hash
 func (tx *Tx) hash(withSig bool) []byte {
-	var core txData
+	var data TxData
 	if withSig {
-		core = tx.Data
+		data = tx.Data
 	} else { // clone
-		core.AccountNonce = tx.Data.AccountNonce
-		core.Recipient = tx.Data.Recipient
-		core.Payload = tx.Data.Payload
-		core.Version = tx.Data.Version
-		core.Sig = nil
+		data.AccountNonce = tx.Data.AccountNonce
+		data.Recipient = tx.Data.Recipient
+		data.Payload = tx.Data.Payload
+		data.Version = tx.Data.Version
+		data.Sig = nil
 	}
 
 	// todo: should we ignore the error?
-	bytes, err := json.Marshal(core)
+	bytes, err := json.Marshal(data)
 	if err != nil {
 		return nil
 	}

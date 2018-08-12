@@ -34,8 +34,8 @@ func NewBlock(num uint64, prevHash []byte, txs []*Tx) *Block {
 	blockHeader := NewBlockHeader(num, prevHash, merkleRootHash)
 
 	block := &Block{
-		Header: *blockHeader,
-		// Transactions: transactions,
+		Header:       *blockHeader,
+		Transactions: txs,
 	}
 	return block
 }

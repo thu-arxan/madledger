@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+// Hex is the wrapper of fmt.Sprintf("%x", data)
+func Hex(data []byte) string {
+	return fmt.Sprintf("%x", data)
+}
+
 // Now returns the time now
 func Now() int64 {
 	return time.Now().Unix()
