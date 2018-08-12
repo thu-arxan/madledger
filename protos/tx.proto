@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package protos;
+
+// Tx is the transaction, which structure is not decided yet
+message Tx {
+	txData Data = 1;
+	uint64 Time = 2;
+}
+
+// txData is the data of Tx
+message txData {
+	uint64 AccountNonce = 1;
+	bytes Recipient = 2;
+	bytes Payload = 3;
+	int32 Version = 4;  
+	txSig Sig = 5;
+}
+
+// txSig is the sig of tx
+// However, it has a gap with the struct of txSig,
+// because there is no big int in the protobuf
+message txSig {
+	bytes V = 1;
+    bytes R = 2;
+    bytes S = 3;
+}

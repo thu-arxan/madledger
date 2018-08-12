@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package protos;
+
+import "tx.proto";
+
+// The definition of Block
+message Block {
+    // Header of Block
+    BlockHeader Header = 1;
+    // Transactions of Block
+    repeated Tx Transactions = 2;
+}
+
+// The definition of BlockHeader
+message BlockHeader {
+    int32 Version = 1;
+    uint64 Sequence = 2;
+    // The hash of PrevBlock
+    bytes PrevBlock = 3;
+    // Do this should change to BitCoin as MerkleRoot?
+    bytes Hash = 4;
+    uint64 Time = 5;
+}

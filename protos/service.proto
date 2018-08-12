@@ -2,5 +2,17 @@ syntax = "proto3";
 
 package protos;
 
+import "block.proto";
 
-service Orderer{}
+// The services that orderers should provide
+service Orderer{
+    rpc FetchBlock(FetchBlockRequest) returns (Block) {}
+}
+
+// However, this is not contains sig now, but this is necessary
+// if we want to verify the permission.
+// TODO: add sig to identity.
+message FetchBlockRequest {
+    string ChannelID = 1;
+    uint64 Number = 2;
+}

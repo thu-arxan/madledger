@@ -7,6 +7,8 @@ import (
 // TODO: This is copied from ethereum.
 // However, how to use these is still a question.
 // Also, there maybe many things is missed.
+// Besides, how to support different kind of encrypted functions
+// is still a problem.
 
 const (
 	// AddressLength is the expected length of the adddress
@@ -31,7 +33,7 @@ func HexToAddress(s string) Address {
 }
 
 // IsHexAddress verifies whether a string can represent a valid hex-encoded
-// Ethereum address or not.
+// MadLedger address or not.
 func IsHexAddress(s string) bool {
 	if hasHexPrefix(s) {
 		s = s[2:]

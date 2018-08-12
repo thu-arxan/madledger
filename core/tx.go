@@ -7,7 +7,6 @@ import (
 )
 
 // Tx is the transaction, which structure is not decided yet
-// TODO
 type Tx struct {
 	Data txData
 	Time uint64

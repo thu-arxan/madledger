@@ -1,6 +1,8 @@
 package channel
 
 import (
+	"errors"
+	"madledger/core"
 	"madledger/orderer/db"
 
 	"github.com/rs/zerolog/log"
@@ -27,4 +29,10 @@ func NewManager(id string, db *db.DB) (*Manager, error) {
 // TODO
 func (manager *Manager) Start() {
 	log.Info().Msgf("Channel %s is starting")
+}
+
+// FetchBlock return the block if exist
+// TODO
+func (manager *Manager) FetchBlock(num uint64) (*core.Block, error) {
+	return nil, errors.New("Not implementation yet")
 }
