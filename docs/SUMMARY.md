@@ -4,3 +4,4 @@
 * [快速上手](start.md)
 * [Orderer](orderer.md)
 * [Peer](peer.md)
+* [开发指南](developer.md)
