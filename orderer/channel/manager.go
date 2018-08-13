@@ -2,6 +2,7 @@ package channel
 
 import (
 	"errors"
+	"madledger/blockchain"
 	"madledger/core"
 	"madledger/orderer/db"
 
@@ -14,14 +15,22 @@ type Manager struct {
 	ID string
 	// db is the database
 	db *db.DB
+	// chain manager
+	cm *blockchain.Manager
 }
 
 // NewManager is the constructor of Manager
 // TODO: many things is not done yet
-func NewManager(id string, db *db.DB) (*Manager, error) {
+func NewManager(id, dir string, db *db.DB) (*Manager, error) {
+	log.Info().Msg(dir)
+	cm, err := blockchain.NewManager(id, dir)
+	if err != nil {
+		return nil, err
+	}
 	return &Manager{
 		ID: id,
 		db: db,
+		cm: cm,
 	}, nil
 }
 

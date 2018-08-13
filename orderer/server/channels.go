@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"madledger/core"
 	"madledger/orderer/channel"
+	"madledger/orderer/config"
 	"madledger/orderer/db"
 	"madledger/util"
 	"sync"
@@ -11,7 +12,8 @@ import (
 
 // ChannelManager is the manager of channels
 type ChannelManager struct {
-	db *db.DB
+	chainCfg *config.BlockChainConfig
+	db       *db.DB
 	// Channels manager all user channels
 	// maybe can use sync.Map, but the advantage is not significant
 	Channels map[string]*channel.Manager
@@ -23,28 +25,34 @@ type ChannelManager struct {
 }
 
 // NewChannelManager is the constructor of ChannelManager
-func NewChannelManager(dir string) (*ChannelManager, error) {
+func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig) (*ChannelManager, error) {
 	m := new(ChannelManager)
 	m.Channels = make(map[string]*channel.Manager)
+	m.chainCfg = chainCfg
 	// set db
-	db, err := db.NewGolevelDB(dir)
+	db, err := db.NewGolevelDB(dbDir)
 	if err != nil {
 		return nil, err
 	}
 	m.db = &db
 	// set global channel manager
-	globalManager, err := channel.NewManager(core.GLOBALCHANNELID, m.db)
+	globalManager, err := channel.NewManager(core.GLOBALCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, core.GLOBALCHANNELID), m.db)
 	if err != nil {
 		return nil, err
 	}
 	m.GlobalChannel = globalManager
 	//set config channel manager
-	configManager, err := channel.NewManager(core.CONFIGCHANNELID, m.db)
+	configManager, err := channel.NewManager(core.CONFIGCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, core.CONFIGCHANNELID), m.db)
 	if err != nil {
 		return nil, err
 	}
 	m.ConfigChannel = configManager
 	return m, nil
+}
+
+// TODO
+func (manager *ChannelManager) start() error {
+	return nil
 }
 
 // FetchBlock return the block if both channel and block exists

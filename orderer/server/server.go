@@ -33,8 +33,13 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	// load chain config
+	chainCfg, err := cfg.GetBlockChainConfig()
+	if err != nil {
+		return nil, err
+	}
 	// get channel manager
-	channelManager, err := NewChannelManager(dbCfg.LevelDB.Dir)
+	channelManager, err := NewChannelManager(dbCfg.LevelDB.Dir, chainCfg)
 	if err != nil {
 		return nil, err
 	}
