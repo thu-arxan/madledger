@@ -33,13 +33,13 @@ func NewChannelManager(dir string) (*ChannelManager, error) {
 	}
 	m.db = &db
 	// set global channel manager
-	globalManager, err := channel.NewManager("_global", m.db)
+	globalManager, err := channel.NewManager(core.GLOBALCHANNELID, m.db)
 	if err != nil {
 		return nil, err
 	}
 	m.GlobalChannel = globalManager
 	//set config channel manager
-	configManager, err := channel.NewManager("_config", m.db)
+	configManager, err := channel.NewManager(core.CONFIGCHANNELID, m.db)
 	if err != nil {
 		return nil, err
 	}
@@ -58,9 +58,9 @@ func (manager *ChannelManager) FetchBlock(channelID string, num uint64) (*core.B
 
 func (manager *ChannelManager) getChannelManager(channelID string) *channel.Manager {
 	switch channelID {
-	case "_global":
+	case core.GLOBALCHANNELID:
 		return manager.GlobalChannel
-	case "_config":
+	case core.CONFIGCHANNELID:
 		return manager.ConfigChannel
 	default:
 		manager.lock.RLock()

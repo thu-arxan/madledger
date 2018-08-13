@@ -11,7 +11,7 @@ import (
 // TODO
 func CreateGenesisBlock() (*core.Block, error) {
 	var payload = Payload{
-		ChannelID: "_global",
+		ChannelID: core.GLOBALCHANNELID,
 		Profile: Profile{
 			Open: true,
 		},
