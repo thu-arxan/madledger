@@ -6,4 +6,4 @@
 * [Orderer](orderer.md)
 * [Peer](peer.md)
 * [开发指南](developer/README.md)
-    * [交易](developer/transaction.md)
+  * [交易](developer/transaction.md)
