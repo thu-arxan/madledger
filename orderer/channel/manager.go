@@ -22,7 +22,6 @@ type Manager struct {
 // NewManager is the constructor of Manager
 // TODO: many things is not done yet
 func NewManager(id, dir string, db *db.DB) (*Manager, error) {
-	log.Info().Msg(dir)
 	cm, err := blockchain.NewManager(id, dir)
 	if err != nil {
 		return nil, err
@@ -32,6 +31,22 @@ func NewManager(id, dir string, db *db.DB) (*Manager, error) {
 		db: db,
 		cm: cm,
 	}, nil
+}
+
+// HasGenesisBlock return if the channel has a genesis block
+func (manager *Manager) HasGenesisBlock() bool {
+	return manager.cm.HasGenesisBlock()
+}
+
+// GetBlock return the block of num
+func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
+	return manager.cm.GetBlock(num)
+}
+
+// AddBlock add a block
+// TODO: check conflict and update db
+func (manager *Manager) AddBlock(block *core.Block) error {
+	return manager.cm.AddBlock(block)
 }
 
 // Start starts the channel

@@ -8,7 +8,7 @@ import (
 // CreateGenesisBlock return the genesis block
 // maybe the address should be a special addr rather than all zero
 // also the data is still need to be discussed
-// TODO
+// TODO: many things
 func CreateGenesisBlock() (*core.Block, error) {
 	var payload = Payload{
 		ChannelID: core.GLOBALCHANNELID,

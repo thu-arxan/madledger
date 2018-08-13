@@ -2,12 +2,16 @@ package server
 
 import (
 	"fmt"
+	cc "madledger/blockchain/config"
+	gc "madledger/blockchain/global"
 	"madledger/core"
 	"madledger/orderer/channel"
 	"madledger/orderer/config"
 	"madledger/orderer/db"
 	"madledger/util"
 	"sync"
+
+	"github.com/rs/zerolog/log"
 )
 
 // ChannelManager is the manager of channels
@@ -35,19 +39,61 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig) (*Channe
 		return nil, err
 	}
 	m.db = &db
+	//set config channel manager
+	configManager, err := loadConfigChannel(chainCfg.Path, m.db)
+	if err != nil {
+		return nil, err
+	}
 	// set global channel manager
 	globalManager, err := channel.NewManager(core.GLOBALCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, core.GLOBALCHANNELID), m.db)
 	if err != nil {
 		return nil, err
 	}
+	if !globalManager.HasGenesisBlock() {
+		log.Info().Msg("Creating genesis block of channel _global")
+		// cgb: config channel genesis block
+		cgb, err := configManager.GetBlock(0)
+		if err != nil {
+			return nil, err
+		}
+		// ggb: global channel genesis block
+		ggb, err := gc.CreateGenesisBlock([]*gc.Payload{&gc.Payload{
+			ChannelID: core.CONFIGCHANNELID,
+			Number:    0,
+			Hash:      cgb.Hash(),
+		}})
+		if err != nil {
+			return nil, err
+		}
+		err = globalManager.AddBlock(ggb)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	m.ConfigChannel = configManager
 	m.GlobalChannel = globalManager
-	//set config channel manager
-	configManager, err := channel.NewManager(core.CONFIGCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, core.CONFIGCHANNELID), m.db)
+
+	return m, nil
+}
+
+func loadConfigChannel(dir string, db *db.DB) (*channel.Manager, error) {
+	configManager, err := channel.NewManager(core.CONFIGCHANNELID, fmt.Sprintf("%s/%s", dir, core.CONFIGCHANNELID), db)
 	if err != nil {
 		return nil, err
 	}
-	m.ConfigChannel = configManager
-	return m, nil
+	if !configManager.HasGenesisBlock() {
+		log.Info().Msg("Creating genesis block of channel _config")
+		gb, err := cc.CreateGenesisBlock()
+		if err != nil {
+			return nil, err
+		}
+		err = configManager.AddBlock(gb)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return configManager, nil
 }
 
 // TODO
@@ -75,8 +121,7 @@ func (manager *ChannelManager) getChannelManager(channelID string) *channel.Mana
 		defer manager.lock.RUnlock()
 		if util.Contain(manager.Channels, channelID) {
 			return manager.Channels[channelID]
-		} else {
-			return nil
 		}
+		return nil
 	}
 }
