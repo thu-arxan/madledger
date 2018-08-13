@@ -14,14 +14,14 @@ type Manager struct {
 	// ID is the id of channel
 	ID string
 	// db is the database
-	db *db.DB
+	db db.DB
 	// chain manager
 	cm *blockchain.Manager
 }
 
 // NewManager is the constructor of Manager
 // TODO: many things is not done yet
-func NewManager(id, dir string, db *db.DB) (*Manager, error) {
+func NewManager(id, dir string, db db.DB) (*Manager, error) {
 	cm, err := blockchain.NewManager(id, dir)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,20 @@ func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
 // AddBlock add a block
 // TODO: check conflict and update db
 func (manager *Manager) AddBlock(block *core.Block) error {
-	return manager.cm.AddBlock(block)
+	var err error
+	err = manager.cm.AddBlock(block)
+	if err != nil {
+		return err
+	}
+	switch manager.ID {
+	case core.CONFIGCHANNELID:
+		return manager.AddConfigBlock(block)
+	case core.GLOBALCHANNELID:
+		return errors.New("Not implementation yet")
+	default:
+		// todo
+		return nil
+	}
 }
 
 // Start starts the channel

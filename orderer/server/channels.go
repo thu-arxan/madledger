@@ -17,7 +17,7 @@ import (
 // ChannelManager is the manager of channels
 type ChannelManager struct {
 	chainCfg *config.BlockChainConfig
-	db       *db.DB
+	db       db.DB
 	// Channels manager all user channels
 	// maybe can use sync.Map, but the advantage is not significant
 	Channels map[string]*channel.Manager
@@ -34,11 +34,11 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig) (*Channe
 	m.Channels = make(map[string]*channel.Manager)
 	m.chainCfg = chainCfg
 	// set db
-	db, err := db.NewGolevelDB(dbDir)
+	db, err := db.NewLevelDB(dbDir)
 	if err != nil {
 		return nil, err
 	}
-	m.db = &db
+	m.db = db
 	//set config channel manager
 	configManager, err := loadConfigChannel(chainCfg.Path, m.db)
 	if err != nil {
@@ -77,7 +77,7 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig) (*Channe
 	return m, nil
 }
 
-func loadConfigChannel(dir string, db *db.DB) (*channel.Manager, error) {
+func loadConfigChannel(dir string, db db.DB) (*channel.Manager, error) {
 	configManager, err := channel.NewManager(core.CONFIGCHANNELID, fmt.Sprintf("%s/%s", dir, core.CONFIGCHANNELID), db)
 	if err != nil {
 		return nil, err
