@@ -7,3 +7,4 @@
 * [Peer](peer.md)
 * [开发指南](developer/README.md)
   * [交易](developer/transaction.md)
+  * [通道](developer/channel.md)
