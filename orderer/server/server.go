@@ -20,6 +20,7 @@ type Server struct {
 }
 
 // NewServer is the constructor of server
+// todo: many thing need to be done
 func NewServer(cfg *config.Config) (*Server, error) {
 	server := new(Server)
 	// set config of server
@@ -55,6 +56,10 @@ func (s *Server) Start() error {
 		return errors.New("Failed to start the orderer")
 	}
 	log.Info().Msgf("Start the orderer at %s", addr)
+	err = s.ChannelManager.start()
+	if err != nil {
+		return err
+	}
 	var opts []grpc.ServerOption
 	s.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterOrdererServer(s.rpcServer, s)

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	cc "madledger/blockchain/config"
 	gc "madledger/blockchain/global"
+	"madledger/consensus"
+	"madledger/consensus/solo"
 	"madledger/core"
 	"madledger/orderer/channel"
 	"madledger/orderer/config"
@@ -26,6 +28,7 @@ type ChannelManager struct {
 	GlobalChannel *channel.Manager
 	// ConfigChannel is the config channel manager
 	ConfigChannel *channel.Manager
+	Consensus     consensus.Consensus
 }
 
 // NewChannelManager is the constructor of ChannelManager
@@ -74,6 +77,22 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig) (*Channe
 	m.ConfigChannel = configManager
 	m.GlobalChannel = globalManager
 
+	// set consensus
+	var channels = make(map[string]consensus.Config, 0)
+	cfg := consensus.Config{
+		Timeout: 1000,
+		MaxSize: 10,
+		Number:  0,
+		Resume:  false,
+	}
+	channels[core.GLOBALCHANNELID] = cfg
+	channels[core.CONFIGCHANNELID] = cfg
+	consensus, err := solo.NewConsensus(channels)
+	if err != nil {
+		return nil, err
+	}
+	m.Consensus = consensus
+
 	return m, nil
 }
 
@@ -98,7 +117,7 @@ func loadConfigChannel(dir string, db db.DB) (*channel.Manager, error) {
 
 // TODO
 func (manager *ChannelManager) start() error {
-	return nil
+	return manager.Consensus.Start()
 }
 
 // FetchBlock return the block if both channel and block exists

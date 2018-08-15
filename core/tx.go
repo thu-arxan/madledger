@@ -13,6 +13,7 @@ type Tx struct {
 }
 
 // TxData is the data of Tx
+// todo: maybe should contain ChannelID
 type TxData struct {
 	AccountNonce uint64
 	Recipient    Address
