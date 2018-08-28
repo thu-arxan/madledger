@@ -2,7 +2,7 @@ package types
 
 import (
 	"bytes"
-	"madledger/util"
+	"madledger/common/crypto"
 	"math"
 )
 
@@ -96,7 +96,7 @@ func HashMerkleBranches(left []byte, right []byte) []byte {
 	buffer.Write(left)
 	buffer.Write(right)
 	concats := buffer.Bytes()
-	return util.Hash(concats[:])
+	return crypto.Hash(concats[:])
 }
 
 // nextPowerOfTwo returns the next highest power of two from a given number if

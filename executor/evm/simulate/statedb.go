@@ -3,7 +3,7 @@ package simulate
 import (
 	"fmt"
 	"madledger/common"
-	"madledger/util"
+	"madledger/common/util"
 )
 
 // StateDB is a memory db to simulate the actions of

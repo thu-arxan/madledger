@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"madledger/common/util"
 	"madledger/core/types"
-	"madledger/util"
 	"os"
 	"strconv"
 )

@@ -3,7 +3,8 @@ package types
 import (
 	"bytes"
 	"madledger/common"
-	"madledger/util"
+	"madledger/common/crypto"
+	"madledger/common/util"
 )
 
 // Block is the elements of BlockChain
@@ -49,7 +50,7 @@ func (b *Block) Hash() common.Hash {
 	buffer.Write(b.Header.PrevBlock)
 	buffer.Write(b.Header.MerkleRoot)
 	buffer.Write(util.Int64ToBytes(b.Header.Time))
-	return common.BytesToHash(util.Hash(buffer.Bytes()))
+	return common.BytesToHash(crypto.Hash(buffer.Bytes()))
 }
 
 // NewBlockHeader is the constructor of BlockHeader

@@ -3,8 +3,8 @@ package solo
 import (
 	"errors"
 	"fmt"
+	"madledger/common/util"
 	"madledger/consensus"
-	"madledger/util"
 	"sync"
 )
 

@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"madledger/util"
+	"madledger/common/util"
 	"os"
 	"reflect"
 	"testing"

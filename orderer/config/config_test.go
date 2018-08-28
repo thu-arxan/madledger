@@ -3,7 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
-	"madledger/util"
+	"madledger/common/util"
 	"os"
 	"testing"
 )

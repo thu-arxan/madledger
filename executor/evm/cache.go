@@ -3,7 +3,7 @@ package evm
 import (
 	"fmt"
 	"madledger/common"
-	"madledger/util"
+	"madledger/common/util"
 )
 
 // Cache cache on a statedb.

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"madledger/util"
+	"madledger/common/util"
 	"os"
 
 	yaml "gopkg.in/yaml.v2"

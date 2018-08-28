@@ -5,9 +5,9 @@ import (
 	"encoding/hex"
 	"io/ioutil"
 	"madledger/common"
+	"madledger/common/util"
 	"madledger/executor/evm/abi"
 	"madledger/executor/evm/simulate"
-	"madledger/util"
 	"os"
 	"testing"
 )

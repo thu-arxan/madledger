@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"errors"
+	"madledger/common/util"
 	"madledger/orderer/config"
 	"madledger/orderer/server"
-	"madledger/util"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

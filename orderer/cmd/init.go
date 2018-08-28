@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"io/ioutil"
-	"madledger/util"
+	"madledger/common/util"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

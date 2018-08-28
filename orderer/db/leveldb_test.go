@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	cc "madledger/blockchain/config"
-	"madledger/util"
+	"madledger/common/util"
 	"os"
 	"testing"
 )

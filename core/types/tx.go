@@ -3,7 +3,8 @@ package types
 import (
 	"encoding/json"
 	"madledger/common"
-	"madledger/util"
+	"madledger/common/crypto"
+	"madledger/common/util"
 	"math/big"
 )
 
@@ -74,5 +75,5 @@ func (tx *Tx) hash(withSig bool) []byte {
 	if err != nil {
 		return nil
 	}
-	return util.Hash(bytes)
+	return crypto.Hash(bytes)
 }
