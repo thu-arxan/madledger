@@ -3,7 +3,7 @@ package blockchain
 import (
 	"errors"
 	"fmt"
-	"madledger/core"
+	"madledger/core/types"
 )
 
 // Manager manage the blockchain
@@ -35,7 +35,7 @@ func (manager *Manager) HasGenesisBlock() bool {
 }
 
 // GetBlock return the block of num
-func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
+func (manager *Manager) GetBlock(num uint64) (*types.Block, error) {
 	if num >= manager.except {
 		return nil, errors.New("The block is not exist")
 	}
@@ -43,7 +43,7 @@ func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
 }
 
 // AddBlock add a block into the chain
-func (manager *Manager) AddBlock(block *core.Block) error {
+func (manager *Manager) AddBlock(block *types.Block) error {
 	if block.Header.Number != manager.except {
 		return fmt.Errorf("Except block %d while receive block %d", manager.except, block.Header.Number)
 	}

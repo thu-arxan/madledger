@@ -3,7 +3,7 @@ package channel
 import (
 	"errors"
 	"madledger/blockchain"
-	"madledger/core"
+	"madledger/core/types"
 	"madledger/orderer/db"
 
 	"github.com/rs/zerolog/log"
@@ -39,22 +39,22 @@ func (manager *Manager) HasGenesisBlock() bool {
 }
 
 // GetBlock return the block of num
-func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
+func (manager *Manager) GetBlock(num uint64) (*types.Block, error) {
 	return manager.cm.GetBlock(num)
 }
 
 // AddBlock add a block
 // TODO: check conflict and update db
-func (manager *Manager) AddBlock(block *core.Block) error {
+func (manager *Manager) AddBlock(block *types.Block) error {
 	var err error
 	err = manager.cm.AddBlock(block)
 	if err != nil {
 		return err
 	}
 	switch manager.ID {
-	case core.CONFIGCHANNELID:
+	case types.CONFIGCHANNELID:
 		return manager.AddConfigBlock(block)
-	case core.GLOBALCHANNELID:
+	case types.GLOBALCHANNELID:
 		return errors.New("Not implementation yet")
 	default:
 		// todo
@@ -70,6 +70,6 @@ func (manager *Manager) Start() {
 
 // FetchBlock return the block if exist
 // TODO
-func (manager *Manager) FetchBlock(num uint64) (*core.Block, error) {
+func (manager *Manager) FetchBlock(num uint64) (*types.Block, error) {
 	return nil, errors.New("Not implementation yet")
 }

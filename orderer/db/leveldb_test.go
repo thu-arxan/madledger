@@ -42,7 +42,7 @@ func TestListChannel(t *testing.T) {
 
 func TestUpdateChannel(t *testing.T) {
 	err := db.UpdateChannel("_config", cc.Profile{
-		Open: true,
+		Public: true,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -57,7 +57,7 @@ func TestUpdateChannel(t *testing.T) {
 	}
 	// add _global
 	err = db.UpdateChannel("_global", cc.Profile{
-		Open: true,
+		Public: true,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -71,7 +71,7 @@ func TestUpdateChannel(t *testing.T) {
 	}
 	// add user channel
 	err = db.UpdateChannel("test", cc.Profile{
-		Open: true,
+		Public: true,
 	})
 	if err != nil {
 		t.Fatal(err)

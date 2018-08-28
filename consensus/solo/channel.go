@@ -13,6 +13,9 @@ type channel struct {
 	txChan chan []byte
 	txs    [][]byte
 	num    uint64
+	// store all blocks, maybe gc is needed
+	// todo
+	blocks map[uint64]*Block
 	notify *chan consensus.Block
 }
 
@@ -23,6 +26,7 @@ func newChannel(id string, config consensus.Config, notify *chan consensus.Block
 		num:    config.Number,
 		txChan: make(chan []byte),
 		notify: notify,
+		blocks: make(map[uint64]*Block),
 	}
 }
 
@@ -60,6 +64,7 @@ func (c *channel) generateBlock() {
 	if c.notify != nil {
 		*c.notify <- block
 	}
+	c.blocks[block.num] = &block
 	c.txs = make([][]byte, 0)
 	c.num++
 }

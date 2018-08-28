@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"madledger/core"
+	"madledger/core/types"
 	"madledger/util"
 	"os"
 	"strconv"
@@ -74,13 +74,13 @@ func loadCache(path string) (uint64, error) {
 	return num, nil
 }
 
-func (manager *Manager) loadBlock(num uint64) (*core.Block, error) {
+func (manager *Manager) loadBlock(num uint64) (*types.Block, error) {
 	path := manager.getJSONStorePath(num)
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	var block core.Block
+	var block types.Block
 	err = json.Unmarshal(data, &block)
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func (manager *Manager) loadBlock(num uint64) (*core.Block, error) {
 	return &block, nil
 }
 
-func (manager *Manager) storeBlock(block *core.Block) error {
+func (manager *Manager) storeBlock(block *types.Block) error {
 	path := manager.getJSONStorePath(block.Header.Number)
 	if util.FileExists(path) {
 		return errors.New("The block file is aleardy exists")

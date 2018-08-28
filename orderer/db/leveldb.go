@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	cc "madledger/blockchain/config"
-	"madledger/core"
+	"madledger/core/types"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -35,7 +35,7 @@ func NewLevelDB(dir string) (DB, error) {
 
 // ListChannel is the implementation of DB
 func (db *LevelDB) ListChannel() []string {
-	var key = []byte(core.CONFIGCHANNELID)
+	var key = []byte(types.CONFIGCHANNELID)
 	var channels []string
 	data, err := db.connect.Get(key, nil)
 	if err != nil {
@@ -76,7 +76,7 @@ func (db *LevelDB) UpdateChannel(id string, profile cc.Profile) error {
 		}
 	}
 	// todo: In the future, this maybe wrong
-	p.Open = profile.Open
+	p.Public = profile.Public
 	data, err := json.Marshal(p)
 	if err != nil {
 		return err
@@ -88,10 +88,10 @@ func (db *LevelDB) UpdateChannel(id string, profile cc.Profile) error {
 	return nil
 }
 
-// addChannel add a record into key core.CONFIGCHANNELID
+// addChannel add a record into key types.CONFIGCHANNELID
 // todo: maybe a map is better, and there is need to check if channel exists aleardy
 func (db *LevelDB) addChannel(id string) error {
-	var key = []byte(core.CONFIGCHANNELID)
+	var key = []byte(types.CONFIGCHANNELID)
 	exist, _ := db.connect.Has(key, nil)
 	var ids []string
 	if exist {
@@ -117,5 +117,5 @@ func (db *LevelDB) addChannel(id string) error {
 }
 
 func getChannelProfileKey(id string) []byte {
-	return []byte(fmt.Sprintf("%s@%s", core.CONFIGCHANNELID, id))
+	return []byte(fmt.Sprintf("%s@%s", types.CONFIGCHANNELID, id))
 }

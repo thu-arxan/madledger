@@ -3,6 +3,9 @@
 # run blockchain test
 go test madledger/blockchain/config -count=1
 
+# run executor test
+go test madledger/executor/evm -count=1
+
 # run orderer test
 orderer init -c orderer/config/.orderer.yaml
 go test madledger/orderer/config -count=1

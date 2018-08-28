@@ -9,5 +9,5 @@ type Payload struct {
 
 // Profile is the profile in payload
 type Profile struct {
-	Open bool
+	Public bool
 }
