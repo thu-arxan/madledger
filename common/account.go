@@ -31,7 +31,7 @@ func NewDefaultAccount(addr Address) *DefaultAccount {
 		address: addr,
 		balance: 0,
 		code:    []byte{},
-		nonce:   1,
+		nonce:   0,
 	}
 }
 

@@ -37,13 +37,21 @@ func NewEVM(context Context, origin common.Address, db StateDB) *EVM {
 }
 
 // Create create a contract
-// Remember, the function will not add the nonce of caller.
+// However, here also something wrong, because that if Create failed then the value should return the caller.
+// TODO: fix the bugs
 func (evm *EVM) Create(caller common.Account, code, input []byte, value uint64) ([]byte, common.Address, error) {
 	contract, err := evm.createAccount(caller)
 	if err != nil {
 		return nil, common.ZeroAddress, err
 	}
-
+	// add the nonce of caller
+	caller.SetNonce(caller.GetNonce() + 1)
+	evm.cache.SetAccount(caller)
+	// check if the contract address is aleardy exist
+	_, err = evm.cache.GetAccount(contract.Address())
+	if err != nil {
+		return nil, contract.Address(), fmt.Errorf("The address %s is aleardy exist", contract.Address())
+	}
 	// Run the contract bytes and return the runtime bytes
 	output, err := evm.Call(caller, contract, code, input, value)
 	if err != nil {
@@ -1225,7 +1233,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 func (evm *EVM) createAccount(account common.Account) (common.Account, error) {
 	// fmt.Printf("callee address is %s\n", caller.Address().String())
 	var cache = evm.cache
-	addr := common.NewContractAddress(account.Address(), account.GetNonce()-1)
+	addr := common.NewContractAddress(account.Address(), account.GetNonce())
 	newAccount := common.NewDefaultAccount(addr)
 	err := cache.SetAccount(newAccount)
 	if err != nil {
