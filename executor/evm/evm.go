@@ -37,11 +37,13 @@ func NewEVM(context Context, origin common.Address, db StateDB) *EVM {
 }
 
 // Create create a contract
+// Remember, the function will not add the nonce of caller.
 func (evm *EVM) Create(caller common.Account, code, input []byte, value uint64) ([]byte, common.Address, error) {
 	contract, err := evm.createAccount(caller)
 	if err != nil {
 		return nil, common.ZeroAddress, err
 	}
+
 	// Run the contract bytes and return the runtime bytes
 	output, err := evm.Call(caller, contract, code, input, value)
 	if err != nil {
@@ -57,7 +59,8 @@ func (evm *EVM) Create(caller common.Account, code, input []byte, value uint64) 
 	return output, contract.Address(), nil
 }
 
-// Call run code on a evm
+// Call run code on a evm.
+// Remember, the function will not add the nonce of caller.
 func (evm *EVM) Call(caller, callee common.Account, code, input []byte, value uint64) ([]byte, error) {
 	if err := transfer(caller, callee, value); err != nil {
 		return nil, err
@@ -1222,17 +1225,12 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 func (evm *EVM) createAccount(account common.Account) (common.Account, error) {
 	// fmt.Printf("callee address is %s\n", caller.Address().String())
 	var cache = evm.cache
-	addr := common.NewContractAddress(account.Address(), account.GetNonce())
+	addr := common.NewContractAddress(account.Address(), account.GetNonce()-1)
 	newAccount := common.NewDefaultAccount(addr)
 	err := cache.SetAccount(newAccount)
 	if err != nil {
 		return nil, err
 	}
-	// err = cache.SetAccount(caller)
-	// if err != nil {
-	// 	fmt.Println("b")
-	// 	return nil, err
-	// }
 	return newAccount, nil
 }
 

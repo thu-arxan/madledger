@@ -115,6 +115,10 @@ func (cache *Cache) Sync() error {
 				return err
 			}
 		} else if account.updated {
+			err = cache.db.SetAccount(account.account)
+			if err != nil {
+				return err
+			}
 			for key, value := range account.storage {
 				if err = cache.db.SetStorage(address, key, value); err != nil {
 					return err

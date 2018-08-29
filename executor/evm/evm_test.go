@@ -13,10 +13,6 @@ import (
 	"golang.org/x/crypto/ripemd160"
 )
 
-// Test output is a bit clearer if we /dev/null the logging, but can be re-enabled by uncommenting the below
-//var logger, _, _ = lifecycle.NewStdErrLogger()
-//
-
 func newContext() Context {
 	return Context{
 		Number:    0,

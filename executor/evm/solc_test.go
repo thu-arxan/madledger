@@ -3,6 +3,7 @@ package evm
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"io/ioutil"
 	"madledger/common"
 	"madledger/common/util"
@@ -30,6 +31,10 @@ func TestHelloWorld(t *testing.T) {
 	user := newAccount(1)
 	db.SetAccount(user)
 	vm := NewEVM(newContext(), user.Address(), db)
+	// before create the the contrat, the nonce should be add one, but this is not a good thing
+	// because this should be done automic
+	user.SetNonce(user.GetNonce() + 1)
+	db.SetAccount(user)
 	output, contractAddr, err := vm.Create(user, contractCodes, []byte{}, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -65,6 +70,21 @@ func TestHelloWorld(t *testing.T) {
 		default:
 			t.Fatal()
 		}
+	}
+	// Then will check if the code or anything else store on the statedb
+	contractAccount, err = db.GetAccount(contractAccount.GetAddress())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(contractAccount.GetCode(), runtimeCodes) {
+		t.Fatal(errors.New("The code of user is not same with the runtime code"))
+	}
+	if contractAccount.GetNonce() != 1 {
+		t.Fatal(errors.New("The nonce of contract is not 1"))
+	}
+	user, err = db.GetAccount(user.GetAddress())
+	if user.GetNonce() != 2 {
+		t.Fatal(errors.New("The nonce of user is not 2"))
 	}
 }
 
