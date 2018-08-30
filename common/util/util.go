@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -107,4 +108,9 @@ func BoolToBytes(b bool) []byte {
 		return []byte{1}
 	}
 	return []byte{0}
+}
+
+// BytesCombine combines some bytes array
+func BytesCombine(pBytes ...[]byte) []byte {
+	return bytes.Join(pBytes, []byte(""))
 }

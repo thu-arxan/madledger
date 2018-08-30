@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/binary"
+	"fmt"
 	"math/big"
 )
 
@@ -106,4 +107,14 @@ func Int64ToWord256(i int64) (word Word256) {
 func Uint64ToWord256(i uint64) (word Word256) {
 	PutUint64BE(word[24:], i)
 	return
+}
+
+// BytesToWord256 convert bytes to Word256
+func BytesToWord256(data []byte) (Word256, error) {
+	var word Word256
+	if len(data) != Word256Length {
+		return ZeroWord256, fmt.Errorf("The length of data is %d other than %d", len(data), Word256Length)
+	}
+	copy(word[:], data)
+	return word, nil
 }

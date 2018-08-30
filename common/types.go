@@ -105,6 +105,11 @@ func (a Address) Format(s fmt.State, c rune) {
 	fmt.Fprintf(s, "%"+string(c), a[:])
 }
 
+// Bytes return the bytes of address
+func (a Address) Bytes() []byte {
+	return a[:]
+}
+
 // SetBytes sets the address to the value of b.
 // If b is larger than len(a) it will panic.
 func (a *Address) SetBytes(b []byte) {
