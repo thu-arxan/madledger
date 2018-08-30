@@ -1,5 +1,8 @@
 # run all tests
 
+# run common test
+go test madledger/common/util -count=1
+
 # run blockchain test
 go test madledger/blockchain/config -count=1
 
