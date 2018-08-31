@@ -1,9 +1,18 @@
 package config
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"madledger/common"
+	"madledger/common/crypto"
 	"madledger/core/types"
+)
+
+// TODO: This must read from config files
+var (
+	secp256k1String      = "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"
+	rawSecp256k1Bytes, _ = hex.DecodeString(secp256k1String)
+	genesisPrivKey, _    = crypto.NewPrivateKey(rawSecp256k1Bytes)
 )
 
 // CreateGenesisBlock return the genesis block
@@ -32,7 +41,7 @@ func CreateGenesisBlock() (*types.Block, error) {
 		}
 		// all zero
 		var addr common.Address
-		tx, err := types.NewTx(addr, payloadBytes)
+		tx, err := types.NewTx(addr, payloadBytes, genesisPrivKey)
 		if err != nil {
 			return nil, err
 		}

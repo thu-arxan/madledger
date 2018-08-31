@@ -2,10 +2,10 @@ package types
 
 import (
 	"encoding/json"
+	"fmt"
 	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/common/util"
-	"math/big"
 )
 
 // Tx is the transaction, which structure is not decided yet
@@ -26,14 +26,13 @@ type TxData struct {
 
 // TxSig is the sig of tx
 type TxSig struct {
-	// maybe change to bytes is better
-	V    *big.Int
-	R, S *big.Int
+	pk  crypto.PublicKey
+	sig crypto.Signature
 }
 
 // NewTx is the constructor of Tx
-// TODO: AccountNonce & sig
-func NewTx(recipient common.Address, payload []byte) (*Tx, error) {
+// TODO: AccountNonce
+func NewTx(recipient common.Address, payload []byte, privKey crypto.PrivateKey) (*Tx, error) {
 	var tx = Tx{
 		Data: TxData{
 			AccountNonce: 0,
@@ -44,7 +43,38 @@ func NewTx(recipient common.Address, payload []byte) (*Tx, error) {
 		},
 		Time: util.Now(),
 	}
+	hash := tx.HashWithoutSig()
+	sig, err := privKey.Sign(hash)
+	if err != nil {
+		return nil, err
+	}
+	tx.Data.Sig = &TxSig{
+		pk:  privKey.PubKey(),
+		sig: sig,
+	}
 	return &tx, nil
+}
+
+// Verify return true if a tx is packed well, else return false
+func (tx *Tx) Verify() bool {
+	if tx.Data.Sig == nil {
+		return false
+	}
+	hash := tx.HashWithoutSig()
+	if !tx.Data.Sig.sig.Verify(hash, tx.Data.Sig.pk) {
+		return false
+	}
+	return true
+}
+
+// GetSender return the sender of the tx
+func (tx *Tx) GetSender() (common.Address, error) {
+	pk, err := tx.Data.Sig.pk.Bytes()
+	if err != nil {
+		return common.ZeroAddress, err
+	}
+	fmt.Println(util.Hex(pk))
+	return common.ZeroAddress, nil
 }
 
 // Hash return the hash of tx

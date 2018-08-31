@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"madledger/common/util"
 	"math/big"
 
 	"github.com/tmthrgd/go-hex"
@@ -44,6 +45,11 @@ func (h *Hash) SetBytes(b []byte) {
 	copy(h[HashLength-len(b):], b)
 }
 
+// Bytes return the bytes of hash
+func (h Hash) Bytes() []byte {
+	return h[:]
+}
+
 // Word256 return the Word256 format of hash
 func (h Hash) Word256() Word256 {
 	return Word256(h)
@@ -77,6 +83,7 @@ func HexToAddress(s string) Address {
 	return BytesToAddress(FromHex(s))
 }
 
+// AddressFromHexString convert hex string to address
 func AddressFromHexString(str string) (Address, error) {
 	bs, err := hex.DecodeString(str)
 	if err != nil {
@@ -122,7 +129,8 @@ func (a *Address) SetBytes(b []byte) {
 // String return the upper 0x
 // Maybe lower is better
 func (a Address) String() string {
-	return hex.EncodeUpperToString(a[:])
+	// return hex.EncodeUpperToString(a[:])
+	return "0x" + util.Hex(a[:])
 }
 
 // AddressFromWord256 decode address from Word256
