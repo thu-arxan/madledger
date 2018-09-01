@@ -55,7 +55,7 @@ func (manager *Manager) AddBlock(block *types.Block) error {
 	case types.CONFIGCHANNELID:
 		return manager.AddConfigBlock(block)
 	case types.GLOBALCHANNELID:
-		return errors.New("Not implementation yet")
+		return nil
 	default:
 		// todo
 		return nil

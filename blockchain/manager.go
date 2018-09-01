@@ -44,8 +44,9 @@ func (manager *Manager) GetBlock(num uint64) (*types.Block, error) {
 
 // AddBlock add a block into the chain
 func (manager *Manager) AddBlock(block *types.Block) error {
+	fmt.Println("Channel ", manager.id, " add block ", block.Header.Number)
 	if block.Header.Number != manager.except {
-		return fmt.Errorf("Except block %d while receive block %d", manager.except, block.Header.Number)
+		return fmt.Errorf("Channel %s except block %d while receive block %d", manager.id, manager.except, block.Header.Number)
 	}
 	var err error
 	err = manager.storeBlock(block)
