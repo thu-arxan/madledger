@@ -7,6 +7,7 @@ import "block.proto";
 // The services that orderers should provide
 service Orderer{
     rpc FetchBlock(FetchBlockRequest) returns (Block) {}
+    rpc ListChannels(ListChannelsRequest) returns(ChannelInfos) {}
 }
 
 // However, this is not contains sig now, but this is necessary
@@ -15,4 +16,19 @@ service Orderer{
 message FetchBlockRequest {
     string ChannelID = 1;
     uint64 Number = 2;
+}
+
+message ListChannelsRequest {
+    // If system channel are included
+    bool System = 1;
+}
+
+// ChannelInfos contains ChannelInfo
+message ChannelInfos {
+    repeated ChannelInfo Channels = 1;
+}
+
+// ChannelInfo includes some infomations of a channel
+message ChannelInfo {
+    string ChannelID = 1;
 }

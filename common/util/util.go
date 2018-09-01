@@ -5,10 +5,16 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"reflect"
 	"time"
+)
+
+const (
+	// MaxUint64 is the max of uint64, used for check overflow
+	MaxUint64 = 1<<64 - 1
 )
 
 // Hex is the wrapper of fmt.Sprintf("%x", data)
@@ -113,4 +119,21 @@ func BoolToBytes(b bool) []byte {
 // BytesCombine combines some bytes array
 func BytesCombine(pBytes ...[]byte) []byte {
 	return bytes.Join(pBytes, []byte(""))
+}
+
+// SafeAdd returns the result and whether overflow occurred.
+func SafeAdd(x, y uint64) (uint64, bool) {
+	return x + y, y > MaxUint64-x
+}
+
+// RandNum return int in [0, num)
+func RandNum(num int) int {
+	rand.Seed(time.Now().UnixNano())
+	randNum := rand.Intn(num)
+	return randNum
+}
+
+// RandUint64 return uint64
+func RandUint64() uint64 {
+	return rand.Uint64()
 }

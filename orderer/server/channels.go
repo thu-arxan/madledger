@@ -11,6 +11,7 @@ import (
 	"madledger/orderer/channel"
 	"madledger/orderer/config"
 	"madledger/orderer/db"
+	pb "madledger/protos"
 	"sync"
 
 	"github.com/rs/zerolog/log"
@@ -96,6 +97,40 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig) (*Channe
 	return m, nil
 }
 
+// FetchBlock return the block if both channel and block exists
+func (manager *ChannelManager) FetchBlock(channelID string, num uint64) (*types.Block, error) {
+	cm := manager.getChannelManager(channelID)
+	if cm == nil {
+		return nil, fmt.Errorf("Channel %s is not exist", channelID)
+	}
+	return cm.FetchBlock(num)
+}
+
+// ListChannels return infos channels
+func (manager *ChannelManager) ListChannels(req *pb.ListChannelsRequest) *pb.ChannelInfos {
+	infos := new(pb.ChannelInfos)
+	if req.System {
+		if manager.GlobalChannel != nil {
+			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
+				ChannelID: types.GLOBALCHANNELID,
+			})
+		}
+		if manager.ConfigChannel != nil {
+			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
+				ChannelID: types.CONFIGCHANNELID,
+			})
+		}
+	}
+	manager.lock.RLock()
+	defer manager.lock.RUnlock()
+	for channel := range manager.Channels {
+		infos.Channels = append(infos.Channels, &pb.ChannelInfo{
+			ChannelID: channel,
+		})
+	}
+	return infos
+}
+
 func loadConfigChannel(dir string, db db.DB) (*channel.Manager, error) {
 	configManager, err := channel.NewManager(types.CONFIGCHANNELID, fmt.Sprintf("%s/%s", dir, types.CONFIGCHANNELID), db)
 	if err != nil {
@@ -118,15 +153,6 @@ func loadConfigChannel(dir string, db db.DB) (*channel.Manager, error) {
 // TODO
 func (manager *ChannelManager) start() error {
 	return manager.Consensus.Start()
-}
-
-// FetchBlock return the block if both channel and block exists
-func (manager *ChannelManager) FetchBlock(channelID string, num uint64) (*types.Block, error) {
-	cm := manager.getChannelManager(channelID)
-	if cm == nil {
-		return nil, fmt.Errorf("Channel %s is not exist", channelID)
-	}
-	return cm.FetchBlock(num)
 }
 
 func (manager *ChannelManager) getChannelManager(channelID string) *channel.Manager {
