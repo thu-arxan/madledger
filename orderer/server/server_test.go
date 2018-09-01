@@ -84,6 +84,7 @@ func TestFetchBlockAtNil(t *testing.T) {
 	if block.Header.Number != 0 {
 		t.Fatal(fmt.Errorf("The number of block is %d", block.Header.Number))
 	}
+	// test bigger number
 	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
 		ChannelID: types.GLOBALCHANNELID,
 		Number:    1,
@@ -91,6 +92,19 @@ func TestFetchBlockAtNil(t *testing.T) {
 	if err == nil {
 		t.Fatal()
 	}
+	// test empty channel id
+	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
+		ChannelID: "",
+		Number:    1,
+	})
+	if err == nil {
+		t.Fatal()
+	}
+	// test a channel which is not exist
+	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
+		ChannelID: "test",
+		Number:    1,
+	})
 	server.Stop()
 	initTestEnvironment()
 }
