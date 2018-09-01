@@ -9,14 +9,16 @@ import (
 )
 
 // Tx is the transaction, which structure is not decided yet
+// Note: The Time is not important and will cause some consensus problems, so it won't
+// be included while cacluating the hash
 type Tx struct {
 	Data TxData
 	Time int64
 }
 
 // TxData is the data of Tx
-// todo: maybe should contain ChannelID
 type TxData struct {
+	ChannelID    string
 	AccountNonce uint64
 	Recipient    common.Address
 	Payload      []byte
@@ -32,9 +34,10 @@ type TxSig struct {
 
 // NewTx is the constructor of Tx
 // TODO: AccountNonce
-func NewTx(recipient common.Address, payload []byte, privKey crypto.PrivateKey) (*Tx, error) {
+func NewTx(channelID string, recipient common.Address, payload []byte, privKey crypto.PrivateKey) (*Tx, error) {
 	var tx = Tx{
 		Data: TxData{
+			ChannelID:    channelID,
 			AccountNonce: 0,
 			Recipient:    recipient,
 			Payload:      payload,
@@ -93,6 +96,7 @@ func (tx *Tx) hash(withSig bool) []byte {
 	if withSig {
 		data = tx.Data
 	} else { // clone
+		data.ChannelID = tx.Data.ChannelID
 		data.AccountNonce = tx.Data.AccountNonce
 		data.Recipient = tx.Data.Recipient
 		data.Payload = tx.Data.Payload

@@ -24,7 +24,7 @@ var (
 
 func TestNewTx(t *testing.T) {
 	var err error
-	tx, err = NewTx(common.ZeroAddress, []byte(""), getPrivKey())
+	tx, err = NewTx("test", common.ZeroAddress, []byte(""), getPrivKey())
 	if err != nil {
 		t.Fatal(err)
 	}
