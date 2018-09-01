@@ -113,11 +113,13 @@ func (manager *ChannelManager) ListChannels(req *pb.ListChannelsRequest) *pb.Cha
 		if manager.GlobalChannel != nil {
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
 				ChannelID: types.GLOBALCHANNELID,
+				BlockSize: manager.GlobalChannel.GetBlockSize(),
 			})
 		}
 		if manager.ConfigChannel != nil {
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
 				ChannelID: types.CONFIGCHANNELID,
+				BlockSize: manager.ConfigChannel.GetBlockSize(),
 			})
 		}
 	}

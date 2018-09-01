@@ -62,6 +62,11 @@ func (manager *Manager) AddBlock(block *types.Block) error {
 	}
 }
 
+// GetBlockSize return the size of blocks
+func (manager *Manager) GetBlockSize() uint64 {
+	return manager.cm.GetExcept()
+}
+
 // Start starts the channel
 // TODO
 func (manager *Manager) Start() {

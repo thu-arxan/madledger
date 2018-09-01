@@ -31,4 +31,5 @@ message ChannelInfos {
 // ChannelInfo includes some infomations of a channel
 message ChannelInfo {
     string ChannelID = 1;
+    uint64 BlockSize = 2;
 }

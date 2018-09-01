@@ -42,6 +42,11 @@ func (manager *Manager) GetBlock(num uint64) (*types.Block, error) {
 	return manager.loadBlock(num)
 }
 
+// GetExcept return the except
+func (manager *Manager) GetExcept() uint64 {
+	return manager.except
+}
+
 // AddBlock add a block into the chain
 func (manager *Manager) AddBlock(block *types.Block) error {
 	fmt.Println("Channel ", manager.id, " add block ", block.Header.Number)
