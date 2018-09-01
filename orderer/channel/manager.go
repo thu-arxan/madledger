@@ -1,7 +1,6 @@
 package channel
 
 import (
-	"errors"
 	"madledger/blockchain"
 	"madledger/core/types"
 	"madledger/orderer/db"
@@ -74,7 +73,7 @@ func (manager *Manager) Start() {
 }
 
 // FetchBlock return the block if exist
-// TODO
 func (manager *Manager) FetchBlock(num uint64) (*types.Block, error) {
-	return nil, errors.New("Not implementation yet")
+	// return nil, errors.New("Not implementation yet")
+	return manager.cm.GetBlock(num)
 }

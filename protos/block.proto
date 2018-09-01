@@ -15,10 +15,11 @@ message Block {
 // The definition of BlockHeader
 message BlockHeader {
     int32 Version = 1;
-    uint64 Sequence = 2;
+    string ChannelID = 2;
+    uint64 Number = 3;
     // The hash of PrevBlock
-    bytes PrevBlock = 3;
+    bytes PrevBlock = 4;
     // Do this should change to BitCoin as MerkleRoot?
-    bytes Hash = 4;
-    uint64 Time = 5;
+    bytes MerkleRoot = 5;
+    uint64 Time = 6;
 }

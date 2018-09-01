@@ -14,8 +14,13 @@ import (
 	"google.golang.org/grpc"
 )
 
+var (
+	server *Server
+)
+
 func TestNewServer(t *testing.T) {
-	server, err := NewServer(getTestConfig())
+	var err error
+	server, err = NewServer(getTestConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -23,7 +28,9 @@ func TestNewServer(t *testing.T) {
 		server.Start()
 	}()
 	time.Sleep(100 * time.Millisecond)
-	// then check blocks
+}
+
+func TestListChannelsAtNil(t *testing.T) {
 	client, err := getClient()
 	if err != nil {
 		t.Fatal()
@@ -58,6 +65,30 @@ func TestNewServer(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(infos.Channels) != 0 {
+		t.Fatal()
+	}
+}
+
+func TestFetchBlockAtNil(t *testing.T) {
+	client, err := getClient()
+	if err != nil {
+		t.Fatal()
+	}
+	block, err := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
+		ChannelID: types.GLOBALCHANNELID,
+		Number:    0,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if block.Header.Number != 0 {
+		t.Fatal(fmt.Errorf("The number of block is %d", block.Header.Number))
+	}
+	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
+		ChannelID: types.GLOBALCHANNELID,
+		Number:    1,
+	})
+	if err == nil {
 		t.Fatal()
 	}
 	server.Stop()

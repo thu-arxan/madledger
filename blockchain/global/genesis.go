@@ -24,7 +24,7 @@ func CreateGenesisBlock(payloads []*Payload) (*types.Block, error) {
 		txs = append(txs, tx)
 	}
 
-	return types.NewBlock(0, nil, txs), nil
+	return types.NewBlock(types.GLOBALCHANNELID, 0, nil, txs), nil
 }
 
 // This function is special prepared for genesis block, because there exists

@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	pb "madledger/protos"
 
 	"golang.org/x/net/context"
@@ -9,7 +8,11 @@ import (
 
 // FetchBlock is the implementation of protos
 func (s *Server) FetchBlock(ctx context.Context, req *pb.FetchBlockRequest) (*pb.Block, error) {
-	return nil, errors.New("Not implementation yet")
+	block, err := s.ChannelManager.FetchBlock(req.ChannelID, req.Number)
+	if err != nil {
+		return nil, err
+	}
+	return ConvertBlockFromTypesToPb(block)
 }
 
 // ListChannels is the implementation of protos
