@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	cc "madledger/blockchain/config"
 	gc "madledger/blockchain/global"
@@ -131,6 +132,14 @@ func (manager *ChannelManager) ListChannels(req *pb.ListChannelsRequest) *pb.Cha
 		})
 	}
 	return infos
+}
+
+// AddChannel try to add a channel
+func (manager *ChannelManager) AddChannel(req *pb.AddChannelRequest) (*pb.ChannelInfo, error) {
+	if manager.getChannelManager(req.ChannelID) != nil {
+		return nil, fmt.Errorf("Channel %s is aleardy exist", req.ChannelID)
+	}
+	return nil, errors.New("Not implementation yet")
 }
 
 func loadConfigChannel(dir string, db db.DB) (*channel.Manager, error) {

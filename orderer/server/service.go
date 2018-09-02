@@ -19,3 +19,8 @@ func (s *Server) FetchBlock(ctx context.Context, req *pb.FetchBlockRequest) (*pb
 func (s *Server) ListChannels(ctx context.Context, req *pb.ListChannelsRequest) (*pb.ChannelInfos, error) {
 	return s.ChannelManager.ListChannels(req), nil
 }
+
+// AddChannel is the implementation of protos
+func (s *Server) AddChannel(ctx context.Context, req *pb.AddChannelRequest) (*pb.ChannelInfo, error) {
+	return s.ChannelManager.AddChannel(req)
+}
