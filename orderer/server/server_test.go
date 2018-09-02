@@ -135,6 +135,7 @@ func TestFetchBlockAtNil(t *testing.T) {
 	initTestEnvironment()
 }
 
+// TODO: The stop is not finished yet, so the test is not right
 func TestServerStartAtAnotherPath(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	cfg, _ := config.LoadConfig(getTestConfigFilePath())

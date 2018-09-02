@@ -152,9 +152,14 @@ func loadConfigChannel(dir string, db db.DB) (*channel.Manager, error) {
 	return configManager, nil
 }
 
-// TODO
 func (manager *ChannelManager) start() error {
 	return manager.Consensus.Start()
+}
+
+// stop will stop the consensus
+// todo: Not finished yet
+func (manager *ChannelManager) stop() {
+
 }
 
 func (manager *ChannelManager) getChannelManager(channelID string) *channel.Manager {
