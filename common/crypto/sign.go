@@ -24,6 +24,7 @@ type PublicKey interface {
 // It may support ecdsa or sm2
 type Signature interface {
 	Verify(hash []byte, pubKey PublicKey) bool
+	Bytes() ([]byte, error)
 }
 
 // NewPrivateKey return a PrivateKey

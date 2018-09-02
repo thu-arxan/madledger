@@ -12,7 +12,7 @@ import (
 // Note: The Time is not important and will cause some consensus problems, so it won't
 // be included while cacluating the hash
 type Tx struct {
-	Data TxData
+	Data *TxData
 	Time int64
 }
 
@@ -28,15 +28,15 @@ type TxData struct {
 
 // TxSig is the sig of tx
 type TxSig struct {
-	pk  crypto.PublicKey
-	sig crypto.Signature
+	PK  crypto.PublicKey
+	Sig crypto.Signature
 }
 
 // NewTx is the constructor of Tx
 // TODO: AccountNonce
 func NewTx(channelID string, recipient common.Address, payload []byte, privKey crypto.PrivateKey) (*Tx, error) {
 	var tx = Tx{
-		Data: TxData{
+		Data: &TxData{
 			ChannelID:    channelID,
 			AccountNonce: 0,
 			Recipient:    recipient,
@@ -52,8 +52,8 @@ func NewTx(channelID string, recipient common.Address, payload []byte, privKey c
 		return nil, err
 	}
 	tx.Data.Sig = &TxSig{
-		pk:  privKey.PubKey(),
-		sig: sig,
+		PK:  privKey.PubKey(),
+		Sig: sig,
 	}
 	return &tx, nil
 }
@@ -64,7 +64,7 @@ func (tx *Tx) Verify() bool {
 		return false
 	}
 	hash := tx.HashWithoutSig()
-	if !tx.Data.Sig.sig.Verify(hash, tx.Data.Sig.pk) {
+	if !tx.Data.Sig.Sig.Verify(hash, tx.Data.Sig.PK) {
 		return false
 	}
 	return true
@@ -72,7 +72,7 @@ func (tx *Tx) Verify() bool {
 
 // GetSender return the sender of the tx
 func (tx *Tx) GetSender() (common.Address, error) {
-	pk, err := tx.Data.Sig.pk.Bytes()
+	pk, err := tx.Data.Sig.PK.Bytes()
 	if err != nil {
 		return common.ZeroAddress, err
 	}
@@ -92,7 +92,7 @@ func (tx *Tx) HashWithoutSig() []byte {
 
 // hash implementation different hash
 func (tx *Tx) hash(withSig bool) []byte {
-	var data TxData
+	var data *TxData
 	if withSig {
 		data = tx.Data
 	} else { // clone

@@ -10,7 +10,7 @@ import (
 // Block is the elements of BlockChain
 type Block struct {
 	// Header of Block
-	Header BlockHeader `json:"Header,omitempty"`
+	Header *BlockHeader `json:"Header,omitempty"`
 	// Transactions of Block
 	Transactions []*Tx `json:"Transactions,omitempty"`
 }
@@ -37,7 +37,7 @@ func NewBlock(channelID string, num uint64, prevHash []byte, txs []*Tx) *Block {
 	blockHeader := NewBlockHeader(channelID, num, prevHash, merkleRootHash)
 
 	block := &Block{
-		Header:       *blockHeader,
+		Header:       blockHeader,
 		Transactions: txs,
 	}
 	return block
@@ -50,7 +50,8 @@ func (b *Block) Hash() common.Hash {
 	buffer.Write(util.Uint64ToBytes(b.Header.Number))
 	buffer.Write(b.Header.PrevBlock)
 	buffer.Write(b.Header.MerkleRoot)
-	buffer.Write(util.Int64ToBytes(b.Header.Time))
+	// Time should not be included
+	// buffer.Write(util.Int64ToBytes(b.Header.Time))
 	return common.BytesToHash(crypto.Hash(buffer.Bytes()))
 }
 

@@ -96,6 +96,11 @@ func (s SECP256K1Signature) Verify(hash []byte, pubKey PublicKey) bool {
 	return secp256k1.VerifySignature(keyBytes, hash, s[:])
 }
 
+// Bytes is the implementation of interface
+func (s SECP256K1Signature) Bytes() ([]byte, error) {
+	return s[:], nil
+}
+
 func newSECP256K1PublicKey(raw []byte) (PublicKey, error) {
 	x, y := elliptic.Unmarshal(S256(), raw)
 	if x == nil {

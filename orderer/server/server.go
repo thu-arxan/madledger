@@ -72,6 +72,7 @@ func (s *Server) Start() error {
 }
 
 // Stop is used only for testing now,
+// TODO: stop consensus
 func (s *Server) Stop() {
 	s.rpcServer.Stop()
 	log.Info().Msg("Succeed to stop the orderer service")

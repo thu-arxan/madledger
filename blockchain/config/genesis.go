@@ -44,7 +44,7 @@ func CreateGenesisBlock() (*types.Block, error) {
 // no signer and it can create a same block ever a signer exists
 func createTx(recipient common.Address, payload []byte) *types.Tx {
 	return &types.Tx{
-		Data: types.TxData{
+		Data: &types.TxData{
 			ChannelID:    types.CONFIGCHANNELID,
 			AccountNonce: 0,
 			Recipient:    recipient,

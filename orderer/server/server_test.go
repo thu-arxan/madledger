@@ -3,11 +3,13 @@ package server
 import (
 	"context"
 	"fmt"
+	"madledger/common"
 	"madledger/common/util"
 	"madledger/core/types"
 	"madledger/orderer/config"
 	pb "madledger/protos"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -15,7 +17,8 @@ import (
 )
 
 var (
-	server *Server
+	server            *Server
+	genesisBlocksHash = make(map[string]common.Hash)
 )
 
 func TestNewServer(t *testing.T) {
@@ -74,16 +77,22 @@ func TestFetchBlockAtNil(t *testing.T) {
 	if err != nil {
 		t.Fatal()
 	}
-	block, err := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
+	globalGenesisBlock, err := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
 		ChannelID: types.GLOBALCHANNELID,
 		Number:    0,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if block.Header.Number != 0 {
-		t.Fatal(fmt.Errorf("The number of block is %d", block.Header.Number))
+	if globalGenesisBlock.Header.Number != 0 {
+		t.Fatal(fmt.Errorf("The number of block is %d", globalGenesisBlock.Header.Number))
 	}
+	// set global genesis block hash
+	typesGlobalGenesisBlock, err := ConvertBlockFromPbToTypes(globalGenesisBlock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	genesisBlocksHash[types.GLOBALCHANNELID] = typesGlobalGenesisBlock.Hash()
 	// test bigger number
 	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
 		ChannelID: types.GLOBALCHANNELID,
@@ -105,8 +114,67 @@ func TestFetchBlockAtNil(t *testing.T) {
 		ChannelID: "test",
 		Number:    1,
 	})
+	// get genesis block of config
+	configGenesisBlock, err := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
+		ChannelID: types.CONFIGCHANNELID,
+		Number:    0,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if configGenesisBlock.Header.Number != 0 {
+		t.Fatal(fmt.Errorf("The number of block is %d", configGenesisBlock.Header.Number))
+	}
+	// set config genesis block hash
+	typesConfigGenesisBlock, err := ConvertBlockFromPbToTypes(configGenesisBlock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	genesisBlocksHash[types.CONFIGCHANNELID] = typesConfigGenesisBlock.Hash()
 	server.Stop()
 	initTestEnvironment()
+}
+
+func TestServerStartAtAnotherPath(t *testing.T) {
+	gopath := os.Getenv("GOPATH")
+	cfg, _ := config.LoadConfig(getTestConfigFilePath())
+	chainPath, _ := util.MakeFileAbs("src/madledger/orderer/server/.data1/blocks", gopath)
+	dbPath, _ := util.MakeFileAbs("src/madledger/orderer/server/.data1/leveldb", gopath)
+	cfg.BlockChain.Path = chainPath
+	cfg.DB.LevelDB.Dir = dbPath
+	var err error
+	server, err = NewServer(getTestConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		server.Start()
+	}()
+	time.Sleep(100 * time.Millisecond)
+	client, err := getClient()
+	if err != nil {
+		t.Fatal()
+	}
+	// compare global genesis block
+	globalGenesisBlock, _ := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
+		ChannelID: types.GLOBALCHANNELID,
+		Number:    0,
+	})
+	typesGlobalGenesisBlock, _ := ConvertBlockFromPbToTypes(globalGenesisBlock)
+	if !reflect.DeepEqual(typesGlobalGenesisBlock.Hash().Bytes(), genesisBlocksHash[types.GLOBALCHANNELID].Bytes()) {
+		t.Fatal()
+	}
+	// compare config genesis block
+	configGenesisBlock, _ := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
+		ChannelID: types.CONFIGCHANNELID,
+		Number:    0,
+	})
+	typesConfigGenesisBlock, _ := ConvertBlockFromPbToTypes(configGenesisBlock)
+	if !reflect.DeepEqual(typesConfigGenesisBlock.Hash().Bytes(), genesisBlocksHash[types.CONFIGCHANNELID].Bytes()) {
+		t.Fatal()
+	}
+	server.Stop()
+
 }
 
 func getClient() (pb.OrdererClient, error) {
