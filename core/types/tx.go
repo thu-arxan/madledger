@@ -12,7 +12,7 @@ import (
 // Note: The Time is not important and will cause some consensus problems, so it won't
 // be included while cacluating the hash
 type Tx struct {
-	Data *TxData
+	Data TxData
 	Time int64
 }
 
@@ -35,8 +35,8 @@ type TxSig struct {
 // NewTx is the constructor of Tx
 // TODO: AccountNonce
 func NewTx(channelID string, recipient common.Address, payload []byte, privKey crypto.PrivateKey) (*Tx, error) {
-	var tx = Tx{
-		Data: &TxData{
+	var tx = &Tx{
+		Data: TxData{
 			ChannelID:    channelID,
 			AccountNonce: 0,
 			Recipient:    recipient,
@@ -55,7 +55,7 @@ func NewTx(channelID string, recipient common.Address, payload []byte, privKey c
 		PK:  privKey.PubKey(),
 		Sig: sig,
 	}
-	return &tx, nil
+	return tx, nil
 }
 
 // Verify return true if a tx is packed well, else return false
@@ -92,7 +92,7 @@ func (tx *Tx) HashWithoutSig() []byte {
 
 // hash implementation different hash
 func (tx *Tx) hash(withSig bool) []byte {
-	var data *TxData
+	var data TxData
 	if withSig {
 		data = tx.Data
 	} else { // clone

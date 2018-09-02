@@ -85,14 +85,14 @@ func ConvertTxFromPbToTypes(tx *pb.Tx) (*types.Tx, error) {
 		return nil, err
 	}
 	return &types.Tx{
-		Data: txData,
+		Data: *txData,
 		Time: tx.Time,
 	}, nil
 }
 
 // ConvertTxFromTypesToPb convert Tx from types.Tx to pb.Tx
 func ConvertTxFromTypesToPb(tx *types.Tx) (*pb.Tx, error) {
-	txData, err := ConvertTxDataFromTypesToPb(tx.Data)
+	txData, err := ConvertTxDataFromTypesToPb(&(tx.Data))
 	if err != nil {
 		return nil, err
 	}

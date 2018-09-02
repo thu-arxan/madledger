@@ -24,14 +24,14 @@ func CreateGenesisBlock(payloads []*Payload) (*types.Block, error) {
 		txs = append(txs, tx)
 	}
 
-	return types.NewBlock(types.GLOBALCHANNELID, 0, nil, txs), nil
+	return types.NewBlock(types.GLOBALCHANNELID, 0, types.GenesisBlockPrevHash, txs), nil
 }
 
 // This function is special prepared for genesis block, because there exists
 // no signer and it can create a same block ever a signer exists
 func createTx(recipient common.Address, payload []byte) *types.Tx {
 	return &types.Tx{
-		Data: &types.TxData{
+		Data: types.TxData{
 			ChannelID:    types.GLOBALCHANNELID,
 			AccountNonce: 0,
 			Recipient:    recipient,
