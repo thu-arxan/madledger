@@ -29,6 +29,23 @@ func (m *manager) start() error {
 	return nil
 }
 
+func (m *manager) stop() error {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	var wg sync.WaitGroup
+
+	for _, c := range m.channels {
+		wg.Add(1)
+		go func(c *channel) {
+			defer wg.Done()
+			c.Stop()
+		}(c)
+	}
+	wg.Wait()
+	return nil
+}
+
 func (m *manager) contain(channelID string) bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()

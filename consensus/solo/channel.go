@@ -1,6 +1,7 @@
 package solo
 
 import (
+	"fmt"
 	"madledger/consensus"
 	"time"
 
@@ -17,6 +18,8 @@ type channel struct {
 	// todo
 	blocks map[uint64]*Block
 	notify *chan consensus.Block
+	init   bool
+	stop   chan bool
 }
 
 func newChannel(id string, config consensus.Config, notify *chan consensus.Block) *channel {
@@ -27,10 +30,15 @@ func newChannel(id string, config consensus.Config, notify *chan consensus.Block
 		txChan: make(chan []byte),
 		notify: notify,
 		blocks: make(map[uint64]*Block),
+		init:   true,
+		stop:   make(chan bool),
 	}
 }
 
-func (c *channel) start() {
+func (c *channel) start() error {
+	if !c.init {
+		return fmt.Errorf("Consensus of channel %s is not init", c.id)
+	}
 	ticker := time.NewTicker(time.Duration(c.config.Timeout) * time.Millisecond)
 	defer ticker.Stop()
 	log.Info().Msgf("Channel %s start", c.id)
@@ -44,7 +52,19 @@ func (c *channel) start() {
 			if len(c.txs) >= c.config.MaxSize {
 				c.generateBlock()
 			}
+		case <-c.stop:
+			log.Info().Msgf("Stop channel %s consensus", c.id)
+			c.init = false
+			return nil
 		}
+	}
+}
+
+// Stop will block the work of channel
+func (c *channel) Stop() {
+	c.stop <- true
+	for c.init {
+		time.Sleep(1 * time.Millisecond)
 	}
 }
 

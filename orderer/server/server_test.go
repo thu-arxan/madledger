@@ -132,10 +132,22 @@ func TestFetchBlockAtNil(t *testing.T) {
 	}
 	genesisBlocksHash[types.CONFIGCHANNELID] = typesConfigGenesisBlock.Hash()
 	server.Stop()
-	initTestEnvironment()
+	// initTestEnvironment(".data")
 }
 
-// TODO: The stop is not finished yet, so the test is not right
+func TestServerRestart(t *testing.T) {
+	var err error
+	server, err = NewServer(getTestConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		server.Start()
+	}()
+	time.Sleep(100 * time.Millisecond)
+	server.Stop()
+}
+
 func TestServerStartAtAnotherPath(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	cfg, _ := config.LoadConfig(getTestConfigFilePath())
@@ -144,7 +156,7 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 	cfg.BlockChain.Path = chainPath
 	cfg.DB.LevelDB.Dir = dbPath
 	var err error
-	server, err = NewServer(getTestConfig())
+	server, err = NewServer(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +187,7 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 		t.Fatal()
 	}
 	server.Stop()
-
+	initTestEnvironment(".data1")
 }
 
 func getClient() (pb.OrdererClient, error) {
@@ -214,8 +226,8 @@ func getTestConfigFilePath() string {
 	return cfgFilePath
 }
 
-func initTestEnvironment() {
+func initTestEnvironment(path string) {
 	gopath := os.Getenv("GOPATH")
-	dataPath, _ := util.MakeFileAbs("src/madledger/orderer/server/.data", gopath)
+	dataPath, _ := util.MakeFileAbs(fmt.Sprintf("src/madledger/orderer/server/%s", path), gopath)
 	os.RemoveAll(dataPath)
 }

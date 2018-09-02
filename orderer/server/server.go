@@ -26,22 +26,26 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	// set config of server
 	serverCfg, err := cfg.GetServerConfig()
 	if err != nil {
+		fmt.Println(1)
 		return nil, err
 	}
 	server.config = serverCfg
 	// load db config
 	dbCfg, err := cfg.GetDBConfig()
 	if err != nil {
+		fmt.Println(2)
 		return nil, err
 	}
 	// load chain config
 	chainCfg, err := cfg.GetBlockChainConfig()
 	if err != nil {
+		fmt.Println(3)
 		return nil, err
 	}
 	// get channel manager
 	channelManager, err := NewChannelManager(dbCfg.LevelDB.Dir, chainCfg)
 	if err != nil {
+		fmt.Println(4)
 		return nil, err
 	}
 	server.ChannelManager = channelManager
@@ -72,8 +76,9 @@ func (s *Server) Start() error {
 }
 
 // Stop is used only for testing now,
-// TODO: stop consensus
+// TODO: stop consensus.
 func (s *Server) Stop() {
 	s.rpcServer.Stop()
+	s.ChannelManager.stop()
 	log.Info().Msg("Succeed to stop the orderer service")
 }

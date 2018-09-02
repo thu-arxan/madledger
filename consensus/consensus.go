@@ -10,4 +10,6 @@ type Consensus interface {
 	SyncBlocks(channelID string, ch *chan Block) error
 	// GetNumber helps shorten the gap between orderer and consensus, if not support return 0 is recommend
 	GetNumber(channelID string) (uint64, error)
+	// Stop stop the consensus
+	Stop() error
 }

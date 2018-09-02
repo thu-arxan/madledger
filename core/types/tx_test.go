@@ -28,7 +28,6 @@ func TestNewTx(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 }
 
 func TestVerify(t *testing.T) {

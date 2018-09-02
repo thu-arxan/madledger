@@ -88,6 +88,11 @@ func (db *LevelDB) UpdateChannel(id string, profile cc.Profile) error {
 	return nil
 }
 
+// Close is the implementation of DB
+func (db *LevelDB) Close() error {
+	return db.connect.Close()
+}
+
 // addChannel add a record into key types.CONFIGCHANNELID
 // todo: maybe a map is better, and there is need to check if channel exists aleardy
 func (db *LevelDB) addChannel(id string) error {

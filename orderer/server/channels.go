@@ -157,9 +157,9 @@ func (manager *ChannelManager) start() error {
 }
 
 // stop will stop the consensus
-// todo: Not finished yet
-func (manager *ChannelManager) stop() {
-
+func (manager *ChannelManager) stop() error {
+	defer manager.db.Close()
+	return manager.Consensus.Stop()
 }
 
 func (manager *ChannelManager) getChannelManager(channelID string) *channel.Manager {
