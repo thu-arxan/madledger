@@ -75,8 +75,7 @@ func (s *Server) Start() error {
 	return nil
 }
 
-// Stop is used only for testing now,
-// TODO: stop consensus.
+// Stop will stop the rpc service and the consensus service
 func (s *Server) Stop() {
 	s.rpcServer.Stop()
 	s.ChannelManager.stop()
