@@ -1,10 +1,11 @@
 package server
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	cc "madledger/blockchain/config"
 	gc "madledger/blockchain/global"
+	"madledger/common"
 	"madledger/common/util"
 	"madledger/consensus"
 	"madledger/consensus/solo"
@@ -84,7 +85,7 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig) (*Channe
 	cfg := consensus.Config{
 		Timeout: 1000,
 		MaxSize: 10,
-		Number:  0,
+		Number:  1,
 		Resume:  false,
 	}
 	channels[types.GLOBALCHANNELID] = cfg
@@ -136,10 +137,75 @@ func (manager *ChannelManager) ListChannels(req *pb.ListChannelsRequest) *pb.Cha
 
 // AddChannel try to add a channel
 func (manager *ChannelManager) AddChannel(req *pb.AddChannelRequest) (*pb.ChannelInfo, error) {
-	if manager.getChannelManager(req.ChannelID) != nil {
-		return nil, fmt.Errorf("Channel %s is aleardy exist", req.ChannelID)
+	err := manager.createChannel(req)
+	if err != nil {
+		return nil, err
 	}
-	return nil, errors.New("Not implementation yet")
+	return &pb.ChannelInfo{}, nil
+}
+
+// createChannel try to create a channel
+// However, this should check if the channel exist and should be thread safety.
+func (manager *ChannelManager) createChannel(req *pb.AddChannelRequest) error {
+	manager.lock.Lock()
+	defer manager.lock.Unlock()
+
+	var channelID = req.ChannelID
+	switch channelID {
+	case types.GLOBALCHANNELID:
+	case types.CONFIGCHANNELID:
+		return fmt.Errorf("Channel %s is aleardy exist", channelID)
+	default:
+		if util.Contain(manager.Channels, channelID) {
+			return fmt.Errorf("Channel %s is aleardy exist", channelID)
+		}
+	}
+	// then try to create a channel
+	_, err := channel.NewManager(channelID, fmt.Sprintf("%s/%s", manager.chainCfg.Path, channelID), manager.db)
+	if err != nil {
+		return err
+	}
+	// then send a tx to config channel
+	// manager.ConfigChannel.AddBlock(nil)
+	payload, _ := json.Marshal(cc.Payload{
+		ChannelID: channelID,
+		Profile: cc.Profile{
+			Public: true,
+		},
+		Version: 1,
+	})
+	var tx = types.Tx{
+		Data: types.TxData{
+			ChannelID:    types.CONFIGCHANNELID,
+			AccountNonce: 0,
+			Recipient:    common.ZeroAddress,
+			Payload:      payload,
+			Version:      1,
+			Sig:          nil,
+		},
+		Time: util.Now(),
+	}
+	// But the manager should not AddTx by consensus, because the confirm
+	// of consensus is not the final confirm.
+	err = manager.ConfigChannel.AddTx(&tx)
+	if err != nil {
+		return err
+	}
+	// create genesis block here
+	// todo
+	// then start the consensus
+	err = manager.Consensus.AddChannel(channelID, consensus.Config{
+		Timeout: 1000,
+		MaxSize: 10,
+		Number:  0,
+		Resume:  false,
+	})
+	chainManager, err := channel.NewManager(channelID, fmt.Sprintf("%s/%s", manager.chainCfg.Path, channelID), manager.db)
+	if err != nil {
+		return err
+	}
+	manager.Channels[channelID] = chainManager
+	return err
 }
 
 func loadConfigChannel(dir string, db db.DB) (*channel.Manager, error) {
@@ -162,7 +228,16 @@ func loadConfigChannel(dir string, db db.DB) (*channel.Manager, error) {
 }
 
 func (manager *ChannelManager) start() error {
-	return manager.Consensus.Start()
+	// start consensus
+	err := manager.Consensus.Start()
+	if err != nil {
+		return err
+	}
+
+	go manager.GlobalChannel.Start(manager.Consensus)
+	go manager.ConfigChannel.Start(manager.Consensus)
+
+	return nil
 }
 
 // stop will stop the consensus

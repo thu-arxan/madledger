@@ -6,6 +6,7 @@ import (
 	"madledger/common/util"
 	"madledger/consensus"
 	"sync"
+	"time"
 )
 
 type manager struct {
@@ -53,6 +54,24 @@ func (m *manager) contain(channelID string) bool {
 	return util.Contain(m.channels, channelID)
 }
 
+func (m *manager) get(channelID string) (*channel, error) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	if util.Contain(m.channels, channelID) {
+		return m.channels[channelID], nil
+	}
+	return nil, fmt.Errorf("The channel %s is not exist", channelID)
+}
+
+// AddTx add a tx
+func (m *manager) AddTx(channelID string, tx []byte) error {
+	channel, err := m.get(channelID)
+	if err != nil {
+		return err
+	}
+	return channel.AddTx(tx)
+}
+
 func (m *manager) add(channelID string, cfg consensus.Config) error {
 	if m.contain(channelID) {
 		return fmt.Errorf("Channel %s is contained aleardy", channelID)
@@ -62,6 +81,19 @@ func (m *manager) add(channelID string, cfg consensus.Config) error {
 	defer m.lock.Unlock()
 	channel := newChannel(channelID, cfg, nil)
 	m.channels[channelID] = channel
+	return nil
+}
+
+func (m *manager) startChannel(channelID string) error {
+	channel, err := m.get(channelID)
+	if err != nil {
+		return err
+	}
+	if channel.init {
+		return fmt.Errorf("Channel %s is starting aleardy", channelID)
+	}
+	go channel.start()
+	time.Sleep(20 * time.Millisecond)
 	return nil
 }
 

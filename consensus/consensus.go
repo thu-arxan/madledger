@@ -12,4 +12,6 @@ type Consensus interface {
 	GetNumber(channelID string) (uint64, error)
 	// Stop stop the consensus
 	Stop() error
+	// AddChannel will add a consensus of a channel
+	AddChannel(channelID string, cfg Config) error
 }

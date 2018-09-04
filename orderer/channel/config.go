@@ -2,6 +2,7 @@ package channel
 
 import (
 	"encoding/json"
+	"fmt"
 	cc "madledger/blockchain/config"
 	"madledger/core/types"
 )
@@ -12,6 +13,7 @@ func (manager *Manager) AddConfigBlock(block *types.Block) error {
 	for _, tx := range block.Transactions {
 		var payload cc.Payload
 		json.Unmarshal(tx.Data.Payload, &payload)
+		fmt.Println(payload)
 		err := manager.db.UpdateChannel(payload.ChannelID, payload.Profile)
 		if err != nil {
 			return err

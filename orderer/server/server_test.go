@@ -142,9 +142,12 @@ func TestServerRestart(t *testing.T) {
 		t.Fatal(err)
 	}
 	go func() {
-		server.Start()
+		err := server.Start()
+		if err != nil {
+			t.Fatal(err)
+		}
 	}()
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 	server.Stop()
 }
 
@@ -188,6 +191,37 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 	}
 	server.Stop()
 	initTestEnvironment(".data1")
+}
+
+func TestAddChannel(t *testing.T) {
+	var err error
+	server, err = NewServer(getTestConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		server.Start()
+	}()
+	time.Sleep(100 * time.Millisecond)
+	// then try to create a channel
+	client, err := getClient()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.AddChannel(context.Background(), &pb.AddChannelRequest{
+		ChannelID: "test",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Then ListChannels
+	infos, err := client.ListChannels(context.Background(), &pb.ListChannelsRequest{
+		System: false,
+	})
+	if err != nil || len(infos.Channels) != 1 || infos.Channels[0].ChannelID != "test" {
+		t.Fatal(infos)
+	}
+	initTestEnvironment(".data")
 }
 
 func getClient() (pb.OrdererClient, error) {

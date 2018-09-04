@@ -55,6 +55,17 @@ func (manager *Manager) GetExcept() uint64 {
 	return manager.except
 }
 
+// GetPrevBlock return the prev block
+func (manager *Manager) GetPrevBlock() *types.Block {
+	manager.lock.Lock()
+	defer manager.lock.Unlock()
+	if manager.except == 0 {
+		return nil
+	}
+	block, _ := manager.loadBlock(manager.except - 1)
+	return block
+}
+
 // AddBlock add a block into the chain
 func (manager *Manager) AddBlock(block *types.Block) error {
 	manager.lock.Lock()
