@@ -5,9 +5,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+)
+
+var (
+	log = logrus.WithFields(logrus.Fields{"app": "peer", "package": "cmd"})
 )
 
 var (
@@ -18,8 +21,10 @@ var (
 )
 
 func init() {
-	zerolog.TimeFieldFormat = "2006-01-02 15:04:05"
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	logrus.SetFormatter(&logrus.JSONFormatter{
+		TimestampFormat: "2006-01-02 15:04:05",
+	})
+	logrus.SetOutput(os.Stdout)
 }
 
 // Execute exec the command
@@ -30,7 +35,6 @@ func Execute() {
 }
 
 func setLog() error {
-	// log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	return nil
 }
 

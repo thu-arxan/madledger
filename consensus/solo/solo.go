@@ -3,6 +3,12 @@ package solo
 import (
 	"madledger/consensus"
 	"time"
+
+	"github.com/sirupsen/logrus"
+)
+
+var (
+	log = logrus.WithFields(logrus.Fields{"app": "orderer", "package": "channel"})
 )
 
 // Consensus is the implementaion of solo consensus

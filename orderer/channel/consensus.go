@@ -1,7 +1,6 @@
 package channel
 
 import (
-	"encoding/json"
 	"madledger/consensus"
 	"madledger/core/types"
 )
@@ -10,11 +9,14 @@ import (
 func GetTxsFromConsensusBlock(block consensus.Block) []*types.Tx {
 	var txs []*types.Tx
 	for _, txBytes := range block.GetTxs() {
-		var tx types.Tx
-		err := json.Unmarshal(txBytes, &tx)
+		// var tx types.Tx
+		// err := json.Unmarshal(txBytes, &tx)
+		tx, err := types.BytesToTx(txBytes)
 		if err == nil {
 			// return nil, err
-			txs = append(txs, &tx)
+			txs = append(txs, tx)
+		} else {
+			log.Info(err)
 		}
 	}
 	return txs

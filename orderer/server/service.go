@@ -24,3 +24,14 @@ func (s *Server) ListChannels(ctx context.Context, req *pb.ListChannelsRequest) 
 func (s *Server) AddChannel(ctx context.Context, req *pb.AddChannelRequest) (*pb.ChannelInfo, error) {
 	return s.ChannelManager.AddChannel(req)
 }
+
+// AddTx is the implementation of protos
+func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus, error) {
+	var status pb.TxStatus
+	tx, err := ConvertTxFromPbToTypes(req.Tx)
+	if err != nil {
+		return &status, err
+	}
+	err = s.ChannelManager.AddTx(tx)
+	return &status, err
+}

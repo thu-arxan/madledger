@@ -2,9 +2,10 @@ package types
 
 import (
 	"encoding/hex"
-	"fmt"
 	"madledger/common"
 	"madledger/common/crypto"
+	"madledger/common/util"
+	"reflect"
 	"testing"
 )
 
@@ -24,7 +25,7 @@ var (
 
 func TestNewTx(t *testing.T) {
 	var err error
-	tx, err = NewTx("test", common.ZeroAddress, []byte(""), getPrivKey())
+	tx, err = NewTx("test", common.ZeroAddress, []byte("Hello World"), getPrivKey())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,8 +52,48 @@ func TestGetSender(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(sender.Bytes())
-	t.Fatal()
+	if sender.String() != "0x970e8128ab834e8eac17ab8e3812f010678cf791" {
+		t.Fatal()
+	}
+}
+
+func TestMarshaAndUnmarshalWithSig(t *testing.T) {
+	txBytes, err := tx.Bytes()
+	if err != nil {
+		t.Fatal(err)
+	}
+	newTx, err := BytesToTx(txBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(tx, newTx) {
+		t.Fatal()
+	}
+}
+
+func TestMarshaAndUnmarshalWithoutSig(t *testing.T) {
+	var tx = &Tx{
+		Data: TxData{
+			ChannelID:    "test",
+			AccountNonce: 1,
+			Recipient:    common.ZeroAddress,
+			Payload:      []byte("Hello World"),
+			Version:      1,
+			Sig:          nil,
+		},
+		Time: util.Now(),
+	}
+	txBytes, err := tx.Bytes()
+	if err != nil {
+		t.Fatal(err)
+	}
+	newTx, err := BytesToTx(txBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(tx, newTx) {
+		t.Fatal()
+	}
 }
 
 func getPrivKey() crypto.PrivateKey {

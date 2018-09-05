@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"madledger/common"
+	"madledger/common/crypto"
 	"madledger/common/util"
 	"madledger/core/types"
 	"madledger/orderer/config"
@@ -14,6 +16,15 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+)
+
+const (
+	secp256k1String = "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"
+)
+
+var (
+	rawSecp256k1Bytes, _ = hex.DecodeString(secp256k1String)
+	rawPrivKey           = rawSecp256k1Bytes
 )
 
 var (
@@ -214,14 +225,51 @@ func TestAddChannel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Then ListChannels
+	// then ListChannels
 	infos, err := client.ListChannels(context.Background(), &pb.ListChannelsRequest{
 		System: false,
 	})
 	if err != nil || len(infos.Channels) != 1 || infos.Channels[0].ChannelID != "test" {
 		t.Fatal(infos)
 	}
+	// then fetch the genesis block of test
+	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
+		ChannelID: "test",
+		Number:    0,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
+		ChannelID: "test",
+		Number:    1,
+	})
+	if err == nil {
+		t.Fatal()
+	}
+	// then add a tx into test channel
+	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
+	typesTx, err := types.NewTx("test", common.ZeroAddress, []byte("Just for test"), privKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pbTx, err := ConvertTxFromTypesToPb(typesTx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: pbTx,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// then stop
+	server.Stop()
 	initTestEnvironment(".data")
+}
+
+func TestServerRestartWithUserChannel(t *testing.T) {
+	// server.
 }
 
 func getClient() (pb.OrdererClient, error) {

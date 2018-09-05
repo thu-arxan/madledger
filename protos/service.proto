@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package protos;
 
+import "tx.proto";
 import "block.proto";
 
 // The services that orderers should provide
@@ -9,6 +10,7 @@ service Orderer{
     rpc FetchBlock(FetchBlockRequest) returns (Block) {}
     rpc ListChannels(ListChannelsRequest) returns(ChannelInfos) {}
     rpc AddChannel(AddChannelRequest) returns(ChannelInfo){}
+    rpc AddTx(AddTxRequest) returns(TxStatus){}
 }
 
 // However, this is not contains sig now, but this is necessary
@@ -38,4 +40,13 @@ message ChannelInfo {
 // AddChannelRequest includes the profile of Channel
 message AddChannelRequest {
     string ChannelID = 1;
+}
+
+message AddTxRequest {
+    Tx Tx = 1;
+}
+
+// TxStatus include nothing now.
+message TxStatus {
+
 }

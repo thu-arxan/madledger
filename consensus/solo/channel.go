@@ -6,8 +6,6 @@ import (
 	"madledger/common/util"
 	"madledger/consensus"
 	"time"
-
-	"github.com/rs/zerolog/log"
 )
 
 type channel struct {
@@ -54,11 +52,11 @@ func (c *channel) start() error {
 	c.init = true
 	ticker := time.NewTicker(time.Duration(c.config.Timeout) * time.Millisecond)
 	defer ticker.Stop()
-	log.Info().Msgf("[Consensus]:Channel %s start", c.id)
+	log.Infof("Channel %s start", c.id)
 	for {
 		select {
 		case <-ticker.C:
-			// log.Info().Msgf("[Consensus]:Channel %s tick", c.id)
+			// log.Infof("Channel %s tick", c.id)
 			c.createBlock(c.pool.fetchTxs(c.config.MaxSize))
 		case notify := <-c.txs:
 			err := c.addTx(notify.tx)
@@ -75,7 +73,7 @@ func (c *channel) start() error {
 				c.createBlock(c.pool.fetchTxs(c.config.MaxSize))
 			}
 		case <-c.stop:
-			log.Info().Msgf("[Consensus]:Stop channel %s consensus", c.id)
+			log.Infof("Stop channel %s consensus", c.id)
 			c.init = false
 			return nil
 		}
@@ -84,7 +82,7 @@ func (c *channel) start() error {
 
 // AddTx will try to add a tx
 func (c *channel) AddTx(tx []byte) error {
-	// log.Info().Msgf("[Consensus]:Channel %s add tx", c.id)
+	// log.Infof("Channel %s add tx", c.id)
 	var e = make(chan error)
 	notify := &txNotify{
 		tx:  tx,
@@ -98,7 +96,7 @@ func (c *channel) AddTx(tx []byte) error {
 	if err != nil {
 		return err
 	}
-	// log.Info().Msgf("[Consensus]:Channel %s succeed to add tx", c.id)
+	// log.Infof("Channel %s succeed to add tx", c.id)
 	return nil
 }
 
@@ -130,7 +128,6 @@ func (c *channel) createBlock(txs [][]byte) error {
 	}
 	c.blocks[block.num] = block
 	c.num++
-	// log.Info().Msgf("[Consensus]Channel %s add block")
 	c.notifies.addBlock(block)
 	if c.consensuBlockChan != nil {
 		go func(block *Block) {

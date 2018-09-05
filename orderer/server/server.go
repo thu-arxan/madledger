@@ -8,8 +8,12 @@ import (
 
 	pb "madledger/protos"
 
-	"github.com/rs/zerolog/log"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+)
+
+var (
+	log = logrus.WithFields(logrus.Fields{"app": "orderer", "package": "server"})
 )
 
 // Server provide the serve of orderer
@@ -55,7 +59,7 @@ func (s *Server) Start() error {
 	if err != nil {
 		return errors.New("Failed to start the orderer")
 	}
-	log.Info().Msgf("Start the orderer at %s", addr)
+	log.Infof("Start the orderer at %s", addr)
 	err = s.ChannelManager.start()
 	if err != nil {
 		return err
@@ -77,5 +81,5 @@ func (s *Server) Stop() {
 	s.rpcServer.Stop()
 	// }
 	s.ChannelManager.stop()
-	log.Info().Msg("Succeed to stop the orderer service")
+	log.Info("Succeed to stop the orderer service")
 }

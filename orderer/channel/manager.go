@@ -1,7 +1,6 @@
 package channel
 
 import (
-	"encoding/json"
 	"madledger/blockchain"
 	"madledger/consensus"
 	"madledger/core/types"
@@ -9,7 +8,11 @@ import (
 	"time"
 	"transaction_service/util"
 
-	"github.com/rs/zerolog/log"
+	"github.com/sirupsen/logrus"
+)
+
+var (
+	log = logrus.WithFields(logrus.Fields{"app": "orderer", "package": "channel"})
 )
 
 // Manager is the manager of channel
@@ -25,6 +28,7 @@ type Manager struct {
 	stop               chan bool
 	consensus          consensus.Consensus
 	notify             *notifyPool
+	globalManager      *Manager
 }
 
 // NewManager is the constructor of Manager
@@ -82,52 +86,57 @@ func (manager *Manager) GetBlockSize() uint64 {
 
 // Start starts the channel
 // TODO: many things to be done
-func (manager *Manager) Start(consensus consensus.Consensus) {
-	log.Info().Msgf("Channel %s is starting", manager.ID)
+func (manager *Manager) Start(consensus consensus.Consensus, globalManager *Manager) {
+	log.Infof("Channel %s is starting", manager.ID)
 	manager.consensus = consensus
+	manager.globalManager = globalManager
 	consensus.SyncBlocks(manager.ID, &(manager.consensusBlockChan))
 	manager.init = true
-	select {
-	case cb := <-manager.consensusBlockChan:
-		log.Info().Msgf("Channel %s receive a block %d", manager.ID, cb.GetNumber())
-		// However, this does not means that the block is added succeed, because it may need to be added into global channel.
-		// So here are many things need to be done.
-		txs := GetTxsFromConsensusBlock(cb)
-		prevBlock := manager.cm.GetPrevBlock()
-		var block *types.Block
-		if prevBlock == nil {
-			block = types.NewBlock(manager.ID, 0, nil, txs)
-		} else {
-			block = types.NewBlock(manager.ID, prevBlock.Header.Number+1, prevBlock.Hash().Bytes(), txs)
-		}
-		// then if the channel is the global channel, the block is finished.
-		// else send a tx to the global channel
-		if manager.ID != types.GLOBALCHANNELID {
-			tx := types.NewGlobalTx(manager.ID, block.Header.Number, block.Hash())
-			txBytes, _ := json.Marshal(tx)
-			err := consensus.AddTx(types.GLOBALCHANNELID, txBytes)
-			if err != nil {
-				log.Fatal().Msgf("Channel %s failed to run", manager.ID)
+	for {
+		select {
+		case cb := <-manager.consensusBlockChan:
+			// However, this does not means that the block is added succeed, because it may need to be added into global channel.
+			// So here are many things need to be done.
+			txs := GetTxsFromConsensusBlock(cb)
+			if len(txs) == 0 {
 				return
 			}
-		}
-		err := manager.AddBlock(block)
-		if err != nil {
-			log.Fatal().Msgf("Channel %s failed to run", manager.ID)
+			prevBlock := manager.cm.GetPrevBlock()
+			var block *types.Block
+			if prevBlock == nil {
+				block = types.NewBlock(manager.ID, 0, nil, txs)
+			} else {
+				block = types.NewBlock(manager.ID, prevBlock.Header.Number+1, prevBlock.Hash().Bytes(), txs)
+			}
+			// then if the channel is the global channel, the block is finished.
+			// else send a tx to the global channel
+			if manager.ID != types.GLOBALCHANNELID {
+				// log.Info().Msgf("Channel %s try to add block into global channel", manager.ID)
+				tx := types.NewGlobalTx(manager.ID, block.Header.Number, block.Hash())
+				err := manager.globalManager.AddTx(tx)
+				if err != nil {
+					log.Fatalf("Channel %s failed to run", manager.ID)
+					return
+				}
+			}
+			err := manager.AddBlock(block)
+			if err != nil {
+				log.Fatalf("Channel %s failed to run", manager.ID)
+				return
+			}
+			log.Infof("Channel %s has %d block now", manager.ID, block.Header.Number+1)
+			manager.notify.addBlock(block)
+
+		case <-manager.stop:
+			manager.init = false
 			return
 		}
-		log.Info().Msgf("Channel %s has %d block now", manager.ID, block.Header.Number+1)
-		manager.notify.addBlock(block)
-
-	case <-manager.stop:
-		manager.init = false
-		return
 	}
 }
 
 // AddTx try to add a tx
 func (manager *Manager) AddTx(tx *types.Tx) error {
-	txBytes, err := json.Marshal(tx)
+	txBytes, err := tx.Bytes()
 	if err != nil {
 		return err
 	}
@@ -160,6 +169,5 @@ func (manager *Manager) Stop() {
 
 // FetchBlock return the block if exist
 func (manager *Manager) FetchBlock(num uint64) (*types.Block, error) {
-	// return nil, errors.New("Not implementation yet")
 	return manager.cm.GetBlock(num)
 }

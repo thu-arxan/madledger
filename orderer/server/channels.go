@@ -15,8 +15,6 @@ import (
 	"madledger/orderer/db"
 	pb "madledger/protos"
 	"sync"
-
-	"github.com/rs/zerolog/log"
 )
 
 // ChannelManager is the manager of channels
@@ -56,7 +54,7 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig) (*Channe
 		return nil, err
 	}
 	if !globalManager.HasGenesisBlock() {
-		log.Info().Msg("Creating genesis block of channel _global")
+		log.Info("Creating genesis block of channel _global")
 		// cgb: config channel genesis block
 		cgb, err := configManager.GetBlock(0)
 		if err != nil {
@@ -83,7 +81,7 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig) (*Channe
 	// set consensus
 	var channels = make(map[string]consensus.Config, 0)
 	cfg := consensus.Config{
-		Timeout: 1000,
+		Timeout: 100,
 		MaxSize: 10,
 		Number:  1,
 		Resume:  false,
@@ -191,8 +189,7 @@ func (manager *ChannelManager) createChannel(req *pb.AddChannelRequest) error {
 	if err != nil {
 		return err
 	}
-	// create genesis block here
-	// todo
+
 	// then start the consensus
 	err = manager.Consensus.AddChannel(channelID, consensus.Config{
 		Timeout: 1000,
@@ -200,12 +197,32 @@ func (manager *ChannelManager) createChannel(req *pb.AddChannelRequest) error {
 		Number:  0,
 		Resume:  false,
 	})
-	chainManager, err := channel.NewManager(channelID, fmt.Sprintf("%s/%s", manager.chainCfg.Path, channelID), manager.db)
+	channel, err := channel.NewManager(channelID, fmt.Sprintf("%s/%s", manager.chainCfg.Path, channelID), manager.db)
 	if err != nil {
 		return err
 	}
-	manager.Channels[channelID] = chainManager
+	// create genesis block here
+	// The genesis only contain the create tx now.
+	genesisBlock := types.NewBlock(channelID, 0, types.GenesisBlockPrevHash, []*types.Tx{&tx})
+	err = channel.AddBlock(genesisBlock)
+	if err != nil {
+		return err
+	}
+	// then start the channel
+	go func() {
+		channel.Start(manager.Consensus, manager.GlobalChannel)
+	}()
+	manager.Channels[channelID] = channel
 	return err
+}
+
+// AddTx add a tx
+func (manager *ChannelManager) AddTx(tx *types.Tx) error {
+	channel, err := manager.getChannelManager(tx.Data.ChannelID)
+	if err != nil {
+		return err
+	}
+	return channel.AddTx(tx)
 }
 
 // loadConfigChannel load the config channel("_config")
@@ -215,7 +232,7 @@ func loadConfigChannel(dir string, db db.DB) (*channel.Manager, error) {
 		return nil, err
 	}
 	if !configManager.HasGenesisBlock() {
-		log.Info().Msg("Creating genesis block of channel _config")
+		log.Info("Creating genesis block of channel _config")
 		gb, err := cc.CreateGenesisBlock()
 		if err != nil {
 			return nil, err
@@ -236,8 +253,8 @@ func (manager *ChannelManager) start() error {
 		return err
 	}
 
-	go manager.GlobalChannel.Start(manager.Consensus)
-	go manager.ConfigChannel.Start(manager.Consensus)
+	go manager.GlobalChannel.Start(manager.Consensus, nil)
+	go manager.ConfigChannel.Start(manager.Consensus, manager.GlobalChannel)
 	// also, start others channels
 
 	return nil

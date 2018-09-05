@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -20,6 +19,6 @@ func init() {
 
 // TODO: fulfill the init
 func runinit(cmd *cobra.Command, args []string) error {
-	log.Info().Msg("init is not finished yet")
+	log.Info("init is not finished yet")
 	return nil
 }

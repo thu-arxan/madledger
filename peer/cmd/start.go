@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -24,9 +23,9 @@ func init() {
 func runStart(cmd *cobra.Command, args []string) error {
 	cfgFile := startViper.GetString("config")
 	if cfgFile == "" {
-		log.Info().Msg("Please provide cfgfile")
+		log.Info("Please provide cfgfile")
 	} else {
-		log.Info().Msg(cfgFile)
+		log.Info(cfgFile)
 	}
 	return nil
 }
