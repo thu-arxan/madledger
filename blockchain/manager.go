@@ -21,7 +21,6 @@ func NewManager(id, dir string) (*Manager, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(id, "except ", except)
 	var m = Manager{
 		lock:   new(sync.Mutex),
 		id:     id,

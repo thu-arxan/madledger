@@ -144,9 +144,10 @@ func (manager *ChannelManager) ListChannels(req *pb.ListChannelsRequest) *pb.Cha
 	}
 	manager.lock.RLock()
 	defer manager.lock.RUnlock()
-	for channel := range manager.Channels {
+	for channel, channelManager := range manager.Channels {
 		infos.Channels = append(infos.Channels, &pb.ChannelInfo{
 			ChannelID: channel,
+			BlockSize: channelManager.GetBlockSize(),
 		})
 	}
 	return infos
@@ -173,6 +174,9 @@ func (manager *ChannelManager) createChannel(req *pb.AddChannelRequest) error {
 	case types.CONFIGCHANNELID:
 		return fmt.Errorf("Channel %s is aleardy exist", channelID)
 	default:
+		if !isLegalChannelName(channelID) {
+			return fmt.Errorf("%s is not a legal channel name", channelID)
+		}
 		if util.Contain(manager.Channels, channelID) {
 			return fmt.Errorf("Channel %s is aleardy exist", channelID)
 		}
