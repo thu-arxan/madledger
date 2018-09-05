@@ -34,7 +34,7 @@ func createTx(recipient common.Address, payload []byte) *types.Tx {
 		Data: types.TxData{
 			ChannelID:    types.GLOBALCHANNELID,
 			AccountNonce: 0,
-			Recipient:    recipient,
+			Recipient:    recipient.Bytes(),
 			Payload:      payload,
 			Version:      1,
 			Sig:          nil,

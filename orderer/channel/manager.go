@@ -104,24 +104,25 @@ func (manager *Manager) Start(consensus consensus.Consensus, globalManager *Mana
 			prevBlock := manager.cm.GetPrevBlock()
 			var block *types.Block
 			if prevBlock == nil {
-				block = types.NewBlock(manager.ID, 0, nil, txs)
+				log.Infof("Channel %s create new block %d", manager.ID, 0)
+				block = types.NewBlock(manager.ID, 0, types.GenesisBlockPrevHash, txs)
 			} else {
+				log.Infof("Channel %s create new block %d", manager.ID, prevBlock.Header.Number+1)
 				block = types.NewBlock(manager.ID, prevBlock.Header.Number+1, prevBlock.Hash().Bytes(), txs)
 			}
 			// then if the channel is the global channel, the block is finished.
 			// else send a tx to the global channel
 			if manager.ID != types.GLOBALCHANNELID {
-				// log.Info().Msgf("Channel %s try to add block into global channel", manager.ID)
 				tx := types.NewGlobalTx(manager.ID, block.Header.Number, block.Hash())
 				err := manager.globalManager.AddTx(tx)
 				if err != nil {
-					log.Fatalf("Channel %s failed to run", manager.ID)
+					log.Fatalf("Channel %s failed to add tx into global channel", manager.ID)
 					return
 				}
 			}
 			err := manager.AddBlock(block)
 			if err != nil {
-				log.Fatalf("Channel %s failed to run", manager.ID)
+				log.Fatalf("Channel %s failed to run because of %s", manager.ID, err)
 				return
 			}
 			log.Infof("Channel %s has %d block now", manager.ID, block.Header.Number+1)

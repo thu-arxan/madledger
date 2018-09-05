@@ -25,7 +25,7 @@ func NewGlobalTx(channelID string, num uint64, hash common.Hash) *Tx {
 		Data: TxData{
 			ChannelID:    GLOBALCHANNELID,
 			AccountNonce: 0,
-			Recipient:    common.ZeroAddress,
+			Recipient:    common.ZeroAddress.Bytes(),
 			Payload:      payloadBytes,
 			Version:      1,
 			Sig:          nil,

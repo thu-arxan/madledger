@@ -21,6 +21,7 @@ func NewManager(id, dir string) (*Manager, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(id, "except ", except)
 	var m = Manager{
 		lock:   new(sync.Mutex),
 		id:     id,
@@ -62,7 +63,10 @@ func (manager *Manager) GetPrevBlock() *types.Block {
 	if manager.except == 0 {
 		return nil
 	}
-	block, _ := manager.loadBlock(manager.except - 1)
+	block, err := manager.loadBlock(manager.except - 1)
+	if err != nil {
+		fmt.Println(err)
+	}
 	return block
 }
 

@@ -14,7 +14,9 @@ import (
 	"madledger/orderer/config"
 	"madledger/orderer/db"
 	pb "madledger/protos"
+	"strings"
 	"sync"
+	"time"
 )
 
 // ChannelManager is the manager of channels
@@ -78,6 +80,14 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig) (*Channe
 	m.ConfigChannel = configManager
 	m.GlobalChannel = globalManager
 
+	// then load user channels
+	userChannels, err := loadUserChannels(chainCfg.Path, db)
+	if err != nil {
+		return nil, err
+	}
+	for channelID, manager := range userChannels {
+		m.Channels[channelID] = manager
+	}
 	// set consensus
 	var channels = make(map[string]consensus.Config, 0)
 	cfg := consensus.Config{
@@ -88,6 +98,15 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig) (*Channe
 	}
 	channels[types.GLOBALCHANNELID] = cfg
 	channels[types.CONFIGCHANNELID] = cfg
+	// set consensus of user channels
+	for channelID := range userChannels {
+		channels[channelID] = consensus.Config{
+			Timeout: 1000,
+			MaxSize: 10,
+			Number:  1,
+			Resume:  false,
+		}
+	}
 	consensus, err := solo.NewConsensus(channels)
 	if err != nil {
 		return nil, err
@@ -176,7 +195,7 @@ func (manager *ChannelManager) createChannel(req *pb.AddChannelRequest) error {
 		Data: types.TxData{
 			ChannelID:    types.CONFIGCHANNELID,
 			AccountNonce: 0,
-			Recipient:    common.ZeroAddress,
+			Recipient:    common.ZeroAddress.Bytes(),
 			Payload:      payload,
 			Version:      1,
 			Sig:          nil,
@@ -245,6 +264,21 @@ func loadConfigChannel(dir string, db db.DB) (*channel.Manager, error) {
 	return configManager, nil
 }
 
+func loadUserChannels(dir string, db db.DB) (map[string]*channel.Manager, error) {
+	var managers = make(map[string]*channel.Manager)
+	channels := db.ListChannel()
+	for _, channelID := range channels {
+		if !strings.HasPrefix(channelID, "_") {
+			manager, err := channel.NewManager(channelID, fmt.Sprintf("%s/%s", dir, channelID), db)
+			if err != nil {
+				return nil, err
+			}
+			managers[channelID] = manager
+		}
+	}
+	return managers, nil
+}
+
 // start the manager
 func (manager *ChannelManager) start() error {
 	// start consensus
@@ -256,7 +290,10 @@ func (manager *ChannelManager) start() error {
 	go manager.GlobalChannel.Start(manager.Consensus, nil)
 	go manager.ConfigChannel.Start(manager.Consensus, manager.GlobalChannel)
 	// also, start others channels
-
+	for _, channelManager := range manager.Channels {
+		go channelManager.Start(manager.Consensus, manager.GlobalChannel)
+	}
+	time.Sleep(10 * time.Millisecond)
 	return nil
 }
 

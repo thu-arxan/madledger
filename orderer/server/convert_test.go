@@ -26,7 +26,7 @@ func TestConvertBlock(t *testing.T) {
 		Data: types.TxData{
 			ChannelID:    types.GLOBALCHANNELID,
 			AccountNonce: 0,
-			Recipient:    common.ZeroAddress,
+			Recipient:    common.ZeroAddress.Bytes(),
 			Payload:      nil,
 			Version:      1,
 			Sig:          nil,
@@ -37,7 +37,7 @@ func TestConvertBlock(t *testing.T) {
 		Data: types.TxData{
 			ChannelID:    types.GLOBALCHANNELID,
 			AccountNonce: 0,
-			Recipient:    common.ZeroAddress,
+			Recipient:    common.ZeroAddress.Bytes(),
 			Payload:      []byte("Hello World"),
 			Version:      1,
 			Sig:          nil,

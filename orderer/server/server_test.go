@@ -265,11 +265,38 @@ func TestAddChannel(t *testing.T) {
 	}
 	// then stop
 	server.Stop()
-	initTestEnvironment(".data")
+
 }
 
 func TestServerRestartWithUserChannel(t *testing.T) {
-	// server.
+	var err error
+	server, err = NewServer(getTestConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		server.Start()
+	}()
+	time.Sleep(100 * time.Millisecond)
+	client, _ := getClient()
+	// Then try to send a tx to test channel
+	// then add a tx into test channel
+	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
+	typesTx, err := types.NewTx("test", common.ZeroAddress, []byte("Just for test"), privKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pbTx, err := ConvertTxFromTypesToPb(typesTx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: pbTx,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	initTestEnvironment(".data")
 }
 
 func getClient() (pb.OrdererClient, error) {

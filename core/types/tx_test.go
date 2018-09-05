@@ -76,7 +76,7 @@ func TestMarshaAndUnmarshalWithoutSig(t *testing.T) {
 		Data: TxData{
 			ChannelID:    "test",
 			AccountNonce: 1,
-			Recipient:    common.ZeroAddress,
+			Recipient:    common.ZeroAddress.Bytes(),
 			Payload:      []byte("Hello World"),
 			Version:      1,
 			Sig:          nil,

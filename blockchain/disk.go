@@ -81,8 +81,11 @@ func (manager *Manager) loadBlock(num uint64) (*types.Block, error) {
 		return nil, err
 	}
 	var block types.Block
+	// However, this can not use json.Unmarshal, because the pk is unable to unmarshal
+	
 	err = json.Unmarshal(data, &block)
 	if err != nil {
+		fmt.Println(1)
 		return nil, err
 	}
 	return &block, nil
@@ -102,6 +105,7 @@ func (manager *Manager) storeBlock(block *types.Block) error {
 
 	err = enc.Encode(block)
 	if err != nil {
+		fmt.Println("1.1")
 		return err
 	}
 	return nil
