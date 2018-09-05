@@ -101,9 +101,9 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig) (*Channe
 
 // FetchBlock return the block if both channel and block exists
 func (manager *ChannelManager) FetchBlock(channelID string, num uint64) (*types.Block, error) {
-	cm := manager.getChannelManager(channelID)
-	if cm == nil {
-		return nil, fmt.Errorf("Channel %s is not exist", channelID)
+	cm, err := manager.getChannelManager(channelID)
+	if err != nil {
+		return nil, err
 	}
 	return cm.FetchBlock(num)
 }
@@ -208,6 +208,7 @@ func (manager *ChannelManager) createChannel(req *pb.AddChannelRequest) error {
 	return err
 }
 
+// loadConfigChannel load the config channel("_config")
 func loadConfigChannel(dir string, db db.DB) (*channel.Manager, error) {
 	configManager, err := channel.NewManager(types.CONFIGCHANNELID, fmt.Sprintf("%s/%s", dir, types.CONFIGCHANNELID), db)
 	if err != nil {
@@ -227,6 +228,7 @@ func loadConfigChannel(dir string, db db.DB) (*channel.Manager, error) {
 	return configManager, nil
 }
 
+// start the manager
 func (manager *ChannelManager) start() error {
 	// start consensus
 	err := manager.Consensus.Start()
@@ -236,6 +238,7 @@ func (manager *ChannelManager) start() error {
 
 	go manager.GlobalChannel.Start(manager.Consensus)
 	go manager.ConfigChannel.Start(manager.Consensus)
+	// also, start others channels
 
 	return nil
 }
@@ -246,18 +249,19 @@ func (manager *ChannelManager) stop() error {
 	return manager.Consensus.Stop()
 }
 
-func (manager *ChannelManager) getChannelManager(channelID string) *channel.Manager {
+// getChannelManager return the manager of the channel
+func (manager *ChannelManager) getChannelManager(channelID string) (*channel.Manager, error) {
 	switch channelID {
 	case types.GLOBALCHANNELID:
-		return manager.GlobalChannel
+		return manager.GlobalChannel, nil
 	case types.CONFIGCHANNELID:
-		return manager.ConfigChannel
+		return manager.ConfigChannel, nil
 	default:
 		manager.lock.RLock()
 		defer manager.lock.RUnlock()
 		if util.Contain(manager.Channels, channelID) {
-			return manager.Channels[channelID]
+			return manager.Channels[channelID], nil
 		}
-		return nil
 	}
+	return nil, fmt.Errorf("Channel %s is not exist", channelID)
 }

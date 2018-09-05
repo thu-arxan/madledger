@@ -7,6 +7,7 @@ import (
 	"madledger/core/types"
 	"madledger/orderer/db"
 	"time"
+	"transaction_service/util"
 
 	"github.com/rs/zerolog/log"
 )
@@ -23,6 +24,7 @@ type Manager struct {
 	init               bool
 	stop               chan bool
 	consensus          consensus.Consensus
+	notify             *notifyPool
 }
 
 // NewManager is the constructor of Manager
@@ -39,6 +41,7 @@ func NewManager(id, dir string, db db.DB) (*Manager, error) {
 		consensusBlockChan: make(chan consensus.Block),
 		init:               false,
 		stop:               make(chan bool),
+		notify:             newNotifyPool(),
 	}, nil
 }
 
@@ -114,6 +117,7 @@ func (manager *Manager) Start(consensus consensus.Consensus) {
 			return
 		}
 		log.Info().Msgf("Channel %s has %d block now", manager.ID, block.Header.Number+1)
+		manager.notify.addBlock(block)
 
 	case <-manager.stop:
 		manager.init = false
@@ -122,22 +126,26 @@ func (manager *Manager) Start(consensus consensus.Consensus) {
 }
 
 // AddTx try to add a tx
-// TODO: notify of block confirm
 func (manager *Manager) AddTx(tx *types.Tx) error {
 	txBytes, err := json.Marshal(tx)
 	if err != nil {
 		return err
 	}
-	num := manager.cm.GetPrevBlock().Header.Number
+	// first register a notify event
+	var errChan = make(chan error)
+	var hash = util.Hex(tx.Hash())
+	err = manager.notify.addNotify(hash, &errChan)
+	if err != nil {
+		return err
+	}
+
+	defer manager.notify.deleteNotify(hash)
 	err = manager.consensus.AddTx(manager.ID, txBytes)
 	if err != nil {
 		return err
 	}
-	for manager.cm.GetPrevBlock().Header.Number == num {
-		time.Sleep(10 * time.Millisecond)
-	}
-	// then waitting for the confirm of the block
-	return nil
+	err = <-errChan
+	return err
 }
 
 // Stop stop the manager
