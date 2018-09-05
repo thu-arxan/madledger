@@ -45,6 +45,38 @@ func TestVerify(t *testing.T) {
 	if !tx.Verify() {
 		t.Fatal()
 	}
+	// However, the situation is more complicated than what you thought
+	sig := TxSig{
+		PK:  tx.Data.Sig.PK,
+		Sig: tx.Data.Sig.Sig,
+	}
+	// 1. set the pk to nil
+	tx.Data.Sig.PK = nil
+	if tx.Verify() {
+		t.Fatal()
+	}
+	// 2. set the pk to random bytes
+	tx.Data.Sig.PK = []byte("Fake pk")
+	if tx.Verify() {
+		t.Fatal()
+	}
+	// 3. set the sig to nil
+	tx.Data.Sig.PK = sig.PK
+	tx.Data.Sig.Sig = nil
+	if tx.Verify() {
+		t.Fatal()
+	}
+	// 4. set the sig to random bytes
+	tx.Data.Sig.Sig = []byte("Fake sig")
+	if tx.Verify() {
+		t.Fatal()
+	}
+
+	// then make everything to be right
+	tx.Data.Sig = &sig
+	if !tx.Verify() {
+		t.Fatal()
+	}
 }
 
 func TestGetSender(t *testing.T) {
@@ -53,6 +85,25 @@ func TestGetSender(t *testing.T) {
 		t.Fatal(err)
 	}
 	if sender.String() != "0x970e8128ab834e8eac17ab8e3812f010678cf791" {
+		t.Fatal()
+	}
+}
+
+func TestGetReceiver(t *testing.T) {
+	receiver := tx.GetReceiver()
+	if !reflect.DeepEqual(common.ZeroAddress.Bytes(), receiver.Bytes()) {
+		t.Fatal()
+	}
+	privKey := getPrivKey()
+	addr, err := privKey.PubKey().Address()
+	if err != nil {
+		t.Fatal(err)
+	}
+	selfTx, err := NewTx("test", addr, []byte("Hello World"), getPrivKey())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(selfTx.GetReceiver().Bytes(), addr.Bytes()) {
 		t.Fatal()
 	}
 }
