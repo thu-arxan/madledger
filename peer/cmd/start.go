@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"errors"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -14,7 +16,7 @@ var (
 
 func init() {
 	startCmd.RunE = runStart
-	startCmd.Flags().StringP("config", "c", "", "The config file of blockchain")
+	startCmd.Flags().StringP("config", "c", "peer.yaml", "The config file of blockchain")
 	startViper.BindPFlag("config", startCmd.Flags().Lookup("config"))
 	rootCmd.AddCommand(startCmd)
 }
@@ -23,9 +25,7 @@ func init() {
 func runStart(cmd *cobra.Command, args []string) error {
 	cfgFile := startViper.GetString("config")
 	if cfgFile == "" {
-		log.Info("Please provide cfgfile")
-	} else {
-		log.Info(cfgFile)
+		return errors.New("Please provide cfgfile")
 	}
 	return nil
 }

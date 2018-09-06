@@ -18,6 +18,7 @@ var (
 		Use:  "peer",
 		Long: "This is the cli of MadLedger peer.",
 	}
+	homeDir, _ = os.Getwd()
 )
 
 func init() {

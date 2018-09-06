@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"io/ioutil"
+	"madledger/common/util"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -10,15 +13,33 @@ var (
 		Use: "init",
 	}
 	initViper = viper.New()
+	cfg       string
 )
 
 func init() {
 	initCmd.RunE = runinit
+	initCmd.Flags().StringP("config", "c", "peer.yaml", "The config file of peer")
+	initViper.BindPFlag("config", initCmd.Flags().Lookup("config"))
 	rootCmd.AddCommand(initCmd)
 }
 
-// TODO: fulfill the init
 func runinit(cmd *cobra.Command, args []string) error {
-	log.Info("init is not finished yet")
+	cfgFile := initViper.GetString("config")
+	if cfgFile == "" {
+		cfgFile = "peer.yaml"
+	}
+	err := createConfigFile(cfgFile)
+	if err != nil {
+		return err
+	}
 	return nil
+}
+
+func createConfigFile(cfgFile string) error {
+	cfgAbsPath, err := util.MakeFileAbs(cfgFile, homeDir)
+	if err != nil {
+		return err
+	}
+	cfg = cfgTemplate
+	return ioutil.WriteFile(cfgAbsPath, []byte(cfg), 0755)
 }
