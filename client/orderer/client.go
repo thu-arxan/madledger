@@ -39,9 +39,9 @@ type channelInfo struct {
 }
 
 // ListChannel list the info of channel
-func (c *Client) ListChannel() error {
+func (c *Client) ListChannel(system bool) error {
 	infos, err := c.ordererClient.ListChannels(context.Background(), &pb.ListChannelsRequest{
-		System: true,
+		System: system,
 	})
 	if err != nil {
 		fmt.Println(err)
@@ -57,7 +57,12 @@ func (c *Client) ListChannel() error {
 			channelInfos[i].System = true
 		}
 	}
-	table.Output(channelInfos)
+	if len(channelInfos) == 0 {
+		fmt.Println("No results!")
+	} else {
+		table.Output(channelInfos)
+	}
+
 	return nil
 }
 

@@ -16,6 +16,8 @@ var (
 
 func init() {
 	listCmd.RunE = runList
+	listCmd.Flags().StringP("system", "s", "true", "If the system channel is contained")
+	listViper.BindPFlag("system", listCmd.Flags().Lookup("system"))
 }
 
 func runList(cmd *cobra.Command, args []string) error {
@@ -24,5 +26,10 @@ func runList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return client.ListChannel()
+	var system = true
+	if listViper.GetString("system") == "false" {
+		system = false
+	}
+
+	return client.ListChannel(system)
 }
