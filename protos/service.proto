@@ -50,3 +50,8 @@ message AddTxRequest {
 message TxStatus {
 
 }
+
+// Peer provides nothing now.
+service Peer {
+
+}

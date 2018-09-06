@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"errors"
+	"madledger/common/util"
+	"madledger/peer/config"
+	"madledger/peer/server"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -27,5 +30,26 @@ func runStart(cmd *cobra.Command, args []string) error {
 	if cfgFile == "" {
 		return errors.New("Please provide cfgfile")
 	}
+
+	cfgAbsPath, err := util.MakeFileAbs(cfgFile, homeDir)
+	if err != nil {
+		return err
+	}
+	cfg, err := config.LoadConfig(cfgAbsPath)
+	if err != nil {
+		return err
+	}
+	// set the log
+	setLog(cfg.Debug)
+	s, err := server.NewServer(cfg)
+	if err != nil {
+		return err
+	}
+	// go registerStop(s)
+	err = s.Start()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

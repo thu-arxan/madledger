@@ -35,7 +35,12 @@ func Execute() {
 	}
 }
 
-func setLog() error {
+func setLog(debug bool) error {
+	if debug {
+		logrus.SetLevel(logrus.DebugLevel)
+	} else {
+		logrus.SetLevel(logrus.InfoLevel)
+	}
 	return nil
 }
 

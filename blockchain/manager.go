@@ -5,6 +5,12 @@ import (
 	"fmt"
 	"madledger/core/types"
 	"sync"
+
+	"github.com/sirupsen/logrus"
+)
+
+var (
+	log = logrus.WithFields(logrus.Fields{"app": "blockchain", "package": "blockchain"})
 )
 
 // Manager manage the blockchain
@@ -77,6 +83,7 @@ func (manager *Manager) AddBlock(block *types.Block) error {
 	if block.Header.Number != manager.except {
 		return fmt.Errorf("Channel %s except block %d while receive block %d", manager.id, manager.except, block.Header.Number)
 	}
+	log.Debugf("Channel %s add block %d", manager.id, manager.except)
 	var err error
 	err = manager.storeBlock(block)
 	if err != nil {

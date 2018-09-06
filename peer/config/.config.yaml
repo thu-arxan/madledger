@@ -11,6 +11,12 @@ Address: localhost
 # Should be false or true (default: true)
 Debug: true
 
+# Configure for the BlockChain
+BlockChain:
+  # default: $GOPATH/src/madledger/peer/data/blocks
+  # But in the production environment, you must provide a path
+  Path: 
+
 # Address of orderers
 Orderer:
   Address:

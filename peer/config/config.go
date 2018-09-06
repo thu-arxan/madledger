@@ -16,11 +16,12 @@ var (
 
 // Config is the combination of all config
 type Config struct {
-	Port    int           `yaml:"Port"`
-	Address string        `yaml:"Address"`
-	Debug   bool          `yaml:"Debug"`
-	Orderer OrdererConfig `yaml:"Orderer"`
-	DB      struct {
+	Port       int              `yaml:"Port"`
+	Address    string           `yaml:"Address"`
+	Debug      bool             `yaml:"Debug"`
+	BlockChain BlockChainConfig `yaml:"BlockChain"`
+	Orderer    OrdererConfig    `yaml:"Orderer"`
+	DB         struct {
 		Type    string `yaml:"Type"`
 		LevelDB struct {
 			Dir string `yaml:"Dir"`
@@ -80,6 +81,26 @@ func (cfg *Config) GetOrdererConfig() (*OrdererConfig, error) {
 	}, nil
 }
 
+// BlockChainConfig is the config of blockchain
+type BlockChainConfig struct {
+	Path string `yaml:"Path"`
+}
+
+// GetBlockChainConfig return the BlockChainConfig
+func (cfg *Config) GetBlockChainConfig() (*BlockChainConfig, error) {
+	var storePath = cfg.BlockChain.Path
+	if storePath == "" {
+		if cfg.Debug {
+			storePath = getDefaultChainPath()
+		} else {
+			return nil, errors.New("The path of blockchain is not provided")
+		}
+	}
+	return &BlockChainConfig{
+		Path: storePath,
+	}, nil
+}
+
 // DBType is the type of DB
 type DBType int
 
@@ -118,5 +139,10 @@ func (cfg *Config) GetDBConfig() (*DBConfig, error) {
 
 func getDefaultLevelDBPath() string {
 	storePath, _ := util.MakeFileAbs("src/madledger/peer/data/leveldb", gopath)
+	return storePath
+}
+
+func getDefaultChainPath() string {
+	storePath, _ := util.MakeFileAbs("src/madledger/peer/data/blocks", gopath)
 	return storePath
 }

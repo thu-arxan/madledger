@@ -58,6 +58,21 @@ func TestGetServerConfig(t *testing.T) {
 	}
 }
 
+func TestGetBlockChainConfig(t *testing.T) {
+	cfg, err := LoadConfig(getTestConfigFilePath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	chainCfg, err := cfg.GetBlockChainConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if chainCfg.Path == "" {
+		t.Fatal(errors.New("The path is chain config is empty"))
+	}
+}
+
 func TestGetOrdererConfig(t *testing.T) {
 	cfg, err := LoadConfig(getTestConfigFilePath())
 	if err != nil {
