@@ -15,3 +15,12 @@ Debug: true
 Orderer:
   Address:
     - localhost:12345
+
+# DB only support leveldb now
+DB:
+  Type: leveldb
+  # LevelDB
+  LevelDB:
+    # default: $GOPATH/src/madledger/peer/data/leveldb
+    # But in the production environment, you must provide a path
+    Dir: 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"madledger/common/util"
 	"os"
 
 	yaml "gopkg.in/yaml.v2"
@@ -19,6 +20,12 @@ type Config struct {
 	Address string        `yaml:"Address"`
 	Debug   bool          `yaml:"Debug"`
 	Orderer OrdererConfig `yaml:"Orderer"`
+	DB      struct {
+		Type    string `yaml:"Type"`
+		LevelDB struct {
+			Dir string `yaml:"Dir"`
+		} `yaml:"LevelDB"`
+	} `yaml:"DB"`
 }
 
 // ServerConfig is the config of server
@@ -71,4 +78,45 @@ func (cfg *Config) GetOrdererConfig() (*OrdererConfig, error) {
 	return &OrdererConfig{
 		Address: cfg.Orderer.Address,
 	}, nil
+}
+
+// DBType is the type of DB
+type DBType int
+
+const (
+	_ DBType = iota
+	// LEVELDB is the leveldb
+	LEVELDB
+)
+
+// DBConfig is the config of db
+type DBConfig struct {
+	Type    DBType
+	LevelDB LevelDBConfig
+}
+
+// LevelDBConfig is the config of leveldb
+type LevelDBConfig struct {
+	Dir string
+}
+
+// GetDBConfig return the DBConfig
+func (cfg *Config) GetDBConfig() (*DBConfig, error) {
+	var config DBConfig
+	switch cfg.DB.Type {
+	case "leveldb":
+		config.Type = LEVELDB
+		config.LevelDB.Dir = cfg.DB.LevelDB.Dir
+		if config.LevelDB.Dir == "" {
+			config.LevelDB.Dir = getDefaultLevelDBPath()
+		}
+	default:
+		return nil, fmt.Errorf("Unsupport db type: %s", cfg.DB.Type)
+	}
+	return &config, nil
+}
+
+func getDefaultLevelDBPath() string {
+	storePath, _ := util.MakeFileAbs("src/madledger/peer/data/leveldb", gopath)
+	return storePath
 }
