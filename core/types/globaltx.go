@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"errors"
 	"madledger/common"
 	"madledger/common/util"
 )
@@ -33,4 +34,17 @@ func NewGlobalTx(channelID string, num uint64, hash common.Hash) *Tx {
 		Time: util.Now(),
 	}
 	return tx
+}
+
+// GetGlobalTxPayload return the payload of tx
+func (tx *Tx) GetGlobalTxPayload() (*GlobalTxPayload, error) {
+	if tx.Data.ChannelID != GLOBALCHANNELID {
+		return nil, errors.New("The tx does not belog to global channel")
+	}
+	var payload GlobalTxPayload
+	err := json.Unmarshal(tx.Data.Payload, &payload)
+	if err != nil {
+		return nil, err
+	}
+	return &payload, nil
 }

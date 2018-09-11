@@ -31,7 +31,7 @@ func TestBalance(t *testing.T) {
 	db := simulate.NewStateDB()
 	user := newAccount(1)
 	db.SetAccount(user)
-	vm := NewEVM(newContext(), user.Address(), db)
+	vm := NewEVM(newContext(), user.GetAddress(), db)
 	code, contractAddr, err := vm.Create(user, contractCodes, []byte{}, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -94,7 +94,7 @@ func TestBalance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if values[0].Value != user.Address().String() {
+	if values[0].Value != user.GetAddress().String() {
 		t.Fatal(values[0].Value)
 	}
 	if values[1].Value != "1314" {

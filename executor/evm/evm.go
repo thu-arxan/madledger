@@ -48,9 +48,9 @@ func (evm *EVM) Create(caller common.Account, code, input []byte, value uint64) 
 	caller.SetNonce(caller.GetNonce() + 1)
 	evm.cache.SetAccount(caller)
 	// check if the contract address is aleardy exist
-	_, err = evm.cache.GetAccount(contract.Address())
+	_, err = evm.cache.GetAccount(contract.GetAddress())
 	if err != nil {
-		return nil, contract.Address(), fmt.Errorf("The address %s is aleardy exist", contract.Address())
+		return nil, contract.GetAddress(), fmt.Errorf("The address %s is aleardy exist", contract.GetAddress())
 	}
 	// Run the contract bytes and return the runtime bytes
 	output, err := evm.Call(caller, contract, code, input, value)
@@ -64,7 +64,7 @@ func (evm *EVM) Create(caller common.Account, code, input []byte, value uint64) 
 	}
 	evm.cache.Sync()
 
-	return output, contract.Address(), nil
+	return output, contract.GetAddress(), nil
 }
 
 // Call run code on a evm.
@@ -542,7 +542,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 			}
 
 		case ADDRESS: // 0x30
-			if err := stack.Push(callee.Address().Word256()); err != nil {
+			if err := stack.Push(callee.GetAddress().Word256()); err != nil {
 				return nil, err
 			}
 
@@ -558,7 +558,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 			if acc == nil {
 				return nil, NewError(UnknownAddress)
 			}
-			balance := acc.Balance()
+			balance := acc.GetBalance()
 			if err = stack.PushU64(balance); err != nil {
 				return nil, err
 			}
@@ -572,7 +572,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 			}
 
 		case CALLER: // 0x33
-			if err := stack.Push(caller.Address().Word256()); err != nil {
+			if err := stack.Push(caller.GetAddress().Word256()); err != nil {
 				return nil, err
 			}
 
@@ -672,7 +672,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 				// }
 				err = stack.Push(common.ZeroWord256)
 			} else {
-				code := acc.Code()
+				code := acc.GetCode()
 				l := int64(len(code))
 				err = stack.Push64(l)
 			}
@@ -695,7 +695,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 			// 	}
 			// 	return nil, firstErr(err, ErrorCodeUnknownAddress)
 			// }
-			code := acc.Code()
+			code := acc.GetCode()
 			memOff, err := stack.PopBigInt()
 			if err != nil {
 				return nil, err
@@ -824,7 +824,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 			if err != nil {
 				return nil, err
 			}
-			data, err := cache.GetStorage(callee.Address(), loc)
+			data, err := cache.GetStorage(callee.GetAddress(), loc)
 			if err != nil {
 				// fmt.Println(errSto)
 				return nil, err
@@ -840,7 +840,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 				return nil, err
 			}
 			loc, data := values[0], values[1]
-			if err = cache.SetStorage(callee.Address(), loc, data); err != nil {
+			if err = cache.SetStorage(callee.GetAddress(), loc, data); err != nil {
 				return nil, err
 			}
 
@@ -944,7 +944,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 				return nil, err
 			}
 			// vm.eventSink.Log(&exec.LogEvent{
-			// 	Address: callee.Address(),
+			// 	Address: callee.GetAddress(),
 			// 	Topics:  topics,
 			// 	Data:    data,
 			// })
@@ -954,7 +954,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 
 			// if !HasPermission(callState, callee, permission.CreateContract) {
 			// 	return nil, PermissionDenied{
-			// 		Address: callee.Address(),
+			// 		Address: callee.GetAddress(),
 			// 		Perm:    permission.CreateContract,
 			// 	}
 			// }
@@ -971,7 +971,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 			}
 
 			// Check balance
-			// if callee.Balance() < uint64(contractValue) {
+			// if callee.GetBalance() < uint64(contractValue) {
 			// 	return nil, firstErr(err, ErrorCodeInsufficientBalance)
 			// }
 
@@ -998,7 +998,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 				return ret, err
 			}
 			newAccount.SetCode(ret) // Set the code (ret need not be copied as per Call contract)
-			if err = stack.Push(newAccount.Address().Word256()); err != nil {
+			if err = stack.Push(newAccount.GetAddress().Word256()); err != nil {
 				return nil, err
 			}
 
@@ -1007,7 +1007,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 
 			// if !HasPermission(callState, callee, permission.Call) {
 			// 	return nil, PermissionDenied{
-			// 		Address: callee.Address(),
+			// 		Address: callee.GetAddress(),
 			// 		Perm:    permission.Call,
 			// 	}
 			// }
@@ -1062,7 +1062,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 			// 	ret, callErr = ExecuteNativeContract(addr, callState, callee, args, &gasLimit, logger)
 			// 	// for now we fire the Call event. maybe later we'll fire more particulars
 			// 	// NOTE: these fire call go_events and not particular go_events for eg name reg or permissions
-			// 	vm.fireCallEvent(&callErr, &ret, callee.Address(), crypto.AddressFromWord256(addr), args, value, &gasLimit)
+			// 	vm.fireCallEvent(&callErr, &ret, callee.GetAddress(), crypto.AddressFromWord256(addr), args, value, &gasLimit)
 			// } else {
 			// EVM contract
 			// if useGasNegative(gas, GasGetAccount, &callErr) {
@@ -1080,18 +1080,18 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 				if acc == nil {
 					return nil, NewError(UnknownAddress)
 				}
-				ret, callErr = evm.Call(callee, callee, acc.Code(), args, value)
+				ret, callErr = evm.Call(callee, callee, acc.GetCode(), args, value)
 			} else if op == DELEGATECALL {
 				if acc == nil {
 					return nil, NewError(UnknownAddress)
 				}
-				ret, callErr = evm.DelegateCall(caller, callee, acc.Code(), args, value)
+				ret, callErr = evm.DelegateCall(caller, callee, acc.GetCode(), args, value)
 			} else {
 				// nil account means we're sending funds to a new account
 				// if acc == nil {
 				// 	if !HasPermission(callState, caller, permission.CreateAccount) {
 				// 		return nil, PermissionDenied{
-				// 			Address: callee.Address(),
+				// 			Address: callee.GetAddress(),
 				// 			Perm:    permission.CreateAccount,
 				// 		}
 				// 	}
@@ -1099,19 +1099,19 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 				// }
 				// add account to the tx cache
 				cache.SetAccount(acc)
-				ret, callErr = evm.Call(callee, acc, acc.Code(), args, value)
+				ret, callErr = evm.Call(callee, acc, acc.GetCode(), args, value)
 			}
 			// }
 			evm.returnData = ret
 			// In case any calls deeper in the stack (particularly SNatives) has altered either of two accounts to which
 			// we hold a reference, we need to freshen our state for subsequent iterations of this call frame's EVM loop
 			// var getErr error
-			// caller, getErr = cache.GetAccount(caller.Address())
+			// caller, getErr = cache.GetAccount(caller.GetAddress())
 			// if getErr != nil {
 			// 	// fmt.Println(caller)
 			// 	return nil, firstErr(err, ErrorCodeUnknownAddress)
 			// }
-			// callee, getErr = cache.GetAccount(callee.Address())
+			// callee, getErr = cache.GetAccount(callee.GetAddress())
 			// if getErr != nil {
 			// 	fmt.Println(2)
 			// 	return nil, firstErr(err, ErrorCodeUnknownAddress)
@@ -1123,8 +1123,8 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 				// vm.nestedCallErrors = append(vm.nestedCallErrors, NestedCall{
 				// 	NestedError: callErr,
 				// 	StackDepth:  vm.stackDepth,
-				// 	Caller:      caller.Address(),
-				// 	Callee:      callee.Address(),
+				// 	Caller:      caller.GetAddress(),
+				// 	Callee:      callee.GetAddress(),
 				// })
 				stack.Push(common.ZeroWord256)
 
@@ -1194,7 +1194,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 				// }
 				// if !HasPermission(callState, callee, permission.CreateContract) {
 				// 	return nil, firstErr(err, PermissionDenied{
-				// 		Address: callee.Address(),
+				// 		Address: callee.GetAddress(),
 				// 		Perm:    permission.CreateContract,
 				// 	})
 				// }
@@ -1205,13 +1205,13 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 
 			}
 
-			err = receiver.AddBalance(callee.Balance())
+			err = receiver.AddBalance(callee.GetBalance())
 			if err != nil {
 				return nil, err
 			}
 			cache.SetAccount(receiver)
-			cache.RemoveAccount(callee.Address())
-			// vm.Debugf(" => (%X) %v\n", addr[:4], callee.Balance())
+			cache.RemoveAccount(callee.GetAddress())
+			// vm.Debugf(" => (%X) %v\n", addr[:4], callee.GetBalance())
 			// fallthrough
 
 		case STOP: // 0x00
@@ -1231,9 +1231,9 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 // provided account.
 // Besides, in this procedure, a new account will be setted in the cache.
 func (evm *EVM) createAccount(account common.Account) (common.Account, error) {
-	// fmt.Printf("callee address is %s\n", caller.Address().String())
+	// fmt.Printf("callee address is %s\n", caller.GetAddress().String())
 	var cache = evm.cache
-	addr := common.NewContractAddress(account.Address(), account.GetNonce())
+	addr := common.NewContractAddress(account.GetAddress(), account.GetNonce())
 	newAccount := common.NewDefaultAccount(addr)
 	err := cache.SetAccount(newAccount)
 	if err != nil {
@@ -1252,7 +1252,7 @@ func (evm *EVM) jump(code []byte, to int64, pc *int64) (err error) {
 }
 
 func transfer(from, to common.Account, amount uint64) error {
-	if from.Balance() < amount {
+	if from.GetBalance() < amount {
 		return NewError(InsufficientBalance)
 	}
 	from.SubBalance(amount)

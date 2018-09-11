@@ -3,24 +3,35 @@ package orderer
 import (
 	"context"
 	"fmt"
+	"madledger/common/crypto"
 	"strings"
 	"time"
 
 	"github.com/modood/table"
 	"google.golang.org/grpc"
 
+	"madledger/client/config"
 	pb "madledger/protos"
 )
 
 // Client is the Client to communicate with orderer
 type Client struct {
 	ordererClient pb.OrdererClient
+	privKey       crypto.PrivateKey
 }
 
 // NewClient is the constructor of pb.OrdereClient
-func NewClient() (*Client, error) {
+func NewClient(cfgFile string) (*Client, error) {
+	cfg, err := config.LoadConfig(cfgFile)
+	if err != nil {
+		return nil, err
+	}
+	keyStore, err := cfg.GetKeyStoreConfig()
+	if err != nil {
+		return nil, err
+	}
 	var conn *grpc.ClientConn
-	var err error
+
 	conn, err = grpc.Dial("localhost:12345", grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
 	if err != nil {
 		return nil, err
@@ -29,7 +40,13 @@ func NewClient() (*Client, error) {
 
 	return &Client{
 		ordererClient: ordererClient,
+		privKey:       keyStore.Keys[0],
 	}, nil
+}
+
+// GetPrivKey return the private key
+func (c *Client) GetPrivKey() crypto.PrivateKey {
+	return c.privKey
 }
 
 type channelInfo struct {
@@ -44,7 +61,7 @@ func (c *Client) ListChannel(system bool) error {
 		System: system,
 	})
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 	var channelInfos []channelInfo
 	for i, channel := range infos.Channels {
@@ -77,4 +94,12 @@ func (c *Client) CreateChannel(channelID string) error {
 		fmt.Println("Succeed!")
 	}
 	return nil
+}
+
+// AddTx try to add a tx
+func (c *Client) AddTx(tx *pb.Tx) error {
+	_, err := c.ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: tx,
+	})
+	return err
 }

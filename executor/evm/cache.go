@@ -41,12 +41,12 @@ func (cache *Cache) GetAccount(addr common.Address) (common.Account, error) {
 
 // SetAccount set account
 func (cache *Cache) SetAccount(account common.Account) error {
-	accInfo, err := cache.get(account.Address())
+	accInfo, err := cache.get(account.GetAddress())
 	if err != nil {
 		return err
 	}
 	if accInfo.removed {
-		return fmt.Errorf("UpdateAccount on a removed account: %s", account.Address())
+		return fmt.Errorf("UpdateAccount on a removed account: %s", account.GetAddress())
 	}
 	accInfo.account = account
 	accInfo.updated = true

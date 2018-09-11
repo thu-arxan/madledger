@@ -560,8 +560,8 @@ func TestSubcurrency(t *testing.T) {
 	account2 := newAccount(3, 2, 1)
 	db.SetAccount(account1)
 	db.SetAccount(account2)
-	fmt.Printf("%s\n", account1.Address().String())
-	fmt.Printf("%s\n", account2.Address().String())
+	fmt.Printf("%s\n", account1.GetAddress().String())
+	fmt.Printf("%s\n", account2.GetAddress().String())
 
 	vm := NewEVM(newContext(), common.ZeroAddress, db)
 
@@ -596,7 +596,7 @@ func TestRevert(t *testing.T) {
 	account2 := newAccount(1, 0, 1)
 	key, value := []byte{0x00}, []byte{0x00}
 	db.SetAccount(account1)
-	db.SetStorage(account1.Address(), common.LeftPadWord256(key), common.LeftPadWord256(value))
+	db.SetStorage(account1.GetAddress(), common.LeftPadWord256(key), common.LeftPadWord256(value))
 	vm := NewEVM(newContext(), common.ZeroAddress, db)
 
 	bytecode := MustSplice(PUSH13, 0x72, 0x65, 0x76, 0x65, 0x72, 0x74, 0x65, 0x64, 0x20, 0x64, 0x61, 0x74, 0x61,
@@ -607,7 +607,7 @@ func TestRevert(t *testing.T) {
 	output, cErr := vm.Call(account1, account2, bytecode, []byte{}, 0)
 	assert.Error(t, cErr, "Expected execution reverted error")
 
-	storageVal, err := db.GetStorage(account1.Address(), common.LeftPadWord256(key))
+	storageVal, err := db.GetStorage(account1.GetAddress(), common.LeftPadWord256(key))
 	assert.Equal(t, common.LeftPadWord256(value), storageVal)
 
 	t.Logf("Output: %v Error: %v\n", output, err)
@@ -627,7 +627,7 @@ func TestRevert(t *testing.T) {
 // 	vm := NewEVM(newContext(), common.ZeroAddress, db)
 
 // 	// account1 will call account2 which will trigger CALL opcode to account3
-// 	addr := account3.Address()
+// 	addr := account3.GetAddress()
 // 	contractCode := callContractCode(addr)
 
 // 	//----------------------------------------------
@@ -816,7 +816,7 @@ func TestMsgSender(t *testing.T) {
 		t.Fatal(errCode)
 	}
 
-	assert.Equal(t, account1.Address().Word256().Bytes(), output)
+	assert.Equal(t, account1.GetAddress().Word256().Bytes(), output)
 
 }
 
@@ -945,7 +945,7 @@ func makeAccountWithCode(db StateDB, name string, code []byte) (common.Account, 
 	account.AddBalance(9999999)
 	account.SetCode(code)
 	db.SetAccount(account)
-	return account, account.Address()
+	return account, account.GetAddress()
 }
 
 // Subscribes to an AccCall, runs the vm, returns the output any direct exception

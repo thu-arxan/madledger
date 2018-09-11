@@ -1,8 +1,11 @@
 package crypto
 
 import (
+	"encoding/hex"
+	"io"
 	"madledger/common"
 	"math/big"
+	"os"
 )
 
 // PrivateKey is the interface of privateKey
@@ -10,6 +13,7 @@ import (
 type PrivateKey interface {
 	Sign(hash []byte) (Signature, error)
 	PubKey() PublicKey
+	Bytes() ([]byte, error)
 }
 
 // PublicKey is the interface of publicKey
@@ -37,6 +41,30 @@ func NewPrivateKey(raw []byte) (PrivateKey, error) {
 	// 	return (PrivateKey)((*ECDSAPrivateKey)(ecPrivKey)), nil
 	// }
 	// return nil, err
+}
+
+// GeneratePrivateKey try to generate a private key
+func GeneratePrivateKey() (PrivateKey, error) {
+	return GenerateSECP256K1PrivateKey()
+}
+
+// LoadPrivateKeyFromFile load private key from file
+func LoadPrivateKeyFromFile(file string) (PrivateKey, error) {
+	buf := make([]byte, 64)
+	fd, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer fd.Close()
+	if _, err := io.ReadFull(fd, buf); err != nil {
+		return nil, err
+	}
+
+	key, err := hex.DecodeString(string(buf))
+	if err != nil {
+		return nil, err
+	}
+	return NewPrivateKey(key)
 }
 
 // NewPublicKey return a PublicKey from []byte

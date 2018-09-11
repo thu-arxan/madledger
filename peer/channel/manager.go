@@ -1,8 +1,12 @@
 package channel
 
 import (
+	"errors"
 	"madledger/blockchain"
+	"madledger/common"
+	"madledger/common/util"
 	"madledger/core/types"
+	"madledger/executor/evm"
 	"madledger/peer/db"
 	"madledger/peer/orderer"
 	"time"
@@ -55,13 +59,76 @@ func (m *Manager) Start() {
 	for {
 		select {
 		case <-ticker.C:
-			// log.Infof("%s ticker", m.id)
 			block, err := m.fetchBlock()
 			if err == nil {
-				m.cm.AddBlock(block)
+				// m.cm.AddBlock(block)
+				m.AddBlock(block)
 			}
 		}
 	}
+}
+
+// AddBlock add a block
+func (m *Manager) AddBlock(block *types.Block) error {
+	// add into the blockchain
+	m.cm.AddBlock(block)
+	switch block.Header.ChannelID {
+	case types.GLOBALCHANNELID:
+		m.AddGlobalBlock(block)
+	case types.CONFIGCHANNELID:
+		// todo
+	default:
+		// do nothing now
+		m.RunBlock(block.Header.Number)
+	}
+	return nil
+}
+
+// RunBlock will carry out all txs in the block.
+// It will return after the block is runned.
+// In the future, this will contains chains which rely on something or nothing
+func (m *Manager) RunBlock(num uint64) error {
+	block, err := m.cm.GetBlock(num)
+	if err != nil {
+		return err
+	}
+	context := evm.NewContext(block)
+	for _, tx := range block.Transactions {
+		senderAddress, err := tx.GetSender()
+		if err == nil {
+			receiverAddress := tx.GetReceiver()
+			log.Infof("The address of receiver is %s", receiverAddress.String())
+			sender, err := m.db.GetAccount(senderAddress)
+			if err != nil {
+				continue
+			}
+			receiver, err := m.db.GetAccount(receiverAddress)
+			if err != nil {
+				continue
+			}
+			evm := evm.NewEVM(*context, senderAddress, m.db)
+			log.Infof("The address of receiver is %s", receiver.GetAddress().String())
+			if receiver.GetAddress().String() != common.ZeroAddress.String() {
+				log.Info("This is a normal call")
+				log.Info(util.Hex(receiver.GetCode()))
+				output, err := evm.Call(sender, receiver, receiver.GetCode(), tx.Data.Payload, 0)
+				if err != nil {
+					log.Error(err)
+				} else {
+					log.Info(output)
+				}
+			} else {
+				log.Info("This is a create call")
+				_, addr, err := evm.Create(sender, tx.Data.Payload, []byte{}, 0)
+				if err != nil {
+					log.Error(err)
+				}
+				log.Infof("Get address %s", addr.String())
+			}
+		}
+
+	}
+	return errors.New("Not implementation yet")
 }
 
 func (m *Manager) fetchBlock() (*types.Block, error) {

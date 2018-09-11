@@ -3,6 +3,7 @@ package crypto
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/rand"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -41,10 +42,24 @@ func HexToSECP256K1PrivateKey(h string) (PrivateKey, error) {
 	return toSECP256K1PrivateKey(b)
 }
 
+// GenerateSECP256K1PrivateKey return a new secp256k1 private key
+func GenerateSECP256K1PrivateKey() (PrivateKey, error) {
+	ecdsaPrivateKey, err := ecdsa.GenerateKey(S256(), rand.Reader)
+	if err != nil {
+		return nil, err
+	}
+	return (SECP256K1PrivateKey)(*ecdsaPrivateKey), nil
+}
+
 // PubKey returns the PublicKey corresponding to this private key.
 func (p SECP256K1PrivateKey) PubKey() PublicKey {
 	pk := (SECP256K1PublicKey)((ecdsa.PrivateKey)(p).PublicKey)
 	return (PublicKey)(pk)
+}
+
+// Bytes is the implementation of interface
+func (p SECP256K1PrivateKey) Bytes() ([]byte, error) {
+	return math.PaddedBigBytes(p.D, p.Params().BitSize/8), nil
 }
 
 // Bytes returns the bytes of Public key

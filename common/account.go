@@ -1,11 +1,11 @@
 package common
 
+import (
+	"encoding/json"
+)
+
 // Account is the account of madledger
 type Account interface {
-	// Will be removed as soon as possible
-	Address() Address
-	Balance() uint64
-	Code() []byte
 	// These functions will be remained.
 	GetAddress() Address
 	GetBalance() uint64
@@ -15,81 +15,72 @@ type Account interface {
 	SetCode(code []byte)
 	GetNonce() uint64
 	SetNonce(nonce uint64)
+	Bytes() ([]byte, error)
 }
 
 // DefaultAccount is the default implementation of Account
 type DefaultAccount struct {
-	address Address
-	balance uint64
-	code    []byte
-	nonce   uint64
+	Address Address
+	Balance uint64
+	Code    []byte
+	Nonce   uint64
 }
 
 // NewDefaultAccount is the constructor of DefaultAccount
 func NewDefaultAccount(addr Address) *DefaultAccount {
 	return &DefaultAccount{
-		address: addr,
-		balance: 0,
-		code:    []byte{},
-		nonce:   0,
+		Address: addr,
+		Balance: 0,
+		Code:    []byte{},
+		Nonce:   0,
 	}
-}
-
-// Address is the implementation of Account
-func (a *DefaultAccount) Address() Address {
-	return a.address
 }
 
 // GetAddress is the implementation of Account
 func (a *DefaultAccount) GetAddress() Address {
-	return a.address
-}
-
-// Balance is the implementation of Account
-func (a *DefaultAccount) Balance() uint64 {
-	return a.balance
+	return a.Address
 }
 
 // GetBalance is the implementation of Account
 func (a *DefaultAccount) GetBalance() uint64 {
-	return a.balance
+	return a.Balance
 }
 
 // AddBalance is the implementation of Account
 // todo: should conside the attack
 func (a *DefaultAccount) AddBalance(balance uint64) error {
-	a.balance += balance
+	a.Balance += balance
 	return nil
 }
 
 // SubBalance is the implementation of Account
 // todo: should conside the attack
 func (a *DefaultAccount) SubBalance(balance uint64) error {
-	a.balance -= balance
+	a.Balance -= balance
 	return nil
-}
-
-// Code is the implementation of Account
-func (a *DefaultAccount) Code() []byte {
-	return a.code
 }
 
 // GetCode is the implementation of Account
 func (a *DefaultAccount) GetCode() []byte {
-	return a.code
+	return a.Code
 }
 
 // SetCode is the implementation of Account
 func (a *DefaultAccount) SetCode(code []byte) {
-	a.code = code
+	a.Code = code
 }
 
 // GetNonce is the implementation of Account
 func (a *DefaultAccount) GetNonce() uint64 {
-	return a.nonce
+	return a.Nonce
 }
 
 // SetNonce is the implementation of Account
 func (a *DefaultAccount) SetNonce(nonce uint64) {
-	a.nonce = nonce
+	a.Nonce = nonce
+}
+
+// Bytes is the implementation of Account
+func (a *DefaultAccount) Bytes() ([]byte, error) {
+	return json.Marshal(a)
 }

@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"madledger/client/cmd/account"
 	"madledger/client/cmd/channel"
+	"madledger/client/cmd/tx"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -28,6 +30,8 @@ func init() {
 	logrus.SetOutput(os.Stdout)
 
 	rootCmd.AddCommand(channel.Cmd())
+	rootCmd.AddCommand(tx.Cmd())
+	rootCmd.AddCommand(account.Cmd())
 }
 
 // Execute exec the command

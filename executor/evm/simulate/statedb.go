@@ -43,10 +43,10 @@ func (s *StateDB) GetStorage(address common.Address, key common.Word256) (common
 
 // SetAccount is the implementation of StateDB
 func (s *StateDB) SetAccount(account common.Account) error {
-	// if len(account.Address()) == 0 {
+	// if len(account.GetAddress()) == 0 {
 	// 	return errors.New("The address of account can not be empty")
 	// }
-	s.accounts[account.Address()] = account
+	s.accounts[account.GetAddress()] = account
 	return nil
 }
 
