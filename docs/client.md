@@ -77,9 +77,9 @@ client tx create -b $bin -n $name
 
 返回结果类似如下所示。
 
-BlockNumber │ BlockIndex │ ContractAddress  
+BlockNumber | BlockIndex | ContractAddress  
 ---- | --- | ---
-1│0│0x16987f7117b6f0f0a8d55f6f15d6d8cb82fec58a
+1 | 0 | 0x16987f7117b6f0f0a8d55f6f15d6d8cb82fec58a
 
 #### 1.4.2 call
 
@@ -91,6 +91,6 @@ client tx call -a $abi -n $name -f $func -p $payload -r $receiver
 
 返回结果类似如下所示。
 
-BlockNumber │ BlockIndex │ Output
+BlockNumber | BlockIndex | Output
 ---- | --- | ---
-4│0│[1314]
+4 | 0 | [1314]
