@@ -64,6 +64,6 @@ Blockchain相关的代码。
 提交代码前请确保通过了所有的测试。
 
 ```bash
-. buils.sh
+. build.sh
 . test.sh
 ```
