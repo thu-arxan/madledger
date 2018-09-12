@@ -79,3 +79,32 @@ func (db *LevelDB) SetStorage(address common.Address, key common.Word256, value 
 	db.connect.Put(storageKey, value.Bytes(), nil)
 	return nil
 }
+
+// GetTxStatus is the implementation of interface
+func (db *LevelDB) GetTxStatus(channelID, txID string) (*TxStatus, error) {
+	var key = util.BytesCombine([]byte(channelID), []byte(txID))
+	value, err := db.connect.Get(key, nil)
+	if err != nil {
+		return nil, err
+	}
+	var status TxStatus
+	err = json.Unmarshal(value, &status)
+	if err != nil {
+		return nil, err
+	}
+	return &status, nil
+}
+
+// SetTxStatus is the implementation of interface
+func (db *LevelDB) SetTxStatus(channelID, txID string, status *TxStatus) error {
+	value, err := json.Marshal(status)
+	if err != nil {
+		return err
+	}
+	var key = util.BytesCombine([]byte(channelID), []byte(txID))
+	err = db.connect.Put(key, value, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
