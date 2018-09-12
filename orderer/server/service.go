@@ -12,7 +12,7 @@ func (s *Server) FetchBlock(ctx context.Context, req *pb.FetchBlockRequest) (*pb
 	if err != nil {
 		return nil, err
 	}
-	return ConvertBlockFromTypesToPb(block)
+	return pb.NewBlock(block)
 }
 
 // ListChannels is the implementation of protos
@@ -28,7 +28,7 @@ func (s *Server) AddChannel(ctx context.Context, req *pb.AddChannelRequest) (*pb
 // AddTx is the implementation of protos
 func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus, error) {
 	var status pb.TxStatus
-	tx, err := ConvertTxFromPbToTypes(req.Tx)
+	tx, err := req.Tx.ConvertToTypes()
 	if err != nil {
 		return &status, err
 	}

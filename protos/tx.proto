@@ -4,8 +4,9 @@ package protos;
 
 // Tx is the transaction, which structure is not decided yet
 message Tx {
-	txData Data = 1;
-	int64 Time = 2;
+	string ID = 1;
+	txData Data = 2;
+	int64 Time = 3;
 }
 
 // txData is the data of Tx

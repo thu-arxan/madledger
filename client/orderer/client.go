@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"madledger/common/crypto"
+	"madledger/core/types"
 	"strings"
 	"time"
 
@@ -97,9 +98,13 @@ func (c *Client) CreateChannel(channelID string) error {
 }
 
 // AddTx try to add a tx
-func (c *Client) AddTx(tx *pb.Tx) error {
-	_, err := c.ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
-		Tx: tx,
+func (c *Client) AddTx(tx *types.Tx) error {
+	pbTx, err := pb.NewTx(tx)
+	if err != nil {
+		return err
+	}
+	_, err = c.ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: pbTx,
 	})
 	return err
 }

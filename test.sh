@@ -9,6 +9,9 @@ go test madledger/common/crypto -count=1
 # run core test
 go test madledger/core/types -count=1
 
+# run protos test
+go test madledger/protos -count=1
+
 # run blockchain test
 go test madledger/blockchain/config -count=1
 

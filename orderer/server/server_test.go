@@ -99,7 +99,7 @@ func TestFetchBlockAtNil(t *testing.T) {
 		t.Fatal(fmt.Errorf("The number of block is %d", globalGenesisBlock.Header.Number))
 	}
 	// set global genesis block hash
-	typesGlobalGenesisBlock, err := ConvertBlockFromPbToTypes(globalGenesisBlock)
+	typesGlobalGenesisBlock, err := globalGenesisBlock.ConvertToTypes()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +137,7 @@ func TestFetchBlockAtNil(t *testing.T) {
 		t.Fatal(fmt.Errorf("The number of block is %d", configGenesisBlock.Header.Number))
 	}
 	// set config genesis block hash
-	typesConfigGenesisBlock, err := ConvertBlockFromPbToTypes(configGenesisBlock)
+	typesConfigGenesisBlock, err := configGenesisBlock.ConvertToTypes()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +187,7 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 		ChannelID: types.GLOBALCHANNELID,
 		Number:    0,
 	})
-	typesGlobalGenesisBlock, _ := ConvertBlockFromPbToTypes(globalGenesisBlock)
+	typesGlobalGenesisBlock, _ := globalGenesisBlock.ConvertToTypes()
 	if !reflect.DeepEqual(typesGlobalGenesisBlock.Hash().Bytes(), genesisBlocksHash[types.GLOBALCHANNELID].Bytes()) {
 		t.Fatal()
 	}
@@ -196,7 +196,7 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 		ChannelID: types.CONFIGCHANNELID,
 		Number:    0,
 	})
-	typesConfigGenesisBlock, _ := ConvertBlockFromPbToTypes(configGenesisBlock)
+	typesConfigGenesisBlock, _ := configGenesisBlock.ConvertToTypes()
 	if !reflect.DeepEqual(typesConfigGenesisBlock.Hash().Bytes(), genesisBlocksHash[types.CONFIGCHANNELID].Bytes()) {
 		t.Fatal()
 	}
@@ -253,7 +253,7 @@ func TestAddChannel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pbTx, err := ConvertTxFromTypesToPb(typesTx)
+	pbTx, err := pb.NewTx(typesTx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -286,7 +286,7 @@ func TestServerRestartWithUserChannel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pbTx, err := ConvertTxFromTypesToPb(typesTx)
+	pbTx, err := pb.NewTx(typesTx)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -12,6 +12,8 @@ import (
 // Note: The Time is not important and will cause some consensus problems, so it won't
 // be included while cacluating the hash
 type Tx struct {
+	// ID is the hash of the tx while presented in hex
+	ID   string
 	Data TxData
 	Time int64
 }
@@ -41,7 +43,7 @@ func NewTx(channelID string, recipient common.Address, payload []byte, privKey c
 	var tx = &Tx{
 		Data: TxData{
 			ChannelID:    channelID,
-			AccountNonce: 0,
+			AccountNonce: util.RandUint64(),
 			Recipient:    recipient.Bytes(),
 			Payload:      payload,
 			Version:      1,
@@ -66,6 +68,7 @@ func NewTx(channelID string, recipient common.Address, payload []byte, privKey c
 		PK:  pkBytes,
 		Sig: sigBytes,
 	}
+	tx.ID = util.Hex(tx.Hash())
 	return tx, nil
 }
 

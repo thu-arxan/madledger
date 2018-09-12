@@ -1,4 +1,4 @@
-package server
+package protos
 
 import (
 	"encoding/hex"
@@ -70,12 +70,12 @@ func TestConvertBlock(t *testing.T) {
 	}
 }
 
-func convertTypesBlock(blocks *types.Block) (*types.Block, error) {
-	pbBlock, err := ConvertBlockFromTypesToPb(blocks)
+func convertTypesBlock(block *types.Block) (*types.Block, error) {
+	pbBlock, err := NewBlock(block)
 	if err != nil {
 		return nil, err
 	}
-	typesBlock, err := ConvertBlockFromPbToTypes(pbBlock)
+	typesBlock, err := pbBlock.ConvertToTypes()
 	if err != nil {
 		return nil, err
 	}

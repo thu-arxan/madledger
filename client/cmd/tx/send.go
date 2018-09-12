@@ -3,11 +3,9 @@ package tx
 import (
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"madledger/client/orderer"
 	"madledger/common"
-
-	pb "madledger/protos"
+	"madledger/core/types"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -58,10 +56,9 @@ func runsend(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	tx, err := pb.NewTx(channelID, common.HexToAddress(receiver).Bytes(), []byte(payloadBytes), client.GetPrivKey())
+	tx, err := types.NewTx(channelID, common.HexToAddress(receiver), []byte(payloadBytes), client.GetPrivKey())
 	if err != nil {
 		return err
 	}
-	fmt.Println(tx)
 	return client.AddTx(tx)
 }
