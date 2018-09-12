@@ -57,7 +57,7 @@ Account命令负责client对账户相关的操作。
 client account info
 ```
 
-会看到如下所示的结果。
+会看到类似于如下所示的结果。
 
 Address |
  ----   |
@@ -67,12 +67,30 @@ Address |
 
 Tx命令负责client的交易部分。
 
-#### 1.4.1 send
+#### 1.4.1 create
 
-发送交易并获取交易结果。
+根据一个sol文件编译生成的bin文件，创建一个合约。
 
 ```bash
-client tx send -n $name -r $receiver -p $payload
+client tx create -b $bin -n $name
 ```
 
-待完善。
+返回结果类似如下所示。
+
+BlockNumber │ BlockIndex │ ContractAddress  
+---- | --- | ---
+1│0│0x16987f7117b6f0f0a8d55f6f15d6d8cb82fec58a
+
+#### 1.4.2 call
+
+根据一个sol文件编译生成的abi文件，调用一个合约。
+
+```bash
+client tx call -a $abi -n $name -f $func -p $payload -r $receiver
+```
+
+返回结果类似如下所示。
+
+BlockNumber │ BlockIndex │ Output
+---- | --- | ---
+4│0│[1314]
