@@ -61,7 +61,7 @@ client account info
 
 Address |
  ----   |
-0xb65127172831e8e66a3f8310ea83d2eda1fcefc5
+0xb65127172831e8e66a3f8310ea83d2eda1fcefc5|
 
 ### 1.4 Tx
 
