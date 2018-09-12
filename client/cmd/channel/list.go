@@ -2,7 +2,7 @@ package channel
 
 import (
 	"errors"
-	"madledger/client/orderer"
+	"madledger/client/lib"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -28,7 +28,7 @@ func runList(cmd *cobra.Command, args []string) error {
 	if cfgFile == "" {
 		return errors.New("The config file of client can not be nil")
 	}
-	client, err := orderer.NewClient(cfgFile)
+	client, err := lib.NewClient(cfgFile)
 	if err != nil {
 		return err
 	}

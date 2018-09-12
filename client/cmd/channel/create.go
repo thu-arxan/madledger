@@ -2,7 +2,7 @@ package channel
 
 import (
 	"errors"
-	"madledger/client/orderer"
+	"madledger/client/lib"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -32,7 +32,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	if name == "" {
 		return errors.New("The name of channel should be [a-z0-9]{1,32} such as test, test01 and etc")
 	}
-	client, err := orderer.NewClient(cfgFile)
+	client, err := lib.NewClient(cfgFile)
 	if err != nil {
 		return err
 	}

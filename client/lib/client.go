@@ -1,4 +1,4 @@
-package orderer
+package lib
 
 import (
 	"context"
@@ -18,6 +18,7 @@ import (
 // Client is the Client to communicate with orderer
 type Client struct {
 	ordererClient pb.OrdererClient
+	peerClient    pb.PeerClient
 	privKey       crypto.PrivateKey
 }
 
@@ -31,18 +32,39 @@ func NewClient(cfgFile string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	var conn *grpc.ClientConn
+	// get clients
+	ordererClient, err := getOrdererClient()
+	if err != nil {
+		return nil, err
+	}
+	peerClient, err := getPeerClient()
+	if err != nil {
+		return nil, err
+	}
 
-	conn, err = grpc.Dial("localhost:12345", grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
+	return &Client{
+		ordererClient: ordererClient,
+		peerClient:    peerClient,
+		privKey:       keyStore.Keys[0],
+	}, nil
+}
+
+func getOrdererClient() (pb.OrdererClient, error) {
+	conn, err := grpc.Dial("localhost:12345", grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
 	if err != nil {
 		return nil, err
 	}
 	ordererClient := pb.NewOrdererClient(conn)
+	return ordererClient, nil
+}
 
-	return &Client{
-		ordererClient: ordererClient,
-		privKey:       keyStore.Keys[0],
-	}, nil
+func getPeerClient() (pb.PeerClient, error) {
+	conn, err := grpc.Dial("localhost:23456", grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
+	if err != nil {
+		return nil, err
+	}
+	peerClient := pb.NewPeerClient(conn)
+	return peerClient, nil
 }
 
 // GetPrivKey return the private key
@@ -98,13 +120,24 @@ func (c *Client) CreateChannel(channelID string) error {
 }
 
 // AddTx try to add a tx
-func (c *Client) AddTx(tx *types.Tx) error {
+func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 	pbTx, err := pb.NewTx(tx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	_, err = c.ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
 		Tx: pbTx,
 	})
-	return err
+	if err != nil {
+		return nil, err
+	}
+	time.Sleep(1 * time.Second)
+	status, err := c.peerClient.GetTxStatus(context.Background(), &pb.GetTxStatusRequest{
+		ChannelID: tx.Data.ChannelID,
+		TxID:      tx.ID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return status, nil
 }

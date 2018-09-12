@@ -60,26 +60,30 @@ func (m *ChannelManager) GetTxStatus(channelID, txID string) (*db.TxStatus, erro
 }
 
 func (m *ChannelManager) start() error {
-	ticker := time.NewTicker(500 * time.Millisecond)
-	defer ticker.Stop()
 	go m.GlobalChannel.Start()
 	go m.ConfigChannel.Start()
-	for {
-		select {
-		case <-ticker.C:
-			channels, err := m.ordererClient.ListChannels()
-			if err == nil {
-				for _, channel := range channels {
-					if !m.hasChannel(channel) {
-						manager, err := m.loadChannel(channel)
-						if err == nil {
-							go manager.Start()
+	go func() {
+		ticker := time.NewTicker(500 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				channels, err := m.ordererClient.ListChannels()
+				if err == nil {
+					for _, channel := range channels {
+						if !m.hasChannel(channel) {
+							manager, err := m.loadChannel(channel)
+							if err == nil {
+								go manager.Start()
+							}
 						}
 					}
 				}
 			}
 		}
-	}
+	}()
+	time.Sleep(20 * time.Millisecond)
+	return nil
 }
 
 // hasChannel return if a channel exist

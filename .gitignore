@@ -1,6 +1,7 @@
 docs/node_modules
 docs/deploy.sh
 env/solo/orderer/data/
+env/solo/peer/data/
 orderer/db/.leveldb
 orderer/server/.data/
 orderer/server/.data1/

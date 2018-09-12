@@ -3,7 +3,7 @@ package account
 import (
 	"errors"
 	"fmt"
-	"madledger/client/orderer"
+	"madledger/client/lib"
 
 	"github.com/modood/table"
 	"github.com/spf13/cobra"
@@ -32,7 +32,7 @@ func runInfo(cmd *cobra.Command, args []string) error {
 	if cfgFile == "" {
 		return errors.New("The config file of client can not be nil")
 	}
-	client, err := orderer.NewClient(cfgFile)
+	client, err := lib.NewClient(cfgFile)
 	if err != nil {
 		return err
 	}
