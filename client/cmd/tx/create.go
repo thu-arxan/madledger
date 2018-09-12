@@ -21,8 +21,8 @@ var (
 
 func init() {
 	createCmd.RunE = runcreate
-	createCmd.Flags().StringP("abi", "a", "", "The abi of tx")
-	createViper.BindPFlag("abi", createCmd.Flags().Lookup("abi"))
+	createCmd.Flags().StringP("bin", "b", "", "The bin of tx")
+	createViper.BindPFlag("bin", createCmd.Flags().Lookup("bin"))
 	createCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
 	createViper.BindPFlag("config", createCmd.Flags().Lookup("config"))
 	createCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
@@ -44,11 +44,11 @@ func runcreate(cmd *cobra.Command, args []string) error {
 	if channelID == "" {
 		return errors.New("The channelID of tx can not be nil")
 	}
-	abiPath := createViper.GetString("abi")
-	if abiPath == "" {
-		return errors.New("The abi path can not be nil")
+	binPath := createViper.GetString("bin")
+	if binPath == "" {
+		return errors.New("The bin path can not be nil")
 	}
-	contractCodes, err := readCodes(fmt.Sprintf("%s/%s.bin", abiPath, abiPath))
+	contractCodes, err := readCodes(fmt.Sprintf("%s/%s.bin", binPath, binPath))
 	if err != nil {
 		return err
 	}
