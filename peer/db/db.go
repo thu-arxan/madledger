@@ -4,10 +4,11 @@ import "madledger/common"
 
 // TxStatus return the status of tx
 type TxStatus struct {
-	Err         string
-	BlockNumber uint64
-	BlockIndex  uint64
-	Output      []byte
+	Err             string
+	BlockNumber     uint64
+	BlockIndex      int
+	Output          []byte
+	ContractAddress string
 }
 
 // DB provide a interface for peer to access the global state

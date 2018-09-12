@@ -93,7 +93,7 @@ func (m *Manager) RunBlock(num uint64) error {
 		return err
 	}
 	context := evm.NewContext(block)
-	for _, tx := range block.Transactions {
+	for i, tx := range block.Transactions {
 		senderAddress, err := tx.GetSender()
 		if err == nil {
 			receiverAddress := tx.GetReceiver()
@@ -112,18 +112,34 @@ func (m *Manager) RunBlock(num uint64) error {
 				log.Info("This is a normal call")
 				log.Info(util.Hex(receiver.GetCode()))
 				output, err := evm.Call(sender, receiver, receiver.GetCode(), tx.Data.Payload, 0)
+				status := &db.TxStatus{
+					Err:         "",
+					BlockNumber: num,
+					BlockIndex:  i,
+					Output:      output,
+				}
 				if err != nil {
+					status.Err = err.Error()
 					log.Error(err)
 				} else {
 					log.Info(output)
 				}
+				m.db.SetTxStatus(m.id, tx.ID, status)
 			} else {
 				log.Info("This is a create call")
-				_, addr, err := evm.Create(sender, tx.Data.Payload, []byte{}, 0)
+				output, addr, err := evm.Create(sender, tx.Data.Payload, []byte{}, 0)
+				status := &db.TxStatus{
+					Err:             "",
+					BlockNumber:     num,
+					BlockIndex:      i,
+					Output:          output,
+					ContractAddress: addr.String(),
+				}
 				if err != nil {
 					log.Error(err)
 				}
 				log.Infof("Get address %s", addr.String())
+				m.db.SetTxStatus(m.id, tx.ID, status)
 			}
 		}
 
