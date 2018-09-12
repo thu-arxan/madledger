@@ -84,4 +84,5 @@ func TestUpdateChannel(t *testing.T) {
 		t.Fatal(errors.New("Channel test is not contained"))
 	}
 	// todo: maybe illegal channel id
+	os.RemoveAll(dir)
 }
