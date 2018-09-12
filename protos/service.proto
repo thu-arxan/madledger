@@ -48,10 +48,19 @@ message AddTxRequest {
 
 // TxStatus include nothing now.
 message TxStatus {
-
+    string Err = 1;
+    uint64 BlockNumber = 2;
+    int32 BlockIndex = 3;
+    bytes Output = 4;
+    string ContractAddress = 5;
 }
 
 // Peer provides nothing now.
 service Peer {
+    rpc GetTxStatus(GetTxStatusRequest) returns (TxStatus){}
+}
 
+message GetTxStatusRequest {
+    string ChannelID = 1;
+    string TxID = 2;
 }

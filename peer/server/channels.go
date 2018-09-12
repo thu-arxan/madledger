@@ -54,6 +54,11 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig, ordererC
 	return m, nil
 }
 
+// GetTxStatus return the status of tx
+func (m *ChannelManager) GetTxStatus(channelID, txID string) (*db.TxStatus, error) {
+	return m.db.GetTxStatus(channelID, txID)
+}
+
 func (m *ChannelManager) start() error {
 	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
