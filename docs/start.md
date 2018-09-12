@@ -13,6 +13,7 @@
 ```bash
 orderer version
 peer version
+client version
 ```
 
 如果看到以下类似结果则说明配置正确。
@@ -20,6 +21,7 @@ peer version
 ```bash
 Orderer version v0.0.1
 Peer version v0.0.1
+Client version v0.0.1
 ```
 
 否则，可能是$PATH设置有误，请将$GOPATH/bin添加为环境变量。
