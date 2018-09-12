@@ -3,7 +3,6 @@ package tx
 import (
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"madledger/client/lib"
 	"madledger/common"
 	"madledger/common/abi"
@@ -86,7 +85,7 @@ func runcall(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	values, err := abi.Unpacker(fmt.Sprintf("%s/%s.abi", abiPath, abiPath), funcName, status.Output)
+	values, err := abi.Unpacker(abiPath, funcName, status.Output)
 	if err != nil {
 		return err
 	}

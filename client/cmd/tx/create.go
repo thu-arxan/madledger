@@ -2,7 +2,6 @@ package tx
 
 import (
 	"errors"
-	"fmt"
 	"madledger/client/lib"
 	"madledger/common"
 	"madledger/core/types"
@@ -48,7 +47,7 @@ func runcreate(cmd *cobra.Command, args []string) error {
 	if binPath == "" {
 		return errors.New("The bin path can not be nil")
 	}
-	contractCodes, err := readCodes(fmt.Sprintf("%s/%s.bin", binPath, binPath))
+	contractCodes, err := readCodes(binPath)
 	if err != nil {
 		return err
 	}
