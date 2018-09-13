@@ -127,6 +127,9 @@ func TestFetchBlockAtNil(t *testing.T) {
 		ChannelID: "test",
 		Number:    1,
 	})
+	if err == nil {
+		t.Fatal()
+	}
 	// get genesis block of config
 	configGenesisBlock, err := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
 		ChannelID: types.CONFIGCHANNELID,
