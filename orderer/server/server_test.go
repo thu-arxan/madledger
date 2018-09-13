@@ -33,6 +33,8 @@ var (
 )
 
 func TestNewServer(t *testing.T) {
+	initTestEnvironment(".data")
+	initTestEnvironment(".data1")
 	var err error
 	server, err = NewServer(getTestConfig())
 	if err != nil {
@@ -41,7 +43,7 @@ func TestNewServer(t *testing.T) {
 	go func() {
 		server.Start()
 	}()
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 }
 
 func TestListChannelsAtNil(t *testing.T) {
@@ -177,7 +179,7 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 	go func() {
 		server.Start()
 	}()
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 	client, err := getClient()
 	if err != nil {
 		t.Fatal()
@@ -213,7 +215,7 @@ func TestAddChannel(t *testing.T) {
 	go func() {
 		server.Start()
 	}()
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 	// then try to create a channel
 	client, err := getClient()
 	if err != nil {
@@ -277,7 +279,7 @@ func TestServerRestartWithUserChannel(t *testing.T) {
 	go func() {
 		server.Start()
 	}()
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 	client, _ := getClient()
 	// Then try to send a tx to test channel
 	// then add a tx into test channel
@@ -296,6 +298,7 @@ func TestServerRestartWithUserChannel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	server.Stop()
 	initTestEnvironment(".data")
 }
 
