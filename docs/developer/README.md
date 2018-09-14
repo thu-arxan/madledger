@@ -51,11 +51,11 @@ Blockchain相关的代码。
 
 测试环境。
 
-### 2.10 脚本
+### 2.10 scripts
 
 - build.sh:　编译MadLedger。
 - test.sh: 运行所有测试。
-- vendor/format.sh: 由于git不会提交包含.git的文件夹，所以需要删除vendor中的.git文件。
+- vendor.sh: 由于git不会提交包含.git的文件夹，所以需要删除vendor中的.git文件。
 
 ## 3 注意事项
 
