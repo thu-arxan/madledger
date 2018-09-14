@@ -49,12 +49,12 @@ client channel create -n $name
 
 Account命令负责client对账户相关的操作。
 
-#### 1.3.1 info
+#### 1.3.1 list
 
 查看当前账户信息。
 
 ```bash
-client account info
+client account list
 ```
 
 会看到类似于如下所示的结果。
