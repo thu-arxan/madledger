@@ -4,8 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"madledger/client/lib"
+	"os"
 
-	"github.com/modood/table"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -50,7 +51,10 @@ func runInfo(cmd *cobra.Command, args []string) error {
 	if len(infos) == 0 {
 		fmt.Println("No results!")
 	} else {
-		table.Output(infos)
+		table := tablewriter.NewWriter(os.Stdout)
+		table.SetHeader([]string{"Address"})
+		table.Append([]string{address.String()})
+		table.Render()
 	}
 	return nil
 }
