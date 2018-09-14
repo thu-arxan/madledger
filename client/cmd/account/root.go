@@ -15,6 +15,6 @@ var (
 
 // Cmd return the account command
 func Cmd() *cobra.Command {
-	accountCmd.AddCommand(infoCmd)
+	accountCmd.AddCommand(listCmd)
 	return accountCmd
 }
