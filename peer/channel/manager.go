@@ -9,7 +9,6 @@ import (
 	"madledger/executor/evm"
 	"madledger/peer/db"
 	"madledger/peer/orderer"
-	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -25,9 +24,9 @@ type Manager struct {
 	// db is the database
 	db db.DB
 	// chain manager
-	cm            *blockchain.Manager
-	init          bool
-	stop          chan bool
+	cm *blockchain.Manager
+	// run           bool
+	// stop          chan bool
 	ordererClient *orderer.Client
 }
 
@@ -38,11 +37,11 @@ func NewManager(id, dir string, db db.DB, ordererClient *orderer.Client) (*Manag
 		return nil, err
 	}
 	return &Manager{
-		id:            id,
-		db:            db,
-		cm:            cm,
-		init:          false,
-		stop:          make(chan bool),
+		id: id,
+		db: db,
+		cm: cm,
+		// run:           false,
+		// stop:          make(chan bool),
 		ordererClient: ordererClient,
 	}, nil
 }
@@ -53,19 +52,26 @@ func NewManager(id, dir string, db db.DB, ordererClient *orderer.Client) (*Manag
 // It should be replaced as soon as possible.
 // TODO:
 func (m *Manager) Start() {
-	ticker := time.NewTicker(500 * time.Millisecond)
-	defer ticker.Stop()
 	log.Infof("%s is starting...", m.id)
+	// m.run = true
+	// var blockChan = make(chan *types.Block)
 	for {
-		select {
-		case <-ticker.C:
-			block, err := m.fetchBlock()
-			if err == nil {
-				// m.cm.AddBlock(block)
-				m.AddBlock(block)
-			}
+		block, err := m.fetchBlock()
+		if err == nil {
+			m.AddBlock(block)
 		}
 	}
+}
+
+// Stop will stop the manager
+// TODO: find a good way to stop
+func (m *Manager) Stop() {
+	// if m.run {
+	// 	m.stop <- true
+	// 	for m.run {
+	// 		time.Sleep(1 * time.Millisecond)
+	// 	}
+	// }
 }
 
 // AddBlock add a block
@@ -148,5 +154,5 @@ func (m *Manager) RunBlock(num uint64) error {
 }
 
 func (m *Manager) fetchBlock() (*types.Block, error) {
-	return m.ordererClient.FetchBlock(m.id, m.cm.GetExcept())
+	return m.ordererClient.FetchBlock(m.id, m.cm.GetExcept(), true)
 }
