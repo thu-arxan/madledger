@@ -117,10 +117,13 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig) (*Channe
 }
 
 // FetchBlock return the block if both channel and block exists
-func (manager *ChannelManager) FetchBlock(channelID string, num uint64) (*types.Block, error) {
+func (manager *ChannelManager) FetchBlock(channelID string, num uint64, async bool) (*types.Block, error) {
 	cm, err := manager.getChannelManager(channelID)
 	if err != nil {
 		return nil, err
+	}
+	if async {
+		return cm.FetchBlockAsync(num)
 	}
 	return cm.FetchBlock(num)
 }

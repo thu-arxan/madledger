@@ -27,26 +27,26 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 type FetchBlockBehavior int32
 
 const (
-	// Return block until the block is ready
-	FetchBlockBehavior_BLOCK_UNTIL_READY FetchBlockBehavior = 0
 	// Fail right away if the block is not exist
-	FetchBlockBehavior_FAIL_IF_NOT_READY FetchBlockBehavior = 1
+	FetchBlockBehavior_FAIL_IF_NOT_READY FetchBlockBehavior = 0
+	// Return block until the block is ready
+	FetchBlockBehavior_BLOCK_UNTIL_READY FetchBlockBehavior = 1
 )
 
 var FetchBlockBehavior_name = map[int32]string{
-	0: "BLOCK_UNTIL_READY",
-	1: "FAIL_IF_NOT_READY",
+	0: "FAIL_IF_NOT_READY",
+	1: "BLOCK_UNTIL_READY",
 }
 var FetchBlockBehavior_value = map[string]int32{
-	"BLOCK_UNTIL_READY": 0,
-	"FAIL_IF_NOT_READY": 1,
+	"FAIL_IF_NOT_READY": 0,
+	"BLOCK_UNTIL_READY": 1,
 }
 
 func (x FetchBlockBehavior) String() string {
 	return proto.EnumName(FetchBlockBehavior_name, int32(x))
 }
 func (FetchBlockBehavior) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_service_3679a799e13e3502, []int{0}
+	return fileDescriptor_service_d1f215bfe9ac4f7a, []int{0}
 }
 
 // However, this is not contains sig now, but this is necessary
@@ -65,7 +65,7 @@ func (m *FetchBlockRequest) Reset()         { *m = FetchBlockRequest{} }
 func (m *FetchBlockRequest) String() string { return proto.CompactTextString(m) }
 func (*FetchBlockRequest) ProtoMessage()    {}
 func (*FetchBlockRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_3679a799e13e3502, []int{0}
+	return fileDescriptor_service_d1f215bfe9ac4f7a, []int{0}
 }
 func (m *FetchBlockRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FetchBlockRequest.Unmarshal(m, b)
@@ -103,7 +103,7 @@ func (m *FetchBlockRequest) GetBehavior() FetchBlockBehavior {
 	if m != nil {
 		return m.Behavior
 	}
-	return FetchBlockBehavior_BLOCK_UNTIL_READY
+	return FetchBlockBehavior_FAIL_IF_NOT_READY
 }
 
 type ListChannelsRequest struct {
@@ -118,7 +118,7 @@ func (m *ListChannelsRequest) Reset()         { *m = ListChannelsRequest{} }
 func (m *ListChannelsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListChannelsRequest) ProtoMessage()    {}
 func (*ListChannelsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_3679a799e13e3502, []int{1}
+	return fileDescriptor_service_d1f215bfe9ac4f7a, []int{1}
 }
 func (m *ListChannelsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListChannelsRequest.Unmarshal(m, b)
@@ -157,7 +157,7 @@ func (m *ChannelInfos) Reset()         { *m = ChannelInfos{} }
 func (m *ChannelInfos) String() string { return proto.CompactTextString(m) }
 func (*ChannelInfos) ProtoMessage()    {}
 func (*ChannelInfos) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_3679a799e13e3502, []int{2}
+	return fileDescriptor_service_d1f215bfe9ac4f7a, []int{2}
 }
 func (m *ChannelInfos) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ChannelInfos.Unmarshal(m, b)
@@ -197,7 +197,7 @@ func (m *ChannelInfo) Reset()         { *m = ChannelInfo{} }
 func (m *ChannelInfo) String() string { return proto.CompactTextString(m) }
 func (*ChannelInfo) ProtoMessage()    {}
 func (*ChannelInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_3679a799e13e3502, []int{3}
+	return fileDescriptor_service_d1f215bfe9ac4f7a, []int{3}
 }
 func (m *ChannelInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ChannelInfo.Unmarshal(m, b)
@@ -243,7 +243,7 @@ func (m *AddChannelRequest) Reset()         { *m = AddChannelRequest{} }
 func (m *AddChannelRequest) String() string { return proto.CompactTextString(m) }
 func (*AddChannelRequest) ProtoMessage()    {}
 func (*AddChannelRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_3679a799e13e3502, []int{4}
+	return fileDescriptor_service_d1f215bfe9ac4f7a, []int{4}
 }
 func (m *AddChannelRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AddChannelRequest.Unmarshal(m, b)
@@ -281,7 +281,7 @@ func (m *AddTxRequest) Reset()         { *m = AddTxRequest{} }
 func (m *AddTxRequest) String() string { return proto.CompactTextString(m) }
 func (*AddTxRequest) ProtoMessage()    {}
 func (*AddTxRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_3679a799e13e3502, []int{5}
+	return fileDescriptor_service_d1f215bfe9ac4f7a, []int{5}
 }
 func (m *AddTxRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AddTxRequest.Unmarshal(m, b)
@@ -324,7 +324,7 @@ func (m *TxStatus) Reset()         { *m = TxStatus{} }
 func (m *TxStatus) String() string { return proto.CompactTextString(m) }
 func (*TxStatus) ProtoMessage()    {}
 func (*TxStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_3679a799e13e3502, []int{6}
+	return fileDescriptor_service_d1f215bfe9ac4f7a, []int{6}
 }
 func (m *TxStatus) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TxStatus.Unmarshal(m, b)
@@ -391,7 +391,7 @@ func (m *GetTxStatusRequest) Reset()         { *m = GetTxStatusRequest{} }
 func (m *GetTxStatusRequest) String() string { return proto.CompactTextString(m) }
 func (*GetTxStatusRequest) ProtoMessage()    {}
 func (*GetTxStatusRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_3679a799e13e3502, []int{7}
+	return fileDescriptor_service_d1f215bfe9ac4f7a, []int{7}
 }
 func (m *GetTxStatusRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetTxStatusRequest.Unmarshal(m, b)
@@ -672,9 +672,9 @@ var _Peer_serviceDesc = grpc.ServiceDesc{
 	Metadata: "service.proto",
 }
 
-func init() { proto.RegisterFile("service.proto", fileDescriptor_service_3679a799e13e3502) }
+func init() { proto.RegisterFile("service.proto", fileDescriptor_service_d1f215bfe9ac4f7a) }
 
-var fileDescriptor_service_3679a799e13e3502 = []byte{
+var fileDescriptor_service_d1f215bfe9ac4f7a = []byte{
 	// 518 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0x5d, 0x6f, 0xd3, 0x30,
 	0x14, 0xad, 0xd7, 0x0f, 0xda, 0x9b, 0x0e, 0xda, 0xbb, 0x31, 0x85, 0x30, 0xa1, 0xc8, 0x4f, 0xd1,
@@ -699,14 +699,14 @@ var fileDescriptor_service_3679a799e13e3502 = []byte{
 	0x6e, 0x37, 0xca, 0x2e, 0xb9, 0xc4, 0xab, 0xb3, 0xb4, 0x42, 0x0f, 0x1e, 0x75, 0xa3, 0xb5, 0x12,
 	0xb3, 0x85, 0x6a, 0x87, 0xa1, 0xe0, 0x52, 0xda, 0x65, 0xad, 0xfb, 0x2f, 0x4c, 0x07, 0x80, 0xef,
 	0xb9, 0x32, 0x26, 0xef, 0x17, 0x20, 0x84, 0x52, 0x10, 0xfb, 0x3d, 0x6d, 0xb8, 0xc6, 0xf4, 0xfa,
-	0xa2, 0x03, 0xb8, 0x1f, 0x12, 0x7c, 0x0c, 0xcd, 0xce, 0x70, 0xdc, 0xfd, 0x30, 0xfd, 0x34, 0x0a,
-	0xfc, 0xe1, 0x94, 0xf5, 0xdb, 0xbd, 0xcf, 0x8d, 0xc2, 0x16, 0x1e, 0xb4, 0xfd, 0xe1, 0xd4, 0x1f,
-	0x4c, 0x47, 0xe3, 0x20, 0x85, 0x49, 0xeb, 0x37, 0x81, 0x07, 0x63, 0x11, 0x72, 0xc1, 0x05, 0xbe,
+	0xa2, 0x03, 0xb8, 0x1f, 0x12, 0x7c, 0x0c, 0xcd, 0x41, 0xdb, 0x1f, 0x4e, 0xfd, 0xc1, 0x74, 0x34,
+	0x0e, 0xa6, 0xac, 0xdf, 0xee, 0x7d, 0x6e, 0x14, 0xb6, 0x70, 0x67, 0x38, 0xee, 0x7e, 0x98, 0x7e,
+	0x1a, 0x05, 0xfe, 0x30, 0x85, 0x49, 0xeb, 0x37, 0x81, 0x07, 0x63, 0x11, 0x72, 0xc1, 0x05, 0xbe,
 	0x06, 0xc8, 0xee, 0xc3, 0x27, 0xfb, 0x41, 0x4c, 0xad, 0x3a, 0xc7, 0x66, 0x4b, 0xa3, 0xb4, 0x80,
 	0x5d, 0xa8, 0xe7, 0xe3, 0x88, 0x4f, 0x0d, 0xe1, 0x40, 0x48, 0x9d, 0xd3, 0x03, 0x51, 0x93, 0xb4,
 	0x80, 0x6f, 0x01, 0xb2, 0x60, 0x64, 0xf2, 0x7b, 0x61, 0x71, 0x0e, 0x65, 0x95, 0x16, 0xf0, 0x0a,
 	0xca, 0x3a, 0x25, 0x78, 0x9a, 0x3b, 0xba, 0x0b, 0x8d, 0xd3, 0xc8, 0x82, 0x92, 0x34, 0x9e, 0x16,
 	0x5a, 0x7d, 0x28, 0x7d, 0xe4, 0x5c, 0xe0, 0x1b, 0xb0, 0x72, 0x13, 0xc1, 0xdd, 0x7f, 0x70, 0x7f,
-	0x4c, 0x87, 0xae, 0x99, 0x27, 0x1f, 0x8c, 0x97, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff, 0xb7, 0x40,
-	0x03, 0x16, 0x48, 0x04, 0x00, 0x00,
+	0x4c, 0x87, 0xae, 0x99, 0x27, 0x1f, 0x8c, 0x97, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff, 0xa9, 0xff,
+	0xa3, 0x4c, 0x48, 0x04, 0x00, 0x00,
 }

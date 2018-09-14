@@ -12,6 +12,7 @@ import (
 	pb "madledger/protos"
 	"os"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -148,7 +149,6 @@ func TestFetchBlockAtNil(t *testing.T) {
 	}
 	genesisBlocksHash[types.CONFIGCHANNELID] = typesConfigGenesisBlock.Hash()
 	server.Stop()
-	// initTestEnvironment(".data")
 }
 
 func TestServerRestart(t *testing.T) {
@@ -206,7 +206,7 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 		t.Fatal()
 	}
 	server.Stop()
-	initTestEnvironment(".data1")
+	// initTestEnvironment(".data1")
 }
 
 func TestAddChannel(t *testing.T) {
@@ -270,7 +270,6 @@ func TestAddChannel(t *testing.T) {
 	}
 	// then stop
 	server.Stop()
-
 }
 
 func TestServerRestartWithUserChannel(t *testing.T) {
@@ -302,7 +301,86 @@ func TestServerRestartWithUserChannel(t *testing.T) {
 		t.Fatal(err)
 	}
 	server.Stop()
+}
+
+func TestFetchBlockAsync(t *testing.T) {
+	var err error
+	server, err = NewServer(getTestConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		server.Start()
+	}()
+	time.Sleep(300 * time.Millisecond)
+	client, _ := getClient()
+	channelInfos, _ := client.ListChannels(context.Background(), &pb.ListChannelsRequest{
+		System: true,
+	})
+	var globalInfo *pb.ChannelInfo
+	for _, channelInfo := range channelInfos.Channels {
+		if channelInfo.ChannelID == types.GLOBALCHANNELID {
+			globalInfo = channelInfo
+			break
+		}
+	}
+	exceptNum := globalInfo.BlockSize
+	// try to fecth the block sync which is not exist
+	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
+		ChannelID: types.GLOBALCHANNELID,
+		Number:    exceptNum,
+		Behavior:  pb.FetchBlockBehavior_FAIL_IF_NOT_READY,
+	})
+	if err == nil {
+		t.Fatal()
+	}
+	// Then async fetch block
+	// first here is a block which is exist
+	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
+		ChannelID: types.GLOBALCHANNELID,
+		Number:    0,
+		Behavior:  pb.FetchBlockBehavior_BLOCK_UNTIL_READY,
+	})
+	if err != nil {
+		t.Fatal()
+	}
+	// then fetch the except block
+	var wg sync.WaitGroup
+	wg.Add(1)
+	// fetch a block, of course this can not be done until a new block is generated.
+	go func() {
+		defer wg.Done()
+		block, err := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
+			ChannelID: types.GLOBALCHANNELID,
+			Number:    exceptNum,
+			Behavior:  pb.FetchBlockBehavior_BLOCK_UNTIL_READY,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if block.Header.ChannelID != types.GLOBALCHANNELID || block.Header.Number != exceptNum {
+			t.Fatal()
+		}
+	}()
+	wg.Add(1)
+	// add a new channel, which will create a new global block
+	go func() {
+		defer wg.Done()
+		time.Sleep(500 * time.Millisecond)
+		_, err = client.AddChannel(context.Background(), &pb.AddChannelRequest{
+			ChannelID: "async",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+	wg.Wait()
+	server.Stop()
+}
+
+func TestEnd(t *testing.T) {
 	initTestEnvironment(".data")
+	initTestEnvironment(".data1")
 }
 
 func getClient() (pb.OrdererClient, error) {

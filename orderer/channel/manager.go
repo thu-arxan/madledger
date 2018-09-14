@@ -172,3 +172,16 @@ func (manager *Manager) Stop() {
 func (manager *Manager) FetchBlock(num uint64) (*types.Block, error) {
 	return manager.cm.GetBlock(num)
 }
+
+// FetchBlockAsync will fetch book async.
+// However, it would be better if using a pool rather than using while.
+// TODO: fix it
+func (manager *Manager) FetchBlockAsync(num uint64) (*types.Block, error) {
+	for {
+		block, err := manager.cm.GetBlock(num)
+		if err == nil {
+			return block, err
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
