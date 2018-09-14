@@ -26,6 +26,8 @@ func init() {
 	infoCmd.RunE = runInfo
 	infoCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
 	infoViper.BindPFlag("config", infoCmd.Flags().Lookup("config"))
+	infoCmd.Flags().StringP("language", "l", "en", "The language of client")
+	infoViper.BindPFlag("language", infoCmd.Flags().Lookup("language"))
 }
 
 func runInfo(cmd *cobra.Command, args []string) error {
@@ -33,6 +35,11 @@ func runInfo(cmd *cobra.Command, args []string) error {
 	if cfgFile == "" {
 		return errors.New("The config file of client can not be nil")
 	}
+	language := infoViper.GetString("language")
+	if language != "zh" {
+		language = "en"
+	}
+
 	client, err := lib.NewClient(cfgFile)
 	if err != nil {
 		return err
@@ -52,7 +59,12 @@ func runInfo(cmd *cobra.Command, args []string) error {
 		fmt.Println("No results!")
 	} else {
 		table := tablewriter.NewWriter(os.Stdout)
-		table.SetHeader([]string{"Address"})
+		if language == "en" {
+			table.SetHeader([]string{"Address"})
+		} else {
+			table.SetHeader([]string{"地址"})
+		}
+
 		table.Append([]string{address.String()})
 		table.Render()
 	}
