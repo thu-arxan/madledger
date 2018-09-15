@@ -144,12 +144,12 @@ func (manager *Manager) AddTx(tx *types.Tx) error {
 	// first register a notify event
 	var errChan = make(chan error)
 	var hash = util.Hex(tx.Hash())
-	err = manager.notify.addNotify(hash, &errChan)
+	err = manager.notify.addTxNotify(hash, &errChan)
 	if err != nil {
 		return err
 	}
 
-	defer manager.notify.deleteNotify(hash)
+	defer manager.notify.deleteTxNotify(hash)
 	err = manager.consensus.AddTx(manager.ID, txBytes)
 	if err != nil {
 		return err
@@ -175,13 +175,21 @@ func (manager *Manager) FetchBlock(num uint64) (*types.Block, error) {
 
 // FetchBlockAsync will fetch book async.
 // However, it would be better if using a pool rather than using while.
-// TODO: fix it
+// TODO: fix the thread unsafety
 func (manager *Manager) FetchBlockAsync(num uint64) (*types.Block, error) {
-	for {
+	var b = make(chan bool)
+	if manager.cm.GetExcept() > num {
 		block, err := manager.cm.GetBlock(num)
 		if err == nil {
 			return block, err
 		}
-		time.Sleep(10 * time.Millisecond)
+		return nil, err
 	}
+	manager.notify.addBlockNotify(num, &b)
+	<-b
+	block, err := manager.cm.GetBlock(num)
+	if err == nil {
+		return block, err
+	}
+	return nil, err
 }
