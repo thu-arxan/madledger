@@ -135,5 +135,6 @@ func RandNum(num int) int {
 
 // RandUint64 return uint64
 func RandUint64() uint64 {
+	rand.Seed(time.Now().UnixNano())
 	return rand.Uint64()
 }
