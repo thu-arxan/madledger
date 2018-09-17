@@ -57,7 +57,7 @@ func (db *LevelDB) HasChannel(id string) bool {
 // UpdateChannel is the implementation of DB
 // maybe the name should be checked
 // TODO
-func (db *LevelDB) UpdateChannel(id string, profile cc.Profile) error {
+func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
 	var p cc.Profile
 	var key = getChannelProfileKey(id)
 	if db.HasChannel(id) {

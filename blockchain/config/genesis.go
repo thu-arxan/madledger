@@ -14,13 +14,13 @@ import (
 func CreateGenesisBlock() (*types.Block, error) {
 	var payloads = []Payload{Payload{
 		ChannelID: types.CONFIGCHANNELID,
-		Profile: Profile{
+		Profile: &Profile{
 			Public: true,
 		},
 		Version: 1,
 	}, Payload{
 		ChannelID: types.GLOBALCHANNELID,
-		Profile: Profile{
+		Profile: &Profile{
 			Public: true,
 		},
 		Version: 1,

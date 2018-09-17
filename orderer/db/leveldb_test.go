@@ -41,7 +41,7 @@ func TestListChannel(t *testing.T) {
 }
 
 func TestUpdateChannel(t *testing.T) {
-	err := db.UpdateChannel("_config", cc.Profile{
+	err := db.UpdateChannel("_config", &cc.Profile{
 		Public: true,
 	})
 	if err != nil {
@@ -56,7 +56,7 @@ func TestUpdateChannel(t *testing.T) {
 		t.Fatal(fmt.Errorf("Should contain channel _config rather than %s", channels[0]))
 	}
 	// add _global
-	err = db.UpdateChannel("_global", cc.Profile{
+	err = db.UpdateChannel("_global", &cc.Profile{
 		Public: true,
 	})
 	if err != nil {
@@ -70,7 +70,7 @@ func TestUpdateChannel(t *testing.T) {
 		t.Fatal(errors.New("Channel _global is not contained"))
 	}
 	// add user channel
-	err = db.UpdateChannel("test", cc.Profile{
+	err = db.UpdateChannel("test", &cc.Profile{
 		Public: true,
 	})
 	if err != nil {

@@ -193,7 +193,7 @@ func (manager *ChannelManager) createChannel(req *pb.AddChannelRequest) error {
 	// manager.ConfigChannel.AddBlock(nil)
 	payload, _ := json.Marshal(cc.Payload{
 		ChannelID: channelID,
-		Profile: cc.Profile{
+		Profile: &cc.Profile{
 			Public: true,
 		},
 		Version: 1,

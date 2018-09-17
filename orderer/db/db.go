@@ -9,6 +9,6 @@ type DB interface {
 	// ListChannel list all channels
 	ListChannel() []string
 	HasChannel(id string) bool
-	UpdateChannel(id string, profile cc.Profile) error
+	UpdateChannel(id string, profile *cc.Profile) error
 	Close() error
 }
