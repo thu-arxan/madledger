@@ -74,6 +74,9 @@ func NewTx(channelID string, recipient common.Address, payload []byte, privKey c
 
 // Verify return true if a tx is packed well, else return false
 func (tx *Tx) Verify() bool {
+	if util.Hex(tx.Hash()) != tx.ID {
+		return false
+	}
 	if tx.Data.Sig == nil {
 		return false
 	}
@@ -89,6 +92,7 @@ func (tx *Tx) Verify() bool {
 	if !sig.Verify(hash, pk) {
 		return false
 	}
+
 	return true
 }
 

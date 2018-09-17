@@ -6,6 +6,8 @@ import (
 	cc "madledger/blockchain/config"
 	"madledger/core/types"
 
+	"madledger/common/util"
+
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -86,6 +88,27 @@ func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
 		return err
 	}
 	return nil
+}
+
+// AddBlock will records all txs in the block to get rid of duplicated txs
+func (db *LevelDB) AddBlock(block *types.Block) error {
+	for _, tx := range block.Transactions {
+		key := util.BytesCombine([]byte(block.Header.ChannelID), []byte(tx.ID))
+		if exist, _ := db.connect.Has(key, nil); exist {
+			return fmt.Errorf("The tx %s exists before", tx.ID)
+		}
+		db.connect.Put(key, []byte("true"), nil)
+	}
+	return nil
+}
+
+// HasTx return if the tx is contained
+func (db *LevelDB) HasTx(tx *types.Tx) bool {
+	key := util.BytesCombine([]byte(tx.Data.ChannelID), []byte(tx.ID))
+	if exist, _ := db.connect.Has(key, nil); exist {
+		return true
+	}
+	return false
 }
 
 // Close is the implementation of DB

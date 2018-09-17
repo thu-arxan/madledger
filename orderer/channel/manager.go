@@ -79,6 +79,11 @@ func (manager *Manager) AddBlock(block *types.Block) error {
 	}
 }
 
+// addBlock will records all txs in the block to get rid of duplicated txs
+func (manager *Manager) addBlock(block *types.Block) error {
+	return manager.db.AddBlock(block)
+}
+
 // GetBlockSize return the size of blocks
 func (manager *Manager) GetBlockSize() uint64 {
 	return manager.cm.GetExcept()

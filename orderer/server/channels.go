@@ -167,6 +167,7 @@ func (manager *ChannelManager) AddChannel(req *pb.AddChannelRequest) (*pb.Channe
 
 // createChannel try to create a channel
 // However, this should check if the channel exist and should be thread safety.
+// todo:
 func (manager *ChannelManager) createChannel(req *pb.AddChannelRequest) error {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
@@ -198,6 +199,7 @@ func (manager *ChannelManager) createChannel(req *pb.AddChannelRequest) error {
 		},
 		Version: 1,
 	})
+	// create tx
 	var tx = types.Tx{
 		Data: types.TxData{
 			ChannelID:    types.CONFIGCHANNELID,
@@ -209,6 +211,7 @@ func (manager *ChannelManager) createChannel(req *pb.AddChannelRequest) error {
 		},
 		Time: util.Now(),
 	}
+	tx.ID = util.Hex(tx.Hash())
 	// But the manager should not AddTx by consensus, because the confirm
 	// of consensus is not the final confirm.
 	err = manager.ConfigChannel.AddTx(&tx)
