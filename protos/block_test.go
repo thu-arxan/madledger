@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"madledger/common"
 	"madledger/common/crypto"
-	"madledger/common/util"
 	"madledger/core/types"
 	"reflect"
 	"testing"
@@ -22,28 +21,8 @@ func TestConvertBlock(t *testing.T) {
 	}
 	// test block with tx but without sig
 	var txs []*types.Tx
-	txs = append(txs, &types.Tx{
-		Data: types.TxData{
-			ChannelID:    types.GLOBALCHANNELID,
-			AccountNonce: 0,
-			Recipient:    common.ZeroAddress.Bytes(),
-			Payload:      nil,
-			Version:      1,
-			Sig:          nil,
-		},
-		Time: util.Now(),
-	})
-	txs = append(txs, &types.Tx{
-		Data: types.TxData{
-			ChannelID:    types.GLOBALCHANNELID,
-			AccountNonce: 0,
-			Recipient:    common.ZeroAddress.Bytes(),
-			Payload:      []byte("Hello World"),
-			Version:      1,
-			Sig:          nil,
-		},
-		Time: util.Now(),
-	})
+	txs = append(txs, types.NewTxWithoutSig(types.GLOBALCHANNELID, nil, 0))
+	txs = append(txs, types.NewTxWithoutSig(types.GLOBALCHANNELID, []byte("Hello World"), 0))
 	block = types.NewBlock(types.GLOBALCHANNELID, 1, types.GenesisBlockPrevHash, txs)
 	typesBlock, err = convertTypesBlock(block)
 	if err != nil {

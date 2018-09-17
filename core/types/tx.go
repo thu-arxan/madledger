@@ -72,6 +72,24 @@ func NewTx(channelID string, recipient common.Address, payload []byte, privKey c
 	return tx, nil
 }
 
+// NewTxWithoutSig is a special kind of tx without sig, it
+// is prepared for the genesis and global hash
+func NewTxWithoutSig(channelID string, payload []byte, accountNonce uint64) *Tx {
+	var tx = &Tx{
+		Data: TxData{
+			ChannelID:    channelID,
+			AccountNonce: accountNonce,
+			Recipient:    common.ZeroAddress.Bytes(),
+			Payload:      payload,
+			Version:      1,
+			Sig:          nil,
+		},
+		Time: util.Now(),
+	}
+	tx.ID = util.Hex(tx.Hash())
+	return tx
+}
+
 // Verify return true if a tx is packed well, else return false
 func (tx *Tx) Verify() bool {
 	if util.Hex(tx.Hash()) != tx.ID {
