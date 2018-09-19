@@ -2,6 +2,7 @@ package channel
 
 import (
 	"errors"
+	"fmt"
 	"madledger/blockchain"
 	"madledger/common"
 	"madledger/common/util"
@@ -9,6 +10,7 @@ import (
 	"madledger/executor/evm"
 	"madledger/peer/db"
 	"madledger/peer/orderer"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -24,25 +26,23 @@ type Manager struct {
 	// db is the database
 	db db.DB
 	// chain manager
-	cm *blockchain.Manager
-	// run           bool
-	// stop          chan bool
-	ordererClient *orderer.Client
+	cm          *blockchain.Manager
+	client      *orderer.Client
+	coordinator *Coordinator
 }
 
 // NewManager is the constructor of Manager
-func NewManager(id, dir string, db db.DB, ordererClient *orderer.Client) (*Manager, error) {
+func NewManager(id, dir string, db db.DB, client *orderer.Client, coordinator *Coordinator) (*Manager, error) {
 	cm, err := blockchain.NewManager(id, dir)
 	if err != nil {
 		return nil, err
 	}
 	return &Manager{
-		id: id,
-		db: db,
-		cm: cm,
-		// run:           false,
-		// stop:          make(chan bool),
-		ordererClient: ordererClient,
+		id:          id,
+		db:          db,
+		cm:          cm,
+		client:      client,
+		coordinator: coordinator,
 	}, nil
 }
 
@@ -53,10 +53,9 @@ func NewManager(id, dir string, db db.DB, ordererClient *orderer.Client) (*Manag
 // TODO:
 func (m *Manager) Start() {
 	log.Infof("%s is starting...", m.id)
-	// m.run = true
-	// var blockChan = make(chan *types.Block)
 	for {
 		block, err := m.fetchBlock()
+		// fmt.Println("Succeed to fetch block", m.id, ":", block.Header.Number)
 		if err == nil {
 			m.AddBlock(block)
 		}
@@ -66,26 +65,31 @@ func (m *Manager) Start() {
 // Stop will stop the manager
 // TODO: find a good way to stop
 func (m *Manager) Stop() {
-	// if m.run {
-	// 	m.stop <- true
-	// 	for m.run {
-	// 		time.Sleep(1 * time.Millisecond)
-	// 	}
-	// }
 }
 
 // AddBlock add a block
 func (m *Manager) AddBlock(block *types.Block) error {
 	// add into the blockchain
-	m.cm.AddBlock(block)
+	err := m.cm.AddBlock(block)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
 	switch block.Header.ChannelID {
 	case types.GLOBALCHANNELID:
 		m.AddGlobalBlock(block)
+		log.Infof("Add global block %d", block.Header.Number)
 	case types.CONFIGCHANNELID:
 		// todo
 	default:
-		// do nothing now
-		m.RunBlock(block.Header.Number)
+		for {
+			if m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
+				log.Infof("Run block %s:%d", m.id, block.Header.Number)
+				m.RunBlock(block.Header.Number)
+				return nil
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
 	}
 	return nil
 }
@@ -154,5 +158,5 @@ func (m *Manager) RunBlock(num uint64) error {
 }
 
 func (m *Manager) fetchBlock() (*types.Block, error) {
-	return m.ordererClient.FetchBlock(m.id, m.cm.GetExcept(), true)
+	return m.client.FetchBlock(m.id, m.cm.GetExcept(), true)
 }

@@ -167,7 +167,7 @@ func (manager *ChannelManager) AddChannel(req *pb.AddChannelRequest) (*pb.Channe
 
 // createChannel try to create a channel
 // However, this should check if the channel exist and should be thread safety.
-// todo:
+// todo: First add a tx then create channel
 func (manager *ChannelManager) createChannel(req *pb.AddChannelRequest) error {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
