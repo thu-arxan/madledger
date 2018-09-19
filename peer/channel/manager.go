@@ -80,7 +80,7 @@ func (m *Manager) AddBlock(block *types.Block) error {
 		m.AddGlobalBlock(block)
 		log.Infof("Add global block %d", block.Header.Number)
 	case types.CONFIGCHANNELID:
-		// todo
+		m.AddConfigBlock(block)
 	default:
 		for {
 			if m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {

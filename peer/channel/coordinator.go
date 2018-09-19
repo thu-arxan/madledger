@@ -62,8 +62,11 @@ func (c *Coordinator) CanRun(channelID string, num uint64) bool {
 	return false
 }
 
-// Locks will lock some channels
+// Locks will lock some channels because all blocks should run after the config
+// blocks are all done.
 func (c *Coordinator) Locks() {
+	c.lock.Lock()
+	defer c.lock.Unlock()
 
 }
 

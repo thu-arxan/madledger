@@ -29,4 +29,8 @@ type DB interface {
 	// GetStatus return the status of the tx
 	GetTxStatus(channelID, txID string) (*TxStatus, error)
 	SetTxStatus(channelID, txID string, status *TxStatus) error
+	BelongChannel(channelID string) bool
+	AddChannel(channelID string)
+	DeleteChannel(channelID string)
+	GetChannels() []string
 }

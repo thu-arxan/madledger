@@ -108,3 +108,54 @@ func (db *LevelDB) SetTxStatus(channelID, txID string, status *TxStatus) error {
 	}
 	return nil
 }
+
+// BelongChannel is the implementation of interface
+func (db *LevelDB) BelongChannel(channelID string) bool {
+	channels := db.GetChannels()
+	if util.Contain(channels, channelID) {
+		return true
+	}
+	return false
+}
+
+// AddChannel is the implementation of interface
+func (db *LevelDB) AddChannel(channelID string) {
+	channels := db.GetChannels()
+	if !util.Contain(channels, channelID) {
+		channels = append(channels, channelID)
+	}
+	db.setChannels(channels)
+}
+
+// DeleteChannel is the implementation of interface
+func (db *LevelDB) DeleteChannel(channelID string) {
+	oldChannels := db.GetChannels()
+	var newChannels []string
+	for i := range oldChannels {
+		if channelID != oldChannels[i] {
+			newChannels = append(newChannels, oldChannels[i])
+		}
+	}
+	db.setChannels(newChannels)
+}
+
+// GetChannels is the implementation of interface
+func (db *LevelDB) GetChannels() []string {
+	var channels []string
+	var key = []byte("channels")
+	if ok, _ := db.connect.Has(key, nil); !ok {
+		return channels
+	}
+	value, err := db.connect.Get(key, nil)
+	if err != nil {
+		return channels
+	}
+	json.Unmarshal(value, &channels)
+	return channels
+}
+
+func (db *LevelDB) setChannels(channels []string) {
+	var key = []byte("channels")
+	value, _ := json.Marshal(channels)
+	db.connect.Put(key, value, nil)
+}
