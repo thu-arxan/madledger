@@ -32,9 +32,9 @@ func NewClient(addr string) (*Client, error) {
 
 // FetchBlock return block if exist, else return error
 func (c *Client) FetchBlock(channelID string, num uint64, async bool) (*types.Block, error) {
-	var behavior = pb.FetchBlockBehavior_FAIL_IF_NOT_READY
+	var behavior = pb.Behavior_FAIL_IF_NOT_READY
 	if async {
-		behavior = pb.FetchBlockBehavior_BLOCK_UNTIL_READY
+		behavior = pb.Behavior_RETURN_UNTIL_READY
 	}
 	pbBlock, err := c.ordererClient.FetchBlock(context.Background(), &pb.FetchBlockRequest{
 		ChannelID: channelID,

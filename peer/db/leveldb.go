@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"madledger/common"
 	"madledger/common/util"
+	"time"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -93,6 +94,26 @@ func (db *LevelDB) GetTxStatus(channelID, txID string) (*TxStatus, error) {
 		return nil, err
 	}
 	return &status, nil
+}
+
+// GetTxStatusAsync is the implementation of interface
+func (db *LevelDB) GetTxStatusAsync(channelID, txID string) (*TxStatus, error) {
+	var key = util.BytesCombine([]byte(channelID), []byte(txID))
+	for {
+		if ok, _ := db.connect.Has(key, nil); ok {
+			value, err := db.connect.Get(key, nil)
+			if err != nil {
+				return nil, err
+			}
+			var status TxStatus
+			err = json.Unmarshal(value, &status)
+			if err != nil {
+				return nil, err
+			}
+			return &status, nil
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
 }
 
 // SetTxStatus is the implementation of interface

@@ -330,7 +330,7 @@ func TestFetchBlockAsync(t *testing.T) {
 	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
 		ChannelID: types.GLOBALCHANNELID,
 		Number:    exceptNum,
-		Behavior:  pb.FetchBlockBehavior_FAIL_IF_NOT_READY,
+		Behavior:  pb.Behavior_FAIL_IF_NOT_READY,
 	})
 	if err == nil {
 		t.Fatal()
@@ -340,7 +340,7 @@ func TestFetchBlockAsync(t *testing.T) {
 	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
 		ChannelID: types.GLOBALCHANNELID,
 		Number:    0,
-		Behavior:  pb.FetchBlockBehavior_BLOCK_UNTIL_READY,
+		Behavior:  pb.Behavior_RETURN_UNTIL_READY,
 	})
 	if err != nil {
 		t.Fatal()
@@ -354,7 +354,7 @@ func TestFetchBlockAsync(t *testing.T) {
 		block, err := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
 			ChannelID: types.GLOBALCHANNELID,
 			Number:    exceptNum,
-			Behavior:  pb.FetchBlockBehavior_BLOCK_UNTIL_READY,
+			Behavior:  pb.Behavior_RETURN_UNTIL_READY,
 		})
 		if err != nil {
 			t.Fatal(err)

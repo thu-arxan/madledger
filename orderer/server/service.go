@@ -8,7 +8,7 @@ import (
 
 // FetchBlock is the implementation of protos
 func (s *Server) FetchBlock(ctx context.Context, req *pb.FetchBlockRequest) (*pb.Block, error) {
-	block, err := s.ChannelManager.FetchBlock(req.ChannelID, req.Number, req.Behavior == pb.FetchBlockBehavior_BLOCK_UNTIL_READY)
+	block, err := s.ChannelManager.FetchBlock(req.ChannelID, req.Number, req.Behavior == pb.Behavior_RETURN_UNTIL_READY)
 	if err != nil {
 		return nil, err
 	}

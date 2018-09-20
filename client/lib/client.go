@@ -135,6 +135,7 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 	status, err := c.peerClient.GetTxStatus(context.Background(), &pb.GetTxStatusRequest{
 		ChannelID: tx.Data.ChannelID,
 		TxID:      tx.ID,
+		Behavior:  pb.Behavior_RETURN_UNTIL_READY,
 	})
 	if err != nil {
 		return nil, err

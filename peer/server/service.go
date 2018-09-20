@@ -7,7 +7,7 @@ import (
 
 // GetTxStatus is the implementation of protos
 func (s *Server) GetTxStatus(ctx context.Context, req *pb.GetTxStatusRequest) (*pb.TxStatus, error) {
-	status, err := s.ChannelManager.GetTxStatus(req.ChannelID, req.TxID)
+	status, err := s.ChannelManager.GetTxStatus(req.ChannelID, req.TxID, true)
 	if err != nil {
 		return &pb.TxStatus{}, nil
 	}

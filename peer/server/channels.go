@@ -57,7 +57,10 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig, ordererC
 }
 
 // GetTxStatus return the status of tx
-func (m *ChannelManager) GetTxStatus(channelID, txID string) (*db.TxStatus, error) {
+func (m *ChannelManager) GetTxStatus(channelID, txID string, async bool) (*db.TxStatus, error) {
+	if async {
+		return m.db.GetTxStatusAsync(channelID, txID)
+	}
 	return m.db.GetTxStatus(channelID, txID)
 }
 
@@ -70,9 +73,11 @@ func (m *ChannelManager) start() error {
 		for {
 			select {
 			case <-ticker.C:
-				channels, err := m.ordererClient.ListChannels()
-				if err == nil {
-					for _, channel := range channels {
+				channels := m.db.GetChannels()
+				for _, channel := range channels {
+					switch channel {
+					case types.GLOBALCHANNELID, types.CONFIGCHANNELID:
+					default:
 						if !m.hasChannel(channel) {
 							manager, err := m.loadChannel(channel)
 							if err == nil {
@@ -82,6 +87,7 @@ func (m *ChannelManager) start() error {
 					}
 				}
 			}
+
 		}
 	}()
 	time.Sleep(20 * time.Millisecond)

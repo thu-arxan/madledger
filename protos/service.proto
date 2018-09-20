@@ -5,6 +5,14 @@ package protos;
 import "tx.proto";
 import "block.proto";
 
+// Behavior defines the behavior
+enum Behavior {
+    // Fail right away if not exist
+    FAIL_IF_NOT_READY = 0;
+    // Return until ready
+    RETURN_UNTIL_READY = 1;
+} 
+
 // The services that orderers should provide
 service Orderer{
     rpc FetchBlock(FetchBlockRequest) returns (Block) {}
@@ -13,13 +21,7 @@ service Orderer{
     rpc AddTx(AddTxRequest) returns(TxStatus){}
 }
 
-// FetchBlockBehavior defines the behavior of FetchBlock
-enum FetchBlockBehavior {
-    // Fail right away if the block is not exist
-    FAIL_IF_NOT_READY = 0;
-    // Return block until the block is ready
-    BLOCK_UNTIL_READY = 1;
-} 
+
 
 // However, this is not contains sig now, but this is necessary
 // if we want to verify the permission.
@@ -27,7 +29,7 @@ enum FetchBlockBehavior {
 message FetchBlockRequest {
     string ChannelID = 1;
     uint64 Number = 2;
-    FetchBlockBehavior Behavior = 3;
+    Behavior Behavior = 3;
 }
 
 message ListChannelsRequest {
@@ -72,4 +74,5 @@ service Peer {
 message GetTxStatusRequest {
     string ChannelID = 1;
     string TxID = 2;
+    Behavior Behavior = 3;
 }
