@@ -86,7 +86,7 @@ func (mem *dynamicMemory) read(offset, length uint64) ([]byte, error) {
 }
 
 func (mem *dynamicMemory) Write(offset *big.Int, value []byte) error {
-	fmt.Printf("Memory write at %d, data is %b\n", offset, value)
+	// fmt.Printf("Memory write at %d, data is %b\n", offset, value)
 	// Ensures positive and not too wide
 	if !offset.IsUint64() {
 		return fmt.Errorf("offset %v does not fit inside an unsigned 64-bit integer", offset)

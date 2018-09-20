@@ -123,8 +123,8 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 
 	for {
 		var op = codeGetOp(code, pc)
-		fmt.Printf(">>> Opcode[%d] is %s, pc is %d\n", i, op, pc)
-		stack.Print(10)
+		// fmt.Printf(">>> Opcode[%d] is %s, pc is %d\n", i, op, pc)
+		// stack.Print(10)
 		i++
 		switch op {
 		case ADD: // 0x01

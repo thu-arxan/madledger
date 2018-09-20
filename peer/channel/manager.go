@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"madledger/blockchain"
 	"madledger/common"
-	"madledger/common/util"
 	"madledger/core/types"
 	"madledger/executor/evm"
 	"madledger/peer/db"
@@ -119,8 +118,8 @@ func (m *Manager) RunBlock(num uint64) error {
 			evm := evm.NewEVM(*context, senderAddress, m.db)
 			log.Infof("The address of receiver is %s", receiver.GetAddress().String())
 			if receiver.GetAddress().String() != common.ZeroAddress.String() {
-				log.Info("This is a normal call")
-				log.Info(util.Hex(receiver.GetCode()))
+				// log.Info("This is a normal call")
+				// log.Info(util.Hex(receiver.GetCode()))
 				output, err := evm.Call(sender, receiver, receiver.GetCode(), tx.Data.Payload, 0)
 				status := &db.TxStatus{
 					Err:         "",
