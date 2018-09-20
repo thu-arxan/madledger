@@ -1,6 +1,7 @@
 package channel
 
 import (
+	"errors"
 	"madledger/blockchain"
 	"madledger/consensus"
 	"madledger/core/types"
@@ -49,46 +50,6 @@ func NewManager(id, dir string, db db.DB) (*Manager, error) {
 	}, nil
 }
 
-// HasGenesisBlock return if the channel has a genesis block
-func (manager *Manager) HasGenesisBlock() bool {
-	return manager.cm.HasGenesisBlock()
-}
-
-// GetBlock return the block of num
-func (manager *Manager) GetBlock(num uint64) (*types.Block, error) {
-	return manager.cm.GetBlock(num)
-}
-
-// AddBlock add a block
-// TODO: check conflict and update db
-func (manager *Manager) AddBlock(block *types.Block) error {
-	var err error
-	err = manager.cm.AddBlock(block)
-	if err != nil {
-		return err
-	}
-	// check is there is any need to update local state of orderer
-	switch manager.ID {
-	case types.CONFIGCHANNELID:
-		return manager.AddConfigBlock(block)
-	case types.GLOBALCHANNELID:
-		return nil
-	default:
-		// todo
-		return nil
-	}
-}
-
-// addBlock will records all txs in the block to get rid of duplicated txs
-func (manager *Manager) addBlock(block *types.Block) error {
-	return manager.db.AddBlock(block)
-}
-
-// GetBlockSize return the size of blocks
-func (manager *Manager) GetBlockSize() uint64 {
-	return manager.cm.GetExcept()
-}
-
 // Start starts the channel
 // TODO: many things to be done
 func (manager *Manager) Start(consensus consensus.Consensus, globalManager *Manager) {
@@ -103,17 +64,25 @@ func (manager *Manager) Start(consensus consensus.Consensus, globalManager *Mana
 			// However, this does not means that the block is added succeed, because it may need to be added into global channel.
 			// So here are many things need to be done.
 			txs := GetTxsFromConsensusBlock(cb)
-			if len(txs) == 0 {
+			var unduplicateTxs []*types.Tx
+			for _, tx := range txs {
+				if !util.Contain(unduplicateTxs, tx) {
+					if !manager.db.HasTx(tx) {
+						unduplicateTxs = append(unduplicateTxs, tx)
+					}
+				}
+			}
+			if len(unduplicateTxs) == 0 {
 				return
 			}
 			prevBlock := manager.cm.GetPrevBlock()
 			var block *types.Block
 			if prevBlock == nil {
-				log.Infof("Channel %s create new block %d", manager.ID, 0)
 				block = types.NewBlock(manager.ID, 0, types.GenesisBlockPrevHash, txs)
+				log.Infof("Channel %s create new block %d, hash is %s", manager.ID, 0, util.Hex(block.Hash().Bytes()))
 			} else {
-				log.Infof("Channel %s create new block %d", manager.ID, prevBlock.Header.Number+1)
 				block = types.NewBlock(manager.ID, prevBlock.Header.Number+1, prevBlock.Hash().Bytes(), txs)
+				log.Infof("Channel %s create new block %d, hash is %s", manager.ID, prevBlock.Header.Number+1, util.Hex(block.Hash().Bytes()))
 			}
 			// then if the channel is the global channel, the block is finished.
 			// else send a tx to the global channel
@@ -121,7 +90,7 @@ func (manager *Manager) Start(consensus consensus.Consensus, globalManager *Mana
 				tx := types.NewGlobalTx(manager.ID, block.Header.Number, block.Hash())
 				err := manager.globalManager.AddTx(tx)
 				if err != nil {
-					log.Fatalf("Channel %s failed to add tx into global channel", manager.ID)
+					log.Fatalf("Channel %s failed to add tx into global channel because %s", manager.ID, err)
 					return
 				}
 			}
@@ -140,8 +109,52 @@ func (manager *Manager) Start(consensus consensus.Consensus, globalManager *Mana
 	}
 }
 
+// HasGenesisBlock return if the channel has a genesis block
+func (manager *Manager) HasGenesisBlock() bool {
+	return manager.cm.HasGenesisBlock()
+}
+
+// GetBlock return the block of num
+func (manager *Manager) GetBlock(num uint64) (*types.Block, error) {
+	return manager.cm.GetBlock(num)
+}
+
+// AddBlock add a block
+// TODO: check conflict and update db
+func (manager *Manager) AddBlock(block *types.Block) error {
+	var err error
+	// first update db
+	manager.db.AddBlock(block)
+	// if err != nil {
+	// 	return err
+	// }
+	err = manager.cm.AddBlock(block)
+	if err != nil {
+		return err
+	}
+	// check is there is any need to update local state of orderer
+	switch manager.ID {
+	case types.CONFIGCHANNELID:
+		return manager.AddConfigBlock(block)
+	case types.GLOBALCHANNELID:
+		return nil
+	default:
+		// todo
+		return nil
+	}
+}
+
+// GetBlockSize return the size of blocks
+func (manager *Manager) GetBlockSize() uint64 {
+	return manager.cm.GetExcept()
+}
+
 // AddTx try to add a tx
 func (manager *Manager) AddTx(tx *types.Tx) error {
+	// First check if the tx exists aleaydy, if true return error right away
+	if manager.db.HasTx(tx) {
+		return errors.New("The tx exist in the blockchain aleardy")
+	}
 	txBytes, err := tx.Bytes()
 	if err != nil {
 		return err

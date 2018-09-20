@@ -105,6 +105,7 @@ func (db *LevelDB) AddBlock(block *types.Block) error {
 // HasTx return if the tx is contained
 func (db *LevelDB) HasTx(tx *types.Tx) bool {
 	key := util.BytesCombine([]byte(tx.Data.ChannelID), []byte(tx.ID))
+	fmt.Println("Search tx", util.Hex(key))
 	if exist, _ := db.connect.Has(key, nil); exist {
 		return true
 	}

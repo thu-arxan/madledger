@@ -12,6 +12,7 @@ import (
 	pb "madledger/protos"
 	"os"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -375,6 +376,44 @@ func TestFetchBlockAsync(t *testing.T) {
 		}
 	}()
 	wg.Wait()
+	server.Stop()
+}
+
+func TestAddDuplicateTxs(t *testing.T) {
+	var err error
+	server, err = NewServer(getTestConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		server.Start()
+	}()
+	time.Sleep(300 * time.Millisecond)
+	client, _ := getClient()
+	// Then try to send a tx to test channel
+	// then add a tx into test channel
+	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
+	typesTx, err := types.NewTx("test", common.ZeroAddress, []byte("Duplicate"), privKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pbTx, err := pb.NewTx(typesTx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: pbTx,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// then add the tx again
+	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: pbTx,
+	})
+	if !strings.Contains(err.Error(), "The tx exist in the blockchain aleardy") {
+		t.Error(err)
+	}
 	server.Stop()
 }
 

@@ -33,6 +33,7 @@ func NewGlobalTx(channelID string, num uint64, hash common.Hash) *Tx {
 		},
 		Time: util.Now(),
 	}
+	tx.ID = util.Hex(tx.Hash())
 	return tx
 }
 

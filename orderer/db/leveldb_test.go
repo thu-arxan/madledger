@@ -111,7 +111,6 @@ func TestAddBlock(t *testing.T) {
 	if err == nil {
 		t.Fatal()
 	}
-	fmt.Println(err)
 	if !db.HasTx(tx1) || !db.HasTx(tx2) {
 		t.Fatal()
 	}
