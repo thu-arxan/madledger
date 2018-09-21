@@ -113,9 +113,10 @@ func (c *Client) CreateChannel(channelID string) error {
 	})
 	if err != nil {
 		fmt.Printf("Failed to create channel %s because %s\n", channelID, err)
-	} else {
-		fmt.Println("Succeed!")
+		return err
 	}
+
+	fmt.Println("Succeed!")
 	return nil
 }
 
