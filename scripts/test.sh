@@ -27,3 +27,6 @@ go test madledger/orderer/server -count=1
 # run peer test
 go test madledger/peer/db -count=1
 go test madledger/peer/config -count=1
+
+# run all test
+go test madledger/tests -count=1
