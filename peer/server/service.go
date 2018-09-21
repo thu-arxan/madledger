@@ -19,3 +19,20 @@ func (s *Server) GetTxStatus(ctx context.Context, req *pb.GetTxStatusRequest) (*
 		ContractAddress: status.ContractAddress,
 	}, nil
 }
+
+// ListTxHistory is the implementation of protos
+// TODO: make sure the address is right and with signature
+func (s *Server) ListTxHistory(ctx context.Context, req *pb.ListTxHistoryRequest) (*pb.TxHistory, error) {
+	history := s.ChannelManager.ListTxHistory(req.Address)
+	var pbHistory = make(map[string]*pb.StringList)
+	for channelID, ids := range history {
+		value := new(pb.StringList)
+		for _, id := range ids {
+			value.Value = append(value.Value, id)
+		}
+		pbHistory[channelID] = value
+	}
+	return &pb.TxHistory{
+		Txs: pbHistory,
+	}, nil
+}

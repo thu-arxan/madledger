@@ -37,5 +37,5 @@ type DB interface {
 	AddChannel(channelID string)
 	DeleteChannel(channelID string)
 	GetChannels() []string
-	GetHistroies(address []byte) []string
+	ListTxHistory(address []byte) map[string][]string
 }

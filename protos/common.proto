@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package protos;
+
+
+// StringList is the array of string
+message StringList {
+    repeated string Value = 1;
+}

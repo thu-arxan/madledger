@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package protos;
 
+import "common.proto";
 import "tx.proto";
 import "block.proto";
 
@@ -69,6 +70,7 @@ message TxStatus {
 // Peer provides nothing now.
 service Peer {
     rpc GetTxStatus(GetTxStatusRequest) returns (TxStatus){}
+    rpc ListTxHistory(ListTxHistoryRequest) returns(TxHistory){}
 }
 
 message GetTxStatusRequest {
@@ -76,3 +78,14 @@ message GetTxStatusRequest {
     string TxID = 2;
     Behavior Behavior = 3;
 }
+
+message ListTxHistoryRequest {
+    bytes Address = 1;
+}
+
+// TxHistory includes all txs
+message TxHistory {
+    // repeated string Txs = 1;
+    map<string, StringList> Txs = 1;
+}
+

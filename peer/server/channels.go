@@ -64,6 +64,11 @@ func (m *ChannelManager) GetTxStatus(channelID, txID string, async bool) (*db.Tx
 	return m.db.GetTxStatus(channelID, txID)
 }
 
+// ListTxHistory return all txs of the address
+func (m *ChannelManager) ListTxHistory(address []byte) map[string][]string {
+	return m.db.ListTxHistory(address)
+}
+
 func (m *ChannelManager) start() error {
 	go m.GlobalChannel.Start()
 	go m.ConfigChannel.Start()

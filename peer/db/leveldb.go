@@ -2,7 +2,7 @@ package db
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"madledger/common"
 	"madledger/common/util"
 	"madledger/core/types"
@@ -46,7 +46,6 @@ func (db *LevelDB) GetAccount(address common.Address) (common.Account, error) {
 
 // SetAccount updates an account or add an account
 func (db *LevelDB) SetAccount(account common.Account) error {
-	fmt.Println("Set account:", account.GetAddress().String())
 	value, err := account.Bytes()
 	if err != nil {
 		return err
@@ -85,6 +84,9 @@ func (db *LevelDB) SetStorage(address common.Address, key common.Word256, value 
 // GetTxStatus is the implementation of interface
 func (db *LevelDB) GetTxStatus(channelID, txID string) (*TxStatus, error) {
 	var key = util.BytesCombine([]byte(channelID), []byte(txID))
+	if ok, _ := db.connect.Has(key, nil); !ok {
+		return nil, errors.New("Not exist")
+	}
 	value, err := db.connect.Get(key, nil)
 	if err != nil {
 		return nil, err
@@ -128,10 +130,8 @@ func (db *LevelDB) SetTxStatus(tx *types.Tx, status *TxStatus) error {
 	if err != nil {
 		return err
 	}
-	sender, err := tx.GetSender()
-	if err == nil {
-		db.addHistory(sender.Bytes(), tx.ID)
-	}
+	sender, _ := tx.GetSender()
+	db.addHistory(sender.Bytes(), tx.Data.ChannelID, tx.ID)
 	return nil
 }
 
@@ -180,30 +180,30 @@ func (db *LevelDB) GetChannels() []string {
 	return channels
 }
 
-// GetHistroies is the implementation of interface
-func (db *LevelDB) GetHistroies(address []byte) []string {
-	var txs []string
+// ListTxHistory is the implementation of interface
+func (db *LevelDB) ListTxHistory(address []byte) map[string][]string {
+	var txs = make(map[string][]string)
 	if ok, _ := db.connect.Has(address, nil); ok {
-		value, err := db.connect.Get(address, nil)
-		if err != nil {
-			json.Unmarshal(value, txs)
-		}
+		value, _ := db.connect.Get(address, nil)
+		json.Unmarshal(value, &txs)
 	}
 	return txs
 }
 
-func (db *LevelDB) addHistory(address []byte, txID string) {
+func (db *LevelDB) addHistory(address []byte, channelID, txID string) {
+	var txs = make(map[string][]string)
 	if ok, _ := db.connect.Has(address, nil); !ok {
-		txs := []string{txID}
+		txs[channelID] = []string{txID}
 		value, _ := json.Marshal(txs)
 		db.connect.Put(address, value, nil)
 	} else {
-		var txs []string
 		value, err := db.connect.Get(address, nil)
 		if err == nil {
 			json.Unmarshal(value, &txs)
-			if !util.Contain(txs, txID) {
-				txs = append(txs, txID)
+			if !util.Contain(txs, channelID) {
+				txs[channelID] = []string{txID}
+			} else {
+				txs[channelID] = append(txs[channelID], txID)
 			}
 			value, _ := json.Marshal(txs)
 			db.connect.Put(address, value, nil)
