@@ -133,7 +133,7 @@ func (m *Manager) RunBlock(num uint64) error {
 				} else {
 					log.Info(output)
 				}
-				m.db.SetTxStatus(m.id, tx.ID, status)
+				m.db.SetTxStatus(tx, status)
 			} else {
 				log.Info("This is a create call")
 				output, addr, err := evm.Create(sender, tx.Data.Payload, []byte{}, 0)
@@ -148,7 +148,7 @@ func (m *Manager) RunBlock(num uint64) error {
 					log.Error(err)
 				}
 				log.Infof("Get address %s", addr.String())
-				m.db.SetTxStatus(m.id, tx.ID, status)
+				m.db.SetTxStatus(tx, status)
 			}
 		}
 

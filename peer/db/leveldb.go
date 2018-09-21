@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"madledger/common"
 	"madledger/common/util"
+	"madledger/core/types"
 	"time"
 
 	"github.com/syndtr/goleveldb/leveldb"
@@ -117,15 +118,19 @@ func (db *LevelDB) GetTxStatusAsync(channelID, txID string) (*TxStatus, error) {
 }
 
 // SetTxStatus is the implementation of interface
-func (db *LevelDB) SetTxStatus(channelID, txID string, status *TxStatus) error {
+func (db *LevelDB) SetTxStatus(tx *types.Tx, status *TxStatus) error {
 	value, err := json.Marshal(status)
 	if err != nil {
 		return err
 	}
-	var key = util.BytesCombine([]byte(channelID), []byte(txID))
+	var key = util.BytesCombine([]byte(tx.Data.ChannelID), []byte(tx.ID))
 	err = db.connect.Put(key, value, nil)
 	if err != nil {
 		return err
+	}
+	sender, err := tx.GetSender()
+	if err == nil {
+		db.addHistory(sender.Bytes(), tx.ID)
 	}
 	return nil
 }
@@ -173,6 +178,37 @@ func (db *LevelDB) GetChannels() []string {
 	}
 	json.Unmarshal(value, &channels)
 	return channels
+}
+
+// GetHistroies is the implementation of interface
+func (db *LevelDB) GetHistroies(address []byte) []string {
+	var txs []string
+	if ok, _ := db.connect.Has(address, nil); ok {
+		value, err := db.connect.Get(address, nil)
+		if err != nil {
+			json.Unmarshal(value, txs)
+		}
+	}
+	return txs
+}
+
+func (db *LevelDB) addHistory(address []byte, txID string) {
+	if ok, _ := db.connect.Has(address, nil); !ok {
+		txs := []string{txID}
+		value, _ := json.Marshal(txs)
+		db.connect.Put(address, value, nil)
+	} else {
+		var txs []string
+		value, err := db.connect.Get(address, nil)
+		if err == nil {
+			json.Unmarshal(value, &txs)
+			if !util.Contain(txs, txID) {
+				txs = append(txs, txID)
+			}
+			value, _ := json.Marshal(txs)
+			db.connect.Put(address, value, nil)
+		}
+	}
 }
 
 func (db *LevelDB) setChannels(channels []string) {

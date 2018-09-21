@@ -1,6 +1,9 @@
 package db
 
-import "madledger/common"
+import (
+	"madledger/common"
+	"madledger/core/types"
+)
 
 // TxStatus return the status of tx
 type TxStatus struct {
@@ -29,9 +32,10 @@ type DB interface {
 	// GetStatus return the status of the tx
 	GetTxStatus(channelID, txID string) (*TxStatus, error)
 	GetTxStatusAsync(channelID, txID string) (*TxStatus, error)
-	SetTxStatus(channelID, txID string, status *TxStatus) error
+	SetTxStatus(tx *types.Tx, status *TxStatus) error
 	BelongChannel(channelID string) bool
 	AddChannel(channelID string)
 	DeleteChannel(channelID string)
 	GetChannels() []string
+	GetHistroies(address []byte) []string
 }
