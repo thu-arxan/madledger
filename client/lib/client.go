@@ -120,7 +120,6 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-	time.Sleep(1 * time.Second)
 	status, err := c.peerClient.GetTxStatus(context.Background(), &pb.GetTxStatusRequest{
 		ChannelID: tx.Data.ChannelID,
 		TxID:      tx.ID,
@@ -130,4 +129,12 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 		return nil, err
 	}
 	return status, nil
+}
+
+// GetHistories return the histories of address
+func (c *Client) GetHistories(address []byte) (*pb.TxHistory, error) {
+	histories, err := c.peerClient.ListTxHistory(context.Background(), &pb.ListTxHistoryRequest{
+		Address: address,
+	})
+	return histories, err
 }

@@ -21,7 +21,7 @@ var (
 )
 
 func init() {
-	callCmd.RunE = runcall
+	callCmd.RunE = runCall
 	callCmd.Flags().StringP("abi", "a", "", "The abi of tx")
 	callViper.BindPFlag("abi", callCmd.Flags().Lookup("abi"))
 	callCmd.Flags().StringP("func", "f", "", "The func of contract")
@@ -42,7 +42,7 @@ type callTxStatus struct {
 	Output      []string
 }
 
-func runcall(cmd *cobra.Command, args []string) error {
+func runCall(cmd *cobra.Command, args []string) error {
 	cfgFile := callViper.GetString("config")
 	if cfgFile == "" {
 		return errors.New("The config file of client can not be nil")

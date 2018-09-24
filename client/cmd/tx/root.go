@@ -19,6 +19,7 @@ var (
 func Cmd() *cobra.Command {
 	txCmd.AddCommand(createCmd)
 	txCmd.AddCommand(callCmd)
+	txCmd.AddCommand(historyCmd)
 	return txCmd
 }
 

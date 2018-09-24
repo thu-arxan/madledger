@@ -19,7 +19,7 @@ var (
 )
 
 func init() {
-	createCmd.RunE = runcreate
+	createCmd.RunE = runCreate
 	createCmd.Flags().StringP("bin", "b", "", "The bin of tx")
 	createViper.BindPFlag("bin", createCmd.Flags().Lookup("bin"))
 	createCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
@@ -34,7 +34,7 @@ type createTxStatus struct {
 	ContractAddress string
 }
 
-func runcreate(cmd *cobra.Command, args []string) error {
+func runCreate(cmd *cobra.Command, args []string) error {
 	cfgFile := createViper.GetString("config")
 	if cfgFile == "" {
 		return errors.New("The config file of client can not be nil")
