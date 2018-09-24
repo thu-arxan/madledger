@@ -4,6 +4,7 @@ import (
 	"errors"
 	"madledger/client/lib"
 
+	"github.com/modood/table"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -38,5 +39,10 @@ func runList(cmd *cobra.Command, args []string) error {
 		system = false
 	}
 
-	return client.ListChannel(system)
+	infos, err := client.ListChannel(system)
+	if err != nil {
+		return err
+	}
+	table.Output(infos)
+	return nil
 }

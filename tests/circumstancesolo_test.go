@@ -1,7 +1,10 @@
 package tests
 
 import (
+	"encoding/hex"
+	"madledger/common"
 	"madledger/common/util"
+	"madledger/core/types"
 	oc "madledger/orderer/config"
 	orderer "madledger/orderer/server"
 	pc "madledger/peer/config"
@@ -9,6 +12,9 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	client "madledger/client/lib"
 )
@@ -21,42 +27,101 @@ import (
 * 4. During main operates, there are some necessary query to make sure everything is ok.
  */
 
+// Some consts of Balance
+const (
+	BalanceBin = "balance/Balance.bin"
+	BalanceAbi = "balance/Balance.abi"
+)
+
+var (
+	contractAddress common.Address
+)
+
 func TestInitCircumstanceSolo(t *testing.T) {
 	err := initDir(".orderer")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	err = initDir(".peer")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	err = initDir(".client")
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	require.NoError(t, err)
 }
 
 func TestCreateChannel(t *testing.T) {
 	startSoloOrderer()
 	startSoloPeer()
 	client, err := getSoloClient()
-	if err != nil {
-		t.Fatal(err)
+	require.NoError(t, err)
+	// first query channels
+	// then query channels
+	infos, err := client.ListChannel(true)
+	require.NoError(t, err)
+	channels := make([]string, 0)
+	for _, info := range infos {
+		channels = append(channels, info.Name)
 	}
+	require.Contains(t, channels, types.GLOBALCHANNELID)
+	require.Contains(t, channels, types.CONFIGCHANNELID)
+	require.NotContains(t, channels, "test")
+
 	// then add a channel
 	err = client.CreateChannel("test")
-	if err != nil {
-		t.Fatal(err)
+	require.NoError(t, err)
+	// then query channels
+	infos, err = client.ListChannel(true)
+	require.NoError(t, err)
+	channels = make([]string, 0)
+	for _, info := range infos {
+		channels = append(channels, info.Name)
 	}
-	// then query channels, however this should modify the function of client
-	// todo
+	require.Contains(t, channels, types.GLOBALCHANNELID)
+	require.Contains(t, channels, types.CONFIGCHANNELID)
+	require.Contains(t, channels, "test")
 
 	// create channel test again
 	err = client.CreateChannel("test")
-	if err == nil {
-		t.Fatal(err)
-	}
+	require.Error(t, err)
+}
+
+func TestCreateContract(t *testing.T) {
+	client, err := getSoloClient()
+	require.NoError(t, err)
+	// then try to create a tx
+	contractCodes, err := readCodes(BalanceBin)
+	require.NoError(t, err)
+	tx, err := types.NewTx("test", common.ZeroAddress, contractCodes, client.GetPrivKey())
+	require.NoError(t, err)
+	status, err := client.AddTx(tx)
+	require.NoError(t, err)
+	contractAddress = common.HexToAddress(status.ContractAddress)
+}
+
+func TestCallContract(t *testing.T) {
+	client, err := getSoloClient()
+	require.NoError(t, err)
+	// then call the contract which is created before
+	var payload []byte
+	// 1. get
+	payload, _ = hex.DecodeString("6d4ce63c")
+	tx, _ := types.NewTx("test", contractAddress, payload, client.GetPrivKey())
+	status, err := client.AddTx(tx)
+	require.NoError(t, err)
+	txStatus, err := getTxStatus(BalanceAbi, "get", status)
+	assert.Equal(t, []string{"10"}, txStatus.Output)
+	// 2. set 1314
+	payload, _ = hex.DecodeString("60fe47b10000000000000000000000000000000000000000000000000000000000000522")
+	tx, _ = types.NewTx("test", contractAddress, payload, client.GetPrivKey())
+	status, err = client.AddTx(tx)
+	require.NoError(t, err)
+	txStatus, err = getTxStatus(BalanceAbi, "set", status)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"true"}, txStatus.Output)
+	// 3. get
+	payload, _ = hex.DecodeString("6d4ce63c")
+	tx, _ = types.NewTx("test", contractAddress, payload, client.GetPrivKey())
+	status, err = client.AddTx(tx)
+	require.NoError(t, err)
+	txStatus, err = getTxStatus(BalanceAbi, "get", status)
+	assert.Equal(t, []string{"1314"}, txStatus.Output)
 }
 
 func TestEnd(t *testing.T) {

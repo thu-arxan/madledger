@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/modood/table"
 	"google.golang.org/grpc"
 
 	"madledger/client/config"
@@ -72,23 +71,17 @@ func (c *Client) GetPrivKey() crypto.PrivateKey {
 	return c.privKey
 }
 
-type channelInfo struct {
-	Name      string
-	System    bool
-	BlockSize uint64
-}
-
 // ListChannel list the info of channel
-func (c *Client) ListChannel(system bool) error {
+func (c *Client) ListChannel(system bool) ([]*ChannelInfo, error) {
 	infos, err := c.ordererClient.ListChannels(context.Background(), &pb.ListChannelsRequest{
 		System: system,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	var channelInfos []channelInfo
+	var channelInfos []*ChannelInfo
 	for i, channel := range infos.Channels {
-		channelInfos = append(channelInfos, channelInfo{
+		channelInfos = append(channelInfos, &ChannelInfo{
 			Name:      channel.ChannelID,
 			System:    false,
 			BlockSize: channel.BlockSize,
@@ -97,13 +90,8 @@ func (c *Client) ListChannel(system bool) error {
 			channelInfos[i].System = true
 		}
 	}
-	if len(channelInfos) == 0 {
-		fmt.Println("No results!")
-	} else {
-		table.Output(channelInfos)
-	}
 
-	return nil
+	return channelInfos, nil
 }
 
 // CreateChannel create a channel

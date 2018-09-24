@@ -84,6 +84,7 @@ func HexToAddress(s string) Address {
 }
 
 // AddressFromHexString convert hex string to address
+// Note: The str can not contain the prefix 0x
 func AddressFromHexString(str string) (Address, error) {
 	bs, err := hex.DecodeString(str)
 	if err != nil {
