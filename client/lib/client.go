@@ -131,10 +131,10 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 	return status, nil
 }
 
-// GetHistories return the histories of address
-func (c *Client) GetHistories(address []byte) (*pb.TxHistory, error) {
-	histories, err := c.peerClient.ListTxHistory(context.Background(), &pb.ListTxHistoryRequest{
+// GetHistory return the history of address
+func (c *Client) GetHistory(address []byte) (*pb.TxHistory, error) {
+	history, err := c.peerClient.ListTxHistory(context.Background(), &pb.ListTxHistoryRequest{
 		Address: address,
 	})
-	return histories, err
+	return history, err
 }

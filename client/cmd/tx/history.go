@@ -39,13 +39,13 @@ func runHistory(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	histories, err := client.GetHistories(address.Bytes())
+	history, err := client.GetHistory(address.Bytes())
 	if err != nil {
 		return err
 	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Channel", "TxID"})
-	for channel, txs := range histories.Txs {
+	for channel, txs := range history.Txs {
 		for _, id := range txs.Value {
 			table.Append([]string{channel, id})
 		}
