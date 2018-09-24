@@ -5,12 +5,19 @@ import (
 	"errors"
 	cc "madledger/blockchain/config"
 	"madledger/core/types"
+	"madledger/peer/db"
 )
 
 // AddConfigBlock add a config block
 // todo: private channel
 func (m *Manager) AddConfigBlock(block *types.Block) error {
-	for _, tx := range block.Transactions {
+	for i, tx := range block.Transactions {
+		status := &db.TxStatus{
+			Err:         "",
+			BlockNumber: block.Header.Number,
+			BlockIndex:  i,
+			Output:      nil,
+		}
 		payload, err := getConfigPayload(tx)
 		if err == nil {
 			channelID := payload.ChannelID
@@ -19,7 +26,10 @@ func (m *Manager) AddConfigBlock(block *types.Block) error {
 					m.db.AddChannel(channelID)
 				}
 			}
+		} else {
+			status.Err = err.Error()
 		}
+		m.db.SetTxStatus(tx, status)
 	}
 	return nil
 }

@@ -130,7 +130,10 @@ func (db *LevelDB) SetTxStatus(tx *types.Tx, status *TxStatus) error {
 	if err != nil {
 		return err
 	}
-	sender, _ := tx.GetSender()
+	sender, err := tx.GetSender()
+	if err != nil {
+		return err
+	}
 	db.addHistory(sender.Bytes(), tx.Data.ChannelID, tx.ID)
 	return nil
 }

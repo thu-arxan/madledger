@@ -124,6 +124,21 @@ func TestCallContract(t *testing.T) {
 	assert.Equal(t, []string{"1314"}, txStatus.Output)
 }
 
+func TestTxHistory(t *testing.T) {
+	client, err := getSoloClient()
+	require.NoError(t, err)
+	// then get the history of the client
+	address, _ := client.GetPrivKey().PubKey().Address()
+	history, err := client.GetHistory(address.Bytes())
+	require.NoError(t, err)
+	// check channel test
+	require.Contains(t, history.Txs, "test")
+	require.Len(t, history.Txs["test"].Value, 4)
+	// check config test
+	// TODO: fix the bug that the history does not contain config channel
+	// require.Contains(t, history.Txs, types.CONFIGCHANNELID)
+}
+
 func TestEnd(t *testing.T) {
 	os.RemoveAll(".orderer")
 	os.RemoveAll(".peer")
