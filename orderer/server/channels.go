@@ -5,7 +5,6 @@ import (
 	"fmt"
 	cc "madledger/blockchain/config"
 	gc "madledger/blockchain/global"
-	"madledger/common"
 	"madledger/common/util"
 	"madledger/consensus"
 	"madledger/consensus/solo"
@@ -156,9 +155,9 @@ func (manager *ChannelManager) ListChannels(req *pb.ListChannelsRequest) *pb.Cha
 	return infos
 }
 
-// AddChannel try to add a channel
-func (manager *ChannelManager) AddChannel(req *pb.AddChannelRequest) (*pb.ChannelInfo, error) {
-	err := manager.createChannel(req)
+// CreateChannel try to create a channel
+func (manager *ChannelManager) CreateChannel(tx *types.Tx) (*pb.ChannelInfo, error) {
+	err := manager.createChannel(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -168,11 +167,16 @@ func (manager *ChannelManager) AddChannel(req *pb.AddChannelRequest) (*pb.Channe
 // createChannel try to create a channel
 // However, this should check if the channel exist and should be thread safety.
 // todo: First add a tx then create channel
-func (manager *ChannelManager) createChannel(req *pb.AddChannelRequest) error {
+func (manager *ChannelManager) createChannel(tx *types.Tx) error {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 
-	var channelID = req.ChannelID
+	var payload cc.Payload
+	err := json.Unmarshal(tx.Data.Payload, &payload)
+	if err != nil {
+		return err
+	}
+	var channelID = payload.ChannelID
 	switch channelID {
 	case types.GLOBALCHANNELID:
 	case types.CONFIGCHANNELID:
@@ -186,35 +190,14 @@ func (manager *ChannelManager) createChannel(req *pb.AddChannelRequest) error {
 		}
 	}
 	// then try to create a channel
-	_, err := channel.NewManager(channelID, fmt.Sprintf("%s/%s", manager.chainCfg.Path, channelID), manager.db)
+	_, err = channel.NewManager(channelID, fmt.Sprintf("%s/%s", manager.chainCfg.Path, channelID), manager.db)
 	if err != nil {
 		return err
 	}
 	// then send a tx to config channel
-	// manager.ConfigChannel.AddBlock(nil)
-	payload, _ := json.Marshal(cc.Payload{
-		ChannelID: channelID,
-		Profile: &cc.Profile{
-			Public: true,
-		},
-		Version: 1,
-	})
-	// create tx
-	var tx = types.Tx{
-		Data: types.TxData{
-			ChannelID:    types.CONFIGCHANNELID,
-			AccountNonce: 0,
-			Recipient:    common.ZeroAddress.Bytes(),
-			Payload:      payload,
-			Version:      1,
-			Sig:          nil,
-		},
-		Time: util.Now(),
-	}
-	tx.ID = util.Hex(tx.Hash())
 	// But the manager should not AddTx by consensus, because the confirm
 	// of consensus is not the final confirm.
-	err = manager.ConfigChannel.AddTx(&tx)
+	err = manager.ConfigChannel.AddTx(tx)
 	if err != nil {
 		return err
 	}
@@ -232,7 +215,7 @@ func (manager *ChannelManager) createChannel(req *pb.AddChannelRequest) error {
 	}
 	// create genesis block here
 	// The genesis only contain the create tx now.
-	genesisBlock := types.NewBlock(channelID, 0, types.GenesisBlockPrevHash, []*types.Tx{&tx})
+	genesisBlock := types.NewBlock(channelID, 0, types.GenesisBlockPrevHash, []*types.Tx{tx})
 	err = channel.AddBlock(genesisBlock)
 	if err != nil {
 		return err

@@ -1,6 +1,9 @@
 package server
 
 import (
+	"errors"
+	"fmt"
+	"madledger/core/types"
 	pb "madledger/protos"
 
 	"golang.org/x/net/context"
@@ -20,9 +23,24 @@ func (s *Server) ListChannels(ctx context.Context, req *pb.ListChannelsRequest) 
 	return s.ChannelManager.ListChannels(req), nil
 }
 
-// AddChannel is the implementation of protos
-func (s *Server) AddChannel(ctx context.Context, req *pb.AddChannelRequest) (*pb.ChannelInfo, error) {
-	return s.ChannelManager.AddChannel(req)
+// CreateChannel is the implementation of protos
+func (s *Server) CreateChannel(ctx context.Context, req *pb.CreateChannelRequest) (*pb.ChannelInfo, error) {
+	tx, err := req.GetTx().ConvertToTypes()
+	if err != nil {
+		fmt.Println(req.GetTx())
+		return nil, err
+	}
+	if !tx.Verify() {
+		return nil, errors.New("The tx is not a valid tx")
+	}
+	if tx.GetReceiver().String() != types.CreateChannelContractAddress.String() {
+		return nil, errors.New("The receiver of the tx is not the valid contract address")
+	}
+	_, err = s.ChannelManager.CreateChannel(tx)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.ChannelInfo{}, nil
 }
 
 // AddTx is the implementation of protos

@@ -135,8 +135,8 @@ func TestTxHistory(t *testing.T) {
 	require.Contains(t, history.Txs, "test")
 	require.Len(t, history.Txs["test"].Value, 4)
 	// check config test
-	// TODO: fix the bug that the history does not contain config channel
-	// require.Contains(t, history.Txs, types.CONFIGCHANNELID)
+	require.Contains(t, history.Txs, types.CONFIGCHANNELID)
+	require.Len(t, history.Txs[types.CONFIGCHANNELID].Value, 2)
 }
 
 func TestEnd(t *testing.T) {

@@ -3,7 +3,9 @@ package server
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	cc "madledger/blockchain/config"
 	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/common/util"
@@ -16,6 +18,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"google.golang.org/grpc"
 )
@@ -210,65 +214,23 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 	// initTestEnvironment(".data1")
 }
 
-func TestAddChannel(t *testing.T) {
+func TestCreateChannel(t *testing.T) {
 	var err error
 	server, err = NewServer(getTestConfig())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	go func() {
 		server.Start()
 	}()
 	time.Sleep(300 * time.Millisecond)
 	// then try to create a channel
 	client, err := getClient()
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = client.AddChannel(context.Background(), &pb.AddChannelRequest{
-		ChannelID: "test",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	// then ListChannels
-	infos, err := client.ListChannels(context.Background(), &pb.ListChannelsRequest{
-		System: false,
-	})
-	if err != nil || len(infos.Channels) != 1 || infos.Channels[0].ChannelID != "test" {
-		t.Fatal(infos)
-	}
-	// then fetch the genesis block of test
-	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
-		ChannelID: "test",
-		Number:    0,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
-		ChannelID: "test",
-		Number:    1,
-	})
-	if err == nil {
-		t.Fatal()
-	}
-	// then add a tx into test channel
-	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
-	typesTx, err := types.NewTx("test", common.ZeroAddress, []byte("Just for test"), privKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-	pbTx, err := pb.NewTx(typesTx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+	require.NoError(t, err)
+
+	pbTx := getCreateChannelTx("test")
+	_, err = client.CreateChannel(context.Background(), &pb.CreateChannelRequest{
 		Tx: pbTx,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	// then stop
 	server.Stop()
 }
@@ -368,12 +330,11 @@ func TestFetchBlockAsync(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		time.Sleep(500 * time.Millisecond)
-		_, err = client.AddChannel(context.Background(), &pb.AddChannelRequest{
-			ChannelID: "async",
+		pbTx := getCreateChannelTx("async")
+		_, err = client.CreateChannel(context.Background(), &pb.CreateChannelRequest{
+			Tx: pbTx,
 		})
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 	}()
 	wg.Wait()
 	server.Stop()
@@ -431,6 +392,21 @@ func getClient() (pb.OrdererClient, error) {
 	}
 	client := pb.NewOrdererClient(conn)
 	return client, nil
+}
+
+func getCreateChannelTx(channelID string) *pb.Tx {
+	payload, _ := json.Marshal(cc.Payload{
+		ChannelID: channelID,
+		Profile: &cc.Profile{
+			Public: true,
+		},
+		Version: 1,
+	})
+	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
+	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload, privKey)
+
+	pbTx, _ := pb.NewTx(typesTx)
+	return pbTx
 }
 
 func getTestConfig() *config.Config {

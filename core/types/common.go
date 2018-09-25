@@ -1,5 +1,7 @@
 package types
 
+import "madledger/common"
+
 const (
 	// GLOBALCHANNELID is the id of global channel
 	GLOBALCHANNELID = "_global"
@@ -10,4 +12,10 @@ const (
 var (
 	// GenesisBlockPrevHash is the prev hash of genesis block
 	GenesisBlockPrevHash = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+)
+
+// Defines some native contracts.
+var (
+	// Create a channel
+	CreateChannelContractAddress = common.HexToAddress("0xffffffffffffffffffffffffffffffffffffffff")
 )

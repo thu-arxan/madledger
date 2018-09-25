@@ -2,6 +2,7 @@ package lib
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"madledger/common/crypto"
 	"madledger/core/types"
@@ -10,6 +11,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	cc "madledger/blockchain/config"
 	"madledger/client/config"
 	pb "madledger/protos"
 )
@@ -96,8 +98,18 @@ func (c *Client) ListChannel(system bool) ([]*ChannelInfo, error) {
 
 // CreateChannel create a channel
 func (c *Client) CreateChannel(channelID string) error {
-	_, err := c.ordererClient.AddChannel(context.Background(), &pb.AddChannelRequest{
+	payload, _ := json.Marshal(cc.Payload{
 		ChannelID: channelID,
+		Profile: &cc.Profile{
+			Public: true,
+		},
+		Version: 1,
+	})
+	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload, c.GetPrivKey())
+	pbTx, _ := pb.NewTx(typesTx)
+
+	_, err := c.ordererClient.CreateChannel(context.Background(), &pb.CreateChannelRequest{
+		Tx: pbTx,
 	})
 	if err != nil {
 		fmt.Printf("Failed to create channel %s because %s\n", channelID, err)
