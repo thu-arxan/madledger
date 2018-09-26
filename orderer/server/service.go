@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"madledger/core/types"
 	pb "madledger/protos"
 
@@ -20,14 +19,13 @@ func (s *Server) FetchBlock(ctx context.Context, req *pb.FetchBlockRequest) (*pb
 
 // ListChannels is the implementation of protos
 func (s *Server) ListChannels(ctx context.Context, req *pb.ListChannelsRequest) (*pb.ChannelInfos, error) {
-	return s.ChannelManager.ListChannels(req), nil
+	return s.ChannelManager.ListChannels(req)
 }
 
 // CreateChannel is the implementation of protos
 func (s *Server) CreateChannel(ctx context.Context, req *pb.CreateChannelRequest) (*pb.ChannelInfo, error) {
 	tx, err := req.GetTx().ConvertToTypes()
 	if err != nil {
-		fmt.Println(req.GetTx())
 		return nil, err
 	}
 	if !tx.Verify() {

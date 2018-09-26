@@ -11,6 +11,8 @@ import (
 	"madledger/core/types"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -81,12 +83,12 @@ func TestUpdateChannel(t *testing.T) {
 		t.Fatal(errors.New("Channel _global is not contained"))
 	}
 	// add user channel
+	admin, _ := types.NewMember(privKey.PubKey(), "admin")
 	err = db.UpdateChannel("test", &cc.Profile{
 		Public: true,
+		Admins: []*types.Member{admin},
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	channels = db.ListChannel()
 	if len(channels) != 3 {
 		t.Fatal(fmt.Errorf("Should contain three channels rather than %d channels", len(channels)))
@@ -114,6 +116,14 @@ func TestAddBlock(t *testing.T) {
 	if !db.HasTx(tx1) || !db.HasTx(tx2) {
 		t.Fatal()
 	}
+}
+
+func TestIsMember(t *testing.T) {
+	member, _ := types.NewMember(privKey.PubKey(), "admin")
+	require.True(t, db.IsMember("test", member))
+	require.True(t, db.IsAdmin("test", member))
+	require.True(t, db.IsMember(types.GLOBALCHANNELID, member))
+	require.False(t, db.IsAdmin(types.GLOBALCHANNELID, member))
 }
 
 func TestEnd(t *testing.T) {

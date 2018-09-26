@@ -133,5 +133,6 @@ func newMember(name string) *types.Member {
 		return nil
 	}
 	pk := privKey.PubKey()
-	return types.NewMember(pk, name)
+	member, _ := types.NewMember(pk, name)
+	return member
 }

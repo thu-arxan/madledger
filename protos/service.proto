@@ -12,7 +12,14 @@ enum Behavior {
     FAIL_IF_NOT_READY = 0;
     // Return until ready
     RETURN_UNTIL_READY = 1;
-} 
+}
+
+// Identity defines the identity in the channel
+enum Identity {
+    MEMBER = 0;
+    ADMIN = 1;
+    OUTSIDER = 2;
+}
 
 // The services that orderers should provide
 service Orderer{
@@ -31,9 +38,11 @@ message FetchBlockRequest {
     Behavior Behavior = 3;
 }
 
+// TODO: This should contain signature.
 message ListChannelsRequest {
     // If system channel are included
     bool System = 1;
+    bytes PK = 2;
 }
 
 // ChannelInfos contains ChannelInfo
@@ -45,6 +54,7 @@ message ChannelInfos {
 message ChannelInfo {
     string ChannelID = 1;
     uint64 BlockSize = 2;
+    Identity Identity = 3; 
 }
 
 // CreateChannelRequest include a special tx which create a channel.

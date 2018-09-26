@@ -75,13 +75,18 @@ func (c *Client) GetPrivKey() crypto.PrivateKey {
 
 // ListChannel list the info of channel
 func (c *Client) ListChannel(system bool) ([]*ChannelInfo, error) {
+	var channelInfos []*ChannelInfo
+	pk, err := c.GetPrivKey().PubKey().Bytes()
+	if err != nil {
+		return channelInfos, err
+	}
 	infos, err := c.ordererClient.ListChannels(context.Background(), &pb.ListChannelsRequest{
 		System: system,
+		PK:     pk,
 	})
 	if err != nil {
 		return nil, err
 	}
-	var channelInfos []*ChannelInfo
 	for i, channel := range infos.Channels {
 		channelInfos = append(channelInfos, &ChannelInfo{
 			Name:      channel.ChannelID,
@@ -98,17 +103,22 @@ func (c *Client) ListChannel(system bool) ([]*ChannelInfo, error) {
 
 // CreateChannel create a channel
 func (c *Client) CreateChannel(channelID string) error {
+	self, err := types.NewMember(c.GetPrivKey().PubKey(), "admin")
+	if err != nil {
+		return err
+	}
 	payload, _ := json.Marshal(cc.Payload{
 		ChannelID: channelID,
 		Profile: &cc.Profile{
 			Public: true,
+			Admins: []*types.Member{self},
 		},
 		Version: 1,
 	})
 	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload, c.GetPrivKey())
 	pbTx, _ := pb.NewTx(typesTx)
 
-	_, err := c.ordererClient.CreateChannel(context.Background(), &pb.CreateChannelRequest{
+	_, err = c.ordererClient.CreateChannel(context.Background(), &pb.CreateChannelRequest{
 		Tx: pbTx,
 	})
 	if err != nil {

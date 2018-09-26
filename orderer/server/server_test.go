@@ -31,6 +31,8 @@ const (
 var (
 	rawSecp256k1Bytes, _ = hex.DecodeString(secp256k1String)
 	rawPrivKey           = rawSecp256k1Bytes
+	privKey, _           = crypto.NewPrivateKey(rawPrivKey)
+	pubKeyBytes, _       = privKey.PubKey().Bytes()
 )
 
 var (
@@ -59,6 +61,7 @@ func TestListChannelsAtNil(t *testing.T) {
 	}
 	infos, err := client.ListChannels(context.Background(), &pb.ListChannelsRequest{
 		System: true,
+		PK:     pubKeyBytes,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -82,6 +85,7 @@ func TestListChannelsAtNil(t *testing.T) {
 	}
 	infos, err = client.ListChannels(context.Background(), &pb.ListChannelsRequest{
 		System: false,
+		PK:     pubKeyBytes,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -279,12 +283,25 @@ func TestFetchBlockAsync(t *testing.T) {
 	client, _ := getClient()
 	channelInfos, _ := client.ListChannels(context.Background(), &pb.ListChannelsRequest{
 		System: true,
+		PK:     pubKeyBytes,
 	})
+	require.Len(t, channelInfos.Channels, 3)
 	var globalInfo *pb.ChannelInfo
 	for _, channelInfo := range channelInfos.Channels {
 		if channelInfo.ChannelID == types.GLOBALCHANNELID {
 			globalInfo = channelInfo
 			break
+		}
+		switch channelInfo.ChannelID {
+		case types.GLOBALCHANNELID:
+			globalInfo = channelInfo
+			require.Equal(t, globalInfo.Identity, pb.Identity_MEMBER)
+		case types.CONFIGCHANNELID:
+			require.Equal(t, channelInfo.Identity, pb.Identity_MEMBER)
+		case "test":
+			require.Equal(t, channelInfo.Identity, pb.Identity_ADMIN)
+		default:
+			t.Fatalf("Unexcepted channel:%s", channelInfo.ChannelID)
 		}
 	}
 	exceptNum := globalInfo.BlockSize
@@ -395,10 +412,12 @@ func getClient() (pb.OrdererClient, error) {
 }
 
 func getCreateChannelTx(channelID string) *pb.Tx {
+	admin, _ := types.NewMember(privKey.PubKey(), "admin")
 	payload, _ := json.Marshal(cc.Payload{
 		ChannelID: channelID,
 		Profile: &cc.Profile{
 			Public: true,
+			Admins: []*types.Member{admin},
 		},
 		Version: 1,
 	})

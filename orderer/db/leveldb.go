@@ -60,26 +60,14 @@ func (db *LevelDB) HasChannel(id string) bool {
 // maybe the name should be checked
 // TODO
 func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
-	var p cc.Profile
 	var key = getChannelProfileKey(id)
-	if db.HasChannel(id) {
-		data, err := db.connect.Get(key, nil)
-		if err != nil {
-			return err
-		}
-		err = json.Unmarshal(data, &p)
-		if err != nil {
-			return err
-		}
-	} else {
+	if !db.HasChannel(id) {
 		err := db.addChannel(id)
 		if err != nil {
 			return err
 		}
 	}
-	// todo: In the future, this maybe wrong
-	p.Public = profile.Public
-	data, err := json.Marshal(p)
+	data, err := json.Marshal(profile)
 	if err != nil {
 		return err
 	}
@@ -105,9 +93,56 @@ func (db *LevelDB) AddBlock(block *types.Block) error {
 // HasTx return if the tx is contained
 func (db *LevelDB) HasTx(tx *types.Tx) bool {
 	key := util.BytesCombine([]byte(tx.Data.ChannelID), []byte(tx.ID))
-	fmt.Println("Search tx", util.Hex(key))
+
 	if exist, _ := db.connect.Has(key, nil); exist {
 		return true
+	}
+	return false
+}
+
+// IsMember is the implementation of DB
+func (db *LevelDB) IsMember(channelID string, member *types.Member) bool {
+	var p cc.Profile
+	var key = getChannelProfileKey(channelID)
+	if db.HasChannel(channelID) {
+		data, err := db.connect.Get(key, nil)
+		if err != nil {
+			return false
+		}
+		err = json.Unmarshal(data, &p)
+		if err != nil {
+			return false
+		}
+		if p.Public {
+			return true
+		}
+		for i := range p.Members {
+			if p.Members[i].Equal(member) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// IsAdmin is the implementation of DB
+func (db *LevelDB) IsAdmin(channelID string, member *types.Member) bool {
+	var p cc.Profile
+	var key = getChannelProfileKey(channelID)
+	if db.HasChannel(channelID) {
+		data, err := db.connect.Get(key, nil)
+		if err != nil {
+			return false
+		}
+		err = json.Unmarshal(data, &p)
+		if err != nil {
+			return false
+		}
+		for i := range p.Admins {
+			if p.Admins[i].Equal(member) {
+				return true
+			}
+		}
 	}
 	return false
 }

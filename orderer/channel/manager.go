@@ -191,6 +191,16 @@ func (manager *Manager) FetchBlock(num uint64) (*types.Block, error) {
 	return manager.cm.GetBlock(num)
 }
 
+// IsMember return if the member belongs to the channel
+func (manager *Manager) IsMember(member *types.Member) bool {
+	return manager.db.IsMember(manager.ID, member)
+}
+
+// IsAdmin return if the member is the admin of the channel
+func (manager *Manager) IsAdmin(member *types.Member) bool {
+	return manager.db.IsAdmin(manager.ID, member)
+}
+
 // FetchBlockAsync will fetch book async.
 // However, it would be better if using a pool rather than using while.
 // TODO: fix the thread unsafety

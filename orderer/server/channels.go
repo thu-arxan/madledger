@@ -5,6 +5,7 @@ import (
 	"fmt"
 	cc "madledger/blockchain/config"
 	gc "madledger/blockchain/global"
+	"madledger/common/crypto"
 	"madledger/common/util"
 	"madledger/consensus"
 	"madledger/consensus/solo"
@@ -128,31 +129,48 @@ func (manager *ChannelManager) FetchBlock(channelID string, num uint64, async bo
 }
 
 // ListChannels return infos channels
-func (manager *ChannelManager) ListChannels(req *pb.ListChannelsRequest) *pb.ChannelInfos {
+func (manager *ChannelManager) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfos, error) {
+	pk, err := crypto.NewPublicKey(req.PK)
+	if err != nil {
+		return &pb.ChannelInfos{}, err
+	}
+	member, err := types.NewMember(pk, "")
+	if err != nil {
+		return &pb.ChannelInfos{}, err
+	}
 	infos := new(pb.ChannelInfos)
 	if req.System {
 		if manager.GlobalChannel != nil {
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
 				ChannelID: types.GLOBALCHANNELID,
 				BlockSize: manager.GlobalChannel.GetBlockSize(),
+				Identity:  pb.Identity_MEMBER,
 			})
 		}
 		if manager.ConfigChannel != nil {
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
 				ChannelID: types.CONFIGCHANNELID,
 				BlockSize: manager.ConfigChannel.GetBlockSize(),
+				Identity:  pb.Identity_MEMBER,
 			})
 		}
 	}
 	manager.lock.RLock()
 	defer manager.lock.RUnlock()
 	for channel, channelManager := range manager.Channels {
-		infos.Channels = append(infos.Channels, &pb.ChannelInfo{
-			ChannelID: channel,
-			BlockSize: channelManager.GetBlockSize(),
-		})
+		if channelManager.IsMember(member) {
+			identity := pb.Identity_MEMBER
+			if channelManager.IsAdmin(member) {
+				identity = pb.Identity_ADMIN
+			}
+			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
+				ChannelID: channel,
+				BlockSize: channelManager.GetBlockSize(),
+				Identity:  identity,
+			})
+		}
 	}
-	return infos
+	return infos, nil
 }
 
 // CreateChannel try to create a channel
