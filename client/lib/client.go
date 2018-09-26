@@ -74,8 +74,8 @@ func (c *Client) GetPrivKey() crypto.PrivateKey {
 }
 
 // ListChannel list the info of channel
-func (c *Client) ListChannel(system bool) ([]*ChannelInfo, error) {
-	var channelInfos []*ChannelInfo
+func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
+	var channelInfos []ChannelInfo
 	pk, err := c.GetPrivKey().PubKey().Bytes()
 	if err != nil {
 		return channelInfos, err
@@ -85,19 +85,19 @@ func (c *Client) ListChannel(system bool) ([]*ChannelInfo, error) {
 		PK:     pk,
 	})
 	if err != nil {
-		return nil, err
+		return channelInfos, err
 	}
 	for i, channel := range infos.Channels {
-		channelInfos = append(channelInfos, &ChannelInfo{
+		channelInfos = append(channelInfos, ChannelInfo{
 			Name:      channel.ChannelID,
 			System:    false,
 			BlockSize: channel.BlockSize,
+			Identity:  channel.Identity.String(),
 		})
 		if strings.HasPrefix(channel.ChannelID, "_") {
 			channelInfos[i].System = true
 		}
 	}
-
 	return channelInfos, nil
 }
 
