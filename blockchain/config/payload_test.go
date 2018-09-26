@@ -4,6 +4,8 @@ import (
 	"madledger/common/crypto"
 	"madledger/core/types"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -21,9 +23,8 @@ func TestPublicPayload(t *testing.T) {
 		},
 		Version: 1,
 	}
-	if payload.Verify() {
-		t.Fatal()
-	}
+	require.Equal(t, payload.Verify(), false)
+
 	// legal channelID
 	payload = Payload{
 		ChannelID: "public",
@@ -32,32 +33,16 @@ func TestPublicPayload(t *testing.T) {
 		},
 		Version: 1,
 	}
-	if !payload.Verify() {
-		t.Fatal()
-	}
-	if payload.IsAdmin(admin) {
-		t.Fatal()
-	}
-	if !payload.IsMember(admin) {
-		t.Fatal()
-	}
-	if !payload.IsMember(civilian) {
-		t.Fatal()
-	}
+	require.Equal(t, payload.Verify(), true)
+	require.Equal(t, payload.IsAdmin(admin), false)
+	require.Equal(t, payload.IsMember(admin), true)
+	require.Equal(t, payload.IsMember(civilian), true)
 	// then set admin
 	payload.Profile.Admins = []*types.Member{admin}
-	if !payload.Verify() {
-		t.Fatal()
-	}
-	if !payload.IsAdmin(admin) {
-		t.Fatal()
-	}
-	if !payload.IsMember(admin) {
-		t.Fatal()
-	}
-	if !payload.IsMember(civilian) {
-		t.Fatal()
-	}
+	require.Equal(t, payload.Verify(), true)
+	require.Equal(t, payload.IsAdmin(admin), true)
+	require.Equal(t, payload.IsMember(admin), true)
+	require.Equal(t, payload.IsMember(civilian), true)
 }
 
 func TestPrivatePayload(t *testing.T) {
@@ -69,9 +54,7 @@ func TestPrivatePayload(t *testing.T) {
 		},
 		Version: 1,
 	}
-	if payload.Verify() {
-		t.Fatal()
-	}
+	require.Equal(t, payload.Verify(), false)
 	// with members
 	payload = Payload{
 		ChannelID: "private",
@@ -81,15 +64,10 @@ func TestPrivatePayload(t *testing.T) {
 		},
 		Version: 1,
 	}
-	if !payload.Verify() {
-		t.Fatal()
-	}
-	if payload.IsAdmin(admin) || !payload.IsMember(admin) {
-		t.Fatal()
-	}
-	if payload.IsMember(civilian) || payload.IsAdmin(civilian) {
-		t.Fatal()
-	}
+	require.Equal(t, payload.Verify(), true)
+	require.Equal(t, payload.IsAdmin(admin), false)
+	require.Equal(t, payload.IsMember(admin), true)
+	require.Equal(t, payload.IsMember(civilian) || payload.IsAdmin(civilian), false)
 	// with members and admins
 	payload = Payload{
 		ChannelID: "private",
@@ -100,18 +78,10 @@ func TestPrivatePayload(t *testing.T) {
 		},
 		Version: 1,
 	}
-	if !payload.Verify() {
-		t.Fatal()
-	}
-	if !payload.IsAdmin(admin) || !payload.IsMember(admin) {
-		t.Fatal()
-	}
-	if !payload.IsMember(civilian) || payload.IsAdmin(civilian) {
-		t.Fatal()
-	}
-	if payload.IsMember(criminal) || payload.IsAdmin(criminal) {
-		t.Fatal()
-	}
+	require.Equal(t, payload.Verify(), true)
+	require.Equal(t, !payload.IsAdmin(admin) || !payload.IsMember(admin), false)
+	require.Equal(t, !payload.IsMember(civilian) || payload.IsAdmin(civilian), false)
+	require.Equal(t, payload.IsMember(criminal) || payload.IsAdmin(criminal), false)
 	// with members and admins, but admins are not contained in the members
 	payload = Payload{
 		ChannelID: "private",
@@ -122,9 +92,7 @@ func TestPrivatePayload(t *testing.T) {
 		},
 		Version: 1,
 	}
-	if payload.Verify() {
-		t.Fatal()
-	}
+	require.Equal(t, payload.Verify(), false)
 }
 
 func newMember(name string) *types.Member {
