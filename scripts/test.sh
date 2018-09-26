@@ -5,6 +5,7 @@ go test madledger/common/util -count=1
 go test madledger/common/math -count=1
 go test madledger/common/hexutil -count=1
 go test madledger/common/crypto -count=1
+go test madledger/common/abi -count=1
 
 # run core test
 go test madledger/core/types -count=1

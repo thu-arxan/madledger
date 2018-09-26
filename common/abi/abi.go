@@ -2,6 +2,8 @@ package abi
 
 import (
 	"fmt"
+	"madledger/common/crypto/sha3"
+	"madledger/common/util"
 )
 
 // Variable defines the struct of key:value
@@ -75,6 +77,26 @@ func Unpacker(abiFile, name string, data []byte) ([]*Variable, error) {
 	}
 
 	return vars, nil
+}
+
+// GetFuncHash return the hash of function
+func GetFuncHash(abiFile, name string) (string, error) {
+	abiSpec, err := ReadAbiSpecFile(abiFile)
+	if err != nil {
+		return "", err
+	}
+
+	if _, ok := abiSpec.Functions[name]; ok {
+		args := abiSpec.Functions[name].Inputs
+		var input = name + "("
+		for _, a := range args {
+			input += a.EVM.GetSignature()
+		}
+		input += ")"
+		hash := sha3.Sha3([]byte(input))
+		return util.Hex(hash[:4]), nil
+	}
+	return "", fmt.Errorf("no such function")
 }
 
 func stripHex(s string) string {
