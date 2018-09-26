@@ -97,8 +97,8 @@ func (o *fakeOrderer) ListChannels(ctx context.Context, req *pb.ListChannelsRequ
 	return nil, nil
 }
 
-// AddChannel is the implementation of protos
-func (o *fakeOrderer) AddChannel(ctx context.Context, req *pb.AddChannelRequest) (*pb.ChannelInfo, error) {
+// CreateChannel is the implementation of protos
+func (o *fakeOrderer) CreateChannel(ctx context.Context, req *pb.CreateChannelRequest) (*pb.ChannelInfo, error) {
 	return nil, nil
 }
 

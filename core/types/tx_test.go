@@ -7,6 +7,8 @@ import (
 	"madledger/common/util"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -26,9 +28,7 @@ var (
 func TestNewTx(t *testing.T) {
 	var err error
 	tx, err = NewTx("test", common.ZeroAddress, []byte("Hello World"), getPrivKey())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 }
 
 func TestVerify(t *testing.T) {
@@ -81,12 +81,8 @@ func TestVerify(t *testing.T) {
 
 func TestGetSender(t *testing.T) {
 	sender, err := tx.GetSender()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if sender.String() != "0x970e8128ab834e8eac17ab8e3812f010678cf791" {
-		t.Fatal()
-	}
+	require.NoError(t, err)
+	require.Equal(t, sender.String(), "0x970e8128ab834e8eac17ab8e3812f010678cf791")
 }
 
 func TestGetReceiver(t *testing.T) {
@@ -96,13 +92,11 @@ func TestGetReceiver(t *testing.T) {
 	}
 	privKey := getPrivKey()
 	addr, err := privKey.PubKey().Address()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	selfTx, err := NewTx("test", addr, []byte("Hello World"), getPrivKey())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	if !reflect.DeepEqual(selfTx.GetReceiver().Bytes(), addr.Bytes()) {
 		t.Fatal()
 	}
@@ -110,13 +104,11 @@ func TestGetReceiver(t *testing.T) {
 
 func TestMarshaAndUnmarshalWithSig(t *testing.T) {
 	txBytes, err := tx.Bytes()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	newTx, err := BytesToTx(txBytes)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	if !reflect.DeepEqual(tx, newTx) {
 		t.Fatal()
 	}
@@ -135,13 +127,11 @@ func TestMarshaAndUnmarshalWithoutSig(t *testing.T) {
 		Time: util.Now(),
 	}
 	txBytes, err := tx.Bytes()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	newTx, err := BytesToTx(txBytes)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	if !reflect.DeepEqual(tx, newTx) {
 		t.Fatal()
 	}

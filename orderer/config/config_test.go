@@ -1,147 +1,99 @@
 package config
 
 import (
-	"errors"
-	"fmt"
 	"madledger/common/util"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetServerConfig(t *testing.T) {
 	cfg, err := LoadConfig(getTestConfigFilePath())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	serverCfg, err := cfg.GetServerConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if serverCfg.Port != 12345 {
-		t.Fatal(fmt.Errorf("The port is %d", serverCfg.Port))
-	}
-	if serverCfg.Address != "localhost" {
-		t.Fatal(fmt.Errorf("The address is %s", serverCfg.Address))
-	}
-	if serverCfg.Debug != true {
-		t.Fatal(fmt.Errorf("The Debug is %t", serverCfg.Debug))
-	}
+	require.NoError(t, err)
+	require.Equal(t, serverCfg.Port, 12345)
+	require.Equal(t, serverCfg.Address, "localhost")
+	require.Equal(t, serverCfg.Debug, true)
+
 	// then change the value of cfg
 	// check address
 	cfg.Address = ""
 	_, err = cfg.GetServerConfig()
-	if err.Error() != "The address can not be empty" {
-		t.Fatal(err)
-	}
+	require.EqualError(t, err, "The address can not be empty")
+
 	// check port
 	cfg.Address = "localhost"
 	cfg.Port = -1
 	_, err = cfg.GetServerConfig()
-	if err.Error() != "The port can not be -1" {
-		t.Fatal(err)
-	}
-	cfg.Port = -1
-	_, err = cfg.GetServerConfig()
-	if err == nil || err.Error() != "The port can not be -1" {
-		t.Fatal(err)
-	}
+	require.EqualError(t, err, "The port can not be -1")
+
 	cfg.Port = 1023
 	_, err = cfg.GetServerConfig()
-	if err == nil || err.Error() != "The port can not be 1023" {
-		t.Fatal(err)
-	}
+	require.EqualError(t, err, "The port can not be 1023")
+
 	cfg.Port = 1024
 	_, err = cfg.GetServerConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 }
 
 func TestGetBlockChainConfig(t *testing.T) {
 	cfg, err := LoadConfig(getTestConfigFilePath())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	chainCfg, err := cfg.GetBlockChainConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if chainCfg.BatchTimeout != 1000 {
-		t.Fatal(fmt.Errorf("The batch timeout is %d", chainCfg.BatchTimeout))
-	}
-	if chainCfg.BatchSize != 100 {
-		t.Fatal(fmt.Errorf("The batch size is %d", chainCfg.BatchSize))
-	}
-	if chainCfg.Path == "" {
-		t.Fatal(errors.New("The path is chain config is empty"))
-	}
+	require.NoError(t, err)
+	require.Equal(t, chainCfg.BatchTimeout, 1000)
+	require.Equal(t, chainCfg.BatchSize, 100)
+	require.NotEqual(t, chainCfg.Path, "")
 	// then change the value of cfg
 	// check batch timeout
 	cfg.BlockChain.BatchTimeout = 0
 	_, err = cfg.GetBlockChainConfig()
-	if err == nil || err.Error() != "The batch timeout can not be 0" {
-		t.Fatal(err)
-	}
+	require.EqualError(t, err, "The batch timeout can not be 0")
 	// check batch size
 	cfg.BlockChain.BatchTimeout = 1000
 	cfg.BlockChain.BatchSize = -1
 	_, err = cfg.GetBlockChainConfig()
-	if err == nil || err.Error() != "The batch size can not be -1" {
-		t.Fatal(err)
-	}
+	require.EqualError(t, err, "The batch size can not be -1")
 	// check debug
 	cfg.BlockChain.BatchSize = 100
 	cfg.Debug = false
 	_, err = cfg.GetBlockChainConfig()
-	if err == nil || err.Error() != "The path of blockchain is not provided" {
-		t.Fatal(err)
-	}
+	require.EqualError(t, err, "The path of blockchain is not provided")
 }
 
 func TestGetConsensusConfig(t *testing.T) {
 	cfg, err := LoadConfig(getTestConfigFilePath())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	consensusCfg, err := cfg.GetConsensusConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if consensusCfg.Type != SOLO {
-		t.Fatal(fmt.Errorf("The type of consensus is %d", consensusCfg.Type))
-	}
+	require.NoError(t, err)
+	require.Equal(t, consensusCfg.Type, SOLO)
+
 	cfg.Consensus.Type = "raft"
 	consensusCfg, err = cfg.GetConsensusConfig()
-	if err == nil || err.Error() != "Raft is not supported yet" {
-		t.Fatal(errors.New("Should be 'Raft is not supported yet' error"))
-	}
+	require.EqualError(t, err, "Raft is not supported yet")
+
 	cfg.Consensus.Type = "unknown"
 	consensusCfg, err = cfg.GetConsensusConfig()
-	if err == nil || err.Error() != "Unsupport consensus type: unknown" {
-		t.Fatal(fmt.Errorf("Should be 'Unsupport consensus type: unknown' error other than '%s'", err))
-	}
+	require.EqualError(t, err, "Unsupport consensus type: unknown")
 }
 
 func TestGetDBConfig(t *testing.T) {
 	cfg, err := LoadConfig(getTestConfigFilePath())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	dbCfg, err := cfg.GetDBConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if dbCfg.Type != LEVELDB {
-		t.Fatal(fmt.Errorf("The type of db is %d", dbCfg.Type))
-	}
-	if dbCfg.LevelDB.Dir == "" {
-		t.Fatal(errors.New("The dir of leveldb should not be empty"))
-	}
+	require.NoError(t, err)
+	require.Equal(t, dbCfg.Type, LEVELDB)
+	require.NotEqual(t, dbCfg.LevelDB.Dir, "")
+
 	cfg.DB.Type = "unknown"
 	dbCfg, err = cfg.GetDBConfig()
-	if err == nil || err.Error() != "Unsupport db type: unknown" {
-		t.Fatal(fmt.Errorf("Should be 'Unsupport db type: unknown' error other than '%s'", err))
-	}
+	require.EqualError(t, err, "Unsupport db type: unknown")
 }
 
 func getTestConfigFilePath() string {

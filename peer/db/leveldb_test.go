@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -44,41 +46,30 @@ var (
 
 func TestInit(t *testing.T) {
 	err := os.RemoveAll(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	err = os.MkdirAll(dir, 0777)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 }
 
 func TestNewLevelDB(t *testing.T) {
 	var err error
 	db, err = NewLevelDB(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 }
 func TestSetTxStatus(t *testing.T) {
 	err := db.SetTxStatus(tx1, tx1Status)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 }
 
 func TestGetTxStatus(t *testing.T) {
 	status, err := db.GetTxStatus(tx1.Data.ChannelID, tx1.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	if !reflect.DeepEqual(status, tx1Status) {
 		t.Fatal()
 	}
 	_, err = db.GetTxStatus(tx2.Data.ChannelID, tx2.ID)
-	if err == nil || err.Error() != "Not exist" {
-		t.Fatal()
-	}
+	require.Error(t, err, "Not exist")
 }
 
 func TestGetTxStatusAsync(t *testing.T) {
@@ -93,9 +84,7 @@ func TestGetTxStatusAsync(t *testing.T) {
 			endChan <- true
 		}()
 		status, err := db.GetTxStatusAsync(tx2.Data.ChannelID, tx2.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 		if !reflect.DeepEqual(status, tx2Status) {
 			t.Fatal()
 		}
@@ -103,9 +92,7 @@ func TestGetTxStatusAsync(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	go func() {
 		err := db.SetTxStatus(tx2, tx2Status)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 	}()
 	<-endChan
 }

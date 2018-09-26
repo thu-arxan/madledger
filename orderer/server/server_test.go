@@ -45,9 +45,8 @@ func TestNewServer(t *testing.T) {
 	initTestEnvironment(".data1")
 	var err error
 	server, err = NewServer(getTestConfig())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	go func() {
 		server.Start()
 	}()
@@ -56,29 +55,19 @@ func TestNewServer(t *testing.T) {
 
 func TestListChannelsAtNil(t *testing.T) {
 	client, err := getClient()
-	if err != nil {
-		t.Fatal()
-	}
+	require.NoError(t, err)
+
 	infos, err := client.ListChannels(context.Background(), &pb.ListChannelsRequest{
 		System: true,
 		PK:     pubKeyBytes,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(infos.Channels) != 2 {
-		t.Fatal()
-	}
+	require.NoError(t, err)
+	require.Len(t, infos.Channels, 2)
+
 	for _, channel := range infos.Channels {
 		switch channel.ChannelID {
-		case types.GLOBALCHANNELID:
-			if channel.BlockSize != 1 {
-				t.Fatal(channel.BlockSize)
-			}
-		case types.CONFIGCHANNELID:
-			if channel.BlockSize != 1 {
-				t.Fatal(channel.BlockSize)
-			}
+		case types.GLOBALCHANNELID, types.CONFIGCHANNELID:
+			require.Equal(t, channel.BlockSize, uint64(1))
 		default:
 			t.Fatal(fmt.Errorf("Unknown channel %s", channel.ChannelID))
 		}
@@ -87,75 +76,54 @@ func TestListChannelsAtNil(t *testing.T) {
 		System: false,
 		PK:     pubKeyBytes,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(infos.Channels) != 0 {
-		t.Fatal()
-	}
+	require.NoError(t, err)
+	require.Len(t, infos.Channels, 0)
 }
 
 func TestFetchBlockAtNil(t *testing.T) {
 	client, err := getClient()
-	if err != nil {
-		t.Fatal()
-	}
+	require.NoError(t, err)
+
 	globalGenesisBlock, err := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
 		ChannelID: types.GLOBALCHANNELID,
 		Number:    0,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if globalGenesisBlock.Header.Number != 0 {
-		t.Fatal(fmt.Errorf("The number of block is %d", globalGenesisBlock.Header.Number))
-	}
+	require.NoError(t, err)
+	require.Equal(t, globalGenesisBlock.Header.Number, uint64(0))
 	// set global genesis block hash
 	typesGlobalGenesisBlock, err := globalGenesisBlock.ConvertToTypes()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	genesisBlocksHash[types.GLOBALCHANNELID] = typesGlobalGenesisBlock.Hash()
 	// test bigger number
 	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
 		ChannelID: types.GLOBALCHANNELID,
 		Number:    1,
 	})
-	if err == nil {
-		t.Fatal()
-	}
+	require.Error(t, err)
 	// test empty channel id
 	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
 		ChannelID: "",
 		Number:    1,
 	})
-	if err == nil {
-		t.Fatal()
-	}
+	require.Error(t, err)
 	// test a channel which is not exist
 	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
 		ChannelID: "test",
 		Number:    1,
 	})
-	if err == nil {
-		t.Fatal()
-	}
+	require.Error(t, err)
 	// get genesis block of config
 	configGenesisBlock, err := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
 		ChannelID: types.CONFIGCHANNELID,
 		Number:    0,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if configGenesisBlock.Header.Number != 0 {
-		t.Fatal(fmt.Errorf("The number of block is %d", configGenesisBlock.Header.Number))
-	}
+	require.NoError(t, err)
+	require.Equal(t, configGenesisBlock.Header.Number, uint64(0))
 	// set config genesis block hash
 	typesConfigGenesisBlock, err := configGenesisBlock.ConvertToTypes()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	genesisBlocksHash[types.CONFIGCHANNELID] = typesConfigGenesisBlock.Hash()
 	server.Stop()
 }
@@ -163,14 +131,11 @@ func TestFetchBlockAtNil(t *testing.T) {
 func TestServerRestart(t *testing.T) {
 	var err error
 	server, err = NewServer(getTestConfig())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	go func() {
 		err := server.Start()
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 	}()
 	time.Sleep(200 * time.Millisecond)
 	server.Stop()
@@ -185,17 +150,14 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 	cfg.DB.LevelDB.Dir = dbPath
 	var err error
 	server, err = NewServer(cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	go func() {
 		server.Start()
 	}()
 	time.Sleep(300 * time.Millisecond)
 	client, err := getClient()
-	if err != nil {
-		t.Fatal()
-	}
+	require.NoError(t, err)
 	// compare global genesis block
 	globalGenesisBlock, _ := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
 		ChannelID: types.GLOBALCHANNELID,
@@ -242,9 +204,8 @@ func TestCreateChannel(t *testing.T) {
 func TestServerRestartWithUserChannel(t *testing.T) {
 	var err error
 	server, err = NewServer(getTestConfig())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	go func() {
 		server.Start()
 	}()
@@ -254,28 +215,24 @@ func TestServerRestartWithUserChannel(t *testing.T) {
 	// then add a tx into test channel
 	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
 	typesTx, err := types.NewTx("test", common.ZeroAddress, []byte("Just for test"), privKey)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	pbTx, err := pb.NewTx(typesTx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
 		Tx: pbTx,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	server.Stop()
 }
 
 func TestFetchBlockAsync(t *testing.T) {
 	var err error
 	server, err = NewServer(getTestConfig())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	go func() {
 		server.Start()
 	}()
@@ -311,9 +268,8 @@ func TestFetchBlockAsync(t *testing.T) {
 		Number:    exceptNum,
 		Behavior:  pb.Behavior_FAIL_IF_NOT_READY,
 	})
-	if err == nil {
-		t.Fatal()
-	}
+	require.Error(t, err)
+
 	// Then async fetch block
 	// first here is a block which is exist
 	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
@@ -321,9 +277,7 @@ func TestFetchBlockAsync(t *testing.T) {
 		Number:    0,
 		Behavior:  pb.Behavior_RETURN_UNTIL_READY,
 	})
-	if err != nil {
-		t.Fatal()
-	}
+	require.NoError(t, err)
 	// then fetch the except block
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -335,12 +289,9 @@ func TestFetchBlockAsync(t *testing.T) {
 			Number:    exceptNum,
 			Behavior:  pb.Behavior_RETURN_UNTIL_READY,
 		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if block.Header.ChannelID != types.GLOBALCHANNELID || block.Header.Number != exceptNum {
-			t.Fatal()
-		}
+		require.NoError(t, err)
+		require.Equal(t, block.Header.ChannelID, types.GLOBALCHANNELID)
+		require.Equal(t, block.Header.Number, exceptNum)
 	}()
 	wg.Add(1)
 	// add a new channel, which will create a new global block
@@ -360,9 +311,8 @@ func TestFetchBlockAsync(t *testing.T) {
 func TestAddDuplicateTxs(t *testing.T) {
 	var err error
 	server, err = NewServer(getTestConfig())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	go func() {
 		server.Start()
 	}()
@@ -372,19 +322,15 @@ func TestAddDuplicateTxs(t *testing.T) {
 	// then add a tx into test channel
 	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
 	typesTx, err := types.NewTx("test", common.ZeroAddress, []byte("Duplicate"), privKey)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	pbTx, err := pb.NewTx(typesTx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
 		Tx: pbTx,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	// then add the tx again
 	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
 		Tx: pbTx,
