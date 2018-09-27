@@ -1,6 +1,7 @@
 package abi
 
 import (
+	"encoding/hex"
 	"fmt"
 	"madledger/common/crypto/sha3"
 	"madledger/common/util"
@@ -99,7 +100,7 @@ func GetFuncHash(abiFile, funcName string) (string, error) {
 	return "", fmt.Errorf("no such function")
 }
 
-// GetPayload return the payload
+// GetPayload return the payload string
 func GetPayload(abiFile, funcName string, inputs []string) (string, error) {
 	abiSpec, err := ReadAbiSpecFile(abiFile)
 	if err != nil {
@@ -124,9 +125,17 @@ func GetPayload(abiFile, funcName string, inputs []string) (string, error) {
 		input += ")"
 		hash := sha3.Sha3([]byte(input))
 		return util.Hex(hash[:4]) + util.Hex(payload), nil
-		// return "", nil
 	}
 	return "", fmt.Errorf("no such function")
+}
+
+// GetPayloadBytes return the payload bytes
+func GetPayloadBytes(abiFile, funcName string, inputs []string) ([]byte, error) {
+	payload, err := GetPayload(abiFile, funcName, inputs)
+	if err != nil {
+		return nil, err
+	}
+	return hex.DecodeString(payload)
 }
 
 func stripHex(s string) string {

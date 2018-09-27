@@ -11,6 +11,12 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
+/*
+* Here defines some key rules.
+* 1. Account: key = []bytes("account:") + address.Bytes()
+* 2. Storage: key = address.Bytes()
+ */
+
 // LevelDB is the implementation of DB on leveldb
 type LevelDB struct {
 	// the dir of data
@@ -32,7 +38,8 @@ func NewLevelDB(dir string) (DB, error) {
 
 // GetAccount returns an account of an address
 func (db *LevelDB) GetAccount(address common.Address) (common.Account, error) {
-	value, err := db.connect.Get(address.Bytes(), nil)
+	var key = util.BytesCombine([]byte("account:"), address.Bytes())
+	value, err := db.connect.Get(key, nil)
 	if err != nil {
 		return common.NewDefaultAccount(address), nil
 	}
@@ -46,21 +53,23 @@ func (db *LevelDB) GetAccount(address common.Address) (common.Account, error) {
 
 // SetAccount updates an account or add an account
 func (db *LevelDB) SetAccount(account common.Account) error {
+	var key = util.BytesCombine([]byte("account:"), account.GetAddress().Bytes())
 	value, err := account.Bytes()
 	if err != nil {
 		return err
 	}
-	err = db.connect.Put(account.GetAddress().Bytes(), value, nil)
+	err = db.connect.Put(key, value, nil)
 	return err
 }
 
 // RemoveAccount removes an account if exist
 func (db *LevelDB) RemoveAccount(address common.Address) error {
-	if ok, _ := db.connect.Has(address.Bytes(), nil); !ok {
+	var key = util.BytesCombine([]byte("account:"), address.Bytes())
+	if ok, _ := db.connect.Has(key, nil); !ok {
 		return nil
 	}
 
-	return db.connect.Delete(address.Bytes(), nil)
+	return db.connect.Delete(key, nil)
 }
 
 // GetStorage returns the key of an address if exist, else returns an error

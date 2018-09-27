@@ -57,6 +57,24 @@ func TestNewLevelDB(t *testing.T) {
 	db, err = NewLevelDB(dir)
 	require.NoError(t, err)
 }
+
+func TestGetAccount(t *testing.T) {
+	address, err := privKey.PubKey().Address()
+	require.NoError(t, err)
+	account, err := db.GetAccount(address)
+	require.NoError(t, err)
+	require.True(t, reflect.DeepEqual(account.GetAddress().Bytes(), address.Bytes()))
+	account.AddBalance(100)
+	require.Equal(t, uint64(100), account.GetBalance())
+	// the set the account
+	err = db.SetAccount(account)
+	require.NoError(t, err)
+	account, err = db.GetAccount(address)
+	require.NoError(t, err)
+	require.True(t, reflect.DeepEqual(account.GetAddress().Bytes(), address.Bytes()))
+	require.Equal(t, uint64(100), account.GetBalance())
+}
+
 func TestSetTxStatus(t *testing.T) {
 	err := db.SetTxStatus(tx1, tx1Status)
 	require.NoError(t, err)
