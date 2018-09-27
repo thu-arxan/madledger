@@ -80,21 +80,51 @@ func Unpacker(abiFile, name string, data []byte) ([]*Variable, error) {
 }
 
 // GetFuncHash return the hash of function
-func GetFuncHash(abiFile, name string) (string, error) {
+func GetFuncHash(abiFile, funcName string) (string, error) {
 	abiSpec, err := ReadAbiSpecFile(abiFile)
 	if err != nil {
 		return "", err
 	}
 
-	if _, ok := abiSpec.Functions[name]; ok {
-		args := abiSpec.Functions[name].Inputs
-		var input = name + "("
+	if _, ok := abiSpec.Functions[funcName]; ok {
+		args := abiSpec.Functions[funcName].Inputs
+		var input = funcName + "("
 		for _, a := range args {
 			input += a.EVM.GetSignature()
 		}
 		input += ")"
 		hash := sha3.Sha3([]byte(input))
 		return util.Hex(hash[:4]), nil
+	}
+	return "", fmt.Errorf("no such function")
+}
+
+// GetPayload return the payload
+func GetPayload(abiFile, funcName string, inputs []string) (string, error) {
+	abiSpec, err := ReadAbiSpecFile(abiFile)
+	if err != nil {
+		return "", err
+	}
+
+	if _, ok := abiSpec.Functions[funcName]; ok {
+		args := abiSpec.Functions[funcName].Inputs
+		if len(args) != len(inputs) {
+			return "", fmt.Errorf("Except %d inputs other than %d inputs", len(args), len(inputs))
+		}
+		var input = funcName + "("
+		var payload []byte
+		for i, a := range args {
+			input += a.EVM.GetSignature()
+			bs, err := a.EVM.pack(inputs[i])
+			if err != nil {
+				return "", err
+			}
+			payload = util.BytesCombine(payload, bs)
+		}
+		input += ")"
+		hash := sha3.Sha3([]byte(input))
+		return util.Hex(hash[:4]) + util.Hex(payload), nil
+		// return "", nil
 	}
 	return "", fmt.Errorf("no such function")
 }
