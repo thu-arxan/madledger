@@ -1,7 +1,6 @@
 package tx
 
 import (
-	"encoding/hex"
 	"errors"
 	"madledger/client/lib"
 	"madledger/common"
@@ -26,8 +25,8 @@ func init() {
 	callViper.BindPFlag("abi", callCmd.Flags().Lookup("abi"))
 	callCmd.Flags().StringP("func", "f", "", "The func of contract")
 	callViper.BindPFlag("func", callCmd.Flags().Lookup("func"))
-	callCmd.Flags().StringP("payload", "p", "", "The payload of tx")
-	callViper.BindPFlag("payload", callCmd.Flags().Lookup("payload"))
+	callCmd.Flags().StringSliceP("inputs", "i", nil, "The inputs of function")
+	callViper.BindPFlag("inputs", callCmd.Flags().Lookup("inputs"))
 	callCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
 	callViper.BindPFlag("config", callCmd.Flags().Lookup("config"))
 	callCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
@@ -63,11 +62,8 @@ func runCall(cmd *cobra.Command, args []string) error {
 	if receiver == "" {
 		return errors.New("The address of receiver can not be nil")
 	}
-	payload := callViper.GetString("payload")
-	if payload == "" {
-		return errors.New("The payload of client can not be nil")
-	}
-	payloadBytes, err := hex.DecodeString(payload)
+	inputs := callViper.GetStringSlice("inputs")
+	payloadBytes, err := abi.GetPayloadBytes(abiPath, funcName, inputs)
 	if err != nil {
 		return err
 	}
