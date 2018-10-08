@@ -1,9 +1,7 @@
 package evm
 
 import (
-	"bytes"
 	"encoding/hex"
-	"errors"
 	"io/ioutil"
 	"madledger/common"
 	"madledger/common/abi"
@@ -11,6 +9,8 @@ import (
 	"madledger/executor/evm/simulate"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 /*
@@ -24,93 +24,65 @@ var (
 
 func TestBalance(t *testing.T) {
 	contractCodes, err := readCodes(getFilePath("Balance.bin"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	db := simulate.NewStateDB()
 	user := newAccount(1)
 	db.SetAccount(user)
 	vm := NewEVM(newContext(), user.GetAddress(), db)
 	code, contractAddr, err := vm.Create(user, contractCodes, []byte{}, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	runtimeCodes, err := readCodes(getFilePath("Balance.bin-runtime"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !bytes.Equal(code, runtimeCodes) {
-		t.Fatal()
-	}
+	require.NoError(t, err)
+	require.Equal(t, runtimeCodes, code)
+
 	contractAccount, err := vm.cache.GetAccount(contractAddr)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
+	abiFilePath := getFilePath("Balance.abi")
+
 	// add 34
-	input, _ := hex.DecodeString("1003e2d20000000000000000000000000000000000000000000000000000000000000022")
+	input, _ := abi.GetPayloadBytes(abiFilePath, "add", []string{"34"})
 	output, err := vm.Call(user, contractAccount, code, input, 0)
 	values, err := abi.Unpacker(getFilePath("Balance.abi"), "add", output)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if values[0].Value != "44" {
-		t.Fatal(values[0].Value)
-	}
+	require.NoError(t, err)
+	require.Equal(t, "44", values[0].Value)
+
 	// sub 5
-	input, _ = hex.DecodeString("27ee58a60000000000000000000000000000000000000000000000000000000000000005")
+	input, _ = abi.GetPayloadBytes(abiFilePath, "sub", []string{"5"})
 	output, err = vm.Call(user, contractAccount, code, input, 0)
 	values, err = abi.Unpacker(getFilePath("Balance.abi"), "sub", output)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if values[0].Value != "39" {
-		t.Fatal(values[0].Value)
-	}
+	require.NoError(t, err)
+	require.Equal(t, "39", values[0].Value)
+
 	// set 1314
-	input, _ = hex.DecodeString("60fe47b10000000000000000000000000000000000000000000000000000000000000522")
+	input, _ = abi.GetPayloadBytes(abiFilePath, "set", []string{"1314"})
 	output, err = vm.Call(user, contractAccount, code, input, 0)
 	values, err = abi.Unpacker(getFilePath("Balance.abi"), "set", output)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if values[0].Value != "true" {
-		t.Fatal(values[0].Value)
-	}
+	require.NoError(t, err)
+	require.Equal(t, "true", values[0].Value)
+
 	// get
-	input, _ = hex.DecodeString("6d4ce63c")
+	input, _ = abi.GetPayloadBytes(abiFilePath, "get", nil)
 	output, err = vm.Call(user, contractAccount, code, input, 0)
 	values, err = abi.Unpacker(getFilePath("Balance.abi"), "get", output)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if values[0].Value != "1314" {
-		t.Fatal(values[0].Value)
-	}
+	require.NoError(t, err)
+	require.Equal(t, "1314", values[0].Value)
+
 	// info
-	input, _ = hex.DecodeString("370158ea")
+	input, _ = abi.GetPayloadBytes(abiFilePath, "info", nil)
 	output, err = vm.Call(user, contractAccount, code, input, 0)
 	values, err = abi.Unpacker(getFilePath("Balance.abi"), "info", output)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if values[0].Value != user.GetAddress().String() {
-		t.Fatal(values[0].Value)
-	}
-	if values[1].Value != "1314" {
-		t.Fatal(values[1].Value)
-	}
+	require.NoError(t, err)
+	require.Equal(t, user.GetAddress().String(), values[0].Value)
+	require.Equal(t, "1314", values[1].Value)
 	// Then will check if the code or anything else store on the statedb
 	contractAccount, err = db.GetAccount(contractAccount.GetAddress())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !bytes.Equal(contractAccount.GetCode(), runtimeCodes) {
-		t.Fatal(errors.New("The code of user is not same with the runtime code"))
-	}
-	user, err = db.GetAccount(user.GetAddress())
-	// if user.GetNonce() != 1 {
-	// 	t.Fatal(fmt.Errorf("The nonce of user is %d", user.GetNonce()))
-	// }
+	require.NoError(t, err)
+	require.Equal(t, runtimeCodes, contractAccount.GetCode())
+
+	// user, err = db.GetAccount(user.GetAddress())
 }
 
 func getFilePath(name string) string {
