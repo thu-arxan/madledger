@@ -13,8 +13,8 @@ type Account interface {
 	SubBalance(balance uint64) error
 	GetCode() []byte
 	SetCode(code []byte)
-	GetNonce() uint64
-	SetNonce(nonce uint64)
+	// GetNonce() uint64
+	// SetNonce(nonce uint64)
 	Bytes() ([]byte, error)
 }
 
@@ -68,17 +68,6 @@ func (a *DefaultAccount) GetCode() []byte {
 // SetCode is the implementation of Account
 func (a *DefaultAccount) SetCode(code []byte) {
 	a.Code = code
-}
-
-// GetNonce is the implementation of Account
-func (a *DefaultAccount) GetNonce() uint64 {
-	// return a.Nonce
-	return 0
-}
-
-// SetNonce is the implementation of Account
-func (a *DefaultAccount) SetNonce(nonce uint64) {
-	a.Nonce = nonce
 }
 
 // Bytes is the implementation of Account

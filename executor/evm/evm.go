@@ -44,8 +44,6 @@ func (evm *EVM) Create(caller common.Account, code, input []byte, value uint64) 
 	if err != nil {
 		return nil, common.ZeroAddress, err
 	}
-	// add the nonce of caller
-	caller.SetNonce(caller.GetNonce() + 1)
 	evm.cache.SetAccount(caller)
 	// check if the contract address is aleardy exist
 	_, err = evm.cache.GetAccount(contract.GetAddress())

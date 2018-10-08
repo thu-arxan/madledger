@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"madledger/common"
 	"madledger/common/abi"
@@ -107,9 +106,6 @@ func TestBalance(t *testing.T) {
 	}
 	if !bytes.Equal(contractAccount.GetCode(), runtimeCodes) {
 		t.Fatal(errors.New("The code of user is not same with the runtime code"))
-	}
-	if contractAccount.GetNonce() != 0 {
-		t.Fatal(fmt.Errorf("The nonce of contract is %d", contractAccount.GetNonce()))
 	}
 	user, err = db.GetAccount(user.GetAddress())
 	// if user.GetNonce() != 1 {
