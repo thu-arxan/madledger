@@ -81,18 +81,22 @@ func runCall(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	values, err := abi.Unpacker(abiPath, funcName, status.Output)
-	if err != nil {
-		return err
-	}
 	var callStatus = callTxStatus{
 		BlockNumber: status.BlockNumber,
 		BlockIndex:  status.BlockIndex,
 	}
-
-	for _, value := range values {
-		callStatus.Output = append(callStatus.Output, value.Value)
+	if status.Err != "" {
+		callStatus.Output = []string{status.Err}
+	} else {
+		values, err := abi.Unpacker(abiPath, funcName, status.Output)
+		if err != nil {
+			return err
+		}
+		for _, value := range values {
+			callStatus.Output = append(callStatus.Output, value.Value)
+		}
 	}
+
 	table.Output([]callTxStatus{callStatus})
 
 	return nil

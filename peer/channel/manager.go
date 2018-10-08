@@ -94,6 +94,7 @@ func (m *Manager) AddBlock(block *types.Block) error {
 // RunBlock will carry out all txs in the block.
 // It will return after the block is runned.
 // In the future, this will contains chains which rely on something or nothing
+// TODO: transfer is not implementation yet
 func (m *Manager) RunBlock(num uint64) error {
 	block, err := m.cm.GetBlock(num)
 	if err != nil {
@@ -102,53 +103,58 @@ func (m *Manager) RunBlock(num uint64) error {
 	context := evm.NewContext(block)
 	for i, tx := range block.Transactions {
 		senderAddress, err := tx.GetSender()
-		if err == nil {
-			receiverAddress := tx.GetReceiver()
-			log.Infof("The address of receiver is %s", receiverAddress.String())
-			sender, err := m.db.GetAccount(senderAddress)
-			if err != nil {
-				continue
-			}
-			evm := evm.NewEVM(*context, senderAddress, m.db)
-
-			if receiverAddress.String() != common.ZeroAddress.String() {
-				// log.Info("This is a normal call")
-				receiver, err := m.db.GetAccount(receiverAddress)
-				if err != nil {
-					continue
-				}
-				output, err := evm.Call(sender, receiver, receiver.GetCode(), tx.Data.Payload, 0)
-				status := &db.TxStatus{
-					Err:         "",
-					BlockNumber: num,
-					BlockIndex:  i,
-					Output:      output,
-				}
-				if err != nil {
-					status.Err = err.Error()
-					log.Error(err)
-				} else {
-					log.Info(output)
-				}
-				m.db.SetTxStatus(tx, status)
-			} else {
-				log.Info("This is a create call")
-				output, addr, err := evm.Create(sender, tx.Data.Payload, []byte{}, 0)
-				status := &db.TxStatus{
-					Err:             "",
-					BlockNumber:     num,
-					BlockIndex:      i,
-					Output:          output,
-					ContractAddress: addr.String(),
-				}
-				if err != nil {
-					status.Err = err.Error()
-					log.Error(err)
-				}
-				m.db.SetTxStatus(tx, status)
-			}
+		status := &db.TxStatus{
+			Err:         "",
+			BlockNumber: num,
+			BlockIndex:  i,
+			Output:      nil,
+		}
+		if err != nil {
+			status.Err = err.Error()
+			m.db.SetTxStatus(tx, status)
+			continue
+		}
+		receiverAddress := tx.GetReceiver()
+		log.Infof("The address of receiver is %s", receiverAddress.String())
+		sender, err := m.db.GetAccount(senderAddress)
+		if err != nil {
+			status.Err = err.Error()
+			m.db.SetTxStatus(tx, status)
+			continue
 		}
 
+		evm := evm.NewEVM(*context, senderAddress, m.db)
+		if receiverAddress.String() != common.ZeroAddress.String() {
+			// log.Info("This is a normal call")
+			// if the length of payload is not zero, this is a contract call
+			if len(tx.Data.Payload) != 0 && !m.db.AccountExist(receiverAddress) {
+				status.Err = "Invalid Address"
+				m.db.SetTxStatus(tx, status)
+				continue
+			}
+
+			receiver, err := m.db.GetAccount(receiverAddress)
+			if err != nil {
+				status.Err = err.Error()
+				m.db.SetTxStatus(tx, status)
+				continue
+			}
+			output, err := evm.Call(sender, receiver, receiver.GetCode(), tx.Data.Payload, 0)
+			status.Output = output
+			if err != nil {
+				status.Err = err.Error()
+			}
+			m.db.SetTxStatus(tx, status)
+		} else {
+			log.Info("This is a create call")
+			output, addr, err := evm.Create(sender, tx.Data.Payload, []byte{}, 0)
+			status.Output = output
+			status.ContractAddress = addr.String()
+			if err != nil {
+				status.Err = err.Error()
+			}
+			m.db.SetTxStatus(tx, status)
+		}
 	}
 	return errors.New("Not implementation yet")
 }

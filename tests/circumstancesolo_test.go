@@ -76,7 +76,6 @@ func TestCreateChannel(t *testing.T) {
 	require.Contains(t, channels, types.GLOBALCHANNELID)
 	require.Contains(t, channels, types.CONFIGCHANNELID)
 	require.Contains(t, channels, "test")
-
 	// create channel test again
 	err = client.CreateChannel("test")
 	require.Error(t, err)
@@ -153,6 +152,12 @@ func TestCallContract(t *testing.T) {
 	address, err := client.GetPrivKey().PubKey().Address()
 	require.NoError(t, err)
 	assert.Equal(t, []string{address.String(), "1314"}, txStatus.Output)
+	// then call an address which is not exist
+	invalidAddress := common.HexToAddress("0x829f6d8cc2a094b5b1d9e2c4e14e38bbb0ee1400")
+	tx, _ = types.NewTx("test", invalidAddress, []byte("invalid"), client.GetPrivKey())
+	status, err = client.AddTx(tx)
+	require.NoError(t, err)
+	require.Equal(t, "Invalid Address", status.Err)
 }
 
 func TestTxHistory(t *testing.T) {
@@ -164,7 +169,7 @@ func TestTxHistory(t *testing.T) {
 	require.NoError(t, err)
 	// check channel test
 	require.Contains(t, history.Txs, "test")
-	require.Len(t, history.Txs["test"].Value, 8)
+	require.Len(t, history.Txs["test"].Value, 9)
 	// check config test
 	require.Contains(t, history.Txs, types.CONFIGCHANNELID)
 	require.Len(t, history.Txs[types.CONFIGCHANNELID].Value, 2)
