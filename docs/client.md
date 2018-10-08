@@ -86,7 +86,15 @@ BlockNumber | BlockIndex | ContractAddress
 根据一个sol文件编译生成的abi文件，调用一个合约。
 
 ```bash
-client tx call -a $abi -n $name -f $func -p $payload -r $receiver
+client tx call -a $abi -n $name -f $func -i $input -r $receiver
+```
+
+注意，-i参数可以有多个或者没有。
+
+```bash
+client tx call -a Balance.abi -n test -f add -i 1314 -r 0x16987f7117b6f0f0a8d55f6f15d6d8cb82fec58a
+client tx call -a Balance.abi -n test -f get -r 0x16987f7117b6f0f0a8d55f6f15d6d8cb82fec58a
+client tx call -a Balance.abi -n test -f mock -i 1314 -i 520 -r 0x16987f7117b6f0f0a8d55f6f15d6d8cb82fec58a
 ```
 
 返回结果类似如下所示。
@@ -94,3 +102,23 @@ client tx call -a $abi -n $name -f $func -p $payload -r $receiver
 BlockNumber | BlockIndex | Output
 ---- | --- | ---
 4 | 0 | [1314]
+
+#### 1.4.3 history
+
+查看当前账户的交易历史。
+
+```bash
+client tx history
+```
+
+返回的结果类似如下所示。
+
+Channel | TxID
+ ------ | ---
+ test   | bb92201e40a00d643fae32ab5bd95bec46242951e88040eb7bbf0a00f50a0626
+ test   | 8ac8890bb62892721296f5d699476cf7f3961fa510a761252e1e3436818cf182
+ test   | 47a4af918ecce1b1450984dd552f3d51e5fc4edb5d340eff7d05ab42a55fe025
+ test   | 567be0d1c8a0181c7c90d0a046fe578354bd0389490500735da8ed0dd687b167
+ test   | d5e35a0c850b3b6ef2ff028614ce49d6748b1d50e0b0dabad44f89f3d548c5e6
+ _config| a77f2fca39eadf40d19dd9f13246b70b30c28e65d3726f4c15261bc512edcb70
+ _config| a77f2fca39eadf40d19dd9f13246b70b30c28e65d3726f4c15261bc512edcb70
