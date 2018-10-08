@@ -66,11 +66,19 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	// Then print the status
-	table.Output([]createTxStatus{createTxStatus{
-		BlockNumber:     status.BlockNumber,
-		BlockIndex:      status.BlockIndex,
-		ContractAddress: status.ContractAddress,
-	}})
+	if status.Err != "" {
+		table.Output([]createTxStatus{createTxStatus{
+			BlockNumber:     status.BlockNumber,
+			BlockIndex:      status.BlockIndex,
+			ContractAddress: status.Err,
+		}})
+	} else {
+		table.Output([]createTxStatus{createTxStatus{
+			BlockNumber:     status.BlockNumber,
+			BlockIndex:      status.BlockIndex,
+			ContractAddress: status.ContractAddress,
+		}})
+	}
 
 	return nil
 }
