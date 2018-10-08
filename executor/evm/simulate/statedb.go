@@ -21,6 +21,14 @@ func NewStateDB() *StateDB {
 	}
 }
 
+// AccountExist is the implementation of StateDB
+func (s *StateDB) AccountExist(address common.Address) bool {
+	if util.Contain(s.accounts, address) {
+		return true
+	}
+	return false
+}
+
 // GetAccount is the implementaion of StateDB
 func (s *StateDB) GetAccount(address common.Address) (common.Account, error) {
 	if util.Contain(s.accounts, address) {

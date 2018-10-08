@@ -15,6 +15,7 @@ import (
 
 func newContext() Context {
 	return Context{
+		ChannelID: "test",
 		Number:    0,
 		BlockHash: common.ZeroHash,
 		BlockTime: 0,
@@ -1083,32 +1084,6 @@ func TestSubslice(t *testing.T) {
 		}
 	}
 }
-
-// func TestHasPermission(t *testing.T) {
-// 	st := newAppState()
-// 	acc := acm.ConcreteAccount{
-// 		Permissions: permission.AccountPermissions{
-// 			Base: BasePermissionsFromStrings(t,
-// 				"00100001000111",
-// 				"11011110111000"),
-// 		},
-// 	}.Account()
-// 	// Ensure we are falling through to global permissions on those bits not set
-// 	assert.True(t, HasPermission(st, acc, PermFlagFromString(t, "100001000110")))
-// }
-
-// func BasePermissionsFromStrings(t *testing.T, perms, setBit string) permission.BasePermissions {
-// 	return permission.BasePermissions{
-// 		Perms:  PermFlagFromString(t, perms),
-// 		SetBit: PermFlagFromString(t, setBit),
-// 	}
-// }
-
-// func PermFlagFromString(t *testing.T, binaryString string) permission.PermFlag {
-// 	permFlag, err := strconv.ParseUint(binaryString, 2, 64)
-// 	require.NoError(t, err)
-// 	return permission.PermFlag(permFlag)
-// }
 
 type ByteSlicable interface {
 	Bytes() []byte

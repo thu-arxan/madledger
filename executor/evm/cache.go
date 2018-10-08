@@ -30,6 +30,14 @@ func NewCache(db StateDB) *Cache {
 	}
 }
 
+// AccountExist return  if an account exist
+func (cache *Cache) AccountExist(addr common.Address) bool {
+	if util.Contain(cache.accounts, addr) {
+		return true
+	}
+	return cache.db.AccountExist(addr)
+}
+
 // GetAccount return the account of address
 func (cache *Cache) GetAccount(addr common.Address) (common.Account, error) {
 	accountInfo, err := cache.get(addr)

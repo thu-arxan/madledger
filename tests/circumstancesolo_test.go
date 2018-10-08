@@ -92,7 +92,14 @@ func TestCreateContract(t *testing.T) {
 	require.NoError(t, err)
 	status, err := client.AddTx(tx)
 	require.NoError(t, err)
+	require.Empty(t, status.Err)
 	contractAddress = common.HexToAddress(status.ContractAddress)
+	// then try to create the same contract again, this should be a duplicate error
+	tx, err = types.NewTx("test", common.ZeroAddress, contractCodes, client.GetPrivKey())
+	require.NoError(t, err)
+	status, err = client.AddTx(tx)
+	require.NoError(t, err)
+	require.Equal(t, status.Err, "Duplicate address")
 }
 
 func TestCallContract(t *testing.T) {
@@ -106,6 +113,7 @@ func TestCallContract(t *testing.T) {
 	status, err := client.AddTx(tx)
 	require.NoError(t, err)
 	txStatus, err := getTxStatus(BalanceAbi, "get", status)
+	require.NoError(t, err)
 	assert.Equal(t, []string{"10"}, txStatus.Output)
 	// 2. set 1314
 	payload, _ = abi.GetPayloadBytes(BalanceAbi, "set", []string{"1314"})
@@ -156,7 +164,7 @@ func TestTxHistory(t *testing.T) {
 	require.NoError(t, err)
 	// check channel test
 	require.Contains(t, history.Txs, "test")
-	require.Len(t, history.Txs["test"].Value, 7)
+	require.Len(t, history.Txs["test"].Value, 8)
 	// check config test
 	require.Contains(t, history.Txs, types.CONFIGCHANNELID)
 	require.Len(t, history.Txs[types.CONFIGCHANNELID].Value, 2)

@@ -3,7 +3,6 @@ package evm
 import (
 	"encoding/hex"
 	"io/ioutil"
-	"madledger/common"
 	"madledger/common/abi"
 	"madledger/common/util"
 	"madledger/executor/evm/simulate"
@@ -18,18 +17,16 @@ import (
  */
 
 var (
-	gopath        = os.Getenv("GOPATH")
-	deployAccount = common.NewDefaultAccount(common.ZeroAddress)
+	simulateDB = simulate.NewStateDB()
+	user       = newAccount(1)
 )
 
 func TestBalance(t *testing.T) {
 	contractCodes, err := readCodes(getFilePath("Balance.bin"))
 	require.NoError(t, err)
 
-	db := simulate.NewStateDB()
-	user := newAccount(1)
-	db.SetAccount(user)
-	vm := NewEVM(newContext(), user.GetAddress(), db)
+	simulateDB.SetAccount(user)
+	vm := NewEVM(newContext(), user.GetAddress(), simulateDB)
 	code, contractAddr, err := vm.Create(user, contractCodes, []byte{}, 0)
 	require.NoError(t, err)
 
@@ -78,15 +75,22 @@ func TestBalance(t *testing.T) {
 	require.Equal(t, user.GetAddress().String(), values[0].Value)
 	require.Equal(t, "1314", values[1].Value)
 	// Then will check if the code or anything else store on the statedb
-	contractAccount, err = db.GetAccount(contractAccount.GetAddress())
+	contractAccount, err = simulateDB.GetAccount(contractAccount.GetAddress())
 	require.NoError(t, err)
 	require.Equal(t, runtimeCodes, contractAccount.GetCode())
 
-	// user, err = db.GetAccount(user.GetAddress())
+	// user, err = simulateDB.GetAccount(user.GetAddress())
+}
+
+func TestDuplicateAddress(t *testing.T) {
+	contractCodes, _ := readCodes(getFilePath("Balance.bin"))
+	vm := NewEVM(newContext(), user.GetAddress(), simulateDB)
+	_, _, err := vm.Create(user, contractCodes, []byte{}, 0)
+	require.EqualError(t, err, "Duplicate address")
 }
 
 func getFilePath(name string) string {
-	path, _ := util.MakeFileAbs("src/madledger/executor/evm/sols/output/"+name, gopath)
+	path, _ := util.MakeFileAbs("src/madledger/executor/evm/sols/output/"+name, os.Getenv("GOPATH"))
 	return path
 }
 

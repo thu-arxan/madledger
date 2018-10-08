@@ -4,6 +4,8 @@ import "madledger/common"
 
 // StateDB provide a interface for evm to access the global state
 type StateDB interface {
+	// AccountExist returns if an account exist
+	AccountExist(address common.Address) bool
 	// GetAccount returns an account of an address
 	GetAccount(address common.Address) (common.Account, error)
 	// SetAccount updates an account or add an account

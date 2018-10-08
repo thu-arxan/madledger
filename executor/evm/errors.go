@@ -56,7 +56,7 @@ func (c ErrorCode) String() string {
 	case MemoryOutOfBounds:
 		return "Memory out of bounds"
 	case CodeOutOfBounds:
-		return " out of bounds"
+		return "Code out of bounds"
 	case InputOutOfBounds:
 		return "Input out of bounds"
 	case ReturnDataOutOfBounds:

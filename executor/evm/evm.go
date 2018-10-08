@@ -44,12 +44,7 @@ func (evm *EVM) Create(caller common.Account, code, input []byte, value uint64) 
 	if err != nil {
 		return nil, common.ZeroAddress, err
 	}
-	evm.cache.SetAccount(caller)
-	// check if the contract address is aleardy exist
-	_, err = evm.cache.GetAccount(contract.GetAddress())
-	if err != nil {
-		return nil, contract.GetAddress(), fmt.Errorf("The address %s is aleardy exist", contract.GetAddress())
-	}
+
 	// Run the contract bytes and return the runtime bytes
 	output, err := evm.Call(caller, contract, code, input, value)
 	if err != nil {
@@ -1225,13 +1220,16 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 	}
 }
 
-// createAccount create an contract account according to the address and the nonce of
-// provided account.
-// Besides, in this procedure, a new account will be setted in the cache.
+// createAccount will cacaluate the address of the new contract account.
+// First, check if the address exists before.
+// Then, create a default account.
 func (evm *EVM) createAccount(account common.Account, code []byte) (common.Account, error) {
 	// fmt.Printf("callee address is %s\n", caller.GetAddress().String())
 	var cache = evm.cache
 	addr := common.NewContractAddress(evm.context.ChannelID, account.GetAddress(), code)
+	if cache.AccountExist(addr) {
+		return nil, NewError(DuplicateAddress)
+	}
 	newAccount := common.NewDefaultAccount(addr)
 	err := cache.SetAccount(newAccount)
 	if err != nil {

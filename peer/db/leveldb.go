@@ -36,6 +36,16 @@ func NewLevelDB(dir string) (DB, error) {
 	return db, nil
 }
 
+// AccountExist is the implementation of the interface
+func (db *LevelDB) AccountExist(address common.Address) bool {
+	var key = util.BytesCombine([]byte("account:"), address.Bytes())
+	_, err := db.connect.Get(key, nil)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 // GetAccount returns an account of an address
 func (db *LevelDB) GetAccount(address common.Address) (common.Account, error) {
 	var key = util.BytesCombine([]byte("account:"), address.Bytes())

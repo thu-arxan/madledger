@@ -17,6 +17,7 @@ type TxStatus struct {
 // DB provide a interface for peer to access the global state
 // Besides, it should also include the function that the evm StateDB provide
 type DB interface {
+	AccountExist(address common.Address) bool
 	// GetAccount returns an account of an address
 	GetAccount(address common.Address) (common.Account, error)
 	// SetAccount updates an account or add an account

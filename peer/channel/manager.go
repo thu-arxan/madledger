@@ -2,7 +2,6 @@ package channel
 
 import (
 	"errors"
-	"fmt"
 	"madledger/blockchain"
 	"madledger/common"
 	"madledger/core/types"
@@ -71,7 +70,6 @@ func (m *Manager) AddBlock(block *types.Block) error {
 	// add into the blockchain
 	err := m.cm.AddBlock(block)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	switch block.Header.ChannelID {
@@ -111,15 +109,14 @@ func (m *Manager) RunBlock(num uint64) error {
 			if err != nil {
 				continue
 			}
-			receiver, err := m.db.GetAccount(receiverAddress)
-			if err != nil {
-				continue
-			}
 			evm := evm.NewEVM(*context, senderAddress, m.db)
-			log.Infof("The address of receiver is %s", receiver.GetAddress().String())
-			if receiver.GetAddress().String() != common.ZeroAddress.String() {
+
+			if receiverAddress.String() != common.ZeroAddress.String() {
 				// log.Info("This is a normal call")
-				// log.Info(util.Hex(receiver.GetCode()))
+				receiver, err := m.db.GetAccount(receiverAddress)
+				if err != nil {
+					continue
+				}
 				output, err := evm.Call(sender, receiver, receiver.GetCode(), tx.Data.Payload, 0)
 				status := &db.TxStatus{
 					Err:         "",
@@ -145,9 +142,9 @@ func (m *Manager) RunBlock(num uint64) error {
 					ContractAddress: addr.String(),
 				}
 				if err != nil {
+					status.Err = err.Error()
 					log.Error(err)
 				}
-				log.Infof("Get address %s", addr.String())
 				m.db.SetTxStatus(tx, status)
 			}
 		}
