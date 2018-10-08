@@ -40,7 +40,7 @@ func NewEVM(context Context, origin common.Address, db StateDB) *EVM {
 // However, here also something wrong, because that if Create failed then the value should return the caller.
 // TODO: fix the bugs
 func (evm *EVM) Create(caller common.Account, code, input []byte, value uint64) ([]byte, common.Address, error) {
-	contract, err := evm.createAccount(caller)
+	contract, err := evm.createAccount(caller, code)
 	if err != nil {
 		return nil, common.ZeroAddress, err
 	}
@@ -980,7 +980,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 			// if useGasNegative(gas, GasCreateAccount, &gasErr) {
 			// 	return nil, firstErr(err, gasErr)
 			// }
-			newAccount, err := evm.createAccount(callee)
+			newAccount, err := evm.createAccount(callee, input)
 			if err != nil {
 				return nil, err
 			}
@@ -1198,7 +1198,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 				// 		Perm:    permission.CreateContract,
 				// 	})
 				// }
-				receiver, err = evm.createAccount(callee)
+				receiver, err = evm.createAccount(callee, receiver.GetCode())
 				if err != nil {
 					return nil, err
 				}
@@ -1230,10 +1230,10 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 // createAccount create an contract account according to the address and the nonce of
 // provided account.
 // Besides, in this procedure, a new account will be setted in the cache.
-func (evm *EVM) createAccount(account common.Account) (common.Account, error) {
+func (evm *EVM) createAccount(account common.Account, code []byte) (common.Account, error) {
 	// fmt.Printf("callee address is %s\n", caller.GetAddress().String())
 	var cache = evm.cache
-	addr := common.NewContractAddress(account.GetAddress(), account.GetNonce())
+	addr := common.NewContractAddress(evm.context.ChannelID, account.GetAddress(), code)
 	newAccount := common.NewDefaultAccount(addr)
 	err := cache.SetAccount(newAccount)
 	if err != nil {

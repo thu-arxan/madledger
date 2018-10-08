@@ -7,6 +7,7 @@ import (
 
 // Context provide a context to run a contract on the evm
 type Context struct {
+	ChannelID string
 	// Number is the number of the block
 	Number uint64
 	// BlockHash is the hash of the block
@@ -24,6 +25,7 @@ type Context struct {
 // NewContext is the constructor of Context
 func NewContext(block *types.Block) *Context {
 	return &Context{
+		ChannelID: block.Header.ChannelID,
 		Number:    block.Header.Number,
 		BlockHash: block.Hash(),
 		BlockTime: block.Header.Time,

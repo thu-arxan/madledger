@@ -72,7 +72,8 @@ func (a *DefaultAccount) SetCode(code []byte) {
 
 // GetNonce is the implementation of Account
 func (a *DefaultAccount) GetNonce() uint64 {
-	return a.Nonce
+	// return a.Nonce
+	return 0
 }
 
 // SetNonce is the implementation of Account
