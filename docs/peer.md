@@ -25,3 +25,7 @@ peer init -c $filepath.yaml
 ```bash
 peer start
 ```
+
+## 分布式
+
+原则上说，peer节点之间不需要任何通信，其完全依赖于排序节点所提供的区块数据并执行即可得到最终结果。
