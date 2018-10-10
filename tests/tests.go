@@ -3,54 +3,20 @@ package tests
 import (
 	"madledger/common"
 	"madledger/common/abi"
-	"madledger/common/util"
 	"madledger/core/types"
-	oc "madledger/orderer/config"
-	orderer "madledger/orderer/server"
-	pc "madledger/peer/config"
-	peer "madledger/peer/server"
-	"os"
 	"testing"
-	"time"
+
+	client "madledger/client/lib"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	client "madledger/client/lib"
-)
-
-/*
-* CircumstanceSolo begins from a empty environment and defines some operations as below.
-* 1. Create channel test.
-* 2. Create a contract.
-* 3. Call the contract in different ways.
-* 4. During main operates, there are some necessary query to make sure everything is ok.
- */
-
-// Some consts of Balance
-const (
-	BalanceBin = "balance/Balance.bin"
-	BalanceAbi = "balance/Balance.abi"
 )
 
 var (
 	contractAddress common.Address
 )
 
-func TestInitCircumstanceSolo(t *testing.T) {
-	err := initDir(".orderer")
-	require.NoError(t, err)
-	err = initDir(".peer")
-	require.NoError(t, err)
-	err = initDir(".client")
-	require.NoError(t, err)
-}
-
-func TestCreateChannel(t *testing.T) {
-	startSoloOrderer()
-	startSoloPeer()
-	client, err := getSoloClient()
-	require.NoError(t, err)
+func testCreateChannel(t *testing.T, client *client.Client) {
 	// first query channels
 	// then query channels
 	infos, err := client.ListChannel(true)
@@ -81,9 +47,7 @@ func TestCreateChannel(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestCreateContract(t *testing.T) {
-	client, err := getSoloClient()
-	require.NoError(t, err)
+func testCreateContract(t *testing.T, client *client.Client) {
 	// then try to create a tx
 	contractCodes, err := readCodes(BalanceBin)
 	require.NoError(t, err)
@@ -101,9 +65,7 @@ func TestCreateContract(t *testing.T) {
 	require.Equal(t, status.Err, "Duplicate address")
 }
 
-func TestCallContract(t *testing.T) {
-	client, err := getSoloClient()
-	require.NoError(t, err)
+func testCallContract(t *testing.T, client *client.Client) {
 	// then call the contract which is created before
 	var payload []byte
 	// 1. get
@@ -160,9 +122,7 @@ func TestCallContract(t *testing.T) {
 	require.Equal(t, "Invalid Address", status.Err)
 }
 
-func TestTxHistory(t *testing.T) {
-	client, err := getSoloClient()
-	require.NoError(t, err)
+func testTxHistory(t *testing.T, client *client.Client) {
 	// then get the history of the client
 	address, _ := client.GetPrivKey().PubKey().Address()
 	history, err := client.GetHistory(address.Bytes())
@@ -173,70 +133,4 @@ func TestTxHistory(t *testing.T) {
 	// check config test
 	require.Contains(t, history.Txs, types.CONFIGCHANNELID)
 	require.Len(t, history.Txs[types.CONFIGCHANNELID].Value, 2)
-}
-
-func TestEnd(t *testing.T) {
-	os.RemoveAll(".orderer")
-	os.RemoveAll(".peer")
-	os.RemoveAll(".client")
-}
-
-func startSoloOrderer() error {
-	cfg, err := getSoloOrdererConfig()
-	if err != nil {
-		return err
-	}
-	server, err := orderer.NewServer(cfg)
-	if err != nil {
-		return err
-	}
-	go func() {
-		server.Start()
-	}()
-	time.Sleep(300 * time.Millisecond)
-	return nil
-}
-
-func startSoloPeer() error {
-	server, err := peer.NewServer(getSoloPeerConfig())
-	if err != nil {
-		return err
-	}
-	go func() {
-		server.Start()
-	}()
-	time.Sleep(300 * time.Millisecond)
-	return nil
-}
-
-func getSoloOrdererConfig() (*oc.Config, error) {
-	cfgFilePath, _ := util.MakeFileAbs("src/madledger/tests/solo_orderer.yaml", gopath)
-	cfg, err := oc.LoadConfig(cfgFilePath)
-	if err != nil {
-		return nil, err
-	}
-	chainPath, _ := util.MakeFileAbs("src/madledger/tests/.orderer/data/blocks", gopath)
-	dbPath, _ := util.MakeFileAbs("src/madledger/tests/.orderer/data/leveldb", gopath)
-	cfg.BlockChain.Path = chainPath
-	cfg.DB.LevelDB.Dir = dbPath
-	return cfg, nil
-}
-
-func getSoloPeerConfig() *pc.Config {
-	cfgFilePath, _ := util.MakeFileAbs("src/madledger/tests/solo_peer.yaml", gopath)
-	cfg, _ := pc.LoadConfig(cfgFilePath)
-	chainPath, _ := util.MakeFileAbs("src/madledger/tests/.peer/data/blocks", gopath)
-	dbPath, _ := util.MakeFileAbs("src/madledger/tests/.peer/data/leveldb", gopath)
-	cfg.BlockChain.Path = chainPath
-	cfg.DB.LevelDB.Dir = dbPath
-	return cfg
-}
-
-func getSoloClient() (*client.Client, error) {
-	cfgFilePath, _ := util.MakeFileAbs("src/madledger/tests/solo_client.yaml", gopath)
-	c, err := client.NewClient(cfgFilePath)
-	if err != nil {
-		return nil, err
-	}
-	return c, nil
 }

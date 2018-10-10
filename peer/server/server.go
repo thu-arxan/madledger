@@ -86,3 +86,12 @@ func (s *Server) Start() error {
 
 	return nil
 }
+
+// Stop stops the server
+// TODO: The channel manager failed to stop
+func (s *Server) Stop() error {
+	s.rpcServer.Stop()
+	// s.ChannelManager.stop()
+	log.Info("Succeed to stop the orderer service")
+	return nil
+}

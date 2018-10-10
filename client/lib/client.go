@@ -19,7 +19,7 @@ import (
 // Client is the Client to communicate with orderer
 type Client struct {
 	ordererClient pb.OrdererClient
-	peerClient    pb.PeerClient
+	peerClients   []pb.PeerClient
 	privKey       crypto.PrivateKey
 }
 
@@ -38,14 +38,14 @@ func NewClient(cfgFile string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	peerClient, err := getPeerClient()
+	peerClients, err := getPeerClients(cfg)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Client{
 		ordererClient: ordererClient,
-		peerClient:    peerClient,
+		peerClients:   peerClients,
 		privKey:       keyStore.Keys[0],
 	}, nil
 }
@@ -59,13 +59,18 @@ func getOrdererClient() (pb.OrdererClient, error) {
 	return ordererClient, nil
 }
 
-func getPeerClient() (pb.PeerClient, error) {
-	conn, err := grpc.Dial("localhost:23456", grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
-	if err != nil {
-		return nil, err
+func getPeerClients(cfg *config.Config) ([]pb.PeerClient, error) {
+	var clients []pb.PeerClient
+	for _, address := range cfg.Peer.Address {
+		conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
+		if err != nil {
+			return nil, err
+		}
+		peerClient := pb.NewPeerClient(conn)
+		clients = append(clients, peerClient)
 	}
-	peerClient := pb.NewPeerClient(conn)
-	return peerClient, nil
+
+	return clients, nil
 }
 
 // GetPrivKey return the private key
@@ -142,21 +147,49 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-	status, err := c.peerClient.GetTxStatus(context.Background(), &pb.GetTxStatusRequest{
-		ChannelID: tx.Data.ChannelID,
-		TxID:      tx.ID,
-		Behavior:  pb.Behavior_RETURN_UNTIL_READY,
-	})
+	collector := NewCollector(len(c.peerClients))
+	for i := range c.peerClients {
+		go func(i int) {
+			status, err := c.peerClients[i].GetTxStatus(context.Background(), &pb.GetTxStatusRequest{
+				ChannelID: tx.Data.ChannelID,
+				TxID:      tx.ID,
+				Behavior:  pb.Behavior_RETURN_UNTIL_READY,
+			})
+			if err != nil {
+				collector.Add(nil, err)
+			} else {
+				collector.Add(status, nil)
+			}
+		}(i)
+	}
+
+	result, err := collector.Wait()
 	if err != nil {
 		return nil, err
 	}
-	return status, nil
+	return result.(*pb.TxStatus), nil
 }
 
 // GetHistory return the history of address
 func (c *Client) GetHistory(address []byte) (*pb.TxHistory, error) {
-	history, err := c.peerClient.ListTxHistory(context.Background(), &pb.ListTxHistoryRequest{
-		Address: address,
-	})
-	return history, err
+	collector := NewCollector(len(c.peerClients))
+	for i := range c.peerClients {
+		go func(i int) {
+			history, err := c.peerClients[i].ListTxHistory(context.Background(), &pb.ListTxHistoryRequest{
+				Address: address,
+			})
+			if err != nil {
+				collector.Add(nil, err)
+			} else {
+				collector.Add(history, nil)
+			}
+		}(i)
+	}
+
+	result, err := collector.Wait()
+	if err != nil {
+		return nil, err
+	}
+
+	return result.(*pb.TxHistory), err
 }
