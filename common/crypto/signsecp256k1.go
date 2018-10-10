@@ -1,9 +1,6 @@
 package crypto
 
 import (
-
-	// "madledger/common/crypto/secp256k1"
-
 	"encoding/hex"
 	"errors"
 	"madledger/common"
@@ -13,6 +10,7 @@ import (
 )
 
 // The secp256k1 implementation of sign.go
+// If need some help about secp256k1, visit https://godoc.org/github.com/decred/dcrd/dcrec/secp256k1
 
 // SECP256K1PrivateKey defines the secp256k1 private key in ecdsa
 type SECP256K1PrivateKey secp256k1.PrivateKey
