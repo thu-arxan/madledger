@@ -7,7 +7,7 @@ import (
 	"madledger/core/types"
 	"madledger/orderer/db"
 	"time"
-	"transaction_service/util"
+	"madledger/common/util"
 
 	"github.com/sirupsen/logrus"
 )
