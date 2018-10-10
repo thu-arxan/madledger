@@ -11,6 +11,7 @@ import (
 
 	"madledger/common"
 	"madledger/common/crypto/secp256k1"
+	"madledger/common/crypto/sha3"
 	"madledger/common/math"
 )
 
@@ -77,8 +78,8 @@ func (p SECP256K1PublicKey) Address() (common.Address, error) {
 	if err != nil {
 		return common.ZeroAddress, nil
 	}
-	hash := Keccak256Hash(bytes[1:])
-	addrBytes := hash.Bytes()[12:]
+	hash := sha3.Sha3(bytes[1:])
+	addrBytes := hash[12:]
 	return common.AddressFromBytes(addrBytes)
 }
 
