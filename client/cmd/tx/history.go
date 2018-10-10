@@ -3,9 +3,8 @@ package tx
 import (
 	"errors"
 	"madledger/client/lib"
-	"os"
+	"madledger/client/util"
 
-	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -43,11 +42,12 @@ func runHistory(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Channel", "TxID"})
+
+	table := util.NewTable()
+	table.SetHeader("Channel", "TxID")
 	for channel, txs := range history.Txs {
 		for _, id := range txs.Value {
-			table.Append([]string{channel, id})
+			table.AddRow(channel, id)
 		}
 	}
 	table.Render()

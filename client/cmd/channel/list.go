@@ -3,8 +3,8 @@ package channel
 import (
 	"errors"
 	"madledger/client/lib"
+	"madledger/client/util"
 
-	"github.com/modood/table"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -43,6 +43,11 @@ func runList(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	table.Output(infos)
+	table := util.NewTable()
+	table.SetHeader("Name", "System", "BlockSize", "Identity")
+	for _, info := range infos {
+		table.AddRow(info.Name, info.System, info.BlockSize, info.Identity)
+	}
+	table.Render()
 	return nil
 }

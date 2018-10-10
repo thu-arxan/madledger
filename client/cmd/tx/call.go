@@ -3,11 +3,11 @@ package tx
 import (
 	"errors"
 	"madledger/client/lib"
+	"madledger/client/util"
 	"madledger/common"
 	"madledger/common/abi"
 	"madledger/core/types"
 
-	"github.com/modood/table"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -33,12 +33,6 @@ func init() {
 	callViper.BindPFlag("channelID", callCmd.Flags().Lookup("channelID"))
 	callCmd.Flags().StringP("receiver", "r", "", "The contract address of the tx")
 	callViper.BindPFlag("receiver", callCmd.Flags().Lookup("receiver"))
-}
-
-type callTxStatus struct {
-	BlockNumber uint64
-	BlockIndex  int32
-	Output      []string
 }
 
 func runCall(cmd *cobra.Command, args []string) error {
@@ -81,23 +75,23 @@ func runCall(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	var callStatus = callTxStatus{
-		BlockNumber: status.BlockNumber,
-		BlockIndex:  status.BlockIndex,
-	}
+
+	table := util.NewTable()
+	table.SetHeader("BlockNumber", "BlockIndex", "Output")
 	if status.Err != "" {
-		callStatus.Output = []string{status.Err}
+		table.AddRow(status.BlockNumber, status.BlockIndex, status.Err)
 	} else {
 		values, err := abi.Unpacker(abiPath, funcName, status.Output)
 		if err != nil {
 			return err
 		}
+		var output []string
 		for _, value := range values {
-			callStatus.Output = append(callStatus.Output, value.Value)
+			output = append(output, value.Value)
 		}
+		table.AddRow(status.BlockNumber, status.BlockIndex, output)
 	}
-
-	table.Output([]callTxStatus{callStatus})
+	table.Render()
 
 	return nil
 }

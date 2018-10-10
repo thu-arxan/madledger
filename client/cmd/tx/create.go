@@ -3,10 +3,10 @@ package tx
 import (
 	"errors"
 	"madledger/client/lib"
+	"madledger/client/util"
 	"madledger/common"
 	"madledger/core/types"
 
-	"github.com/modood/table"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -66,19 +66,14 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	// Then print the status
+	table := util.NewTable()
+	table.SetHeader("BlockNumber", "BlockIndex", "ContractAddress")
 	if status.Err != "" {
-		table.Output([]createTxStatus{createTxStatus{
-			BlockNumber:     status.BlockNumber,
-			BlockIndex:      status.BlockIndex,
-			ContractAddress: status.Err,
-		}})
+		table.AddRow(status.BlockNumber, status.BlockIndex, status.Err)
 	} else {
-		table.Output([]createTxStatus{createTxStatus{
-			BlockNumber:     status.BlockNumber,
-			BlockIndex:      status.BlockIndex,
-			ContractAddress: status.ContractAddress,
-		}})
+		table.AddRow(status.BlockNumber, status.BlockIndex, status.ContractAddress)
 	}
+	table.Render()
 
 	return nil
 }
