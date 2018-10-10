@@ -14,6 +14,7 @@ Orderer:
 Peer:
   Address:
     - localhost:23456
+    - localhost:34567
 
 # KeyStore manage some private keys
 KeyStore:

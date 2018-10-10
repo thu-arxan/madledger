@@ -4,6 +4,8 @@ import (
 	"madledger/common/util"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -13,36 +15,24 @@ var (
 func TestLoadConfig(t *testing.T) {
 	var err error
 	cfg, err = LoadConfig(getTestConfigFilePath())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 }
 
 func TestGetKeyStoreConfig(t *testing.T) {
 	_, err := cfg.GetKeyStoreConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 }
 
 func TestGetOrdererConfig(t *testing.T) {
 	ordererConfig, err := cfg.GetOrdererConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(ordererConfig.Address) != 1 || ordererConfig.Address[0] != "localhost:12345" {
-		t.Fatal()
-	}
+	require.NoError(t, err)
+	require.Equal(t, []string{"localhost:12345"}, ordererConfig.Address)
 }
 
 func TestGetPeerConfig(t *testing.T) {
 	peerConfig, err := cfg.GetPeerConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(peerConfig.Address) != 1 || peerConfig.Address[0] != "localhost:23456" {
-		t.Fatal()
-	}
+	require.NoError(t, err)
+	require.Equal(t, []string{"localhost:23456", "localhost:34567"}, peerConfig.Address)
 }
 
 func getTestConfigFilePath() string {
