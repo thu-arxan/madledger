@@ -58,14 +58,22 @@ func TestNewLevelDB(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestGetAccount(t *testing.T) {
+func TestAccount(t *testing.T) {
 	address, err := privKey.PubKey().Address()
 	require.NoError(t, err)
+	// The address should not exist
+	require.False(t, db.AccountExist(address))
+	// But if we GetAccount, we can get the default account
 	account, err := db.GetAccount(address)
 	require.NoError(t, err)
-	require.True(t, reflect.DeepEqual(account.GetAddress().Bytes(), address.Bytes()))
+	defaultAccount := common.NewDefaultAccount(address)
+	require.Equal(t, defaultAccount, account)
+	// then set balance and code
 	account.AddBalance(100)
 	require.Equal(t, uint64(100), account.GetBalance())
+	code := []byte("Hello world")
+	account.SetCode(code)
+	require.Equal(t, code, account.GetCode())
 	// the set the account
 	err = db.SetAccount(account)
 	require.NoError(t, err)
@@ -73,6 +81,32 @@ func TestGetAccount(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, reflect.DeepEqual(account.GetAddress().Bytes(), address.Bytes()))
 	require.Equal(t, uint64(100), account.GetBalance())
+	require.Equal(t, code, account.GetCode())
+	require.True(t, db.AccountExist(account.GetAddress()))
+	// then remove account
+	err = db.RemoveAccount(account.GetAddress())
+	require.NoError(t, err)
+	require.False(t, db.AccountExist(account.GetAddress()))
+}
+
+func TestStorage(t *testing.T) {
+	// first set an account
+	address, _ := privKey.PubKey().Address()
+	account, _ := db.GetAccount(address)
+	db.SetAccount(account)
+	// then get key and value
+	key, err := common.BytesToWord256([]byte("I want a key which length is 32."))
+	require.NoError(t, err)
+	value, err := common.BytesToWord256([]byte("I need a value that length is 32"))
+	require.NoError(t, err)
+	// then test the storage
+	_, err = db.GetStorage(address, key)
+	require.Error(t, err, "not found")
+	err = db.SetStorage(address, key, value)
+	require.NoError(t, err)
+	v, err := db.GetStorage(address, key)
+	require.NoError(t, err)
+	require.Equal(t, value, v)
 }
 
 func TestSetTxStatus(t *testing.T) {
@@ -83,9 +117,8 @@ func TestSetTxStatus(t *testing.T) {
 func TestGetTxStatus(t *testing.T) {
 	status, err := db.GetTxStatus(tx1.Data.ChannelID, tx1.ID)
 	require.NoError(t, err)
-	if !reflect.DeepEqual(status, tx1Status) {
-		t.Fatal()
-	}
+	require.Equal(t, status, tx1Status)
+
 	_, err = db.GetTxStatus(tx2.Data.ChannelID, tx2.ID)
 	require.Error(t, err, "Not exist")
 }
