@@ -30,7 +30,7 @@ func testCreateChannel(t *testing.T, client *client.Client) {
 	require.NotContains(t, channels, "test")
 
 	// then add a channel
-	err = client.CreateChannel("test")
+	err = client.CreateChannel("test", true, nil, nil)
 	require.NoError(t, err)
 	// then query channels
 	infos, err = client.ListChannel(true)
@@ -43,12 +43,16 @@ func testCreateChannel(t *testing.T, client *client.Client) {
 	require.Contains(t, channels, types.CONFIGCHANNELID)
 	require.Contains(t, channels, "test")
 	// create channel test again
-	err = client.CreateChannel("test")
+	err = client.CreateChannel("test", true, nil, nil)
 	require.Error(t, err)
+	// create private channel
+	err = client.CreateChannel("private", false, nil, nil)
+	require.NoError(t, err)
 }
 
 func testCreateContract(t *testing.T, client *client.Client) {
-	// then try to create a tx
+	// First, test on channel test, which is public
+	// try to create a tx
 	contractCodes, err := readCodes(BalanceBin)
 	require.NoError(t, err)
 	tx, err := types.NewTx("test", common.ZeroAddress, contractCodes, client.GetPrivKey())
@@ -63,6 +67,12 @@ func testCreateContract(t *testing.T, client *client.Client) {
 	status, err = client.AddTx(tx)
 	require.NoError(t, err)
 	require.Equal(t, status.Err, "Duplicate address")
+	// Then, test on channel private, which is private
+	tx, err = types.NewTx("private", common.ZeroAddress, contractCodes, client.GetPrivKey())
+	require.NoError(t, err)
+	// Note: This function will not get a result because until there is a peer
+	// status, err = client.AddTx(tx)
+	// require.NoError(t, err)
 }
 
 func testCallContract(t *testing.T, client *client.Client) {
@@ -132,5 +142,5 @@ func testTxHistory(t *testing.T, client *client.Client) {
 	require.Len(t, history.Txs["test"].Value, 9)
 	// check config test
 	require.Contains(t, history.Txs, types.CONFIGCHANNELID)
-	require.Len(t, history.Txs[types.CONFIGCHANNELID].Value, 2)
+	require.Len(t, history.Txs[types.CONFIGCHANNELID].Value, 3)
 }

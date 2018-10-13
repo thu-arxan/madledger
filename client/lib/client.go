@@ -107,16 +107,24 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 }
 
 // CreateChannel create a channel
-func (c *Client) CreateChannel(channelID string) error {
+func (c *Client) CreateChannel(channelID string, public bool, admins, members []*types.Member) error {
 	self, err := types.NewMember(c.GetPrivKey().PubKey(), "admin")
 	if err != nil {
 		return err
 	}
+	admins = unionMembers(admins, []*types.Member{self})
+	// if this is a public channel, there is no need to contain members
+	if public {
+		members = make([]*types.Member, 0)
+	} else {
+		members = unionMembers(admins, members)
+	}
 	payload, _ := json.Marshal(cc.Payload{
 		ChannelID: channelID,
 		Profile: &cc.Profile{
-			Public: true,
-			Admins: []*types.Member{self},
+			Public:  public,
+			Admins:  admins,
+			Members: members,
 		},
 		Version: 1,
 	})
@@ -192,4 +200,24 @@ func (c *Client) GetHistory(address []byte) (*pb.TxHistory, error) {
 	}
 
 	return result.(*pb.TxHistory), err
+}
+
+func unionMembers(first, second []*types.Member) []*types.Member {
+	union := make([]*types.Member, 0)
+	members := append(first, second...)
+	for _, member := range members {
+		if !membersContain(union, member) {
+			union = append(union, member)
+		}
+	}
+	return union
+}
+
+func membersContain(members []*types.Member, member *types.Member) bool {
+	for i := range members {
+		if member.Equal(members[i]) {
+			return true
+		}
+	}
+	return false
 }
