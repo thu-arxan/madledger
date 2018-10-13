@@ -8,11 +8,9 @@ import (
 	"github.com/tmthrgd/go-hex"
 )
 
-// TODO: This is copied from ethereum.
-// However, how to use these is still a question.
-// Also, there maybe many things is missed.
-// Besides, how to support different kind of encrypted functions
-// is still a problem.
+// his is copied from ethereum.
+// However, there maybe many things is missed like
+// how to support different kind of encrypted functions.
 
 const (
 	// HashLength is the expected length of the hash

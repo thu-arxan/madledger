@@ -36,9 +36,8 @@ func NewEVM(context Context, origin common.Address, db StateDB) *EVM {
 	}
 }
 
-// Create create a contract
-// However, here also something wrong, because that if Create failed then the value should return the caller.
-// TODO: fix the bugs
+// Create create a contract.
+// If there exist a contract on the address then a error occurs.
 func (evm *EVM) Create(caller common.Account, code, input []byte, value uint64) ([]byte, common.Address, error) {
 	contract, err := evm.createAccount(caller, code)
 	if err != nil {

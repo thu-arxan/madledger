@@ -35,7 +35,6 @@ type TxSig struct {
 }
 
 // NewTx is the constructor of Tx
-// TODO: AccountNonce
 func NewTx(channelID string, recipient common.Address, payload []byte, privKey crypto.PrivateKey) (*Tx, error) {
 	if payload == nil || len(payload) == 0 {
 		return nil, errors.New("The payload can not be empty")
@@ -156,11 +155,7 @@ func (tx *Tx) hash(withSig bool) []byte {
 		data.Sig = nil
 	}
 
-	// todo: should we ignore the error?
-	bytes, err := json.Marshal(data)
-	if err != nil {
-		return nil
-	}
+	bytes, _ := json.Marshal(data)
 	return crypto.Hash(bytes)
 }
 
