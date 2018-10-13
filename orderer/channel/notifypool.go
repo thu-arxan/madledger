@@ -74,7 +74,6 @@ func (pool *notifyPool) addBlock(block *types.Block) {
 	if len(txs) != 0 {
 		for _, tx := range txs {
 			hash := util.Hex(tx.Hash())
-			// fmt.Printf("Notify notify %s\n", hash)
 			if util.Contain(pool.txs, hash) {
 				e := pool.txs[hash]
 				delete(pool.txs, hash)

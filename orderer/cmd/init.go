@@ -23,7 +23,6 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 }
 
-// TODO: fulfill the init
 func runinit(cmd *cobra.Command, args []string) error {
 	cfgFile := initViper.GetString("config")
 	if cfgFile == "" {
