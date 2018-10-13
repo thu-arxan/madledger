@@ -100,8 +100,12 @@ func TestAddBlock(t *testing.T) {
 func TestIsMember(t *testing.T) {
 	member, _ := types.NewMember(privKey.PubKey(), "admin")
 	require.True(t, db.IsMember("test", member))
-	require.True(t, db.IsAdmin("test", member))
 	require.True(t, db.IsMember(types.GLOBALCHANNELID, member))
+}
+
+func TestIsAdmin(t *testing.T) {
+	member, _ := types.NewMember(privKey.PubKey(), "admin")
+	require.True(t, db.IsAdmin("test", member))
 	require.False(t, db.IsAdmin(types.GLOBALCHANNELID, member))
 }
 
