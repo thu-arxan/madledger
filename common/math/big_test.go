@@ -5,8 +5,6 @@ import (
 	"encoding/hex"
 	"math/big"
 	"testing"
-
-	"madledger/common"
 )
 
 func TestHexOrDecimal256(t *testing.T) {
@@ -213,7 +211,7 @@ func TestBigEndianByteAt(t *testing.T) {
 		{"ABCDEF0908070605040302010000000000000000000000000000000000000000", 500, 0x00},
 	}
 	for _, test := range tests {
-		v := new(big.Int).SetBytes(common.Hex2Bytes(test.x))
+		v := new(big.Int).SetBytes(hex2Bytes(test.x))
 		actual := bigEndianByteAt(v, test.y)
 		if actual != test.exp {
 			t.Fatalf("Expected  [%v] %v:th byte to be %v, was %v.", test.x, test.y, test.exp, actual)
@@ -246,7 +244,7 @@ func TestLittleEndianByteAt(t *testing.T) {
 		{"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 0xFFFF, 0x0},
 	}
 	for _, test := range tests {
-		v := new(big.Int).SetBytes(common.Hex2Bytes(test.x))
+		v := new(big.Int).SetBytes(hex2Bytes(test.x))
 		actual := Byte(v, 32, test.y)
 		if actual != test.exp {
 			t.Fatalf("Expected  [%v] %v:th byte to be %v, was %v.", test.x, test.y, test.exp, actual)
@@ -298,4 +296,11 @@ func TestExp(t *testing.T) {
 			t.Errorf("Exp(%d, %d) = %d, want %d", test.base, test.exponent, result, test.result)
 		}
 	}
+}
+
+// This it the Hex2Bytes in common, but we can use the function in
+// common directly because the math should not rely on common.
+func hex2Bytes(str string) []byte {
+	h, _ := hex.DecodeString(str)
+	return h
 }

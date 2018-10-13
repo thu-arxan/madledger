@@ -121,11 +121,6 @@ func BytesCombine(pBytes ...[]byte) []byte {
 	return bytes.Join(pBytes, []byte(""))
 }
 
-// SafeAdd returns the result and whether overflow occurred.
-func SafeAdd(x, y uint64) (uint64, bool) {
-	return x + y, y > MaxUint64-x
-}
-
 // RandNum return int in [0, num)
 func RandNum(num int) int {
 	rand.Seed(time.Now().UnixNano())

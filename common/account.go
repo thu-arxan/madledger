@@ -2,6 +2,8 @@ package common
 
 import (
 	"encoding/json"
+	"errors"
+	"madledger/common/math"
 )
 
 // Account is the account of madledger
@@ -47,15 +49,19 @@ func (a *DefaultAccount) GetBalance() uint64 {
 }
 
 // AddBalance is the implementation of Account
-// todo: should conside the attack
 func (a *DefaultAccount) AddBalance(balance uint64) error {
+	if _, overflow := math.SafeAdd(a.Balance, balance); overflow {
+		return errors.New("Overflow")
+	}
 	a.Balance += balance
 	return nil
 }
 
 // SubBalance is the implementation of Account
-// todo: should conside the attack
 func (a *DefaultAccount) SubBalance(balance uint64) error {
+	if _, overflow := math.SafeSub(a.Balance, balance); !overflow {
+		return errors.New("Overflow")
+	}
 	a.Balance -= balance
 	return nil
 }
