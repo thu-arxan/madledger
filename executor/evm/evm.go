@@ -962,16 +962,6 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 				return nil, err
 			}
 
-			// Check balance
-			// if callee.GetBalance() < uint64(contractValue) {
-			// 	return nil, firstErr(err, ErrorCodeInsufficientBalance)
-			// }
-
-			// TODO charge for gas to create account _ the code length * GasCreateByte
-			// var gasErr ErrorCode
-			// if useGasNegative(gas, GasCreateAccount, &gasErr) {
-			// 	return nil, firstErr(err, gasErr)
-			// }
 			newAccount, err := evm.createAccount(callee, input)
 			if err != nil {
 				return nil, err
@@ -996,14 +986,6 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 
 		case CALL, CALLCODE, DELEGATECALL: // 0xF1, 0xF2, 0xF4
 			evm.returnData = nil
-
-			// if !HasPermission(callState, callee, permission.Call) {
-			// 	return nil, PermissionDenied{
-			// 		Address: callee.GetAddress(),
-			// 		Perm:    permission.Call,
-			// 	}
-			// }
-			// gasLimit
 			_, err := stack.PopU64()
 			if err != nil {
 				return nil, err

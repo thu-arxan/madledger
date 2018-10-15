@@ -77,8 +77,6 @@ func TestUpdateChannel(t *testing.T) {
 	if !util.Contain(channels, "test") {
 		t.Fatal(errors.New("Channel test is not contained"))
 	}
-	// todo: maybe illegal channel id
-
 }
 
 func TestAddBlock(t *testing.T) {

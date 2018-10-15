@@ -26,7 +26,6 @@ type Server struct {
 }
 
 // NewServer is the constructor of server
-// todo: many thing need to be done
 func NewServer(cfg *config.Config) (*Server, error) {
 	server := new(Server)
 	// set config of server

@@ -5,10 +5,7 @@ import (
 	"madledger/core/types"
 )
 
-// CreateGenesisBlock return the genesis block
-// maybe the address should be a special addr rather than all zero
-// also the data is still need to be discussed
-// TODO:
+// CreateGenesisBlock return the genesis block.
 func CreateGenesisBlock(payloads []*Payload) (*types.Block, error) {
 	var txs []*types.Tx
 	for _, payload := range payloads {

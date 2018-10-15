@@ -6,9 +6,7 @@ import (
 )
 
 // CreateGenesisBlock return the genesis block
-// maybe the address should be a special addr rather than all zero
-// also the data is still need to be discussed
-// TODO: many things
+// TODO: maybe there should includes some admins in the genesis block
 func CreateGenesisBlock() (*types.Block, error) {
 	var payloads = []Payload{Payload{
 		ChannelID: types.CONFIGCHANNELID,

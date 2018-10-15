@@ -3,11 +3,11 @@ package channel
 import (
 	"errors"
 	"madledger/blockchain"
+	"madledger/common/util"
 	"madledger/consensus"
 	"madledger/core/types"
 	"madledger/orderer/db"
 	"time"
-	"madledger/common/util"
 
 	"github.com/sirupsen/logrus"
 )
@@ -33,7 +33,6 @@ type Manager struct {
 }
 
 // NewManager is the constructor of Manager
-// TODO: many things is not done yet
 func NewManager(id, dir string, db db.DB) (*Manager, error) {
 	cm, err := blockchain.NewManager(id, dir)
 	if err != nil {
@@ -51,7 +50,6 @@ func NewManager(id, dir string, db db.DB) (*Manager, error) {
 }
 
 // Start starts the channel
-// TODO: many things to be done
 func (manager *Manager) Start(consensus consensus.Consensus, globalManager *Manager) {
 	log.Infof("Channel %s is starting", manager.ID)
 	manager.consensus = consensus
@@ -139,7 +137,6 @@ func (manager *Manager) AddBlock(block *types.Block) error {
 	case types.GLOBALCHANNELID:
 		return nil
 	default:
-		// todo
 		return nil
 	}
 }

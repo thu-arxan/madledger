@@ -11,9 +11,10 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
-// TODO: This need a summary or do this in the docs
 /*
-*
+*  1. Channel profile: key is []byte("_config@" + channelID), value is the json.Marshal(profile)
+*  2. All channel ids: key is []byte("_config"), value is json.Marshl([]string{id1, id2, ...})
+*  3. Tx: key is combine of []byte(channelID) and []byte(txID), value is []byte("true")
  */
 
 // LevelDB is the implementation of DB on leveldb
@@ -57,8 +58,6 @@ func (db *LevelDB) HasChannel(id string) bool {
 }
 
 // UpdateChannel is the implementation of DB
-// maybe the name should be checked
-// TODO
 func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
 	var key = getChannelProfileKey(id)
 	if !db.HasChannel(id) {
@@ -153,7 +152,6 @@ func (db *LevelDB) Close() error {
 }
 
 // addChannel add a record into key types.CONFIGCHANNELID
-// todo: maybe a map is better, and there is need to check if channel exists aleardy
 func (db *LevelDB) addChannel(id string) error {
 	var key = []byte(types.CONFIGCHANNELID)
 	exist, _ := db.connect.Has(key, nil)
@@ -168,7 +166,9 @@ func (db *LevelDB) addChannel(id string) error {
 			return err
 		}
 	}
-	ids = append(ids, id)
+	if !util.Contain(ids, id) {
+		ids = append(ids, id)
+	}
 	data, err := json.Marshal(ids)
 	if err != nil {
 		return err

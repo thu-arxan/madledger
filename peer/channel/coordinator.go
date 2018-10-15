@@ -27,7 +27,6 @@ type Dependency struct {
 }
 
 // State represents the state of channel
-// todo
 type State struct {
 	num  uint64
 	code StateCode

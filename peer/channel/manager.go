@@ -47,10 +47,6 @@ func NewManager(id, dir string, identity *types.Member, db db.DB, client *ordere
 }
 
 // Start start the manager.
-// The manager will try to fetch a block every 500ms,
-// but remember this is a implementation which is very bad.
-// It should be replaced as soon as possible.
-// TODO:
 func (m *Manager) Start() {
 	log.Infof("%s is starting...", m.id)
 	for {

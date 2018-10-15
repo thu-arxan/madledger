@@ -97,7 +97,7 @@ func (m *manager) startChannel(channelID string) error {
 	return nil
 }
 
-// todo
+// todo: update consensus config is not finished yet
 func (m *manager) update(channelID string, cfg consensus.Config) error {
 	return errors.New("The update is not supported now")
 }

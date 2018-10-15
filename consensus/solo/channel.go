@@ -16,7 +16,7 @@ type channel struct {
 	notifies *notifyPool
 	num      uint64
 	// store all blocks, maybe gc is needed
-	// todo
+	// todo: gc to reduce the storage
 	blocks            map[uint64]*Block
 	notify            *chan consensus.Block
 	init              bool
