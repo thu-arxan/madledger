@@ -48,5 +48,7 @@ func getPeerConfig(i int) *pc.Config {
 	cfg.DB.LevelDB.Dir = dbPath
 	// then set port
 	cfg.Port += i
+	// then set key
+	cfg.KeyStore.Key = fmt.Sprintf("config/peer/.solo_peer%d.pem", i)
 	return cfg
 }
