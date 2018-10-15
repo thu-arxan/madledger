@@ -80,6 +80,16 @@ func TestGetDBConfig(t *testing.T) {
 	require.Error(t, err, "Unsupport db type: unknown")
 }
 
+func TestGetKeyStoreConfig(t *testing.T) {
+	cfg, _ := LoadConfig(getTestConfigFilePath())
+	_, err := cfg.GetKeyStoreConfig()
+	require.NoError(t, err)
+	// set key to nil
+	cfg.KeyStore.Key = ""
+	_, err = cfg.GetKeyStoreConfig()
+	require.Error(t, err, "The key should not be nil")
+}
+
 func getTestConfigFilePath() string {
 	gopath := os.Getenv("GOPATH")
 	cfgFilePath, _ := util.MakeFileAbs("src/madledger/peer/config/.config.yaml", gopath)

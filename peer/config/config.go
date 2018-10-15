@@ -1,11 +1,14 @@
 package config
 
 import (
+	"crypto"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"madledger/common/util"
 	"os"
+
+	putil "madledger/peer/util"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -27,6 +30,9 @@ type Config struct {
 			Dir string `yaml:"Dir"`
 		} `yaml:"LevelDB"`
 	} `yaml:"DB"`
+	KeyStore struct {
+		Key string `yaml:"Key"`
+	} `yaml:"KeyStore"`
 }
 
 // ServerConfig is the config of server
@@ -135,6 +141,26 @@ func (cfg *Config) GetDBConfig() (*DBConfig, error) {
 		return nil, fmt.Errorf("Unsupport db type: %s", cfg.DB.Type)
 	}
 	return &config, nil
+}
+
+// KeyStoreConfig is the config of KeyStore
+type KeyStoreConfig struct {
+	Key crypto.PrivateKey
+}
+
+// GetKeyStoreConfig return the keystore config
+func (cfg *Config) GetKeyStoreConfig() (*KeyStoreConfig, error) {
+	if cfg.KeyStore.Key == "" {
+		return nil, errors.New("The key should not be nil")
+	}
+	key, err := putil.LoadPrivateKey(cfg.KeyStore.Key)
+	if err != nil {
+		return nil, err
+	}
+
+	return &KeyStoreConfig{
+		Key: key,
+	}, nil
 }
 
 func getDefaultLevelDBPath() string {
