@@ -80,13 +80,13 @@ func TestGetDBConfig(t *testing.T) {
 	require.Error(t, err, "Unsupport db type: unknown")
 }
 
-func TestGetKeyStoreConfig(t *testing.T) {
+func TestGetIdentity(t *testing.T) {
 	cfg, _ := LoadConfig(getTestConfigFilePath())
-	_, err := cfg.GetKeyStoreConfig()
+	_, err := cfg.GetIdentity()
 	require.NoError(t, err)
 	// set key to nil
 	cfg.KeyStore.Key = ""
-	_, err = cfg.GetKeyStoreConfig()
+	_, err = cfg.GetIdentity()
 	require.Error(t, err, "The key should not be nil")
 }
 

@@ -1,11 +1,11 @@
 package config
 
 import (
-	"crypto"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"madledger/common/util"
+	"madledger/core/types"
 	"os"
 
 	putil "madledger/peer/util"
@@ -143,24 +143,22 @@ func (cfg *Config) GetDBConfig() (*DBConfig, error) {
 	return &config, nil
 }
 
-// KeyStoreConfig is the config of KeyStore
-type KeyStoreConfig struct {
-	Key crypto.PrivateKey
-}
-
-// GetKeyStoreConfig return the keystore config
-func (cfg *Config) GetKeyStoreConfig() (*KeyStoreConfig, error) {
+// GetIdentity return the identity of peer
+func (cfg *Config) GetIdentity() (*types.Member, error) {
 	if cfg.KeyStore.Key == "" {
 		return nil, errors.New("The key should not be nil")
 	}
-	key, err := putil.LoadPrivateKey(cfg.KeyStore.Key)
+	privKey, err := putil.LoadPrivateKey(cfg.KeyStore.Key)
 	if err != nil {
 		return nil, err
 	}
 
-	return &KeyStoreConfig{
-		Key: key,
-	}, nil
+	identity, err := types.NewMember(privKey.PubKey(), "self")
+	if err != nil {
+		return nil, err
+	}
+
+	return identity, nil
 }
 
 func getDefaultLevelDBPath() string {
