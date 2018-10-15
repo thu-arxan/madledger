@@ -54,7 +54,12 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	channelManager, err := NewChannelManager(dbCfg.LevelDB.Dir, chainCfg, ordererClient)
+	// load identity
+	identity, err := cfg.GetIdentity()
+	if err != nil {
+		return nil, err
+	}
+	channelManager, err := NewChannelManager(dbCfg.LevelDB.Dir, identity, chainCfg, ordererClient)
 	if err != nil {
 		return nil, err
 	}

@@ -9,7 +9,6 @@ import (
 )
 
 // AddConfigBlock add a config block
-// todo: private channel
 func (m *Manager) AddConfigBlock(block *types.Block) error {
 	for i, tx := range block.Transactions {
 		status := &db.TxStatus{
@@ -22,8 +21,18 @@ func (m *Manager) AddConfigBlock(block *types.Block) error {
 		if err == nil {
 			channelID := payload.ChannelID
 			if payload.Profile.Public {
-				if !m.db.BelongChannel(channelID) {
-					m.db.AddChannel(channelID)
+				m.db.AddChannel(channelID)
+			} else {
+				var remove = true
+				for _, member := range payload.Profile.Members {
+					if member.Equal(m.identity) {
+						m.db.AddChannel(channelID)
+						remove = false
+						break
+					}
+				}
+				if remove && m.db.BelongChannel(channelID) {
+					m.db.DeleteChannel(channelID)
 				}
 			}
 		} else {

@@ -34,5 +34,9 @@ DB:
     # default: $GOPATH/src/madledger/peer/data/leveldb
     # But in the production environment, you must provide a path
     Dir: 
+
+# KeyStore manage some private keys
+KeyStore:
+  Key:
 `
 )

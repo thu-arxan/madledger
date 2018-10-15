@@ -57,7 +57,7 @@ func stopSoloPeer() {
 }
 
 func getSoloOrdererConfig() (*oc.Config, error) {
-	cfgFilePath, _ := util.MakeFileAbs("src/madledger/tests/solo_orderer.yaml", gopath)
+	cfgFilePath, _ := util.MakeFileAbs("src/madledger/tests/config/orderer/solo_orderer.yaml", gopath)
 	cfg, err := oc.LoadConfig(cfgFilePath)
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func getSoloOrdererConfig() (*oc.Config, error) {
 }
 
 func getSoloPeerConfig() *pc.Config {
-	cfgFilePath, _ := util.MakeFileAbs("src/madledger/tests/solo_peer.yaml", gopath)
+	cfgFilePath, _ := util.MakeFileAbs("src/madledger/tests/config/peer/solo_peer.yaml", gopath)
 	cfg, _ := pc.LoadConfig(cfgFilePath)
 	chainPath, _ := util.MakeFileAbs("src/madledger/tests/.peer/data/blocks", gopath)
 	dbPath, _ := util.MakeFileAbs("src/madledger/tests/.peer/data/leveldb", gopath)
@@ -80,7 +80,7 @@ func getSoloPeerConfig() *pc.Config {
 }
 
 func getSoloClient() (*client.Client, error) {
-	cfgFilePath, _ := util.MakeFileAbs("src/madledger/tests/solo_client.yaml", gopath)
+	cfgFilePath, _ := util.MakeFileAbs("src/madledger/tests/config/client/solo_client.yaml", gopath)
 	c, err := client.NewClient(cfgFilePath)
 	if err != nil {
 		return nil, err

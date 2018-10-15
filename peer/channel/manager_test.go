@@ -23,15 +23,15 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Note: This file could not be used for automotic test
+// Note: This file could not be used for automotic test now
 
 var (
 	coordinator      = NewCoordinator()
 	leveldb, _       = db.NewLevelDB(".data/leveldb")
 	client, _        = orderer.NewClient("localhost:9999")
-	globalManager, _ = NewManager(types.GLOBALCHANNELID, ".data/blocks/"+types.GLOBALCHANNELID, leveldb, client, coordinator)
-	configManager, _ = NewManager(types.CONFIGCHANNELID, ".data/blocks/"+types.CONFIGCHANNELID, leveldb, client, coordinator)
-	testManager, _   = NewManager("test", ".data/blocks/test", leveldb, client, coordinator)
+	globalManager, _ = NewManager(types.GLOBALCHANNELID, ".data/blocks/"+types.GLOBALCHANNELID, nil, leveldb, client, coordinator)
+	configManager, _ = NewManager(types.CONFIGCHANNELID, ".data/blocks/"+types.CONFIGCHANNELID, nil, leveldb, client, coordinator)
+	testManager, _   = NewManager("test", ".data/blocks/test", nil, leveldb, client, coordinator)
 	globalBlocks     = make(map[int]*types.Block)
 	configBlocks     = make(map[int]*types.Block)
 	testBlocks       = make(map[int]*types.Block)

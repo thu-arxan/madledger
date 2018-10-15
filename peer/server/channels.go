@@ -14,7 +14,8 @@ import (
 
 // ChannelManager manages all the channels
 type ChannelManager struct {
-	db db.DB
+	db       db.DB
+	identity *types.Member
 	// Channels manager all user channels
 	// maybe can use sync.Map, but the advantage is not significant
 	Channels map[string]*channel.Manager
@@ -29,9 +30,10 @@ type ChannelManager struct {
 }
 
 // NewChannelManager is the constructor of ChannelManager
-func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig, ordererClient *orderer.Client) (*ChannelManager, error) {
+func NewChannelManager(dbDir string, identity *types.Member, chainCfg *config.BlockChainConfig, ordererClient *orderer.Client) (*ChannelManager, error) {
 	m := new(ChannelManager)
 	m.Channels = make(map[string]*channel.Manager)
+	m.identity = identity
 	// set db
 	db, err := db.NewLevelDB(dbDir)
 	if err != nil {
@@ -42,11 +44,11 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig, ordererC
 	m.chainCfg = chainCfg
 	m.coordinator = channel.NewCoordinator()
 	// set global channel manager
-	globalManager, err := channel.NewManager(types.GLOBALCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, types.GLOBALCHANNELID), m.db, ordererClient, m.coordinator)
+	globalManager, err := channel.NewManager(types.GLOBALCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, types.GLOBALCHANNELID), identity, m.db, ordererClient, m.coordinator)
 	if err != nil {
 		return nil, err
 	}
-	configManager, err := channel.NewManager(types.CONFIGCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, types.CONFIGCHANNELID), m.db, ordererClient, m.coordinator)
+	configManager, err := channel.NewManager(types.CONFIGCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, types.CONFIGCHANNELID), identity, m.db, ordererClient, m.coordinator)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +118,7 @@ func (m *ChannelManager) loadChannel(channelID string) (*channel.Manager, error)
 	if util.Contain(m.Channels, channelID) {
 		return m.Channels[channelID], nil
 	}
-	manager, err := channel.NewManager(channelID, fmt.Sprintf("%s/%s", m.chainCfg.Path, channelID), m.db, m.ordererClient, m.coordinator)
+	manager, err := channel.NewManager(channelID, fmt.Sprintf("%s/%s", m.chainCfg.Path, channelID), m.identity, m.db, m.ordererClient, m.coordinator)
 	if err != nil {
 		return nil, err
 	}

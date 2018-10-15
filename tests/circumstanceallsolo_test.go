@@ -29,8 +29,10 @@ func TestInitCircumstanceAllSolo(t *testing.T) {
 	err = initDir(".client")
 	require.NoError(t, err)
 	// then start necessary orderer and peer
-	startSoloOrderer()
-	startSoloPeer()
+	err = startSoloOrderer()
+	require.NoError(t, err)
+	err = startSoloPeer()
+	require.NoError(t, err)
 }
 
 func TestAllSoloCreateChannel(t *testing.T) {

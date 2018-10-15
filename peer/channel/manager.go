@@ -19,6 +19,7 @@ var (
 
 // Manager is the manager of channel
 type Manager struct {
+	identity *types.Member
 	// id is the id of channel
 	id string
 	// db is the database
@@ -30,12 +31,13 @@ type Manager struct {
 }
 
 // NewManager is the constructor of Manager
-func NewManager(id, dir string, db db.DB, client *orderer.Client, coordinator *Coordinator) (*Manager, error) {
+func NewManager(id, dir string, identity *types.Member, db db.DB, client *orderer.Client, coordinator *Coordinator) (*Manager, error) {
 	cm, err := blockchain.NewManager(id, dir)
 	if err != nil {
 		return nil, err
 	}
 	return &Manager{
+		identity:    identity,
 		id:          id,
 		db:          db,
 		cm:          cm,

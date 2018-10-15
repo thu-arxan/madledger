@@ -40,7 +40,7 @@ func stopPeers(size int) {
 }
 
 func getPeerConfig(i int) *pc.Config {
-	cfgFilePath, _ := util.MakeFileAbs("src/madledger/tests/peer.yaml", gopath)
+	cfgFilePath, _ := util.MakeFileAbs("src/madledger/tests/config/peer/peer.yaml", gopath)
 	cfg, _ := pc.LoadConfig(cfgFilePath)
 	chainPath, _ := util.MakeFileAbs(fmt.Sprintf("src/madledger/tests/.peer%d/data/blocks", i), gopath)
 	dbPath, _ := util.MakeFileAbs(fmt.Sprintf("src/madledger/tests/.peer%d/data/leveldb", i), gopath)
