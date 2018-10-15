@@ -2,6 +2,9 @@ package tests
 
 import (
 	"madledger/common"
+	"madledger/common/util"
+	"madledger/core/types"
+	pc "madledger/peer/config"
 	"os"
 	"testing"
 
@@ -38,7 +41,12 @@ func TestInitCircumstanceAllSolo(t *testing.T) {
 func TestAllSoloCreateChannel(t *testing.T) {
 	client, err := getSoloClient()
 	require.NoError(t, err)
-	testCreateChannel(t, client)
+	// get identity of solo peer
+	cfgFilePath, _ := util.MakeFileAbs("src/madledger/tests/config/peer/solo_peer.yaml", gopath)
+	cfg, _ := pc.LoadConfig(cfgFilePath)
+	identity, err := cfg.GetIdentity()
+	require.NoError(t, err)
+	testCreateChannel(t, client, []*types.Member{identity})
 }
 
 func TestAllSoloCreateContract(t *testing.T) {
