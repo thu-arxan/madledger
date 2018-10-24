@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	log = logrus.WithFields(logrus.Fields{"app": "orderer", "package": "channel"})
+	log = logrus.WithFields(logrus.Fields{"app": "consensus", "package": "solo"})
 )
 
 // Consensus is the implementaion of solo consensus
@@ -63,6 +63,7 @@ func (c *Consensus) SyncBlocks(channelID string, ch *chan consensus.Block) error
 }
 
 // GetNumber is the implementation of interface
+// TODO: This function if not really implementation yet.
 func (c *Consensus) GetNumber(channelID string) (uint64, error) {
 	return 0, nil
 }
