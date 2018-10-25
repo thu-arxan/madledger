@@ -9,6 +9,7 @@ import (
 	"madledger/common/util"
 	"madledger/consensus"
 	"madledger/consensus/solo"
+	"madledger/consensus/tendermint"
 	"madledger/core/types"
 	"madledger/orderer/channel"
 	"madledger/orderer/config"
@@ -116,11 +117,11 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig, consensu
 		m.Consensus = consensus
 	case config.PBFT:
 		// TODO: Not finished yet
-		// consensus, err := tendermint.NewConsensus(channels, nil)
-		// if err != nil {
-		// 	return nil, err
-		// }
-		// m.Consensus = consensus
+		consensus, err := tendermint.NewConsensus(channels, nil)
+		if err != nil {
+			return nil, err
+		}
+		m.Consensus = consensus
 	default:
 		return nil, fmt.Errorf("Unsupport consensus type:%d", consensusCfg.Type)
 	}
