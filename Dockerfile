@@ -1,5 +1,6 @@
 FROM ubuntu:18.04
 
+# go environment
 RUN apt-get update \
     && apt install -y wget \
     && wget https://dl.google.com/go/go1.11.linux-amd64.tar.gz \
@@ -11,5 +12,12 @@ RUN apt-get update \
     && mkdir gopath/pkg
 
 ENV GOROOT=/usr/local/go \
-    PATH=$PATH:$GOROOT/bin \
+    PATH=$PATH:/usr/local/go/bin \
     GOPATH=gopath
+
+# copy code
+COPY . gopath/src/madldger
+
+# build
+RUN . gopath/src/madledger/scripts/build.sh
+
