@@ -8,7 +8,8 @@ RUN apt-get update \
     && mkdir gopath \
     && mkdir gopath/src \
     && mkdir gopath/bin \
-    && mkdir gopath/pkg \
-    && export GOROOT=/usr/local/go \
-    && export PATH=$PATH:$GOROOT/bin \
-    && export GOPATH=/home/gopath 
+    && mkdir gopath/pkg
+
+ENV GOROOT=/usr/local/go \
+    PATH=$PATH:$GOROOT/bin \
+    GOPATH=gopath
