@@ -13,7 +13,7 @@ RUN apt-get update \
 
 ENV GOROOT=/usr/local/go \
     PATH=$PATH:/usr/local/go/bin \
-    GOPATH=gopath
+    GOPATH=/gopath
 
 # copy code
 COPY . gopath/src/madledger
