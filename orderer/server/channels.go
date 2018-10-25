@@ -35,7 +35,7 @@ type ChannelManager struct {
 }
 
 // NewChannelManager is the constructor of ChannelManager
-func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig) (*ChannelManager, error) {
+func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig, consensusCfg *config.ConsensusConfig) (*ChannelManager, error) {
 	m := new(ChannelManager)
 	m.Channels = make(map[string]*channel.Manager)
 	m.chainCfg = chainCfg
@@ -107,11 +107,23 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig) (*Channe
 			Resume:  false,
 		}
 	}
-	consensus, err := solo.NewConsensus(channels)
-	if err != nil {
-		return nil, err
+	switch consensusCfg.Type {
+	case config.SOLO:
+		consensus, err := solo.NewConsensus(channels)
+		if err != nil {
+			return nil, err
+		}
+		m.Consensus = consensus
+	case config.PBFT:
+		// TODO: Not finished yet
+		// consensus, err := tendermint.NewConsensus(channels, nil)
+		// if err != nil {
+		// 	return nil, err
+		// }
+		// m.Consensus = consensus
+	default:
+		return nil, fmt.Errorf("Unsupport consensus type:%d", consensusCfg.Type)
 	}
-	m.Consensus = consensus
 
 	return m, nil
 }

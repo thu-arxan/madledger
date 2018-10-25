@@ -132,7 +132,7 @@ func (cfg *Config) GetConsensusConfig() (*ConsensusConfig, error) {
 		return nil, errors.New("Raft is not supported yet")
 	case "pbft":
 		consensus.Type = PBFT
-		return nil, errors.New("Pbft is not supported yet")
+		return nil, errors.New("Pbft is under constructing now")
 	default:
 		return nil, fmt.Errorf("Unsupport consensus type: %s", cfg.Consensus.Type)
 	}

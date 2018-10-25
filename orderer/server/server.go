@@ -42,8 +42,13 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	// load consensus config
+	consensusCfg, err := cfg.GetConsensusConfig()
+	if err != nil {
+		return nil, err
+	}
 	// get channel manager
-	channelManager, err := NewChannelManager(dbCfg.LevelDB.Dir, chainCfg)
+	channelManager, err := NewChannelManager(dbCfg.LevelDB.Dir, chainCfg, consensusCfg)
 	if err != nil {
 		return nil, err
 	}

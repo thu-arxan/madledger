@@ -3,6 +3,10 @@ package cmd
 import (
 	"io/ioutil"
 	"madledger/common/util"
+	"os"
+	"strings"
+
+	putil "madledger/client/util"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -41,5 +45,17 @@ func createConfigFile(cfgFile string) error {
 		return err
 	}
 	cfg = cfgTemplate
+
+	keyStorePath, _ := util.MakeFileAbs(".keystore", homeDir)
+	err = os.MkdirAll(keyStorePath, 0777)
+	if err != nil {
+		return err
+	}
+	keyPath, err := putil.GeneratePrivateKey(keyStorePath)
+	if err != nil {
+		return err
+	}
+	var cfg = cfgTemplate
+	cfg = strings.Replace(cfg, "<<<KEYFILE>>>", keyPath, 1)
 	return ioutil.WriteFile(cfgAbsPath, []byte(cfg), 0755)
 }

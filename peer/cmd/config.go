@@ -37,6 +37,6 @@ DB:
 
 # KeyStore manage some private keys
 KeyStore:
-  Key:
+  Key: <<<KEYFILE>>>
 `
 )
