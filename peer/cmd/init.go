@@ -21,13 +21,13 @@ var (
 )
 
 func init() {
-	initCmd.RunE = runinit
+	initCmd.RunE = runInit
 	initCmd.Flags().StringP("config", "c", "peer.yaml", "The config file of peer")
 	initViper.BindPFlag("config", initCmd.Flags().Lookup("config"))
 	rootCmd.AddCommand(initCmd)
 }
 
-func runinit(cmd *cobra.Command, args []string) error {
+func runInit(cmd *cobra.Command, args []string) error {
 	cfgFile := initViper.GetString("config")
 	if cfgFile == "" {
 		cfgFile = "peer.yaml"

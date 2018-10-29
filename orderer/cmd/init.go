@@ -18,7 +18,7 @@ var (
 )
 
 func init() {
-	initCmd.RunE = runinit
+	initCmd.RunE = runInit
 	initCmd.Flags().StringP("config", "c", "orderer.yaml", "The config file")
 	initViper.BindPFlag("config", initCmd.Flags().Lookup("config"))
 	initCmd.Flags().StringP("path", "p", "", "The path of orderer")
@@ -26,7 +26,7 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 }
 
-func runinit(cmd *cobra.Command, args []string) error {
+func runInit(cmd *cobra.Command, args []string) error {
 	cfgFile := initViper.GetString("config")
 	if cfgFile == "" {
 		cfgFile = "orderer.yaml"

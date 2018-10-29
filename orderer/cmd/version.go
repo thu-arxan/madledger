@@ -19,11 +19,11 @@ var (
 )
 
 func init() {
-	versionCmd.RunE = runversion
+	versionCmd.RunE = runVersion
 	rootCmd.AddCommand(versionCmd)
 }
 
-func runversion(cmd *cobra.Command, args []string) error {
+func runVersion(cmd *cobra.Command, args []string) error {
 	fmt.Println(version)
 	return nil
 }
