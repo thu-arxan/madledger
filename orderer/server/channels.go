@@ -115,7 +115,7 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig, consensu
 			return nil, err
 		}
 		m.Consensus = consensus
-	case config.PBFT:
+	case config.BFT:
 		// TODO: Not finished yet
 		consensus, err := tendermint.NewConsensus(channels, nil)
 		if err != nil {

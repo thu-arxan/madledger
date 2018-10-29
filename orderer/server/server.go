@@ -48,7 +48,7 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 	// get channel manager
-	channelManager, err := NewChannelManager(dbCfg.LevelDB.Dir, chainCfg, consensusCfg)
+	channelManager, err := NewChannelManager(dbCfg.LevelDB.Path, chainCfg, consensusCfg)
 	if err != nil {
 		return nil, err
 	}

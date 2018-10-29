@@ -65,7 +65,7 @@ func getSoloOrdererConfig() (*oc.Config, error) {
 	chainPath, _ := util.MakeFileAbs("src/madledger/tests/.orderer/data/blocks", gopath)
 	dbPath, _ := util.MakeFileAbs("src/madledger/tests/.orderer/data/leveldb", gopath)
 	cfg.BlockChain.Path = chainPath
-	cfg.DB.LevelDB.Dir = dbPath
+	cfg.DB.LevelDB.Path = dbPath
 	return cfg, nil
 }
 

@@ -147,7 +147,7 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 	chainPath, _ := util.MakeFileAbs("src/madledger/orderer/server/.data1/blocks", gopath)
 	dbPath, _ := util.MakeFileAbs("src/madledger/orderer/server/.data1/leveldb", gopath)
 	cfg.BlockChain.Path = chainPath
-	cfg.DB.LevelDB.Dir = dbPath
+	cfg.DB.LevelDB.Path = dbPath
 	var err error
 	server, err = NewServer(cfg)
 	require.NoError(t, err)
@@ -377,7 +377,7 @@ func getCreateChannelTx(channelID string) *pb.Tx {
 func getTestConfig() *config.Config {
 	cfg, _ := config.LoadConfig(getTestConfigFilePath())
 	cfg.BlockChain.Path = getTestChainPath()
-	cfg.DB.LevelDB.Dir = getTestDBPath()
+	cfg.DB.LevelDB.Path = getTestDBPath()
 	return cfg
 }
 

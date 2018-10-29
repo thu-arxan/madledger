@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"madledger/common/util"
 	"os"
 
 	yaml "gopkg.in/yaml.v2"
@@ -21,12 +20,13 @@ type Config struct {
 	Debug      bool             `yaml:"Debug"`
 	BlockChain BlockChainConfig `yaml:"BlockChain"`
 	Consensus  struct {
-		Type string `yaml:"Type"`
+		Type       string           `yaml:"Type"`
+		Tendermint TendermintConfig `yaml:"Tendermint"`
 	} `yaml:"Consensus"`
 	DB struct {
 		Type    string `yaml:"Type"`
 		LevelDB struct {
-			Dir string `yaml:"Dir"`
+			Path string `yaml:"Path"`
 		} `yaml:"LevelDB"`
 	} `yaml:"DB"`
 }
@@ -88,24 +88,32 @@ const (
 	SOLO
 	// RAFT is the raft
 	RAFT
-	// PBFT is the pbft
-	PBFT
+	// BFT is the tendermint
+	BFT
 )
 
 // ConsensusConfig is the config of consensus
 type ConsensusConfig struct {
 	Type ConsensusType
+	BFT  TendermintConfig
+}
+
+// TendermintConfig is the config of tendermint
+type TendermintConfig struct {
+	Path string `yaml:"Path"`
+	Port struct {
+		P2P int `yaml:"P2P"`
+		RPC int `yaml:"RPC"`
+		APP int `yaml:"APP"`
+	} `yaml:"Port"`
+	P2PAddress []string `yaml:"P2PAddress"`
 }
 
 // GetBlockChainConfig return the BlockChainConfig
 func (cfg *Config) GetBlockChainConfig() (*BlockChainConfig, error) {
 	var storePath = cfg.BlockChain.Path
 	if storePath == "" {
-		if cfg.Debug {
-			storePath = getDefaultChainPath()
-		} else {
-			return nil, errors.New("The path of blockchain is not provided")
-		}
+		return nil, errors.New("The path of blockchain is not provided")
 	}
 	if cfg.BlockChain.BatchTimeout <= 0 {
 		return nil, fmt.Errorf("The batch timeout can not be %d", cfg.BlockChain.BatchTimeout)
@@ -130,9 +138,11 @@ func (cfg *Config) GetConsensusConfig() (*ConsensusConfig, error) {
 	case "raft":
 		consensus.Type = RAFT
 		return nil, errors.New("Raft is not supported yet")
-	case "pbft":
-		consensus.Type = PBFT
-		return nil, errors.New("Pbft is under constructing now")
+	case "bft":
+		consensus.Type = BFT
+		// todo: It would be better if we check the arugments of Tendermint
+		consensus.BFT = cfg.Consensus.Tendermint
+		return &consensus, nil
 	default:
 		return nil, fmt.Errorf("Unsupport consensus type: %s", cfg.Consensus.Type)
 	}
@@ -156,7 +166,7 @@ type DBConfig struct {
 
 // LevelDBConfig is the config of leveldb
 type LevelDBConfig struct {
-	Dir string
+	Path string
 }
 
 // GetDBConfig return the DBConfig
@@ -165,22 +175,12 @@ func (cfg *Config) GetDBConfig() (*DBConfig, error) {
 	switch cfg.DB.Type {
 	case "leveldb":
 		config.Type = LEVELDB
-		config.LevelDB.Dir = cfg.DB.LevelDB.Dir
-		if config.LevelDB.Dir == "" {
-			config.LevelDB.Dir = getDefaultLevelDBPath()
+		config.LevelDB.Path = cfg.DB.LevelDB.Path
+		if config.LevelDB.Path == "" {
+			return nil, errors.New("The path of leveldb is not provided")
 		}
 	default:
 		return nil, fmt.Errorf("Unsupport db type: %s", cfg.DB.Type)
 	}
 	return &config, nil
-}
-
-func getDefaultChainPath() string {
-	storePath, _ := util.MakeFileAbs("src/madledger/orderer/data/blocks", gopath)
-	return storePath
-}
-
-func getDefaultLevelDBPath() string {
-	storePath, _ := util.MakeFileAbs("src/madledger/orderer/data/leveldb", gopath)
-	return storePath
 }

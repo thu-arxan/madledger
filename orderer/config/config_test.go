@@ -58,11 +58,6 @@ func TestGetBlockChainConfig(t *testing.T) {
 	cfg.BlockChain.BatchSize = -1
 	_, err = cfg.GetBlockChainConfig()
 	require.EqualError(t, err, "The batch size can not be -1")
-	// check debug
-	cfg.BlockChain.BatchSize = 100
-	cfg.Debug = false
-	_, err = cfg.GetBlockChainConfig()
-	require.EqualError(t, err, "The path of blockchain is not provided")
 }
 
 func TestGetConsensusConfig(t *testing.T) {
@@ -72,6 +67,16 @@ func TestGetConsensusConfig(t *testing.T) {
 	consensusCfg, err := cfg.GetConsensusConfig()
 	require.NoError(t, err)
 	require.Equal(t, consensusCfg.Type, SOLO)
+
+	// then check bft
+	cfg.Consensus.Type = "bft"
+	consensusCfg, err = cfg.GetConsensusConfig()
+	require.NoError(t, err)
+	require.NotEqual(t, "", consensusCfg.BFT.Path)
+	require.Equal(t, 26656, consensusCfg.BFT.Port.P2P)
+	require.Equal(t, 26657, consensusCfg.BFT.Port.RPC)
+	require.Equal(t, 26658, consensusCfg.BFT.Port.APP)
+	require.Equal(t, []string{""}, consensusCfg.BFT.P2PAddress)
 
 	cfg.Consensus.Type = "raft"
 	consensusCfg, err = cfg.GetConsensusConfig()
@@ -89,7 +94,7 @@ func TestGetDBConfig(t *testing.T) {
 	dbCfg, err := cfg.GetDBConfig()
 	require.NoError(t, err)
 	require.Equal(t, dbCfg.Type, LEVELDB)
-	require.NotEqual(t, dbCfg.LevelDB.Dir, "")
+	require.NotEqual(t, dbCfg.LevelDB.Path, "")
 
 	cfg.DB.Type = "unknown"
 	dbCfg, err = cfg.GetDBConfig()

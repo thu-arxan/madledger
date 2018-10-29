@@ -20,24 +20,34 @@ BlockChain:
   BatchTimeout: 1000
   # Max txs can be included in a block (defalut: 100)
   BatchSize: 100
-  # Path to store the blocks (default: $GOPATH/src/madledger/orderer/data/blocks)
-  # But in the production environment, you must provide a path
-  Path: 
+  # Path to store the blocks (default: orderer/data/blocks)
+  Path: <<<BlockChainPath>>>
   # If verify the rightness of blocks (default: false)
   Verify: false
 
 # Consensus mechanism configuration
 Consensus:
-  # will support solo, raft, pbft. Only support solo yet.
+  # will support solo, raft, bft. Only support solo yet and bft is constructed now.
   Type: solo
+  # Tendermint is the bft consensus.
+  Tendermint:
+    # The path of tendermint (default: orderer/.tendermint)
+    Path: <<<TendermintPath>>>
+    # Some ports
+    Port:
+      P2P: 26656
+      RPC: 26657
+      APP: 26658
+    # P2P Persistent Address, like c395828cc2baaa6f6af2bd13ce62d1e9484919c8@localhost:36656
+    P2PAddress:
+      -
 
 # DB only support leveldb now
 DB:
   Type: leveldb
   # LevelDB
   LevelDB:
-    # default: $GOPATH/src/madledger/orderer/data/leveldb
-    # But in the production environment, you must provide a path
-    Dir: 
+    # The path of leveldb (default: orderer/data/leveldb)
+    Path: <<<LevelDBPath>>>
 `
 )
