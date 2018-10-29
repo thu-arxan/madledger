@@ -157,6 +157,8 @@ func (manager *Manager) AddTx(tx *types.Tx) error {
 		return err
 	}
 	// first register a notify event
+	// Note: The reason why we must do this is because we must make sure we return the result after we store the block
+	// However, we may find a better way to do this if we allow there are more interactive between the consensus and orderer.
 	var errChan = make(chan error)
 	var hash = util.Hex(tx.Hash())
 	err = manager.notify.addTxNotify(hash, &errChan)

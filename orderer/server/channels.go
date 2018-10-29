@@ -10,6 +10,7 @@ import (
 	"madledger/consensus"
 	"madledger/consensus/solo"
 	"madledger/consensus/tendermint"
+	ct "madledger/consensus/tendermint"
 	"madledger/core/types"
 	"madledger/orderer/channel"
 	"madledger/orderer/config"
@@ -43,7 +44,7 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig, consensu
 	// set db
 	db, err := db.NewLevelDB(dbDir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to load db at %s because %s", dbDir, err.Error())
 	}
 	m.db = db
 	//set config channel manager
@@ -117,7 +118,15 @@ func NewChannelManager(dbDir string, chainCfg *config.BlockChainConfig, consensu
 		m.Consensus = consensus
 	case config.BFT:
 		// TODO: Not finished yet
-		consensus, err := tendermint.NewConsensus(channels, nil)
+		consensus, err := tendermint.NewConsensus(channels, &ct.Config{
+			Port: ct.Port{
+				P2P: consensusCfg.BFT.Port.P2P,
+				RPC: consensusCfg.BFT.Port.RPC,
+				App: consensusCfg.BFT.Port.APP,
+			},
+			Dir:        consensusCfg.BFT.Path,
+			P2PAddress: consensusCfg.BFT.P2PAddress,
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -210,6 +219,7 @@ func (manager *ChannelManager) createChannel(tx *types.Tx) error {
 	var channelID = payload.ChannelID
 	switch channelID {
 	case types.GLOBALCHANNELID:
+		return fmt.Errorf("Channel %s is aleardy exist", channelID)
 	case types.CONFIGCHANNELID:
 		return fmt.Errorf("Channel %s is aleardy exist", channelID)
 	default:
@@ -228,10 +238,12 @@ func (manager *ChannelManager) createChannel(tx *types.Tx) error {
 	// then send a tx to config channel
 	// But the manager should not AddTx by consensus, because the confirm
 	// of consensus is not the final confirm.
+	fmt.Println(0)
 	err = manager.ConfigChannel.AddTx(tx)
 	if err != nil {
 		return err
 	}
+	fmt.Println(1)
 
 	// then start the consensus
 	err = manager.Consensus.AddChannel(channelID, consensus.Config{
@@ -240,6 +252,7 @@ func (manager *ChannelManager) createChannel(tx *types.Tx) error {
 		Number:  0,
 		Resume:  false,
 	})
+	fmt.Println(2)
 	channel, err := channel.NewManager(channelID, fmt.Sprintf("%s/%s", manager.chainCfg.Path, channelID), manager.db)
 	if err != nil {
 		return err

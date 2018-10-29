@@ -18,7 +18,7 @@ BlockChain:
   # Max txs can be included in a block (defalut: 100)
   BatchSize: 100
   # Path to store the blocks (default: orderer/data/blocks)
-  Path: /home/liuyihua/gopath/src/madledger/orderer/data/blocks
+  Path: /home/liuyihua/gopath/src/madledger/orderer/config/data/blocks
   # If verify the rightness of blocks (default: false)
   Verify: false
 
@@ -29,12 +29,14 @@ Consensus:
   # Tendermint is the bft consensus.
   Tendermint:
     # The path of tendermint (default: orderer/.tendermint)
-    Path: /home/liuyihua/gopath/src/madledger/orderer/.tendermint
+    Path: /home/liuyihua/gopath/src/madledger/orderer/config/.tendermint
     # Some ports
     Port:
       P2P: 26656
       RPC: 26657
       APP: 26658
+    # ID means to identity in p2p connections
+    ID: 8e7a05ef8045e35a51eedd26eeecf89488497bae
     # P2P Persistent Address, like c395828cc2baaa6f6af2bd13ce62d1e9484919c8@localhost:36656
     P2PAddress:
       -
@@ -45,4 +47,4 @@ DB:
   # LevelDB
   LevelDB:
     # The path of leveldb (default: orderer/data/leveldb)
-    Path: /home/liuyihua/gopath/src/madledger/orderer/data/leveldb
+    Path: /home/liuyihua/gopath/src/madledger/orderer/config/data/leveldb

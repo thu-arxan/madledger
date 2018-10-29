@@ -7,6 +7,7 @@ Debug: true
 
 # Address of orderers
 Orderer:
+  Consensus: 
   Address:
     - localhost:12345
   

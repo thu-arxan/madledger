@@ -1,7 +1,7 @@
 package tendermint
 
 import (
-	log "github.com/sirupsen/logrus"
+	logrus "github.com/sirupsen/logrus"
 	tmlog "github.com/tendermint/tendermint/libs/log"
 )
 
@@ -12,7 +12,7 @@ type Logger struct {
 
 // NewLogger is the constructor of Logger
 func NewLogger() *Logger {
-	logger := tmlog.NewTMLogger(log.StandardLogger().Out)
+	logger := tmlog.NewTMLogger(logrus.StandardLogger().Out)
 	return &Logger{
 		logger: logger,
 	}

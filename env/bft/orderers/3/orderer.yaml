@@ -1,0 +1,52 @@
+#############################################################################
+#   This is a configuration file for the MadLedger orderer.
+#############################################################################
+
+# Port should be an integer (default: 12345)
+Port: 45678
+
+# Bind address for the server (default: localhost)
+Address: localhost
+
+# Should be false or true (default: true)
+Debug: true
+
+# Configure for the BlockChain
+BlockChain:
+  # Max time to create a block which unit is milliseconds (default: 1000)
+  BatchTimeout: 1000
+  # Max txs can be included in a block (defalut: 100)
+  BatchSize: 100
+  # Path to store the blocks (default: orderer/data/blocks)
+  Path: /home/liuyihua/gopath/src/madledger/env/bft/orderers/3/data/blocks
+  # If verify the rightness of blocks (default: false)
+  Verify: false
+
+# Consensus mechanism configuration
+Consensus:
+  # will support solo, raft, bft. Only support solo yet and bft is constructed now.
+  Type: bft
+  # Tendermint is the bft consensus.
+  Tendermint:
+    # The path of tendermint (default: orderer/.tendermint)
+    Path: /home/liuyihua/gopath/src/madledger/env/bft/orderers/3/.tendermint
+    # Some ports
+    Port:
+      P2P: 26665
+      RPC: 26666
+      APP: 26667
+    # ID means to identity in p2p connections
+    ID: d2a1e59ffebb22c6a82158e124d332d52c51a382
+    # P2P Persistent Address, like c395828cc2baaa6f6af2bd13ce62d1e9484919c8@localhost:36656
+    P2PAddress:
+      - 45b79eed014e1e0f269e1e073c184f20171190db@localhost:26656
+      - 3869f162cca7ee3b31c070b7fb16e0e826db2c50@localhost:26659
+      - 199a96c73fe7ff0167cc44d35510d5faff2e8f17@localhost:26662
+
+# DB only support leveldb now
+DB:
+  Type: leveldb
+  # LevelDB
+  LevelDB:
+    # The path of leveldb (default: orderer/data/leveldb)
+    Path: /home/liuyihua/gopath/src/madledger/env/bft/orderers/3/data/leveldb

@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"madledger/orderer/config"
 	"net"
@@ -61,7 +60,7 @@ func (s *Server) Start() error {
 	addr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port)
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		return errors.New("Failed to start the orderer")
+		return fmt.Errorf("Failed to start the orderer server because %s", err.Error())
 	}
 	log.Infof("Start the orderer at %s", addr)
 	err = s.ChannelManager.start()

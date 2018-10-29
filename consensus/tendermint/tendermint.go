@@ -3,11 +3,18 @@ package tendermint
 import (
 	"fmt"
 	"madledger/consensus"
+	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // Note: We just reach consensus in one chain of tendermint now.
 // So we will not distinguish channel in the consensus layer and we consensus on
 // one block then we split it into different blocks of different channels.
+
+var (
+	log = logrus.WithFields(logrus.Fields{"app": "consensus", "package": "tendermint"})
+)
 
 // Consensus is the implementation of tendermint
 type Consensus struct {
@@ -19,7 +26,7 @@ type Consensus struct {
 // Note: We are not going to support different configs of different channels.
 // TODO: Not finished yet
 func NewConsensus(channels map[string]consensus.Config, cfg *Config) (consensus.Consensus, error) {
-	app, err := NewGlue(fmt.Sprintf("%s/.glue", cfg.Dir), cfg.Port.App)
+	app, err := NewGlue(fmt.Sprintf("%s/.glue", cfg.Dir), &cfg.Port)
 	if err != nil {
 		return nil, err
 	}
@@ -35,6 +42,12 @@ func NewConsensus(channels map[string]consensus.Config, cfg *Config) (consensus.
 
 // Start is the implementation of interface
 func (c *Consensus) Start() error {
+	log.Info("Trying to start consensus")
+	go c.app.Start()
+	time.Sleep(200 * time.Millisecond)
+	go c.node.Start()
+	time.Sleep(300 * time.Millisecond)
+	log.Info("Start consensus...")
 	return nil
 }
 

@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"madledger/core/types"
 	pb "madledger/protos"
 
@@ -19,6 +20,7 @@ func (s *Server) FetchBlock(ctx context.Context, req *pb.FetchBlockRequest) (*pb
 
 // ListChannels is the implementation of protos
 func (s *Server) ListChannels(ctx context.Context, req *pb.ListChannelsRequest) (*pb.ChannelInfos, error) {
+	fmt.Println("list channels")
 	return s.ChannelManager.ListChannels(req)
 }
 

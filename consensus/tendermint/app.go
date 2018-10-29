@@ -19,23 +19,28 @@ type Glue struct {
 	// th is the hash of tendermint
 	th     []byte
 	txs    [][]byte
+	blocks []*Block
 	db     *DB
 	port   int
 	client *Client
 }
 
 // NewGlue is the constructor of Glue
-func NewGlue(dbDir string, port int) (*Glue, error) {
+func NewGlue(dbDir string, port *Port) (*Glue, error) {
 	g := new(Glue)
 	g.lock = new(sync.Mutex)
 	db, err := NewDB(dbDir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to load db at %s because %s", dbDir, err.Error())
 	}
 	g.db = db
 	g.tn = db.GetHeight()
 	g.th = db.GetHash()
-	g.port = port
+	g.port = port.App
+	g.client, err = NewClient(port.RPC)
+	if err != nil {
+		return nil, err
+	}
 	return g, nil
 }
 
@@ -50,6 +55,7 @@ func (g *Glue) Start() error {
 	if err := srv.Start(); err != nil {
 		return err
 	}
+	log.Info("Start glue...")
 
 	// Wait forever
 	cmn.TrapSignal(func() {
@@ -61,6 +67,7 @@ func (g *Glue) Start() error {
 
 // CheckTx always return OK
 func (g *Glue) CheckTx(tx []byte) types.ResponseCheckTx {
+	log.Info("CheckTx")
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
@@ -77,10 +84,19 @@ func (g *Glue) DeliverTx(tx []byte) types.ResponseDeliverTx {
 func (g *Glue) Commit() types.ResponseCommit {
 	g.lock.Lock()
 	defer g.lock.Unlock()
-
+	log.Info("Commit")
 	// todo: how to manage these txs is still consided
 	if len(g.txs) != 0 {
-
+		var txs [][]byte
+		for i := range g.txs {
+			tx, err := BytesToTx(g.txs[i])
+			if err != nil {
+				txs = append(txs, tx.Data)
+			}
+		}
+		if len(txs) != 0 {
+			// block :=
+		}
 	}
 
 	g.db.SetHeight(g.tn)
@@ -168,6 +184,7 @@ func (t *Tx) Bytes() []byte {
 // AddTx add a tx
 // TODO: Not implementation yet
 func (g *Glue) AddTx(channelID string, tx []byte) error {
-	NewTx(channelID, tx)
-	return nil
+	// NewTx(channelID, tx)
+	log.Info("Glue AddTx")
+	return g.client.AddTx(NewTx(channelID, tx).Bytes())
 }

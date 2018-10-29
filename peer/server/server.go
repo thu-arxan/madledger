@@ -73,9 +73,9 @@ func (s *Server) Start() error {
 	addr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port)
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		return errors.New("Failed to start the orderer")
+		return errors.New("Failed to start the peer server")
 	}
-	log.Infof("Start the orderer at %s", addr)
+	log.Infof("Start the peer server at %s", addr)
 	err = s.ChannelManager.start()
 	if err != nil {
 		return err

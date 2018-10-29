@@ -106,6 +106,7 @@ type TendermintConfig struct {
 		RPC int `yaml:"RPC"`
 		APP int `yaml:"APP"`
 	} `yaml:"Port"`
+	ID         string   `yaml:"ID"`
 	P2PAddress []string `yaml:"P2PAddress"`
 }
 
@@ -140,8 +141,11 @@ func (cfg *Config) GetConsensusConfig() (*ConsensusConfig, error) {
 		return nil, errors.New("Raft is not supported yet")
 	case "bft":
 		consensus.Type = BFT
-		// todo: It would be better if we check the arugments of Tendermint
 		consensus.BFT = cfg.Consensus.Tendermint
+		// check some necessary things
+		if len(consensus.BFT.ID) != 40 {
+			return nil, fmt.Errorf("The ID(%s) of tendermint is not legal", consensus.BFT.ID)
+		}
 		return &consensus, nil
 	default:
 		return nil, fmt.Errorf("Unsupport consensus type: %s", cfg.Consensus.Type)

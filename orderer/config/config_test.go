@@ -77,6 +77,10 @@ func TestGetConsensusConfig(t *testing.T) {
 	require.Equal(t, 26657, consensusCfg.BFT.Port.RPC)
 	require.Equal(t, 26658, consensusCfg.BFT.Port.APP)
 	require.Equal(t, []string{""}, consensusCfg.BFT.P2PAddress)
+	// set some thing wrong
+	cfg.Consensus.Tendermint.ID = "fatal id"
+	_, err = cfg.GetConsensusConfig()
+	require.EqualError(t, err, "The ID(fatal id) of tendermint is not legal")
 
 	cfg.Consensus.Type = "raft"
 	consensusCfg, err = cfg.GetConsensusConfig()

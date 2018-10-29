@@ -38,6 +38,8 @@ Consensus:
       P2P: 26656
       RPC: 26657
       APP: 26658
+    # ID means to identity in p2p connections
+    ID: <<<TendermintP2PID>>>
     # P2P Persistent Address, like c395828cc2baaa6f6af2bd13ce62d1e9484919c8@localhost:36656
     P2PAddress:
       -
