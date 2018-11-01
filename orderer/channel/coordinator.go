@@ -35,7 +35,8 @@ type Coordinator struct {
 	// GM is the global channel manager
 	GM *Manager
 	// CM is the config channel manager
-	CM        *Manager
+	CM *Manager
+
 	Consensus consensus.Consensus
 }
 
@@ -51,12 +52,12 @@ func NewCoordinator(dbDir string, chainCfg *config.BlockChainConfig, consensusCf
 	}
 	c.db = db
 	//set config channel manager
-	configManager, err := c.loadConfigChannel(chainCfg.Path)
+	configManager, err := c.loadConfigChannel()
 	if err != nil {
 		return nil, err
 	}
 	// set global channel manager
-	globalManager, err := NewManager(types.GLOBALCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, types.GLOBALCHANNELID), c)
+	globalManager, err := NewManager(types.GLOBALCHANNELID, c)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +87,7 @@ func NewCoordinator(dbDir string, chainCfg *config.BlockChainConfig, consensusCf
 	c.GM = globalManager
 
 	// then load user channels
-	userChannels, err := c.loadUserChannels(chainCfg.Path)
+	userChannels, err := c.loadUserChannels()
 	if err != nil {
 		return nil, err
 	}
@@ -281,7 +282,7 @@ func (c *Coordinator) createChannel(tx *types.Tx) error {
 		Number:  0,
 		Resume:  false,
 	})
-	channel, err := NewManager(channelID, fmt.Sprintf("%s/%s", c.chainCfg.Path, channelID), c)
+	channel, err := NewManager(channelID, c)
 	if err != nil {
 		return err
 	}
@@ -318,8 +319,8 @@ func (c *Coordinator) getChannelManager(channelID string) (*Manager, error) {
 }
 
 // loadConfigChannel load the config channel("_config")
-func (c *Coordinator) loadConfigChannel(dir string) (*Manager, error) {
-	configManager, err := NewManager(types.CONFIGCHANNELID, fmt.Sprintf("%s/%s", dir, types.CONFIGCHANNELID), c)
+func (c *Coordinator) loadConfigChannel() (*Manager, error) {
+	configManager, err := NewManager(types.CONFIGCHANNELID, c)
 	if err != nil {
 		return nil, err
 	}
@@ -337,12 +338,12 @@ func (c *Coordinator) loadConfigChannel(dir string) (*Manager, error) {
 	return configManager, nil
 }
 
-func (c *Coordinator) loadUserChannels(dir string) (map[string]*Manager, error) {
+func (c *Coordinator) loadUserChannels() (map[string]*Manager, error) {
 	var managers = make(map[string]*Manager)
 	channels := c.db.ListChannel()
 	for _, channelID := range channels {
 		if !strings.HasPrefix(channelID, "_") {
-			manager, err := NewManager(channelID, fmt.Sprintf("%s/%s", dir, channelID), c)
+			manager, err := NewManager(channelID, c)
 			if err != nil {
 				return nil, err
 			}
