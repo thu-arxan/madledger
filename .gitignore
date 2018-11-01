@@ -8,6 +8,15 @@ env/bft/orderers/0/data/
 env/bft/orderers/1/data/
 env/bft/orderers/2/data/
 env/bft/orderers/3/data/
+env/bft/orderers/0/.tendermint/.glue
+env/bft/orderers/0/.tendermint/data
+env/bft/orderers/1/.tendermint/.glue
+env/bft/orderers/1/.tendermint/data
+env/bft/orderers/2/.tendermint/.glue
+env/bft/orderers/2/.tendermint/data
+env/bft/orderers/3/.tendermint/.glue
+env/bft/orderers/3/.tendermint/data
+env/backup
 orderer/db/.leveldb
 orderer/server/.data/
 orderer/server/.data1/

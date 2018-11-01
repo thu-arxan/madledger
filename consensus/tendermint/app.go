@@ -3,6 +3,8 @@ package tendermint
 import (
 	"encoding/json"
 	"fmt"
+	"madledger/common/util"
+	"madledger/consensus"
 	"sync"
 
 	"github.com/tendermint/tendermint/abci/example/code"
@@ -17,9 +19,11 @@ type Glue struct {
 	// tn is the number(height) of tendermint
 	tn int64
 	// th is the hash of tendermint
-	th     []byte
-	txs    [][]byte
-	blocks []*Block
+	th  []byte
+	txs [][]byte
+
+	blocks map[string]uint64
+	chans  map[string]*chan consensus.Block
 	db     *DB
 	port   int
 	client *Client
@@ -41,6 +45,8 @@ func NewGlue(dbDir string, port *Port) (*Glue, error) {
 	if err != nil {
 		return nil, err
 	}
+	g.blocks = make(map[string]uint64)
+	g.chans = make(map[string]*chan consensus.Block)
 	return g, nil
 }
 
@@ -67,7 +73,7 @@ func (g *Glue) Start() error {
 
 // CheckTx always return OK
 func (g *Glue) CheckTx(tx []byte) types.ResponseCheckTx {
-	log.Info("CheckTx")
+	// log.Info("CheckTx")
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
@@ -84,19 +90,38 @@ func (g *Glue) DeliverTx(tx []byte) types.ResponseDeliverTx {
 func (g *Glue) Commit() types.ResponseCommit {
 	g.lock.Lock()
 	defer g.lock.Unlock()
-	log.Info("Commit")
-	// todo: how to manage these txs is still consided
+	log.Infof("Commit %d txs", len(g.txs))
 	if len(g.txs) != 0 {
-		var txs [][]byte
+		var txs = make(map[string][][]byte)
 		for i := range g.txs {
 			tx, err := BytesToTx(g.txs[i])
-			if err != nil {
-				txs = append(txs, tx.Data)
+			if err == nil {
+				if !util.Contain(txs, tx.ChannelID) {
+					txs[tx.ChannelID] = make([][]byte, 0)
+				}
+				txs[tx.ChannelID] = append(txs[tx.ChannelID], tx.Data)
 			}
 		}
-		if len(txs) != 0 {
-			// block :=
+		for channelID := range txs {
+			log.Infof("This is range of channel %s", channelID)
+			if !util.Contain(g.blocks, channelID) {
+				g.blocks[channelID] = 0
+			}
+			block := &Block{
+				channelID: channelID,
+				num:       g.blocks[channelID],
+				txs:       txs[channelID],
+			}
+			g.blocks[channelID]++
+			// todo: if we haven't set sync channel, here will lost the block
+			go func(channelID string) {
+				log.Infof("Send block of channel %s", channelID)
+				if util.Contain(g.chans, channelID) {
+					(*g.chans[channelID]) <- block
+				}
+			}(channelID)
 		}
+		g.txs = make([][]byte, 0)
 	}
 
 	g.db.SetHeight(g.tn)
@@ -151,6 +176,15 @@ func (g *Glue) Query(reqQuery types.RequestQuery) types.ResponseQuery {
 	return types.ResponseQuery{}
 }
 
+// SetSyncChan set the sync chan of channelID
+func (g *Glue) SetSyncChan(channelID string, ch *chan consensus.Block) {
+	g.lock.Lock()
+	defer g.lock.Unlock()
+
+	log.Infof("Set sync chan of channel %s", channelID)
+	g.chans[channelID] = ch
+}
+
 // Tx is the union of ChannelID and Data
 type Tx struct {
 	ChannelID string
@@ -182,9 +216,6 @@ func (t *Tx) Bytes() []byte {
 }
 
 // AddTx add a tx
-// TODO: Not implementation yet
 func (g *Glue) AddTx(channelID string, tx []byte) error {
-	// NewTx(channelID, tx)
-	log.Info("Glue AddTx")
 	return g.client.AddTx(NewTx(channelID, tx).Bytes())
 }

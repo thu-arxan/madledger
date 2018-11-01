@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"madledger/orderer/channel"
 	"madledger/orderer/config"
 	"net"
 
@@ -17,9 +18,9 @@ var (
 
 // Server provide the serve of orderer
 type Server struct {
-	config         *config.ServerConfig
-	rpcServer      *grpc.Server
-	ChannelManager *ChannelManager
+	config    *config.ServerConfig
+	rpcServer *grpc.Server
+	cc        *channel.Coordinator
 }
 
 // NewServer is the constructor of server
@@ -46,12 +47,12 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	// get channel manager
-	channelManager, err := NewChannelManager(dbCfg.LevelDB.Path, chainCfg, consensusCfg)
+	// get channel coordinator
+	cc, err := channel.NewCoordinator(dbCfg.LevelDB.Path, chainCfg, consensusCfg)
 	if err != nil {
 		return nil, err
 	}
-	server.ChannelManager = channelManager
+	server.cc = cc
 	return server, nil
 }
 
@@ -63,7 +64,7 @@ func (s *Server) Start() error {
 		return fmt.Errorf("Failed to start the orderer server because %s", err.Error())
 	}
 	log.Infof("Start the orderer at %s", addr)
-	err = s.ChannelManager.start()
+	err = s.cc.Start()
 	if err != nil {
 		return err
 	}
@@ -83,6 +84,6 @@ func (s *Server) Stop() {
 	// if s.rpcServer != nil {
 	s.rpcServer.Stop()
 	// }
-	s.ChannelManager.stop()
+	s.cc.Stop()
 	log.Info("Succeed to stop the orderer service")
 }

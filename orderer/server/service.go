@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"madledger/core/types"
 	pb "madledger/protos"
 
@@ -11,7 +10,7 @@ import (
 
 // FetchBlock is the implementation of protos
 func (s *Server) FetchBlock(ctx context.Context, req *pb.FetchBlockRequest) (*pb.Block, error) {
-	block, err := s.ChannelManager.FetchBlock(req.ChannelID, req.Number, req.Behavior == pb.Behavior_RETURN_UNTIL_READY)
+	block, err := s.cc.FetchBlock(req.ChannelID, req.Number, req.Behavior == pb.Behavior_RETURN_UNTIL_READY)
 	if err != nil {
 		return nil, err
 	}
@@ -20,8 +19,7 @@ func (s *Server) FetchBlock(ctx context.Context, req *pb.FetchBlockRequest) (*pb
 
 // ListChannels is the implementation of protos
 func (s *Server) ListChannels(ctx context.Context, req *pb.ListChannelsRequest) (*pb.ChannelInfos, error) {
-	fmt.Println("list channels")
-	return s.ChannelManager.ListChannels(req)
+	return s.cc.ListChannels(req)
 }
 
 // CreateChannel is the implementation of protos
@@ -36,7 +34,7 @@ func (s *Server) CreateChannel(ctx context.Context, req *pb.CreateChannelRequest
 	if tx.GetReceiver().String() != types.CreateChannelContractAddress.String() {
 		return nil, errors.New("The receiver of the tx is not the valid contract address")
 	}
-	_, err = s.ChannelManager.CreateChannel(tx)
+	_, err = s.cc.CreateChannel(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -50,6 +48,6 @@ func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus,
 	if err != nil {
 		return &status, err
 	}
-	err = s.ChannelManager.AddTx(tx)
+	err = s.cc.AddTx(tx)
 	return &status, err
 }

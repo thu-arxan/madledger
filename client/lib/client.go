@@ -34,7 +34,7 @@ func NewClient(cfgFile string) (*Client, error) {
 		return nil, err
 	}
 	// get clients
-	ordererClient, err := getOrdererClient()
+	ordererClient, err := getOrdererClient(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +50,8 @@ func NewClient(cfgFile string) (*Client, error) {
 	}, nil
 }
 
-func getOrdererClient() (pb.OrdererClient, error) {
-	conn, err := grpc.Dial("localhost:12345", grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
+func getOrdererClient(cfg *config.Config) (pb.OrdererClient, error) {
+	conn, err := grpc.Dial(cfg.Orderer.Address[0], grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
 	if err != nil {
 		return nil, err
 	}

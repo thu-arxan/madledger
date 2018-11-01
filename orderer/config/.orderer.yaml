@@ -36,7 +36,7 @@ Consensus:
       RPC: 26657
       APP: 26658
     # ID means to identity in p2p connections
-    ID: 8e7a05ef8045e35a51eedd26eeecf89488497bae
+    ID: 94c029de6fc2db54b9ed79fc8edb630e6bfd4ef6
     # P2P Persistent Address, like c395828cc2baaa6f6af2bd13ce62d1e9484919c8@localhost:36656
     P2PAddress:
       -

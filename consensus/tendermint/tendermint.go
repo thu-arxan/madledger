@@ -64,6 +64,7 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 
 // SyncBlocks is the implementation of interface
 func (c *Consensus) SyncBlocks(channelID string, ch *chan consensus.Block) error {
+	c.app.SetSyncChan(channelID, ch)
 	return nil
 }
 

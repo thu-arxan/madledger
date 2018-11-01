@@ -27,34 +27,34 @@ type Manager struct {
 	consensusBlockChan chan consensus.Block
 	init               bool
 	stop               chan bool
-	consensus          consensus.Consensus
 	notify             *notifyPool
-	globalManager      *Manager
+	coordinator        *Coordinator
 }
 
 // NewManager is the constructor of Manager
-func NewManager(id, dir string, db db.DB) (*Manager, error) {
+func NewManager(id, dir string, coordinator *Coordinator) (*Manager, error) {
 	cm, err := blockchain.NewManager(id, dir)
 	if err != nil {
 		return nil, err
 	}
 	return &Manager{
 		ID:                 id,
-		db:                 db,
+		db:                 coordinator.db,
 		cm:                 cm,
 		consensusBlockChan: make(chan consensus.Block),
 		init:               false,
 		stop:               make(chan bool),
 		notify:             newNotifyPool(),
+		coordinator:        coordinator,
 	}, nil
 }
 
 // Start starts the channel
-func (manager *Manager) Start(consensus consensus.Consensus, globalManager *Manager) {
+func (manager *Manager) Start() {
 	log.Infof("Channel %s is starting", manager.ID)
-	manager.consensus = consensus
-	manager.globalManager = globalManager
-	consensus.SyncBlocks(manager.ID, &(manager.consensusBlockChan))
+	// manager.consensus = consensus
+	// manager.globalManager = globalManager
+	manager.coordinator.Consensus.SyncBlocks(manager.ID, &(manager.consensusBlockChan))
 	manager.init = true
 	for {
 		select {
@@ -86,7 +86,7 @@ func (manager *Manager) Start(consensus consensus.Consensus, globalManager *Mana
 			// else send a tx to the global channel
 			if manager.ID != types.GLOBALCHANNELID {
 				tx := types.NewGlobalTx(manager.ID, block.Header.Number, block.Hash())
-				err := manager.globalManager.AddTx(tx)
+				err := manager.coordinator.GM.AddTx(tx)
 				if err != nil {
 					log.Fatalf("Channel %s failed to add tx into global channel because %s", manager.ID, err)
 					return
@@ -167,7 +167,7 @@ func (manager *Manager) AddTx(tx *types.Tx) error {
 	}
 
 	defer manager.notify.deleteTxNotify(hash)
-	err = manager.consensus.AddTx(manager.ID, txBytes)
+	err = manager.coordinator.Consensus.AddTx(manager.ID, txBytes)
 	if err != nil {
 		return err
 	}
