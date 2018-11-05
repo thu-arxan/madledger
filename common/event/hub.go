@@ -1,0 +1,63 @@
+package event
+
+import (
+	"madledger/common/util"
+	"sync"
+)
+
+// Hub manage all events
+type Hub struct {
+	lock   *sync.Mutex
+	events map[string][]chan bool
+	finish map[string]*Result
+}
+
+// NewHub is the constructor of Hub
+func NewHub() *Hub {
+	return &Hub{
+		lock:   new(sync.Mutex),
+		finish: make(map[string]*Result),
+		events: make(map[string][]chan bool),
+	}
+}
+
+// Done set the result of event.
+// One event could only set done once now.
+func (h *Hub) Done(event Event, result *Result) {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
+	var id = event.ID()
+	// event is not finished and
+	if !util.Contain(h.finish, id) {
+		h.finish[id] = result
+		for _, ch := range h.events[id] {
+			ch <- true
+		}
+	}
+}
+
+// Watch will watch an event.
+// gc is still now be done yet.
+func (h *Hub) Watch(event Event) *Result {
+	h.lock.Lock()
+	var id = event.ID()
+	if util.Contain(h.finish, id) {
+		defer h.lock.Unlock()
+		return h.finish[id]
+	}
+
+	if !util.Contain(h.events, id) {
+		h.events[id] = make([]chan bool, 0)
+	}
+	ch := make(chan bool, 1)
+	h.events[id] = append(h.events[id], ch)
+	h.lock.Unlock()
+
+	<-ch
+	h.lock.Lock()
+	result := h.finish[id]
+	defer h.lock.Unlock()
+
+	return result
+}
