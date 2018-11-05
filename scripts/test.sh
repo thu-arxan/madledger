@@ -20,10 +20,10 @@ go test madledger/blockchain/config -count=1
 go test madledger/executor/evm -count=1
 
 # run orderer test
-rm -rf $GOPATH/src/madledger/orderer/config/.orderer.yaml
-orderer init -c $GOPATH/src/madledger/orderer/config/.orderer.yaml -p $GOPATH/src/madledger/orderer/config
+# rm -rf $GOPATH/src/madledger/orderer/config/.orderer.yaml
+# orderer init -c $GOPATH/src/madledger/orderer/config/.orderer.yaml -p $GOPATH/src/madledger/orderer/config
 go test madledger/orderer/config -count=1
-rm -rf $GOPATH/src/madledger/orderer/config/.tendermint
+# rm -rf $GOPATH/src/madledger/orderer/config/.tendermint
 go test madledger/orderer/db -count=1
 go test madledger/orderer/server -count=1
 

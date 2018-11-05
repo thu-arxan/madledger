@@ -42,102 +42,32 @@ type Coordinator struct {
 
 // NewCoordinator is the constructor of Coordinator
 func NewCoordinator(dbDir string, chainCfg *config.BlockChainConfig, consensusCfg *config.ConsensusConfig) (*Coordinator, error) {
+	var err error
+
 	c := new(Coordinator)
 	c.Managers = make(map[string]*Manager)
 	c.chainCfg = chainCfg
 	// set db
-	db, err := db.NewLevelDB(dbDir)
+	c.db, err = db.NewLevelDB(dbDir)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to load db at %s because %s", dbDir, err.Error())
 	}
-	c.db = db
-	//set config channel manager
-	configManager, err := c.loadConfigChannel()
+	//set system channels like config and global
+	err = c.loadSystemChannel()
 	if err != nil {
 		return nil, err
 	}
-	// set global channel manager
-	globalManager, err := NewManager(types.GLOBALCHANNELID, c)
-	if err != nil {
-		return nil, err
-	}
-	if !globalManager.HasGenesisBlock() {
-		log.Info("Creating genesis block of channel _global")
-		// cgb: config channel genesis block
-		cgb, err := configManager.GetBlock(0)
-		if err != nil {
-			return nil, err
-		}
-		// ggb: global channel genesis block
-		ggb, err := gc.CreateGenesisBlock([]*gc.Payload{&gc.Payload{
-			ChannelID: types.CONFIGCHANNELID,
-			Number:    0,
-			Hash:      cgb.Hash(),
-		}})
-		if err != nil {
-			return nil, err
-		}
-		err = globalManager.AddBlock(ggb)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	c.CM = configManager
-	c.GM = globalManager
-
 	// then load user channels
-	userChannels, err := c.loadUserChannels()
+	err = c.loadUserChannel()
 	if err != nil {
 		return nil, err
-	}
-	for channelID, manager := range userChannels {
-		c.Managers[channelID] = manager
 	}
 	// set consensus
-	var channels = make(map[string]consensus.Config, 0)
-	cfg := consensus.Config{
-		Timeout: 100,
-		MaxSize: 10,
-		Number:  1,
-		Resume:  false,
+	err = c.setConsensus(consensusCfg)
+	if err != nil {
+		return nil, err
 	}
-	channels[types.GLOBALCHANNELID] = cfg
-	channels[types.CONFIGCHANNELID] = cfg
-	// set consensus of user channels
-	for channelID := range userChannels {
-		channels[channelID] = consensus.Config{
-			Timeout: 1000,
-			MaxSize: 10,
-			Number:  1,
-			Resume:  false,
-		}
-	}
-	switch consensusCfg.Type {
-	case config.SOLO:
-		consensus, err := solo.NewConsensus(channels)
-		if err != nil {
-			return nil, err
-		}
-		c.Consensus = consensus
-	case config.BFT:
-		// TODO: Not finished yet
-		consensus, err := tendermint.NewConsensus(channels, &ct.Config{
-			Port: ct.Port{
-				P2P: consensusCfg.BFT.Port.P2P,
-				RPC: consensusCfg.BFT.Port.RPC,
-				App: consensusCfg.BFT.Port.APP,
-			},
-			Dir:        consensusCfg.BFT.Path,
-			P2PAddress: consensusCfg.BFT.P2PAddress,
-		})
-		if err != nil {
-			return nil, err
-		}
-		c.Consensus = consensus
-	default:
-		return nil, fmt.Errorf("Unsupport consensus type:%d", consensusCfg.Type)
-	}
+
 	return c, nil
 }
 
@@ -204,8 +134,10 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 			})
 		}
 	}
+
 	c.lock.RLock()
 	defer c.lock.RUnlock()
+
 	for channel, channelManager := range c.Managers {
 		if channelManager.IsMember(member) {
 			identity := pb.Identity_MEMBER
@@ -242,7 +174,7 @@ func (c *Coordinator) AddTx(tx *types.Tx) error {
 
 // createChannel try to create a channel
 // However, this should check if the channel exist and should be thread safety.
-// todo: First add a tx then create channel
+// todo: This is wrong if there is a consensus
 func (c *Coordinator) createChannel(tx *types.Tx) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -275,29 +207,14 @@ func (c *Coordinator) createChannel(tx *types.Tx) error {
 		return err
 	}
 
-	// then start the consensus
-	err = c.Consensus.AddChannel(channelID, consensus.Config{
-		Timeout: 1000,
-		MaxSize: 10,
-		Number:  0,
-		Resume:  false,
-	})
-	channel, err := NewManager(channelID, c)
-	if err != nil {
-		return err
+	// However, we must make sure that channel is created succeed.
+	for {
+		if c.db.HasChannel(channelID) {
+			break
+		}
+		time.Sleep(50 * time.Millisecond)
 	}
-	// create genesis block here
-	// The genesis only contain the create tx now.
-	genesisBlock := types.NewBlock(channelID, 0, types.GenesisBlockPrevHash, []*types.Tx{tx})
-	err = channel.AddBlock(genesisBlock)
-	if err != nil {
-		return err
-	}
-	// then start the channel
-	go func() {
-		channel.Start()
-	}()
-	c.Managers[channelID] = channel
+
 	return err
 }
 
@@ -318,37 +235,126 @@ func (c *Coordinator) getChannelManager(channelID string) (*Manager, error) {
 	return nil, fmt.Errorf("Channel %s is not exist", channelID)
 }
 
-// loadConfigChannel load the config channel("_config")
-func (c *Coordinator) loadConfigChannel() (*Manager, error) {
-	configManager, err := NewManager(types.CONFIGCHANNELID, c)
-	if err != nil {
-		return nil, err
+// loadSystemChannel will load config channel and global channel
+func (c *Coordinator) loadSystemChannel() error {
+	if err := c.loadConfigChannel(); err != nil {
+		return err
 	}
-	if !configManager.HasGenesisBlock() {
+
+	if err := c.loadGlobalChannel(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// loadConfigChannel load the config channel("_config")
+func (c *Coordinator) loadConfigChannel() error {
+	var err error
+	c.CM, err = NewManager(types.CONFIGCHANNELID, c)
+	if err != nil {
+		return err
+	}
+	if !c.CM.HasGenesisBlock() {
 		log.Info("Creating genesis block of channel _config")
 		gb, err := cc.CreateGenesisBlock()
 		if err != nil {
-			return nil, err
+			return err
 		}
-		err = configManager.AddBlock(gb)
+		err = c.CM.AddBlock(gb)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
-	return configManager, nil
+	return nil
 }
 
-func (c *Coordinator) loadUserChannels() (map[string]*Manager, error) {
-	var managers = make(map[string]*Manager)
+// loadGlobalChannel load the global channel("_global")
+// Note: loadGlobalChannel must call after loadConfigChannel
+func (c *Coordinator) loadGlobalChannel() error {
+	var err error
+	c.GM, err = NewManager(types.GLOBALCHANNELID, c)
+	if err != nil {
+		return err
+	}
+	if !c.GM.HasGenesisBlock() {
+		log.Info("Creating genesis block of channel _global")
+		// cgb: config channel genesis block
+		cgb, err := c.CM.GetBlock(0)
+		if err != nil {
+			return err
+		}
+		// ggb: global channel genesis block
+		ggb, err := gc.CreateGenesisBlock([]*gc.Payload{&gc.Payload{
+			ChannelID: types.CONFIGCHANNELID,
+			Number:    0,
+			Hash:      cgb.Hash(),
+		}})
+		if err != nil {
+			return err
+		}
+		err = c.GM.AddBlock(ggb)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// loadUserChannel load all user channels
+func (c *Coordinator) loadUserChannel() error {
 	channels := c.db.ListChannel()
 	for _, channelID := range channels {
 		if !strings.HasPrefix(channelID, "_") {
 			manager, err := NewManager(channelID, c)
 			if err != nil {
-				return nil, err
+				return err
 			}
-			managers[channelID] = manager
+			c.Managers[channelID] = manager
 		}
 	}
-	return managers, nil
+	return nil
+}
+
+// setConsensus set consensus according to the consensus config
+func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
+	// set consensus
+	var channels = make(map[string]consensus.Config, 0)
+	defaultCfg := consensus.Config{
+		Timeout: 100,
+		MaxSize: 10,
+		Number:  1,
+		Resume:  false,
+	}
+	channels[types.GLOBALCHANNELID] = defaultCfg
+	channels[types.CONFIGCHANNELID] = defaultCfg
+	// set consensus of user channels
+	for channelID := range c.Managers {
+		channels[channelID] = defaultCfg
+	}
+	switch cfg.Type {
+	case config.SOLO:
+		consensus, err := solo.NewConsensus(channels)
+		if err != nil {
+			return err
+		}
+		c.Consensus = consensus
+	case config.BFT:
+		// TODO: Not finished yet
+		consensus, err := tendermint.NewConsensus(channels, &ct.Config{
+			Port: ct.Port{
+				P2P: cfg.BFT.Port.P2P,
+				RPC: cfg.BFT.Port.RPC,
+				App: cfg.BFT.Port.APP,
+			},
+			Dir:        cfg.BFT.Path,
+			P2PAddress: cfg.BFT.P2PAddress,
+		})
+		if err != nil {
+			return err
+		}
+		c.Consensus = consensus
+	default:
+		return fmt.Errorf("Unsupport consensus type:%d", cfg.Type)
+	}
+	return nil
 }
