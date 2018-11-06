@@ -23,14 +23,17 @@ func NewHub() *Hub {
 
 // Done set the result of event.
 // One event could only set done once now.
-func (h *Hub) Done(event Event, result *Result) {
+func (h *Hub) Done(id string, result *Result) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
-	var id = event.ID()
 	// event is not finished and
 	if !util.Contain(h.finish, id) {
 		h.finish[id] = result
+		if result == nil {
+			h.finish[id] = NewResult(nil)
+		}
+
 		for _, ch := range h.events[id] {
 			ch <- true
 		}
@@ -39,9 +42,9 @@ func (h *Hub) Done(event Event, result *Result) {
 
 // Watch will watch an event.
 // gc is still now be done yet.
-func (h *Hub) Watch(event Event) *Result {
+func (h *Hub) Watch(id string) *Result {
 	h.lock.Lock()
-	var id = event.ID()
+
 	if util.Contain(h.finish, id) {
 		defer h.lock.Unlock()
 		return h.finish[id]

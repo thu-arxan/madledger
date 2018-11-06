@@ -10,26 +10,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type fakeEvent struct {
-	id string
-}
-
-func (e *fakeEvent) ID() string {
-	return e.id
-}
-
 var (
 	eventSize = 2048
 )
 
 func TestHub(t *testing.T) {
 	hub := NewHub()
-	events := make([]*fakeEvent, eventSize)
+	events := make([]string, eventSize)
 	// initial events
 	for i := range events {
-		events[i] = &fakeEvent{
-			id: randomStr(),
-		}
+		events[i] = randomStr()
 	}
 
 	var wg sync.WaitGroup

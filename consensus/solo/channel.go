@@ -3,41 +3,35 @@ package solo
 import (
 	"fmt"
 	"madledger/common/crypto"
+	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
 	"time"
 )
 
 type channel struct {
-	id       string
-	config   consensus.Config
-	txs      chan *txNotify
-	pool     *txPool
-	notifies *notifyPool
-	num      uint64
+	id     string
+	config consensus.Config
+	txs    chan []byte
+	pool   *txPool
+	hub    *event.Hub
+	num    uint64
 	// store all blocks, maybe gc is needed
 	// todo: gc to reduce the storage
 	blocks            map[uint64]*Block
-	notify            *chan consensus.Block
 	init              bool
 	stop              chan bool
 	consensuBlockChan *chan consensus.Block
 }
 
-type txNotify struct {
-	tx  []byte
-	err *chan error
-}
-
-func newChannel(id string, config consensus.Config, notify *chan consensus.Block) *channel {
+func newChannel(id string, config consensus.Config) *channel {
 	return &channel{
 		id:                id,
 		config:            config,
 		num:               config.Number,
-		txs:               make(chan *txNotify, config.MaxSize),
+		txs:               make(chan []byte, config.MaxSize),
 		pool:              newTxPool(),
-		notifies:          newNotifyPool(),
-		notify:            notify,
+		hub:               event.NewHub(),
 		blocks:            make(map[uint64]*Block),
 		init:              false,
 		stop:              make(chan bool),
@@ -58,15 +52,11 @@ func (c *channel) start() error {
 		case <-ticker.C:
 			// log.Infof("Channel %s tick", c.id)
 			c.createBlock(c.pool.fetchTxs(c.config.MaxSize))
-		case notify := <-c.txs:
-			err := c.addTx(notify.tx)
+		case tx := <-c.txs:
+			err := c.addTx(tx)
+			hash := util.Hex(crypto.Hash(tx))
 			if err != nil {
-				go func() {
-					(*notify.err) <- err
-				}()
-			} else {
-				hash := util.Hex(crypto.Hash(notify.tx))
-				c.notifies.addNotify(hash, notify.err)
+				c.hub.Done(hash, event.NewResult(err))
 			}
 			// then see if there is a need to create block
 			if c.pool.getPoolSize() >= c.config.MaxSize {
@@ -82,22 +72,12 @@ func (c *channel) start() error {
 
 // AddTx will try to add a tx
 func (c *channel) AddTx(tx []byte) error {
-	// log.Infof("Channel %s add tx", c.id)
-	var e = make(chan error)
-	notify := &txNotify{
-		tx:  tx,
-		err: &e,
-	}
 	go func() {
-		c.txs <- notify
+		c.txs <- tx
 	}()
 
-	err := <-e
-	if err != nil {
-		return err
-	}
-	// log.Infof("Channel %s succeed to add tx", c.id)
-	return nil
+	result := c.hub.Watch(util.Hex(crypto.Hash(tx)))
+	return result.Err
 }
 
 func (c *channel) addTx(tx []byte) error {
@@ -128,7 +108,10 @@ func (c *channel) createBlock(txs [][]byte) error {
 	}
 	c.blocks[block.num] = block
 	c.num++
-	c.notifies.addBlock(block)
+	for _, tx := range block.txs {
+		hash := util.Hex(crypto.Hash(tx))
+		c.hub.Done(hash, nil)
+	}
 	if c.consensuBlockChan != nil {
 		go func(block *Block) {
 			(*c.consensuBlockChan) <- block

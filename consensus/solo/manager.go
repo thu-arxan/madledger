@@ -79,7 +79,7 @@ func (m *manager) add(channelID string, cfg consensus.Config) error {
 
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	channel := newChannel(channelID, cfg, nil)
+	channel := newChannel(channelID, cfg)
 	m.channels[channelID] = channel
 	return nil
 }

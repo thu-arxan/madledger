@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"madledger/blockchain"
+	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
 	"madledger/core/types"
@@ -28,7 +29,7 @@ type Manager struct {
 	consensusBlockChan chan consensus.Block
 	init               bool
 	stop               chan bool
-	notify             *notifyPool
+	hub                *event.Hub
 	coordinator        *Coordinator
 }
 
@@ -45,7 +46,7 @@ func NewManager(id string, coordinator *Coordinator) (*Manager, error) {
 		consensusBlockChan: make(chan consensus.Block),
 		init:               false,
 		stop:               make(chan bool),
-		notify:             newNotifyPool(),
+		hub:                event.NewHub(),
 		coordinator:        coordinator,
 	}, nil
 }
@@ -99,7 +100,10 @@ func (manager *Manager) Start() {
 				return
 			}
 			log.Infof("Channel %s has %d block now", manager.ID, block.Header.Number+1)
-			manager.notify.addBlock(block)
+			manager.hub.Done(string(block.Header.Number), nil)
+			for _, tx := range block.Transactions {
+				manager.hub.Done(util.Hex(tx.Hash()), nil)
+			}
 
 		case <-manager.stop:
 			manager.init = false
@@ -157,23 +161,15 @@ func (manager *Manager) AddTx(tx *types.Tx) error {
 	if err != nil {
 		return err
 	}
-	// first register a notify event
-	// Note: The reason why we must do this is because we must make sure we return the result after we store the block
-	// However, we may find a better way to do this if we allow there are more interactive between the consensus and orderer.
-	var errChan = make(chan error)
-	var hash = util.Hex(tx.Hash())
-	err = manager.notify.addTxNotify(hash, &errChan)
-	if err != nil {
-		return err
-	}
 
-	defer manager.notify.deleteTxNotify(hash)
 	err = manager.coordinator.Consensus.AddTx(manager.ID, txBytes)
 	if err != nil {
 		return err
 	}
-	err = <-errChan
-	return err
+	// Note: The reason why we must do this is because we must make sure we return the result after we store the block
+	// However, we may find a better way to do this if we allow there are more interactive between the consensus and orderer.
+	result := manager.hub.Watch(util.Hex(tx.Hash()))
+	return result.Err
 }
 
 // Stop stop the manager
@@ -202,19 +198,12 @@ func (manager *Manager) IsAdmin(member *types.Member) bool {
 }
 
 // FetchBlockAsync will fetch book async.
-// However, it would be better if using a pool rather than using while.
 // TODO: fix the thread unsafety
 func (manager *Manager) FetchBlockAsync(num uint64) (*types.Block, error) {
-	var b = make(chan bool)
-	if manager.cm.GetExcept() > num {
-		block, err := manager.cm.GetBlock(num)
-		if err == nil {
-			return block, err
-		}
-		return nil, err
+	if manager.cm.GetExcept() <= num {
+		manager.hub.Watch(string(num))
 	}
-	manager.notify.addBlockNotify(num, &b)
-	<-b
+
 	block, err := manager.cm.GetBlock(num)
 	if err == nil {
 		return block, err

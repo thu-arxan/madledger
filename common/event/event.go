@@ -11,9 +11,3 @@ func NewResult(err error) *Result {
 		Err: err,
 	}
 }
-
-// Event is a interface
-type Event interface {
-	// ID provide a unique id to notify
-	ID() string
-}
