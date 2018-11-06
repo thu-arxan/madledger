@@ -1,6 +1,7 @@
 package event
 
 import (
+	"fmt"
 	"madledger/common/util"
 	"sync"
 )
@@ -42,8 +43,12 @@ func (h *Hub) Done(id string, result *Result) {
 
 // Watch will watch an event.
 // gc is still now be done yet.
-func (h *Hub) Watch(id string) *Result {
+func (h *Hub) Watch(id string, wc *WatchConfig) *Result {
 	h.lock.Lock()
+
+	if wc == nil {
+		wc = DefaultWatchConfig()
+	}
 
 	if util.Contain(h.finish, id) {
 		defer h.lock.Unlock()
@@ -53,6 +58,12 @@ func (h *Hub) Watch(id string) *Result {
 	if !util.Contain(h.events, id) {
 		h.events[id] = make([]chan bool, 0)
 	}
+
+	if wc.Single && len(h.events) != 0 {
+		defer h.lock.Unlock()
+		return NewResult(fmt.Errorf("Duplicate watch is not allowed in single mode"))
+	}
+
 	ch := make(chan bool, 1)
 	h.events[id] = append(h.events[id], ch)
 	h.lock.Unlock()

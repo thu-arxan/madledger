@@ -20,6 +20,9 @@ go test madledger/blockchain/config -count=1
 # run executor test
 go test madledger/executor/evm -count=1
 
+#run consensus test
+go test madledger/consensus/solo -count=1
+
 # run orderer test
 # rm -rf $GOPATH/src/madledger/orderer/config/.orderer.yaml
 # orderer init -c $GOPATH/src/madledger/orderer/config/.orderer.yaml -p $GOPATH/src/madledger/orderer/config

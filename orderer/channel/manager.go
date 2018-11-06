@@ -168,7 +168,7 @@ func (manager *Manager) AddTx(tx *types.Tx) error {
 	}
 	// Note: The reason why we must do this is because we must make sure we return the result after we store the block
 	// However, we may find a better way to do this if we allow there are more interactive between the consensus and orderer.
-	result := manager.hub.Watch(util.Hex(tx.Hash()))
+	result := manager.hub.Watch(util.Hex(tx.Hash()), nil)
 	return result.Err
 }
 
@@ -201,7 +201,7 @@ func (manager *Manager) IsAdmin(member *types.Member) bool {
 // TODO: fix the thread unsafety
 func (manager *Manager) FetchBlockAsync(num uint64) (*types.Block, error) {
 	if manager.cm.GetExcept() <= num {
-		manager.hub.Watch(string(num))
+		manager.hub.Watch(string(num), nil)
 	}
 
 	block, err := manager.cm.GetBlock(num)

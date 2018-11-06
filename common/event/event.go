@@ -11,3 +11,20 @@ func NewResult(err error) *Result {
 		Err: err,
 	}
 }
+
+// WatchConfig is the config of Watch
+type WatchConfig struct {
+	Single bool
+}
+
+// NewWatchConfig is the constructor of WatchConfig
+func NewWatchConfig(single bool) *WatchConfig {
+	return &WatchConfig{
+		Single: single,
+	}
+}
+
+// DefaultWatchConfig return the default WatchConfig
+func DefaultWatchConfig() *WatchConfig {
+	return NewWatchConfig(false)
+}

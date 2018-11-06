@@ -32,7 +32,7 @@ func TestHub(t *testing.T) {
 			wg.Add(1)
 			go func(i int) {
 				defer wg.Done()
-				result := hub.Watch(event)
+				result := hub.Watch(event, nil)
 				require.EqualError(t, result.Err, fmt.Sprintf("Error is %d", i%eventSize))
 			}(i)
 		}

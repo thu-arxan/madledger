@@ -6,13 +6,15 @@ import (
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
+	"sync"
 	"time"
 )
 
 type channel struct {
 	id     string
+	lock   sync.Mutex
 	config consensus.Config
-	txs    chan []byte
+	txs    chan bool
 	pool   *txPool
 	hub    *event.Hub
 	num    uint64
@@ -29,7 +31,7 @@ func newChannel(id string, config consensus.Config) *channel {
 		id:                id,
 		config:            config,
 		num:               config.Number,
-		txs:               make(chan []byte, config.MaxSize),
+		txs:               make(chan bool, config.MaxSize),
 		pool:              newTxPool(),
 		hub:               event.NewHub(),
 		blocks:            make(map[uint64]*Block),
@@ -52,13 +54,8 @@ func (c *channel) start() error {
 		case <-ticker.C:
 			// log.Infof("Channel %s tick", c.id)
 			c.createBlock(c.pool.fetchTxs(c.config.MaxSize))
-		case tx := <-c.txs:
-			err := c.addTx(tx)
-			hash := util.Hex(crypto.Hash(tx))
-			if err != nil {
-				c.hub.Done(hash, event.NewResult(err))
-			}
-			// then see if there is a need to create block
+		case <-c.txs:
+			// see if there is a need to create block
 			if c.pool.getPoolSize() >= c.config.MaxSize {
 				c.createBlock(c.pool.fetchTxs(c.config.MaxSize))
 			}
@@ -72,21 +69,23 @@ func (c *channel) start() error {
 
 // AddTx will try to add a tx
 func (c *channel) AddTx(tx []byte) error {
+	c.lock.Lock()
+	err := c.addTx(tx)
+	c.lock.Unlock()
+	if err != nil {
+		return err
+	}
+
 	go func() {
-		c.txs <- tx
+		c.txs <- true
 	}()
 
-	result := c.hub.Watch(util.Hex(crypto.Hash(tx)))
+	result := c.hub.Watch(util.Hex(crypto.Hash(tx)), nil)
 	return result.Err
 }
 
 func (c *channel) addTx(tx []byte) error {
-	// try to add into the pool
-	err := c.pool.addTx(tx)
-	if err != nil {
-		return err
-	}
-	return nil
+	return c.pool.addTx(tx)
 }
 
 // Stop will block the work of channel
