@@ -5,7 +5,7 @@ import (
 	"madledger/core/types"
 )
 
-//GetTxsFromConsensusBlock return txs in the consensus block
+// GetTxsFromConsensusBlock return txs in the consensus block.
 func GetTxsFromConsensusBlock(block consensus.Block) []*types.Tx {
 	var txs []*types.Tx
 	for _, txBytes := range block.GetTxs() {

@@ -54,27 +54,16 @@ func NewManager(id string, coordinator *Coordinator) (*Manager, error) {
 // Start starts the channel
 func (manager *Manager) Start() {
 	log.Infof("Channel %s is starting", manager.ID)
-	// manager.consensus = consensus
-	// manager.globalManager = globalManager
 	manager.coordinator.Consensus.SyncBlocks(manager.ID, &(manager.consensusBlockChan))
 	manager.init = true
 	for {
 		select {
 		case cb := <-manager.consensusBlockChan:
-			// However, this does not means that the block is added succeed, because it may need to be added into global channel.
-			// So here are many things need to be done.
-			txs := GetTxsFromConsensusBlock(cb)
-			var unduplicateTxs []*types.Tx
-			for _, tx := range txs {
-				if !util.Contain(unduplicateTxs, tx) {
-					if !manager.db.HasTx(tx) {
-						unduplicateTxs = append(unduplicateTxs, tx)
-					}
-				}
-			}
-			if len(unduplicateTxs) == 0 {
+			txs := removeDuplicateTxs(manager.db, GetTxsFromConsensusBlock(cb))
+			if len(txs) == 0 {
 				return
 			}
+
 			prevBlock := manager.cm.GetPrevBlock()
 			var block *types.Block
 			if prevBlock == nil {
@@ -209,4 +198,16 @@ func (manager *Manager) FetchBlockAsync(num uint64) (*types.Block, error) {
 		return block, err
 	}
 	return nil, err
+}
+
+func removeDuplicateTxs(db db.DB, txs []*types.Tx) []*types.Tx {
+	var unduplicateTxs []*types.Tx
+	for _, tx := range txs {
+		if !util.Contain(unduplicateTxs, tx) {
+			if !db.HasTx(tx) {
+				unduplicateTxs = append(unduplicateTxs, tx)
+			}
+		}
+	}
+	return unduplicateTxs
 }

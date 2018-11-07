@@ -15,5 +15,8 @@ type DB interface {
 	HasTx(tx *types.Tx) bool
 	IsMember(channelID string, member *types.Member) bool
 	IsAdmin(channelID string, member *types.Member) bool
+	// WatchChannel provide a way to spy channel change. Now it mainly used to
+	// spy channel create operation.
+	WatchChannel(channelID string)
 	Close() error
 }

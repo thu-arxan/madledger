@@ -21,7 +21,6 @@ func (manager *Manager) AddConfigBlock(block *types.Block) error {
 		// This is a create channel tx
 		if !manager.db.HasChannel(channelID) {
 			// then start the consensus
-			log.Info(manager.coordinator)
 			err := manager.coordinator.Consensus.AddChannel(channelID, consensus.DefaultConfig())
 			channel, err := NewManager(channelID, manager.coordinator)
 			if err != nil {

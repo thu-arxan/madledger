@@ -81,7 +81,6 @@ func (c *Coordinator) Start() error {
 
 	go c.GM.Start()
 	go c.CM.Start()
-	// also, start others channels
 	for _, channelManager := range c.Managers {
 		go channelManager.Start()
 	}
@@ -174,7 +173,6 @@ func (c *Coordinator) AddTx(tx *types.Tx) error {
 
 // createChannel try to create a channel
 // However, this should check if the channel exist and should be thread safety.
-// todo: This is wrong if there is a consensus
 func (c *Coordinator) createChannel(tx *types.Tx) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -184,6 +182,7 @@ func (c *Coordinator) createChannel(tx *types.Tx) error {
 	if err != nil {
 		return err
 	}
+
 	var channelID = payload.ChannelID
 	switch channelID {
 	case types.GLOBALCHANNELID:
@@ -199,21 +198,11 @@ func (c *Coordinator) createChannel(tx *types.Tx) error {
 		}
 	}
 
-	// then send a tx to config channel
-	// But the manager should not AddTx by consensus, because the confirm
-	// of consensus is not the final confirm.
 	err = c.CM.AddTx(tx)
 	if err != nil {
 		return err
 	}
-
-	// However, we must make sure that channel is created succeed.
-	for {
-		if c.db.HasChannel(channelID) {
-			break
-		}
-		time.Sleep(50 * time.Millisecond)
-	}
+	c.db.WatchChannel(channelID)
 
 	return err
 }

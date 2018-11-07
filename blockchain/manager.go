@@ -48,6 +48,7 @@ func (manager *Manager) HasGenesisBlock() bool {
 func (manager *Manager) GetBlock(num uint64) (*types.Block, error) {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
+
 	if num >= manager.except {
 		return nil, errors.New("The block is not exist")
 	}
@@ -58,6 +59,7 @@ func (manager *Manager) GetBlock(num uint64) (*types.Block, error) {
 func (manager *Manager) GetExcept() uint64 {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
+
 	return manager.except
 }
 
@@ -65,6 +67,7 @@ func (manager *Manager) GetExcept() uint64 {
 func (manager *Manager) GetPrevBlock() *types.Block {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
+
 	if manager.except == 0 {
 		return nil
 	}
@@ -85,6 +88,7 @@ func (manager *Manager) AddBlock(block *types.Block) error {
 	}
 	log.Debugf("Channel %s add block %d", manager.id, manager.except)
 	var err error
+
 	err = manager.storeBlock(block)
 	if err != nil {
 		return err

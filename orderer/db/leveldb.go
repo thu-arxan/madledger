@@ -6,6 +6,7 @@ import (
 	cc "madledger/blockchain/config"
 	"madledger/core/types"
 
+	"madledger/common/event"
 	"madledger/common/util"
 
 	"github.com/syndtr/goleveldb/leveldb"
@@ -22,17 +23,21 @@ type LevelDB struct {
 	// the dir of data
 	dir     string
 	connect *leveldb.DB
+	hub     *event.Hub
 }
 
 // NewLevelDB is the constructor of LevelDB
 func NewLevelDB(dir string) (DB, error) {
+	var err error
+
 	db := new(LevelDB)
 	db.dir = dir
-	connect, err := leveldb.OpenFile(dir, nil)
+	db.connect, err = leveldb.OpenFile(dir, nil)
 	if err != nil {
 		return nil, err
 	}
-	db.connect = connect
+	db.hub = event.NewHub()
+
 	return db, nil
 }
 
@@ -74,6 +79,7 @@ func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
 	if err != nil {
 		return err
 	}
+	db.hub.Done(id, nil)
 	return nil
 }
 
@@ -144,6 +150,11 @@ func (db *LevelDB) IsAdmin(channelID string, member *types.Member) bool {
 		}
 	}
 	return false
+}
+
+// WatchChannel is the implementation of DB
+func (db *LevelDB) WatchChannel(channelID string) {
+	db.hub.Watch(channelID, nil)
 }
 
 // Close is the implementation of DB
