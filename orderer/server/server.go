@@ -81,6 +81,7 @@ func (s *Server) Start() error {
 
 // Stop will stop the rpc service and the consensus service
 func (s *Server) Stop() {
+	fmt.Println("Stop signal!!!")
 	// if s.rpcServer != nil {
 	s.rpcServer.Stop()
 	// }

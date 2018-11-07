@@ -61,8 +61,10 @@ func testCreateContract(t *testing.T, client *client.Client) {
 func createContract(t *testing.T, channelID string, client *client.Client) {
 	contractCodes, err := readCodes(BalanceBin)
 	require.NoError(t, err)
+
 	tx, err := types.NewTx(channelID, common.ZeroAddress, contractCodes, client.GetPrivKey())
 	require.NoError(t, err)
+
 	status, err := client.AddTx(tx)
 	require.NoError(t, err)
 	require.Empty(t, status.Err)
@@ -70,6 +72,7 @@ func createContract(t *testing.T, channelID string, client *client.Client) {
 	// then try to create the same contract again, this should be a duplicate error
 	tx, err = types.NewTx(channelID, common.ZeroAddress, contractCodes, client.GetPrivKey())
 	require.NoError(t, err)
+
 	status, err = client.AddTx(tx)
 	require.NoError(t, err)
 	require.Equal(t, status.Err, "Duplicate address")

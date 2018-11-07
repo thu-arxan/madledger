@@ -48,7 +48,7 @@ func TestNewServer(t *testing.T) {
 	require.NoError(t, err)
 
 	go func() {
-		server.Start()
+		require.NoError(t, server.Start())
 	}()
 	time.Sleep(300 * time.Millisecond)
 }
@@ -134,8 +134,7 @@ func TestServerRestart(t *testing.T) {
 	require.NoError(t, err)
 
 	go func() {
-		err := server.Start()
-		require.NoError(t, err)
+		require.NoError(t, server.Start())
 	}()
 	time.Sleep(200 * time.Millisecond)
 	server.Stop()
@@ -153,7 +152,7 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 	require.NoError(t, err)
 
 	go func() {
-		server.Start()
+		require.NoError(t, server.Start())
 	}()
 	time.Sleep(300 * time.Millisecond)
 	client, err := getClient()
@@ -185,7 +184,7 @@ func TestCreateChannel(t *testing.T) {
 	server, err = NewServer(getTestConfig())
 	require.NoError(t, err)
 	go func() {
-		server.Start()
+		require.NoError(t, server.Start())
 	}()
 	time.Sleep(300 * time.Millisecond)
 	// then try to create a channel
@@ -207,7 +206,7 @@ func TestServerRestartWithUserChannel(t *testing.T) {
 	require.NoError(t, err)
 
 	go func() {
-		server.Start()
+		require.NoError(t, server.Start())
 	}()
 	time.Sleep(300 * time.Millisecond)
 	client, _ := getClient()
@@ -234,7 +233,7 @@ func TestFetchBlockAsync(t *testing.T) {
 	require.NoError(t, err)
 
 	go func() {
-		server.Start()
+		require.NoError(t, server.Start())
 	}()
 	time.Sleep(300 * time.Millisecond)
 	client, _ := getClient()
@@ -314,7 +313,7 @@ func TestAddDuplicateTxs(t *testing.T) {
 	require.NoError(t, err)
 
 	go func() {
-		server.Start()
+		require.NoError(t, server.Start())
 	}()
 	time.Sleep(300 * time.Millisecond)
 	client, _ := getClient()

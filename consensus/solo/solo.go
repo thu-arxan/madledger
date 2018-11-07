@@ -26,6 +26,7 @@ func NewConsensus(channels map[string]consensus.Config) (consensus.Consensus, er
 			return nil, err
 		}
 	}
+
 	return c, nil
 }
 
@@ -53,19 +54,19 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 	return c.manager.AddTx(channelID, tx)
 }
 
-// SyncBlocks is the implementation of interface
-func (c *Consensus) SyncBlocks(channelID string, ch *chan consensus.Block) error {
-	channel, err := c.manager.get(channelID)
-	if err != nil {
-		return err
-	}
-	return channel.setConsensusBlockChan(ch)
-}
-
 // GetNumber is the implementation of interface
 // TODO: This function if not really implementation yet.
 func (c *Consensus) GetNumber(channelID string) (uint64, error) {
 	return 0, nil
+}
+
+// GetBlock is the implementation of interface
+func (c *Consensus) GetBlock(channelID string, num uint64, async bool) (consensus.Block, error) {
+	channel, err := c.manager.get(channelID)
+	if err != nil {
+		return nil, err
+	}
+	return channel.getBlock(num, async)
 }
 
 // Stop is the implementation of interface

@@ -13,7 +13,7 @@ func DefaultConfig() Config {
 	return Config{
 		Timeout: 1000,
 		MaxSize: 10,
-		Number:  0,
+		Number:  1,
 		Resume:  false,
 	}
 }

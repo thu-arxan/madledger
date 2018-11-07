@@ -25,12 +25,13 @@ type Manager struct {
 	// db is the database
 	db db.DB
 	// chain manager
-	cm                 *blockchain.Manager
-	consensusBlockChan chan consensus.Block
-	init               bool
-	stop               chan bool
-	hub                *event.Hub
-	coordinator        *Coordinator
+	cm *blockchain.Manager
+	// consensus block chan
+	cbc         chan consensus.Block
+	init        bool
+	stop        chan bool
+	hub         *event.Hub
+	coordinator *Coordinator
 }
 
 // NewManager is the constructor of Manager
@@ -40,25 +41,26 @@ func NewManager(id string, coordinator *Coordinator) (*Manager, error) {
 		return nil, err
 	}
 	return &Manager{
-		ID:                 id,
-		db:                 coordinator.db,
-		cm:                 cm,
-		consensusBlockChan: make(chan consensus.Block),
-		init:               false,
-		stop:               make(chan bool),
-		hub:                event.NewHub(),
-		coordinator:        coordinator,
+		ID:          id,
+		db:          coordinator.db,
+		cm:          cm,
+		cbc:         make(chan consensus.Block),
+		init:        false,
+		stop:        make(chan bool),
+		hub:         event.NewHub(),
+		coordinator: coordinator,
 	}, nil
 }
 
 // Start starts the channel
 func (manager *Manager) Start() {
 	log.Infof("Channel %s is starting", manager.ID)
-	manager.coordinator.Consensus.SyncBlocks(manager.ID, &(manager.consensusBlockChan))
+	// manager.coordinator.Consensus.SyncBlocks(manager.ID, &(manager.consensusBlockChan))
 	manager.init = true
+	go manager.syncBlock()
 	for {
 		select {
-		case cb := <-manager.consensusBlockChan:
+		case cb := <-manager.cbc:
 			txs := removeDuplicateTxs(manager.db, GetTxsFromConsensusBlock(cb))
 			if len(txs) == 0 {
 				return
@@ -98,6 +100,20 @@ func (manager *Manager) Start() {
 			manager.init = false
 			return
 		}
+	}
+}
+
+func (manager *Manager) syncBlock() {
+	var num uint64 = 1
+	for {
+		cb, err := manager.coordinator.Consensus.GetBlock(manager.ID, num, true)
+		if err != nil {
+			fmt.Println(err)
+		}
+		num++
+		go func() {
+			manager.cbc <- cb
+		}()
 	}
 }
 
@@ -142,10 +158,10 @@ func (manager *Manager) GetBlockSize() uint64 {
 
 // AddTx try to add a tx
 func (manager *Manager) AddTx(tx *types.Tx) error {
-	// First check if the tx exists aleaydy, if true return error right away
 	if manager.db.HasTx(tx) {
 		return errors.New("The tx exist in the blockchain aleardy")
 	}
+
 	txBytes, err := tx.Bytes()
 	if err != nil {
 		return err
@@ -158,6 +174,7 @@ func (manager *Manager) AddTx(tx *types.Tx) error {
 	// Note: The reason why we must do this is because we must make sure we return the result after we store the block
 	// However, we may find a better way to do this if we allow there are more interactive between the consensus and orderer.
 	result := manager.hub.Watch(util.Hex(tx.Hash()), nil)
+
 	return result.Err
 }
 

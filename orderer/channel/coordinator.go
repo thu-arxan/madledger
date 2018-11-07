@@ -202,6 +202,7 @@ func (c *Coordinator) createChannel(tx *types.Tx) error {
 	if err != nil {
 		return err
 	}
+
 	c.db.WatchChannel(channelID)
 
 	return err
