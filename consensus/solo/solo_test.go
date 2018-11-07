@@ -1,7 +1,6 @@
 package solo
 
 import (
-	"fmt"
 	"madledger/consensus"
 	"math/rand"
 	"sync"
@@ -54,7 +53,6 @@ func TestAddTx(t *testing.T) {
 	}
 	wg.Wait()
 
-	fmt.Println(success)
 	for i := range success {
 		require.Equal(t, 1, success[i])
 	}
