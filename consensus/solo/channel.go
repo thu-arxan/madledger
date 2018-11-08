@@ -18,7 +18,6 @@ type channel struct {
 	pool   *txPool
 	hub    *event.Hub
 	num    uint64
-	// store all blocks, maybe gc is needed
 	// todo: gc to reduce the storage
 	blocks map[uint64]*Block
 	init   bool
@@ -50,7 +49,6 @@ func (c *channel) start() error {
 	for {
 		select {
 		case <-ticker.C:
-			// log.Infof("Channel %s tick", c.id)
 			c.createBlock(c.pool.fetchTxs(c.config.MaxSize))
 		case <-c.txs:
 			if c.pool.getPoolSize() >= c.config.MaxSize {
