@@ -21,8 +21,6 @@ import (
 	pb "madledger/protos"
 )
 
-// TODO: These codes is too complex and may contains lots of bugs. So conside rewrite them right away.
-
 // Coordinator responsible for coordination of managers
 type Coordinator struct {
 	chainCfg *config.BlockChainConfig
@@ -30,7 +28,6 @@ type Coordinator struct {
 
 	lock sync.RWMutex
 	// Channels manager all user channels
-	// maybe can use sync.Map, but the advantage is not significant
 	Managers map[string]*Manager
 	// GM is the global channel manager
 	GM *Manager

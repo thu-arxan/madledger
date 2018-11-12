@@ -9,7 +9,6 @@ import (
 
 // AddConfigBlock add a config block
 // The block is formated, so there is no need to verify
-// TODO: We hava to check the config block to update
 func (manager *Manager) AddConfigBlock(block *types.Block) error {
 	if block.Header.Number == 0 {
 		return nil
@@ -43,7 +42,6 @@ func (manager *Manager) AddConfigBlock(block *types.Block) error {
 		if err != nil {
 			return err
 		}
-
 	}
 	return nil
 }
