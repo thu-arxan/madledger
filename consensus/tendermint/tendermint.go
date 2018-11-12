@@ -69,11 +69,6 @@ func (c *Consensus) SyncBlocks(channelID string, ch *chan consensus.Block) error
 	return nil
 }
 
-// GetNumber is the implementation of interface
-func (c *Consensus) GetNumber(channelID string) (uint64, error) {
-	return 0, nil
-}
-
 // Stop is the implementation of interface
 func (c *Consensus) Stop() error {
 	return nil

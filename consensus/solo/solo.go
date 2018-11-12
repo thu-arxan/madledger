@@ -54,12 +54,6 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 	return c.manager.AddTx(channelID, tx)
 }
 
-// GetNumber is the implementation of interface
-// TODO: This function if not really implementation yet.
-func (c *Consensus) GetNumber(channelID string) (uint64, error) {
-	return 0, nil
-}
-
 // GetBlock is the implementation of interface
 func (c *Consensus) GetBlock(channelID string, num uint64, async bool) (consensus.Block, error) {
 	channel, err := c.manager.get(channelID)
