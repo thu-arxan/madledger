@@ -1,10 +1,13 @@
 package channel
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
+	"io"
 	"madledger/blockchain/config"
 	"madledger/common"
 	"madledger/common/util"
@@ -13,8 +16,13 @@ import (
 	"madledger/peer/orderer"
 	"net"
 	"os"
+	"regexp"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	cc "madledger/blockchain/config"
 	gc "madledger/blockchain/global"
@@ -23,7 +31,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Note: This file could not be used for automotic test now
+// Note: Run this file and output logs to log.txt
+// Then analyse all logs to make sure all orderers all right.
 
 var (
 	coordinator      = NewCoordinator()
@@ -38,9 +47,23 @@ var (
 	globalBlocksEnd  = make(chan bool, 1)
 	configBlocksEnd  = make(chan bool, 1)
 	testBlocksEnd    = make(chan bool, 1)
+	blockSize        = 100
 )
 
-func TestAll(t *testing.T) {
+var (
+	step int
+)
+
+func init() {
+	flag.IntVar(&step, "s", 1, "step")
+	flag.Parse()
+}
+
+func TestRun(t *testing.T) {
+	if step != 1 {
+		return
+	}
+
 	generateBlocks()
 	go func() {
 		err := startFakeOrderer()
@@ -56,7 +79,59 @@ func TestAll(t *testing.T) {
 	<-globalBlocksEnd
 	<-configBlocksEnd
 	<-testBlocksEnd
+}
+
+// block is used for block analyse
+type block struct {
+	channel string
+	number  int
+}
+
+func TestAnalyse(t *testing.T) {
+	if step != 2 {
+		return
+	}
+
+	f, err := os.Open(getLogFile())
+	require.NoError(t, err)
+
+	var blocks []*block
+	buf := bufio.NewReader(f)
+	// read log file
+	for {
+		line, err := buf.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			require.NoError(t, err)
+		}
+		line = strings.TrimSpace(line)
+		block := findBlock(line)
+		if block != nil {
+			blocks = append(blocks, block)
+		}
+	}
+	// analyse
+	var globalNumber = -100
+	var testNumber = -100 // set it a small number
+	for _, block := range blocks {
+		switch block.channel {
+		case "global":
+			globalNumber = block.number
+		default:
+			testNumber = block.number
+		}
+		if testNumber > globalNumber-2 {
+			t.Fatal(fmt.Sprintf("Run test block %d too early because global block is still %d", testNumber, globalNumber))
+		}
+	}
+
+	require.Equal(t, blockSize+1, globalNumber)
+	require.Equal(t, blockSize-1, testNumber)
+
 	os.RemoveAll(".data")
+	os.Remove(getLogFile())
 }
 
 type fakeOrderer struct {
@@ -108,10 +183,10 @@ func (o *fakeOrderer) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxSt
 }
 
 func generateBlocks() {
-	// first generate 100 test blocks
+	// first generate test blocks
 	testGenesisBlock := types.NewBlock("test", 0, types.GenesisBlockPrevHash, nil)
 	testBlocks[0] = testGenesisBlock
-	for i := 1; i < 100; i++ {
+	for i := 1; i < blockSize; i++ {
 		testBlock := types.NewBlock("test", uint64(i), testBlocks[i-1].Hash().Bytes(), nil)
 		testBlocks[i] = testBlock
 	}
@@ -178,7 +253,7 @@ func generateBlocks() {
 	globalBlocks[1] = types.NewBlock(types.GLOBALCHANNELID, 1, globalBlocks[0].Hash().Bytes(), []*types.Tx{tx})
 
 	// then many blocks, global block begin from num 2
-	for i := 0; i < 100; i++ {
+	for i := 0; i < blockSize; i++ {
 		tx := types.NewGlobalTx("test", uint64(i), testBlocks[i].Hash())
 		globalBlock := types.NewBlock(types.GLOBALCHANNELID, uint64(i+2), globalBlocks[i+1].Hash().Bytes(), []*types.Tx{tx})
 		globalBlocks[i+2] = globalBlock
@@ -188,13 +263,11 @@ func generateBlocks() {
 func getGlobalBlock(n uint64) *pb.Block {
 	num := int(n)
 	if util.Contain(globalBlocks, num) {
-		time.Sleep(10 * time.Millisecond)
+		randomSleep()
 		block, _ := pb.NewBlock(globalBlocks[num])
 		return block
 	}
 	globalBlocksEnd <- true
-	var c = make(chan bool)
-	<-c
 	return nil
 }
 
@@ -205,8 +278,6 @@ func getConfigBlock(n uint64) *pb.Block {
 		return block
 	}
 	configBlocksEnd <- true
-	var c = make(chan bool)
-	<-c
 	return nil
 }
 
@@ -220,4 +291,39 @@ func getTestBlock(n uint64) *pb.Block {
 	var c = make(chan bool)
 	<-c
 	return nil
+}
+
+func getLogFile() string {
+	gopath := os.Getenv("GOPATH")
+	logFile, _ := util.MakeFileAbs("src/madledger/peer/channel/log.txt", gopath)
+	return logFile
+}
+
+func findBlock(line string) *block {
+	if strings.Contains(line, "Add global block") {
+		blockRegexp := regexp.MustCompile(`^.+?Add global block ([\d]+).+`)
+		params := blockRegexp.FindStringSubmatch(line)
+		if len(params) >= 1 {
+			num, _ := strconv.Atoi(params[1])
+			return &block{
+				channel: "global",
+				number:  num,
+			}
+		}
+	} else if strings.Contains(line, "Run block test") {
+		blockRegexp := regexp.MustCompile(`^.+?Run block test:([\d]+).+`)
+		params := blockRegexp.FindStringSubmatch(line)
+		if len(params) >= 1 {
+			num, _ := strconv.Atoi(params[1])
+			return &block{
+				channel: "test",
+				number:  num,
+			}
+		}
+	}
+	return nil
+}
+
+func randomSleep() {
+	time.Sleep(time.Duration(util.RandNum(50)) * time.Millisecond)
 }

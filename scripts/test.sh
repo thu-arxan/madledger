@@ -34,6 +34,7 @@ go test madledger/orderer/server -count=1
 # run peer test
 go test madledger/peer/db -count=1
 go test madledger/peer/config -count=1
+. $GOPATH/src/madledger/peer/channel/test.sh
 
 # run all test
 go test madledger/tests -count=1
