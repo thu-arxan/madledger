@@ -115,7 +115,7 @@ func (g *Glue) Commit() types.ResponseCommit {
 				num = 1
 			} else {
 				if len(g.blocks[channelID]) != 0 {
-					num = g.blocks[channelID][len(g.blocks[channelID])-1].GetNumber()
+					num = g.blocks[channelID][len(g.blocks[channelID])-1].GetNumber() + 1
 				}
 			}
 			block := &Block{
