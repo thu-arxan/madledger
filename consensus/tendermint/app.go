@@ -3,6 +3,7 @@ package tendermint
 import (
 	"encoding/json"
 	"fmt"
+	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
 	"sync"
@@ -22,7 +23,9 @@ type Glue struct {
 	th  []byte
 	txs [][]byte
 
-	blocks map[string]uint64
+	hub *event.Hub
+
+	blocks map[string][]*Block
 	chans  map[string]*chan consensus.Block
 	db     *DB
 	port   int
@@ -41,11 +44,13 @@ func NewGlue(dbDir string, port *Port) (*Glue, error) {
 	g.tn = db.GetHeight()
 	g.th = db.GetHash()
 	g.port = port.App
+	g.hub = event.NewHub()
+
 	g.client, err = NewClient(port.RPC)
 	if err != nil {
 		return nil, err
 	}
-	g.blocks = make(map[string]uint64)
+	g.blocks = make(map[string][]*Block)
 	g.chans = make(map[string]*chan consensus.Block)
 	return g, nil
 }
@@ -104,15 +109,23 @@ func (g *Glue) Commit() types.ResponseCommit {
 		}
 		for channelID := range txs {
 			log.Infof("This is range of channel %s", channelID)
+			var num uint64
 			if !util.Contain(g.blocks, channelID) {
-				g.blocks[channelID] = 0
+				g.blocks[channelID] = make([]*Block, 0)
+				num = 1
+			} else {
+				if len(g.blocks[channelID]) != 0 {
+					num = g.blocks[channelID][len(g.blocks[channelID])-1].GetNumber()
+				}
 			}
 			block := &Block{
 				channelID: channelID,
-				num:       g.blocks[channelID],
+				num:       num,
 				txs:       txs[channelID],
 			}
-			g.blocks[channelID]++
+			g.blocks[channelID] = append(g.blocks[channelID], block)
+			fmt.Printf("Done block %s\n", fmt.Sprintf("%s:%d", channelID, num))
+			g.hub.Done(fmt.Sprintf("%s:%d", channelID, num), nil)
 			// todo: if we haven't set sync channel, here will lost the block
 			go func(channelID string) {
 				log.Infof("Send block of channel %s", channelID)
@@ -183,6 +196,30 @@ func (g *Glue) SetSyncChan(channelID string, ch *chan consensus.Block) {
 
 	log.Infof("Set sync chan of channel %s", channelID)
 	g.chans[channelID] = ch
+}
+
+// GetBlock return the block of channelID and with the num
+func (g *Glue) GetBlock(channelID string, num uint64, async bool) (consensus.Block, error) {
+	g.lock.Lock()
+	for i := range g.blocks[channelID] {
+		if g.blocks[channelID][i].GetNumber() == num {
+			return g.blocks[channelID][i], nil
+		}
+	}
+	g.lock.Unlock()
+	if async {
+		fmt.Printf("Watch block %s\n", fmt.Sprintf("%s:%d", channelID, num))
+		g.hub.Watch(fmt.Sprintf("%s:%d", channelID, num), nil)
+		g.lock.Lock()
+		defer g.lock.Unlock()
+		for i := range g.blocks[channelID] {
+			if g.blocks[channelID][i].GetNumber() == num {
+				return g.blocks[channelID][i], nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("Block %s:%d is not exist", channelID, num)
 }
 
 // Tx is the union of ChannelID and Data

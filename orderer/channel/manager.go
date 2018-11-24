@@ -61,6 +61,7 @@ func (manager *Manager) Start() {
 	for {
 		select {
 		case cb := <-manager.cbc:
+			fmt.Println("lalalalal")
 			txs := removeDuplicateTxs(manager.db, GetTxsFromConsensusBlock(cb))
 			if len(txs) == 0 {
 				return
@@ -109,6 +110,7 @@ func (manager *Manager) syncBlock() {
 		cb, err := manager.coordinator.Consensus.GetBlock(manager.ID, num, true)
 		if err != nil {
 			fmt.Println(err)
+			continue
 		}
 		num++
 		go func() {

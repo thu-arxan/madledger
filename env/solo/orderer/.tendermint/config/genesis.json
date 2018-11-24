@@ -1,0 +1,25 @@
+{
+  "genesis_time": "2018-11-24T08:29:20.830881713Z",
+  "chain_id": "madledger",
+  "consensus_params": {
+    "block_size_params": {
+      "max_bytes": "22020096",
+      "max_gas": "-1"
+    },
+    "evidence_params": {
+      "max_age": "100000"
+    }
+  },
+  "validators": [
+    {
+      "address": "47A01C081EA7D3AE320FD62F4A6916E6A26D33C6",
+      "pub_key": {
+        "type": "tendermint/PubKeyEd25519",
+        "value": "OcyAg3ioBDSUbi4nj90WeSyWjrmLaW6/N52QnybJl4Y="
+      },
+      "power": "10",
+      "name": ""
+    }
+  ],
+  "app_hash": ""
+}

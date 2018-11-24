@@ -1,7 +1,6 @@
 package tendermint
 
 import (
-	"errors"
 	"fmt"
 	"madledger/consensus"
 	"time"
@@ -77,5 +76,5 @@ func (c *Consensus) Stop() error {
 // GetBlock is the implementation of interface
 // TODO: Implementation it.
 func (c *Consensus) GetBlock(channelID string, num uint64, async bool) (consensus.Block, error) {
-	return nil, errors.New("Not implementation yet")
+	return c.app.GetBlock(channelID, num, async)
 }

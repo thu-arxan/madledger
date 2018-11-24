@@ -8,16 +8,20 @@ import (
 
 // DB will record some necessary thing such as height and hash of tendermint
 type DB struct {
+	dir     string
 	connect *leveldb.DB
 }
 
 // NewDB is the constructor of DB
 func NewDB(dir string) (*DB, error) {
 	db := new(DB)
+	db.dir = dir
+
 	connect, err := leveldb.OpenFile(dir, nil)
 	if err != nil {
 		return nil, err
 	}
+
 	db.connect = connect
 	return db, nil
 }
@@ -54,4 +58,12 @@ func (db *DB) GetHash() []byte {
 func (db *DB) SetHash(hash []byte) {
 	var key = []byte("hash")
 	db.connect.Put(key, hash, nil)
+}
+
+// Close close the connection if exist
+func (db *DB) Close() error {
+	if db.connect != nil {
+		return db.connect.Close()
+	}
+	return nil
 }

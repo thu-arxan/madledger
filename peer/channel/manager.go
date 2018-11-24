@@ -1,7 +1,6 @@
 package channel
 
 import (
-	"errors"
 	"madledger/blockchain"
 	"madledger/common"
 	"madledger/core/types"
@@ -154,7 +153,8 @@ func (m *Manager) RunBlock(num uint64) error {
 			m.db.SetTxStatus(tx, status)
 		}
 	}
-	return errors.New("Not implementation yet")
+	// return errors.New("Not implementation yet")
+	return nil
 }
 
 func (m *Manager) fetchBlock() (*types.Block, error) {
