@@ -56,6 +56,10 @@ func TestWatch(t *testing.T) {
 	}()
 
 	wg.Wait()
+	// test if all events is clean
+	for event := range hub.events {
+		require.Len(t, hub.events[event], 0)
+	}
 }
 
 func TestWatches(t *testing.T) {
@@ -119,6 +123,10 @@ func TestWatches(t *testing.T) {
 	}()
 
 	wg.Wait()
+	// test if all events is clean
+	for event := range hub.events {
+		require.Len(t, hub.events[event], 0)
+	}
 }
 
 func randomSleep() {

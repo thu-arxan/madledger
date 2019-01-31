@@ -38,11 +38,13 @@ func (h *Hub) Done(id string, result *Result) {
 		for _, ch := range h.events[id] {
 			ch <- true
 		}
+		// h.events will not be changed because lock is needed if we want to change h.events
+		// then we can remove all of them
+		h.events[id] = make([]chan bool, 0)
 	}
 }
 
 // Watch will watch an event.
-// todo: gc is still not done yet.
 func (h *Hub) Watch(id string, wc *WatchConfig) *Result {
 	h.lock.Lock()
 
