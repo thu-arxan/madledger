@@ -61,42 +61,39 @@ func (manager *Manager) Start() {
 	for {
 		select {
 		case cb := <-manager.cbc:
-			fmt.Println("lalalalal")
+			log.Infof("Receive block %d from consunsus\n", cb.GetNumber())
 			txs := removeDuplicateTxs(manager.db, GetTxsFromConsensusBlock(cb))
-			if len(txs) == 0 {
-				return
-			}
-
-			prevBlock := manager.cm.GetPrevBlock()
-			var block *types.Block
-			if prevBlock == nil {
-				block = types.NewBlock(manager.ID, 0, types.GenesisBlockPrevHash, txs)
-				log.Infof("Channel %s create new block %d, hash is %s", manager.ID, 0, util.Hex(block.Hash().Bytes()))
-			} else {
-				block = types.NewBlock(manager.ID, prevBlock.Header.Number+1, prevBlock.Hash().Bytes(), txs)
-				log.Infof("Channel %s create new block %d, hash is %s", manager.ID, prevBlock.Header.Number+1, util.Hex(block.Hash().Bytes()))
-			}
-			// then if the channel is the global channel, the block is finished.
-			// else send a tx to the global channel
-			if manager.ID != types.GLOBALCHANNELID {
-				tx := types.NewGlobalTx(manager.ID, block.Header.Number, block.Hash())
-				err := manager.coordinator.GM.AddTx(tx)
+			if len(txs) != 0 {
+				prevBlock := manager.cm.GetPrevBlock()
+				var block *types.Block
+				if prevBlock == nil {
+					block = types.NewBlock(manager.ID, 0, types.GenesisBlockPrevHash, txs)
+					log.Infof("Channel %s create new block %d, hash is %s", manager.ID, 0, util.Hex(block.Hash().Bytes()))
+				} else {
+					block = types.NewBlock(manager.ID, prevBlock.Header.Number+1, prevBlock.Hash().Bytes(), txs)
+					log.Infof("Channel %s create new block %d, hash is %s", manager.ID, prevBlock.Header.Number+1, util.Hex(block.Hash().Bytes()))
+				}
+				// If the channel is the global channel, the block is finished.
+				// else send a tx to the global channel
+				if manager.ID != types.GLOBALCHANNELID {
+					tx := types.NewGlobalTx(manager.ID, block.Header.Number, block.Hash())
+					err := manager.coordinator.GM.AddTx(tx)
+					if err != nil {
+						log.Fatalf("Channel %s failed to add tx into global channel because %s", manager.ID, err)
+						return
+					}
+				}
+				err := manager.AddBlock(block)
 				if err != nil {
-					log.Fatalf("Channel %s failed to add tx into global channel because %s", manager.ID, err)
+					log.Fatalf("Channel %s failed to run because of %s", manager.ID, err)
 					return
 				}
+				log.Infof("Channel %s has %d block now", manager.ID, block.Header.Number+1)
+				manager.hub.Done(string(block.Header.Number), nil)
+				for _, tx := range block.Transactions {
+					manager.hub.Done(util.Hex(tx.Hash()), nil)
+				}
 			}
-			err := manager.AddBlock(block)
-			if err != nil {
-				log.Fatalf("Channel %s failed to run because of %s", manager.ID, err)
-				return
-			}
-			log.Infof("Channel %s has %d block now", manager.ID, block.Header.Number+1)
-			manager.hub.Done(string(block.Header.Number), nil)
-			for _, tx := range block.Transactions {
-				manager.hub.Done(util.Hex(tx.Hash()), nil)
-			}
-
 		case <-manager.stop:
 			manager.init = false
 			return
@@ -219,6 +216,7 @@ func (manager *Manager) FetchBlockAsync(num uint64) (*types.Block, error) {
 	return nil, err
 }
 
+// removeDuplicateTxs will remove tx which exists in the previous blocks
 func removeDuplicateTxs(db db.DB, txs []*types.Tx) []*types.Tx {
 	var unduplicateTxs []*types.Tx
 	for _, tx := range txs {
