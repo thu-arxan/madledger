@@ -1,11 +1,10 @@
 package solo
 
 import (
+	"madledger/common/util"
 	"madledger/consensus"
-	"math/rand"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -64,11 +63,5 @@ func TestEnd(t *testing.T) {
 }
 
 func randomTx() []byte {
-	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	b := make([]rune, 32)
-	rand.Seed(time.Now().UnixNano())
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
-	}
-	return []byte(string(b))
+	return []byte(util.RandomString(32))
 }

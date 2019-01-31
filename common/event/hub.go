@@ -59,9 +59,9 @@ func (h *Hub) Watch(id string, wc *WatchConfig) *Result {
 		h.events[id] = make([]chan bool, 0)
 	}
 
-	if wc.Single && len(h.events) != 0 {
+	if wc.maxWatchSize != 0 && len(h.events) == wc.maxWatchSize {
 		defer h.lock.Unlock()
-		return NewResult(fmt.Errorf("Duplicate watch is not allowed in single mode"))
+		return NewResult(fmt.Errorf("Only allow at most %d watches", wc.maxWatchSize))
 	}
 
 	ch := make(chan bool, 1)

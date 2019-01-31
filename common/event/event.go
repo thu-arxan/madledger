@@ -14,17 +14,18 @@ func NewResult(err error) *Result {
 
 // WatchConfig is the config of Watch
 type WatchConfig struct {
-	Single bool
+	// 0 means no limit
+	maxWatchSize int
 }
 
 // NewWatchConfig is the constructor of WatchConfig
-func NewWatchConfig(single bool) *WatchConfig {
+func NewWatchConfig(maxWatchSize int) *WatchConfig {
 	return &WatchConfig{
-		Single: single,
+		maxWatchSize: maxWatchSize,
 	}
 }
 
 // DefaultWatchConfig return the default WatchConfig
 func DefaultWatchConfig() *WatchConfig {
-	return NewWatchConfig(false)
+	return NewWatchConfig(0)
 }

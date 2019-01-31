@@ -133,3 +133,14 @@ func RandUint64() uint64 {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Uint64()
 }
+
+// RandomString return random string includes upper and lowwer chars
+func RandomString(length int) string {
+	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	b := make([]rune, length)
+	rand.Seed(time.Now().UnixNano())
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}

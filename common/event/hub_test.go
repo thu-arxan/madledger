@@ -3,7 +3,6 @@ package event
 import (
 	"fmt"
 	"madledger/common/util"
-	"math/rand"
 	"sync"
 	"testing"
 	"time"
@@ -12,7 +11,8 @@ import (
 )
 
 var (
-	eventSize = 2048
+	eventSize   = 2048
+	eventLength = 32
 )
 
 func TestWatch(t *testing.T) {
@@ -20,7 +20,7 @@ func TestWatch(t *testing.T) {
 	events := make([]string, eventSize)
 	// initial events
 	for i := range events {
-		events[i] = randomStr()
+		events[i] = util.RandomString(eventLength)
 	}
 
 	var wg sync.WaitGroup
@@ -63,7 +63,7 @@ func TestWatches(t *testing.T) {
 	events := make([]string, eventSize)
 	// initial events
 	for i := range events {
-		events[i] = randomStr()
+		events[i] = util.RandomString(eventLength)
 	}
 
 	var wg sync.WaitGroup
@@ -119,16 +119,6 @@ func TestWatches(t *testing.T) {
 	}()
 
 	wg.Wait()
-}
-
-func randomStr() string {
-	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	b := make([]rune, 32)
-	rand.Seed(time.Now().UnixNano())
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(b)
 }
 
 func randomSleep() {
