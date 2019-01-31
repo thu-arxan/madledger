@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"time"
 )
 
@@ -143,4 +144,12 @@ func RandomString(length int) string {
 		b[i] = letters[rand.Intn(len(letters))]
 	}
 	return string(b)
+}
+
+// IsLegalChannelName return if a channel id is a legal channel name
+func IsLegalChannelName(channelID string) bool {
+	if m, err := regexp.MatchString("^[a-z0-9]{1,32}$", channelID); err != nil || !m {
+		return false
+	}
+	return true
 }

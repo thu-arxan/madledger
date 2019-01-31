@@ -1,8 +1,8 @@
 package config
 
 import (
+	"madledger/common/util"
 	"madledger/core/types"
-	"regexp"
 )
 
 // Payload config a channel
@@ -34,7 +34,7 @@ func (payload *Payload) Verify() bool {
 	case types.GLOBALCHANNELID:
 	case types.CONFIGCHANNELID:
 	default:
-		if !isLegalChannelName(payload.ChannelID) {
+		if !util.IsLegalChannelName(payload.ChannelID) {
 			return false
 		}
 	}
@@ -74,11 +74,4 @@ func (payload *Payload) IsAdmin(member *types.Member) bool {
 		}
 	}
 	return false
-}
-
-func isLegalChannelName(channelID string) bool {
-	if m, _ := regexp.MatchString("^[a-z0-9]{1,32}$", channelID); !m {
-		return false
-	}
-	return true
 }

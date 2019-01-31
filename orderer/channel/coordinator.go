@@ -187,7 +187,7 @@ func (c *Coordinator) createChannel(tx *types.Tx) error {
 	case types.CONFIGCHANNELID:
 		return fmt.Errorf("Channel %s is aleardy exist", channelID)
 	default:
-		if !isLegalChannelName(channelID) {
+		if !util.IsLegalChannelName(channelID) {
 			return fmt.Errorf("%s is not a legal channel name", channelID)
 		}
 		if util.Contain(c.Managers, channelID) {
