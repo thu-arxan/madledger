@@ -44,7 +44,7 @@ func NewManager(id string, coordinator *Coordinator) (*Manager, error) {
 		ID:          id,
 		db:          coordinator.db,
 		cm:          cm,
-		cbc:         make(chan consensus.Block),
+		cbc:         make(chan consensus.Block, 1024),
 		init:        false,
 		stop:        make(chan bool),
 		hub:         event.NewHub(),
@@ -55,15 +55,14 @@ func NewManager(id string, coordinator *Coordinator) (*Manager, error) {
 // Start starts the channel
 func (manager *Manager) Start() {
 	log.Infof("Channel %s is starting", manager.ID)
-	// manager.coordinator.Consensus.SyncBlocks(manager.ID, &(manager.consensusBlockChan))
 	manager.init = true
 	go manager.syncBlock()
 	for {
 		select {
 		case cb := <-manager.cbc:
 			log.Infof("Receive block %d from consunsus\n", cb.GetNumber())
-			// todo: if a tx is duplicated and it was added into consensus block succeed, then it will never receive response
-			txs := removeDuplicateTxs(manager.db, GetTxsFromConsensusBlock(cb))
+			// todo: if a tx is duplicated and it was added into consensus block succeed, then it may never receive response
+			txs, _ := manager.getTxsFromConsensusBlock(cb)
 			if len(txs) != 0 {
 				prevBlock := manager.cm.GetPrevBlock()
 				var block *types.Block
@@ -74,18 +73,15 @@ func (manager *Manager) Start() {
 					block = types.NewBlock(manager.ID, prevBlock.Header.Number+1, prevBlock.Hash().Bytes(), txs)
 					log.Infof("Channel %s create new block %d, hash is %s", manager.ID, prevBlock.Header.Number+1, util.Hex(block.Hash().Bytes()))
 				}
-				// If the channel is the global channel, the block is finished.
-				// else send a tx to the global channel
+				// If the channel is not the global channel, it should send a tx to the global channel
 				if manager.ID != types.GLOBALCHANNELID {
 					tx := types.NewGlobalTx(manager.ID, block.Header.Number, block.Hash())
-					err := manager.coordinator.GM.AddTx(tx)
-					if err != nil {
+					if err := manager.coordinator.GM.AddTx(tx); err != nil {
 						log.Fatalf("Channel %s failed to add tx into global channel because %s", manager.ID, err)
 						return
 					}
 				}
-				err := manager.AddBlock(block)
-				if err != nil {
+				if err := manager.AddBlock(block); err != nil {
 					log.Fatalf("Channel %s failed to run because of %s", manager.ID, err)
 					return
 				}
@@ -102,18 +98,13 @@ func (manager *Manager) Start() {
 	}
 }
 
-func (manager *Manager) syncBlock() {
-	var num uint64 = 1
-	for {
-		cb, err := manager.coordinator.Consensus.GetBlock(manager.ID, num, true)
-		if err != nil {
-			fmt.Println(err)
-			continue
+// Stop stop the manager
+func (manager *Manager) Stop() {
+	if manager.init {
+		manager.stop <- true
+		for manager.init {
+			time.Sleep(1 * time.Millisecond)
 		}
-		num++
-		go func() {
-			manager.cbc <- cb
-		}()
 	}
 }
 
@@ -141,7 +132,7 @@ func (manager *Manager) AddBlock(block *types.Block) error {
 	case types.CONFIGCHANNELID:
 		return manager.AddConfigBlock(block)
 	case types.GLOBALCHANNELID:
-		return nil
+		return manager.AddGlobalBlock(block)
 	default:
 		return nil
 	}
@@ -174,16 +165,6 @@ func (manager *Manager) AddTx(tx *types.Tx) error {
 	return result.Err
 }
 
-// Stop stop the manager
-func (manager *Manager) Stop() {
-	if manager.init {
-		manager.stop <- true
-		for manager.init {
-			time.Sleep(1 * time.Millisecond)
-		}
-	}
-}
-
 // FetchBlock return the block if exist
 func (manager *Manager) FetchBlock(num uint64) (*types.Block, error) {
 	return manager.cm.GetBlock(num)
@@ -213,15 +194,31 @@ func (manager *Manager) FetchBlockAsync(num uint64) (*types.Block, error) {
 	return nil, err
 }
 
-// removeDuplicateTxs will remove tx which exists in the previous blocks
-func removeDuplicateTxs(db db.DB, txs []*types.Tx) []*types.Tx {
-	var unduplicateTxs []*types.Tx
+// syncBlock is not safe and not efficiency
+// todo: the manager should not begin from 1 and should not using a channel to send block
+func (manager *Manager) syncBlock() {
+	var num uint64 = 1
+	for {
+		cb, err := manager.coordinator.Consensus.GetBlock(manager.ID, num, true)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		num++
+		manager.cbc <- cb
+	}
+}
+
+// getTxsFromConsensusBlock return txs which are legal and duplicate
+func (manager *Manager) getTxsFromConsensusBlock(block consensus.Block) (legal, duplicate []*types.Tx) {
+	txs := GetTxsFromConsensusBlock(block)
+	var count = make(map[string]bool)
 	for _, tx := range txs {
-		if !util.Contain(unduplicateTxs, tx) {
-			if !db.HasTx(tx) {
-				unduplicateTxs = append(unduplicateTxs, tx)
-			}
+		if !util.Contain(count, tx.ID) && !manager.db.HasTx(tx) {
+			legal = append(legal, tx)
+		} else {
+			duplicate = append(duplicate, tx)
 		}
 	}
-	return unduplicateTxs
+	return
 }
