@@ -25,8 +25,3 @@ func GeneratePrivateKey(path string) (string, error) {
 	}
 	return filePath, nil
 }
-
-// LoadPrivateKey load private key from file
-func LoadPrivateKey(file string) (crypto.PrivateKey, error) {
-	return crypto.LoadPrivateKeyFromFile(file)
-}

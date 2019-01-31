@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 	"io/ioutil"
-	"madledger/client/util"
 	"madledger/common/crypto"
 
 	yaml "gopkg.in/yaml.v2"
@@ -76,7 +75,7 @@ func (cfg *Config) GetKeyStoreConfig() (*KeyStoreConfig, error) {
 	}
 	var keys []crypto.PrivateKey
 	for _, keyFile := range cfg.KeyStore.Keys {
-		key, err := util.LoadPrivateKey(keyFile)
+		key, err := crypto.LoadPrivateKeyFromFile(keyFile)
 		if err != nil {
 			return nil, err
 		}

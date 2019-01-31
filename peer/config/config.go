@@ -4,11 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"madledger/common/crypto"
 	"madledger/common/util"
 	"madledger/core/types"
 	"os"
-
-	putil "madledger/peer/util"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -148,7 +147,7 @@ func (cfg *Config) GetIdentity() (*types.Member, error) {
 	if cfg.KeyStore.Key == "" {
 		return nil, errors.New("The key should not be nil")
 	}
-	privKey, err := putil.LoadPrivateKey(cfg.KeyStore.Key)
+	privKey, err := crypto.LoadPrivateKeyFromFile(cfg.KeyStore.Key)
 	if err != nil {
 		return nil, err
 	}
