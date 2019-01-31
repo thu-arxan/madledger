@@ -62,6 +62,7 @@ func (manager *Manager) Start() {
 		select {
 		case cb := <-manager.cbc:
 			log.Infof("Receive block %d from consunsus\n", cb.GetNumber())
+			// todo: if a tx is duplicated and it was added into consensus block succeed, then it will never receive response
 			txs := removeDuplicateTxs(manager.db, GetTxsFromConsensusBlock(cb))
 			if len(txs) != 0 {
 				prevBlock := manager.cm.GetPrevBlock()
@@ -127,16 +128,12 @@ func (manager *Manager) GetBlock(num uint64) (*types.Block, error) {
 }
 
 // AddBlock add a block
-// TODO: check conflict and update db
 func (manager *Manager) AddBlock(block *types.Block) error {
-	var err error
 	// first update db
-	manager.db.AddBlock(block)
-	// if err != nil {
-	// 	return err
-	// }
-	err = manager.cm.AddBlock(block)
-	if err != nil {
+	if err := manager.db.AddBlock(block); err != nil {
+		return err
+	}
+	if err := manager.cm.AddBlock(block); err != nil {
 		return err
 	}
 	// check is there is any need to update local state of orderer
