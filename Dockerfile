@@ -16,10 +16,11 @@ ENV GOROOT=/usr/local/go \
     GOPATH=/gopath
 ENV PATH=$PATH:/gopath/bin
 
-# solc
-RUN add-apt-repository ppa:ethereum/ethereum \
+# gcc, solc
+RUN apt install -y build-essential software-properties-common \
+    && add-apt-repository ppa:ethereum/ethereum \
     && apt update \
-    && apt install solc
+    && apt install -y solc
 
 # copy code
 COPY . gopath/src/madledger
