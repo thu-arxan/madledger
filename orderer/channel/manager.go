@@ -60,7 +60,7 @@ func (manager *Manager) Start() {
 	for {
 		select {
 		case cb := <-manager.cbc:
-			log.Infof("Receive block %d from consunsus\n", cb.GetNumber())
+			log.Infof("Receive block %d from consensus\n", cb.GetNumber())
 			// todo: if a tx is duplicated and it was added into consensus block succeed, then it may never receive response
 			txs, _ := manager.getTxsFromConsensusBlock(cb)
 			if len(txs) != 0 {
@@ -154,6 +154,7 @@ func (manager *Manager) AddTx(tx *types.Tx) error {
 		return err
 	}
 
+	fmt.Println("Receive tx:", tx)
 	err = manager.coordinator.Consensus.AddTx(manager.ID, txBytes)
 	if err != nil {
 		return err
