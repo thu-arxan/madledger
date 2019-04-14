@@ -4,6 +4,17 @@ env/solo/orderer/data/
 env/solo/peers/0/data/
 env/solo/peers/1/data/
 env/solo/peers/2/data/
+.glue
+addrbook.json
+priv_validator.json
+env/bft/orderers/0/data
+env/bft/orderers/0/.tendermint/data
+env/bft/orderers/1/data
+env/bft/orderers/1/.tendermint/data
+env/bft/orderers/2/data
+env/bft/orderers/2/.tendermint/data
+env/bft/orderers/3/data
+env/bft/orderers/3/.tendermint/data
 orderer/db/.leveldb
 orderer/server/.data/
 orderer/server/.data1/
