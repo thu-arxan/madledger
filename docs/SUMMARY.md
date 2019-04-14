@@ -2,7 +2,6 @@
 
 * [项目简介](README.md)
 * [快速上手](start.md)
-  * [Env说明](../env/README.md)
 * [Client](client.md)
 * [Orderer](orderer.md)
 * [Peer](peer.md)
