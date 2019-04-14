@@ -154,7 +154,6 @@ func (manager *Manager) AddTx(tx *types.Tx) error {
 		return err
 	}
 
-	fmt.Println("Receive tx:", tx)
 	err = manager.coordinator.Consensus.AddTx(manager.ID, txBytes)
 	if err != nil {
 		return err

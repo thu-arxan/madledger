@@ -59,7 +59,6 @@ func (c *Consensus) AddChannel(channelID string, cfg consensus.Config) error {
 
 // AddTx is the implementation of interface
 func (c *Consensus) AddTx(channelID string, tx []byte) error {
-	fmt.Printf("Tendermint receive add tx of channel %s\n", channelID)
 	return c.app.AddTx(channelID, tx)
 }
 
