@@ -16,6 +16,10 @@ env/bft/orderers/2/.tendermint/.glue
 env/bft/orderers/2/.tendermint/data
 env/bft/orderers/3/.tendermint/.glue
 env/bft/orderers/3/.tendermint/data
+env/bft/orderers/0/.tendermint/config/priv_validator.json
+env/bft/orderers/1/.tendermint/config/priv_validator.json
+env/bft/orderers/2/.tendermint/config/priv_validator.json
+env/bft/orderers/3/.tendermint/config/priv_validator.json
 env/backup
 orderer/db/.leveldb
 orderer/server/.data/

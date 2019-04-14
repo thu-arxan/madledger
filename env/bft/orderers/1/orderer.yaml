@@ -18,7 +18,7 @@ BlockChain:
   # Max txs can be included in a block (defalut: 100)
   BatchSize: 100
   # Path to store the blocks (default: orderer/data/blocks)
-  Path: /home/liuyihua/gopath/src/madledger/env/bft/orderers/1/data/blocks
+  Path: data/blocks
   # If verify the rightness of blocks (default: false)
   Verify: false
 
@@ -29,7 +29,7 @@ Consensus:
   # Tendermint is the bft consensus.
   Tendermint:
     # The path of tendermint (default: orderer/.tendermint)
-    Path: /home/liuyihua/gopath/src/madledger/env/bft/orderers/1/.tendermint
+    Path: .tendermint
     # Some ports
     Port:
       P2P: 26659
@@ -50,4 +50,4 @@ DB:
   # LevelDB
   LevelDB:
     # The path of leveldb (default: orderer/data/leveldb)
-    Path: /home/liuyihua/gopath/src/madledger/env/bft/orderers/1/data/leveldb
+    Path: data/leveldb
