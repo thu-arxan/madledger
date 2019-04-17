@@ -1,0 +1,22 @@
+#############################################################################
+#   This is a configuration file for the MadLedger client.
+#############################################################################
+
+# Should be false or true (default: true)
+Debug: true
+
+# Address of orderers
+Orderer:
+  Address:
+    - localhost:34567
+  
+# Address of peers
+Peer:
+  Address:
+    #- localhost:23456
+    - localhost:11111
+
+# KeyStore manage some private keys
+KeyStore:
+  Keys:
+    - /home/hadoop/GOPATH/src/madledger/env/bft/clients/2/.keystore/d3d1ee69887b9917b7b68244650b4baf030a9be4b708440d623aaa42529a4759

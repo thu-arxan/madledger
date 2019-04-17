@@ -76,6 +76,9 @@ func (manager *Manager) Start() {
 				// If the channel is not the global channel, it should send a tx to the global channel
 				if manager.ID != types.GLOBALCHANNELID {
 					tx := types.NewGlobalTx(manager.ID, block.Header.Number, block.Hash())
+					// 打印非config通道向global通道中添加的tx信息
+					log.Debugf("Channel %s add tx %s to global channel.", manager.ID, tx.ID)
+
 					if err := manager.coordinator.GM.AddTx(tx); err != nil {
 						log.Fatalf("Channel %s failed to add tx into global channel because %s", manager.ID, err)
 						return
@@ -122,9 +125,16 @@ func (manager *Manager) GetBlock(num uint64) (*types.Block, error) {
 func (manager *Manager) AddBlock(block *types.Block) error {
 	// first update db
 	if err := manager.db.AddBlock(block); err != nil {
+		log.Infof("manager.db.AddBlock error: %s add block %d, %s",
+			manager.ID, block.Header.Number, err.Error())
+		//log.Info("manager.db.AddBlock error: ",manager.ID," add block ",block.Header.Number, ", ", err)
 		return err
 	}
 	if err := manager.cm.AddBlock(block); err != nil {
+		log.Infof("manager.db.AddBlock error: %s add block %d, %s",
+			manager.ID, block.Header.Number, err.Error())
+
+		//log.Info("manager.db.AddBlock error: ",manager.ID," add block ",block.Header.Number, ", ", err)
 		return err
 	}
 	// check is there is any need to update local state of orderer
@@ -215,7 +225,24 @@ func (manager *Manager) getTxsFromConsensusBlock(block consensus.Block) (legal, 
 	var count = make(map[string]bool)
 	for _, tx := range txs {
 		if !util.Contain(count, tx.ID) && !manager.db.HasTx(tx) {
-			legal = append(legal, tx)
+			// 检查legal中是否已经存在该tx
+			var flag bool = true
+			for _, item := range  legal{
+				if item.ID == tx.ID {
+					flag = false
+					log.Infof("getTxsFromConsensusBlock: block %d in %s already has tx %s",
+						block.GetNumber(),manager.ID, tx.ID)
+					//不break，查看有多少合法的重复的tx
+					break
+				}
+			}
+			// 不重复，向legal中添加tx
+			if flag {
+				log.Infof("getTxsFromConsensusBlock: block %d in %s add tx %s",
+					block.GetNumber(),manager.ID, tx.ID)
+				legal = append(legal, tx)
+			}
+			//legal = append(legal, tx)
 		} else {
 			duplicate = append(duplicate, tx)
 		}

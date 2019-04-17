@@ -3,13 +3,11 @@ package db
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/syndtr/goleveldb/leveldb"
 	cc "madledger/blockchain/config"
-	"madledger/core/types"
-
 	"madledger/common/event"
 	"madledger/common/util"
-
-	"github.com/syndtr/goleveldb/leveldb"
+	"madledger/core/types"
 )
 
 /*
@@ -88,9 +86,24 @@ func (db *LevelDB) AddBlock(block *types.Block) error {
 	for _, tx := range block.Transactions {
 		key := util.BytesCombine([]byte(block.Header.ChannelID), []byte(tx.ID))
 		if exist, _ := db.connect.Has(key, nil); exist {
+            // 打印数据库中已经包含的键值对
+			/*iter := db.connect.NewIterator(nil, nil)
+			for iter.Next() {
+				key   := string(iter.Key())
+				value := string(iter.Value())
+				log.Info("db.AddBlock： (", key,", ", value,")")
+			}
+			iter.Release()*/
+
+			// 打印tx的添加时间
+			/*log.Info("db.AddBlock： add ",block.Header.ChannelID," block ",block.Header.Number,", the tx ",tx.ID,
+				"exists before, and its time is ",tx.Time, ".")*/
 			return fmt.Errorf("The tx %s exists before", tx.ID)
 		}
 		db.connect.Put(key, []byte("true"), nil)
+		// 打印tx的添加时间
+		/*log.Info("db.AddBlock： add ",block.Header.ChannelID," block ",block.Header.Number,", put (", string(key),
+			", true) into db, and its time is ",tx.Time, ".")*/
 	}
 	return nil
 }
