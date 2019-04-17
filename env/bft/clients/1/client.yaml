@@ -8,6 +8,8 @@ Debug: true
 # Address of orderers
 Orderer:
   Address:
+    - localhost:11112
+    - localhost:11113
     - localhost:23456
   
 # Address of peers

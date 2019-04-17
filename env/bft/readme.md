@@ -1,9 +1,11 @@
-#### 测试说明
+#### global中出现重复tx的测试说明
 ###### ① 关于测试文件
 - 在env/bft目录下有完整的client和orderer的配置，其中其中每个client里面有`test.sh`,`test1.sh`,`create_ca.sh`。
 - `test.sh`用于创建多个通道，如client 0 创建通道`test10`、`test20`、`test30`等，数目可以自己通过修改shell脚本发生改变。目前是创建8个新通道。
 - `test1.sh`与test.sh的作用一样，最开始只是为了在不初始化环境的情况下，重新测试通道的创建。
 - `create_ca.sh`用于为指定通道创建智能合约，虽然peer节点没有启动会报错，但是在通道中会创建对应的block。在使用create_ca.sh之前，需要为每个通道client创建对应的通道。如`client 0`创建`test0`通道，`client 1`创建`test1`通道。
+- **注意：** 如果使用`init.sh`重新初始化env后，再通过`start.sh`启动orderer后，发现所有的orderer会自动读取之前的信息。**解决办法：** 使用`rm -rf .tendermint`删除`.tendermint`，再通过`start.sh`重新启动。
+- **PS：** 可以考虑直接在`start.sh`中添加`rm -rf .tendermint`。
 ###### ② 关于代码
 - 主要改动集中在`orderer/channel/manager.go`中。
 - `Start()`方法中，首先对`txs, _ := manager.getTxsFromConsensusBlock(cb)`中的`getTxsFromConsensusBlock()`进行了改动，在向legal中添加tx时，主动判断是否与legal中存在的tx重复，若重复则不添加，并打印相关信息。
@@ -17,3 +19,13 @@ INFO[0068] Channel _config create new block 2, hash is 54c0a99995a0cdfce3f74a9c5
 INFO[0068] Channel _config add tx f90b86eeddc6d4bb59e7f86c0a3b1e7158adce9549c91b32cd9216d79106e16a to global channel  app=orderer package=channel
 ```
 - 若不是重复添加，那什么会出现重复的tx？会不会是具体的添加tx的函数`manager.coordinator.GM.AddTx(tx)`那里出现的问题？
+
+#### client访问多个ordererClient，实现`channel list`的测试说明
+###### ① 关于client.yaml
+- 在`client.yaml`中修改了Orderer/Address，添加了两个不存在的orderer address
+- 使用`client channel list`进行测试时，可以将所有的orderer address都配置为不存在的地址。
+##### ② 关于代码
+- 主要改动集中在`madledger/client/lib/client.go`中。
+- 将`ordererClient`改成了数组，用于存储多个ordererCleint的信息。
+- `getOrdererClient()改为`getOrdererClients()，用于获取所有的ordererClient。
+- `ListChannel()`中，遍历ordererClient直到成功获取the info of channels。

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"madledger/common/crypto"
 	"madledger/core/types"
 	"strings"
@@ -16,9 +17,14 @@ import (
 	pb "madledger/protos"
 )
 
+var (
+	log = logrus.WithFields(logrus.Fields{"app": "client", "package": "lib"})
+)
+
 // Client is the Client to communicate with orderer
 type Client struct {
-	ordererClient pb.OrdererClient
+	//ordererClient pb.OrdererClient
+	ordererClients []pb.OrdererClient
 	peerClients   []pb.PeerClient
 	privKey       crypto.PrivateKey
 }
@@ -34,7 +40,8 @@ func NewClient(cfgFile string) (*Client, error) {
 		return nil, err
 	}
 	// get clients
-	ordererClient, err := getOrdererClient(cfg)
+	//ordererClient, err := getOrdererClient(cfg)
+	ordererClients, err := getOrdererClients(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +51,8 @@ func NewClient(cfgFile string) (*Client, error) {
 	}
 
 	return &Client{
-		ordererClient: ordererClient,
+		//ordererClient: ordererClient,
+		ordererClients: ordererClients,
 		peerClients:   peerClients,
 		privKey:       keyStore.Keys[0],
 	}, nil
@@ -57,6 +65,21 @@ func getOrdererClient(cfg *config.Config) (pb.OrdererClient, error) {
 	}
 	ordererClient := pb.NewOrdererClient(conn)
 	return ordererClient, nil
+}
+
+// 获取ordererClient数组
+func getOrdererClients(cfg *config.Config) ([]pb.OrdererClient, error) {
+	var clients []pb.OrdererClient
+	for _, address := range cfg.Orderer.Address {
+		conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
+		if err != nil {
+			return nil, err
+		}
+		ordererClient := pb.NewOrdererClient(conn)
+		clients = append(clients, ordererClient)
+	}
+
+	return clients, nil
 }
 
 func getPeerClients(cfg *config.Config) ([]pb.PeerClient, error) {
@@ -85,13 +108,28 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 	if err != nil {
 		return channelInfos, err
 	}
-	infos, err := c.ordererClient.ListChannels(context.Background(), &pb.ListChannelsRequest{
-		System: system,
-		PK:     pk,
-	})
-	if err != nil {
-		return channelInfos, err
+	var infos *pb.ChannelInfos
+
+	// 有多个ordererClient，遍历ordererClient直到成功获取the info of channels
+	for i, ordererClient := range c.ordererClients {
+		infos, err = ordererClient.ListChannels(context.Background(), &pb.ListChannelsRequest{
+			System: system,
+			PK:     pk,
+		})
+		if err != nil {
+			fmt.Println("lib/client.ListChannel error: ", err.Error())
+			// 如果最后一个ordererClient仍然失败，需要return
+			// 是否可以自定义error，提示所有的ordererClient都拒绝访问
+			if (i+1) == len(c.ordererClients) {
+				return channelInfos, err
+			}
+		} else {
+			fmt.Println("lib/client.ListChannel success: get ", len(infos.Channels)," channels")
+			// 获取信息成功，break
+			break
+		}
 	}
+
 	for i, channel := range infos.Channels {
 		channelInfos = append(channelInfos, ChannelInfo{
 			Name:      channel.ChannelID,
@@ -103,7 +141,8 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 			channelInfos[i].System = true
 		}
 	}
-	return channelInfos, nil
+
+	return channelInfos,nil
 }
 
 // CreateChannel create a channel
@@ -131,7 +170,7 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload, c.GetPrivKey())
 	pbTx, _ := pb.NewTx(typesTx)
 
-	_, err = c.ordererClient.CreateChannel(context.Background(), &pb.CreateChannelRequest{
+	_, err = c.ordererClients[0].CreateChannel(context.Background(), &pb.CreateChannelRequest{
 		Tx: pbTx,
 	})
 	if err != nil {
@@ -142,6 +181,50 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 	fmt.Println("Succeed!")
 	return nil
 }
+/*func (c *Client) CreateChannel(channelID string, public bool, admins, members []*types.Member) error {
+	self, err := types.NewMember(c.GetPrivKey().PubKey(), "admin")
+	if err != nil {
+		return err
+	}
+	admins = unionMembers(admins, []*types.Member{self})
+	// if this is a public channel, there is no need to contain members
+	if public {
+		members = make([]*types.Member, 0)
+	} else {
+		members = unionMembers(admins, members)
+	}
+	payload, _ := json.Marshal(cc.Payload{
+		ChannelID: channelID,
+		Profile: &cc.Profile{
+			Public:  public,
+			Admins:  admins,
+			Members: members,
+		},
+		Version: 1,
+	})
+	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload, c.GetPrivKey())
+	pbTx, _ := pb.NewTx(typesTx)
+
+	for i, ordererClient := range c.ordererClients {
+		_, err = ordererClient.CreateChannel(context.Background(), &pb.CreateChannelRequest{
+			Tx: pbTx,
+		})
+
+		if err != nil {
+			// 继续使用其他ordererClient进行尝试，直到最后一个ordererClient仍然报错
+			if  (i+1) == len(c.ordererClients) {
+				fmt.Printf("Failed to create channel %s because %s\n", channelID, err)
+				return err
+			}
+		} else {
+			// 创建成功，打印信息并退出循环退出循环
+			fmt.Println("Succeed!")
+			break
+		}
+	}
+
+	return nil
+}*/
 
 // AddTx try to add a tx
 func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
@@ -149,12 +232,25 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = c.ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
-		Tx: pbTx,
-	})
-	if err != nil {
-		return nil, err
+
+	for i, ordererClient := range c.ordererClients {
+		_, err = ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
+			Tx: pbTx,
+		})
+
+		if err != nil {
+			// 继续使用其他ordererClient进行尝试，直到最后一个ordererClient仍然报错
+			if (i+1)  == len(c.ordererClients) {
+				log.Debugf("lib/client.AddTx error: %s",err.Error())
+				return nil, err
+			}
+		}else{
+			// 添加tx成功，打印信息并退出循环
+			log.Debug("lib/client.AddTx success")
+			break
+		}
 	}
+
 	collector := NewCollector(len(c.peerClients))
 	for i := range c.peerClients {
 		go func(i int) {
