@@ -77,7 +77,7 @@ func (manager *Manager) Start() {
 				if manager.ID != types.GLOBALCHANNELID {
 					tx := types.NewGlobalTx(manager.ID, block.Header.Number, block.Hash())
 					// 打印非config通道向global通道中添加的tx信息
-					log.Debugf("Channel %s add tx %s to global channel.", manager.ID, tx.ID)
+					log.Infof("Channel %s add tx %s to global channel.", manager.ID, tx.ID)
 
 					if err := manager.coordinator.GM.AddTx(tx); err != nil {
 						log.Fatalf("Channel %s failed to add tx into global channel because %s", manager.ID, err)
@@ -225,7 +225,7 @@ func (manager *Manager) getTxsFromConsensusBlock(block consensus.Block) (legal, 
 	var count = make(map[string]bool)
 	for _, tx := range txs {
 		if !util.Contain(count, tx.ID) && !manager.db.HasTx(tx) {
-			// 检查legal中是否已经存在该tx
+			/*// 检查legal中是否已经存在该tx
 			var flag bool = true
 			for _, item := range  legal{
 				if item.ID == tx.ID {
@@ -241,8 +241,11 @@ func (manager *Manager) getTxsFromConsensusBlock(block consensus.Block) (legal, 
 				log.Infof("getTxsFromConsensusBlock: block %d in %s add tx %s",
 					block.GetNumber(),manager.ID, tx.ID)
 				legal = append(legal, tx)
-			}
-			//legal = append(legal, tx)
+			}*/
+			count[tx.ID] = true //更新count，否则无法判断block中重复的tx
+			legal = append(legal, tx)
+			log.Infof("getTxsFromConsensusBlock: block %d in %s add tx %s",
+				block.GetNumber(),manager.ID, tx.ID)
 		} else {
 			duplicate = append(duplicate, tx)
 		}

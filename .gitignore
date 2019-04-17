@@ -5,6 +5,7 @@ env/solo/peers/0/data/
 env/solo/peers/1/data/
 env/solo/peers/2/data/
 .glue
+.idea
 addrbook.json
 priv_validator.json
 env/bft/orderers/0/data
