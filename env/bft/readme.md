@@ -29,3 +29,9 @@ INFO[0068] Channel _config add tx f90b86eeddc6d4bb59e7f86c0a3b1e7158adce9549c91b
 - 将`ordererClient`改成了数组，用于存储多个ordererCleint的信息。
 - `getOrdererClient()改为`getOrdererClients()，用于获取所有的ordererClient。
 - `ListChannel()`中，遍历ordererClient直到成功获取the info of channels。
+#### client访问多个ordererClient，实现`channel create`的测试说明
+##### ① 使用之前配置的`test.sh`实现`channel create`命令的测试。
+- 多个client并发创建channel，没有问题。
+- 中途突然关闭某个orderer，发现所有的global倒是几乎同步了，但是不同orderer的config不是同步的，导致global上的block比config通道的block多。**这个bug待修复**
+##### ② 关于代码
+- 主要改动集中在`madledger/client/lib/client.go`的`CreateChannel()`方法中。

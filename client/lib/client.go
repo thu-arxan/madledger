@@ -116,15 +116,18 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 			System: system,
 			PK:     pk,
 		})
+		times := i+1
 		if err != nil {
-			fmt.Println("lib/client.ListChannel error: ", err.Error())
+			// 打印出每一个出错信息
 			// 如果最后一个ordererClient仍然失败，需要return
-			// 是否可以自定义error，提示所有的ordererClient都拒绝访问
-			if (i+1) == len(c.ordererClients) {
+			if times == len(c.ordererClients) {
+				fmt.Printf("try %d times (the last time) but failed to get the info of channels because %s\n", times, err)
 				return channelInfos, err
+			} else {
+				fmt.Printf("try %d times but failed to get the info of channels because %s\n", times, err)
 			}
 		} else {
-			fmt.Println("lib/client.ListChannel success: get ", len(infos.Channels)," channels")
+			fmt.Printf("try %d times and success to get %d channels' info\n", times,len(infos.Channels))
 			// 获取信息成功，break
 			break
 		}
@@ -170,61 +173,29 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload, c.GetPrivKey())
 	pbTx, _ := pb.NewTx(typesTx)
 
-	_, err = c.ordererClients[0].CreateChannel(context.Background(), &pb.CreateChannelRequest{
-		Tx: pbTx,
-	})
-	if err != nil {
-		fmt.Printf("Failed to create channel %s because %s\n", channelID, err)
-		return err
-	}
-
-	fmt.Println("Succeed!")
-	return nil
-}
-/*func (c *Client) CreateChannel(channelID string, public bool, admins, members []*types.Member) error {
-	self, err := types.NewMember(c.GetPrivKey().PubKey(), "admin")
-	if err != nil {
-		return err
-	}
-	admins = unionMembers(admins, []*types.Member{self})
-	// if this is a public channel, there is no need to contain members
-	if public {
-		members = make([]*types.Member, 0)
-	} else {
-		members = unionMembers(admins, members)
-	}
-	payload, _ := json.Marshal(cc.Payload{
-		ChannelID: channelID,
-		Profile: &cc.Profile{
-			Public:  public,
-			Admins:  admins,
-			Members: members,
-		},
-		Version: 1,
-	})
-	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload, c.GetPrivKey())
-	pbTx, _ := pb.NewTx(typesTx)
-
 	for i, ordererClient := range c.ordererClients {
 		_, err = ordererClient.CreateChannel(context.Background(), &pb.CreateChannelRequest{
 			Tx: pbTx,
 		})
 
+		times := i+1
 		if err != nil {
 			// 继续使用其他ordererClient进行尝试，直到最后一个ordererClient仍然报错
-			if  (i+1) == len(c.ordererClients) {
-				fmt.Printf("Failed to create channel %s because %s\n", channelID, err)
+			if  times == len(c.ordererClients) {
+				fmt.Printf("try %d times (the last time) but failed to create channel %s because %s\n", times, channelID, err)
 				return err
+			} else {
+				fmt.Printf("try %d times but failed to create channel %s because %s\n", times ,channelID, err)
 			}
 		} else {
 			// 创建成功，打印信息并退出循环退出循环
-			fmt.Println("Succeed!")
+			fmt.Printf("try %d times and success to create channel %s", times ,channelID)
 			break
 		}
 	}
 
 	return nil
-}*/
+}
 
 // AddTx try to add a tx
 func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {

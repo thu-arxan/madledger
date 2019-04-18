@@ -1,10 +1,10 @@
 #!/bin/bash
 # This is our first script.
 echo 'Test bft consensus...'
-for ((i=12; i<=42; i+=10))
+for ((i=1; i<=4; i++))
 do
-  echo 'create channel test'$i
-  client channel create -n test$i
+  echo 'try '$i' times to test channel list'
+  client channel list
   #client channel list
   #echo $i
 done
