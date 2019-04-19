@@ -19,3 +19,11 @@ env/bft/orderers/3/.tendermint/data
 orderer/db/.leveldb
 orderer/server/.data/
 orderer/server/.data1/
+env/bft/clients/0/.keystore
+env/bft/clients/1/.keystore
+env/bft/clients/2/.keystore
+env/bft/clients/3/.keystore
+env/bft/clients/0/client.yaml
+env/bft/clients/1/client.yaml
+env/bft/clients/2/client.yaml
+env/bft/clients/3/client.yaml
