@@ -1,0 +1,21 @@
+#############################################################################
+#   This is a configuration file for the MadLedger client.
+#############################################################################
+
+# Should be false or true (default: true)
+Debug: true
+
+# Address of orderers
+Orderer:
+  Address:
+    - localhost:12345
+  
+# Address of peers
+Peer:
+  Address:
+    - localhost:23456
+
+# KeyStore manage some private keys
+KeyStore:
+  Keys:
+    - .keystore/b771e048640bfab599ab67bae8270f1b17e7da54337a349a669706d16887b1f2

@@ -37,4 +37,5 @@ go test madledger/peer/config -count=1
 . $GOPATH/src/madledger/peer/channel/test.sh
 
 # run all test
+echo "Next test may cost 1 minute ..."
 go test madledger/tests -count=1

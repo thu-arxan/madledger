@@ -70,6 +70,8 @@ func (c *Consensus) SyncBlocks(channelID string, ch *chan consensus.Block) error
 
 // Stop is the implementation of interface
 func (c *Consensus) Stop() error {
+	c.app.Stop()
+	c.node.Stop()
 	return nil
 }
 

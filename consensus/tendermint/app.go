@@ -30,6 +30,8 @@ type Glue struct {
 	db     *DB
 	port   int
 	client *Client
+
+	srv cmn.Service
 }
 
 // NewGlue is the constructor of Glue
@@ -62,6 +64,7 @@ func (g *Glue) Start() error {
 	if err != nil {
 		return err
 	}
+	g.srv = srv
 	srv.SetLogger(NewLogger())
 	if err := srv.Start(); err != nil {
 		return err
@@ -74,6 +77,12 @@ func (g *Glue) Start() error {
 		srv.Stop()
 	})
 	return nil
+}
+
+// Stop stop the glue service
+// TODO: This way may be too violent
+func (g *Glue) Stop() {
+	g.srv.Stop()
 }
 
 // CheckTx always return OK

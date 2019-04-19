@@ -5,6 +5,7 @@ import (
 	"madledger/orderer/channel"
 	"madledger/orderer/config"
 	"net"
+	"time"
 
 	pb "madledger/protos"
 
@@ -85,5 +86,6 @@ func (s *Server) Stop() {
 	s.rpcServer.Stop()
 	// }
 	s.cc.Stop()
+	time.Sleep(500 * time.Millisecond)
 	log.Info("Succeed to stop the orderer service")
 }

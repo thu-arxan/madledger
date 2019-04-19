@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"madledger/common/crypto"
 	"madledger/core/types"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"google.golang.org/grpc"
 
@@ -25,8 +26,8 @@ var (
 type Client struct {
 	//ordererClient pb.OrdererClient
 	ordererClients []pb.OrdererClient
-	peerClients   []pb.PeerClient
-	privKey       crypto.PrivateKey
+	peerClients    []pb.PeerClient
+	privKey        crypto.PrivateKey
 }
 
 // NewClient is the constructor of pb.OrdereClient
@@ -35,6 +36,12 @@ func NewClient(cfgFile string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return NewClientFromConfig(cfg)
+}
+
+// NewClientFromConfig will construct client from cfg
+func NewClientFromConfig(cfg *config.Config) (*Client, error) {
 	keyStore, err := cfg.GetKeyStoreConfig()
 	if err != nil {
 		return nil, err
@@ -53,8 +60,8 @@ func NewClient(cfgFile string) (*Client, error) {
 	return &Client{
 		//ordererClient: ordererClient,
 		ordererClients: ordererClients,
-		peerClients:   peerClients,
-		privKey:       keyStore.Keys[0],
+		peerClients:    peerClients,
+		privKey:        keyStore.Keys[0],
 	}, nil
 }
 
@@ -116,7 +123,7 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 			System: system,
 			PK:     pk,
 		})
-		times := i+1
+		times := i + 1
 		if err != nil {
 			// 打印出每一个出错信息
 			// 如果最后一个ordererClient仍然失败，需要return
@@ -127,7 +134,7 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 				fmt.Printf("try %d times but failed to get the info of channels because %s\n", times, err)
 			}
 		} else {
-			fmt.Printf("try %d times and success to get %d channels' info\n", times,len(infos.Channels))
+			fmt.Printf("try %d times and success to get %d channels' info\n", times, len(infos.Channels))
 			// 获取信息成功，break
 			break
 		}
@@ -145,7 +152,7 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 		}
 	}
 
-	return channelInfos,nil
+	return channelInfos, nil
 }
 
 // CreateChannel create a channel
@@ -178,18 +185,18 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 			Tx: pbTx,
 		})
 
-		times := i+1
+		times := i + 1
 		if err != nil {
 			// 继续使用其他ordererClient进行尝试，直到最后一个ordererClient仍然报错
-			if  times == len(c.ordererClients) {
+			if times == len(c.ordererClients) {
 				fmt.Printf("try %d times (the last time) but failed to create channel %s because %s\n", times, channelID, err)
 				return err
 			} else {
-				fmt.Printf("try %d times but failed to create channel %s because %s\n", times ,channelID, err)
+				fmt.Printf("try %d times but failed to create channel %s because %s\n", times, channelID, err)
 			}
 		} else {
 			// 创建成功，打印信息并退出循环退出循环
-			fmt.Printf("try %d times and success to create channel %s", times ,channelID)
+			fmt.Printf("try %d times and success to create channel %s", times, channelID)
 			break
 		}
 	}
@@ -211,11 +218,11 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 
 		if err != nil {
 			// 继续使用其他ordererClient进行尝试，直到最后一个ordererClient仍然报错
-			if (i+1)  == len(c.ordererClients) {
-				log.Debugf("lib/client.AddTx error: %s",err.Error())
+			if (i + 1) == len(c.ordererClients) {
+				log.Debugf("lib/client.AddTx error: %s", err.Error())
 				return nil, err
 			}
-		}else{
+		} else {
 			// 添加tx成功，打印信息并退出循环
 			log.Debug("lib/client.AddTx success")
 			break

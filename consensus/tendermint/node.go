@@ -52,3 +52,10 @@ func (n *Node) Start() error {
 	n.tn.RunForever()
 	return nil
 }
+
+// Stop stop the node
+func (n *Node) Stop() {
+	if n.tn != nil {
+		n.tn.Stop()
+	}
+}
