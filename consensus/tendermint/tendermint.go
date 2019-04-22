@@ -52,7 +52,7 @@ func (c *Consensus) Start() error {
 }
 
 // AddChannel add a channel
-// Because we do not care the channel in the consensus layer, so the function will do nothing now.
+// Because we are not using multi-group to improve performance, so we can just ignore this function in tendermint
 func (c *Consensus) AddChannel(channelID string, cfg consensus.Config) error {
 	return nil
 }
@@ -69,6 +69,7 @@ func (c *Consensus) SyncBlocks(channelID string, ch *chan consensus.Block) error
 }
 
 // Stop is the implementation of interface
+// todo: implement the stop function
 func (c *Consensus) Stop() error {
 	c.app.Stop()
 	c.node.Stop()
