@@ -75,10 +75,11 @@ func (m *Manager) AddBlock(block *types.Block) error {
 		log.Infof("Add global block %d", block.Header.Number)
 	case types.CONFIGCHANNELID:
 		m.AddConfigBlock(block)
+		log.Infof("Add config block %d", block.Header.Number)
 	default:
 		for {
 			if m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
-				log.Infof("Run block %s:%d", m.id, block.Header.Number)
+				log.Infof("Run block %s: %d", m.id, block.Header.Number)
 				m.RunBlock(block.Header.Number)
 				return nil
 			}

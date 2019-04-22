@@ -9,11 +9,14 @@ Debug: true
 Orderer:
   Address:
     - localhost:12345
+    - localhost:23456
+    - localhost:34567
+  
   
 # Address of peers
 Peer:
   Address:
-    - localhost:23456
+    - localhost:20500
 
 # KeyStore manage some private keys
 KeyStore:

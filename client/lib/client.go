@@ -196,7 +196,7 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 			}
 		} else {
 			// 创建成功，打印信息并退出循环退出循环
-			fmt.Printf("try %d times and success to create channel %s", times, channelID)
+			fmt.Printf("try %d times and success to create channel %s\n", times, channelID)
 			break
 		}
 	}
@@ -216,15 +216,18 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 			Tx: pbTx,
 		})
 
+		times := i + 1
 		if err != nil {
 			// 继续使用其他ordererClient进行尝试，直到最后一个ordererClient仍然报错
-			if (i + 1) == len(c.ordererClients) {
-				log.Debugf("lib/client.AddTx error: %s", err.Error())
+			if times == len(c.ordererClients) {
+				fmt.Printf("try %d times(the last time) but fail to add tx %s because %s\n", times, tx.ID, err)
 				return nil, err
+			} else {
+				fmt.Printf("try %d times but fail to add tx %s because %s\n", times, tx.ID, err)
 			}
 		} else {
 			// 添加tx成功，打印信息并退出循环
-			log.Debug("lib/client.AddTx success")
+			fmt.Printf("try %d times and success to add tx %s\n", times, tx.ID)
 			break
 		}
 	}

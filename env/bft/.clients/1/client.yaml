@@ -8,12 +8,15 @@ Debug: true
 # Address of orderers
 Orderer:
   Address:
-    - localhost:12345
+    - localhost:23456
+    - localhost:34567
+    - localhost:45678
   
 # Address of peers
 Peer:
   Address:
-    - localhost:23456
+    - localhost:20501
+
 
 # KeyStore manage some private keys
 KeyStore:
