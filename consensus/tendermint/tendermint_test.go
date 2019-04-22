@@ -125,11 +125,6 @@ func getConfigPath(node int) string {
 	return getNodePath(node) + "/orderer.yaml"
 }
 
-func initEnv() error {
-
-	return nil
-}
-
 func getTestPath() string {
 	gopath := os.Getenv("GOPATH")
 	testPath, _ := util.MakeFileAbs("src/madledger/consensus/tendermint/.test", gopath)
