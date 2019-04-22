@@ -27,3 +27,7 @@ env/bft/clients/0/client.yaml
 env/bft/clients/1/client.yaml
 env/bft/clients/2/client.yaml
 env/bft/clients/3/client.yaml
+env/bft/peers/0/data
+env/bft/peers/1/data
+env/bft/peers/2/data
+env/bft/peers/3/data
