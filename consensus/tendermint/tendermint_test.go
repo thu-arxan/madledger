@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/otiai10/copy"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,6 +25,13 @@ var (
 func TestMain(m *testing.M) {
 	ret := m.Run()
 	os.Exit(ret)
+}
+
+func TestInitEnv(t *testing.T) {
+	gopath := os.Getenv("GOPATH")
+	require.NoError(t, os.RemoveAll(getTestPath()))
+
+	require.NoError(t, copy.Copy(gopath+"/src/madledger/env/bft/.orderers", fmt.Sprintf("%s/orderers", getTestPath())))
 }
 
 func TestStart(t *testing.T) {
@@ -67,40 +75,69 @@ func TestSendTx(t *testing.T) {
 	}
 
 	var wg sync.WaitGroup
-	// each tx send 3 times
 	for i := range txs {
-		for m := 0; m < 3; m++ {
-			wg.Add(1)
-			tx := txs[i]
-			go func() {
-				defer wg.Done()
-				if err := tns[0].AddTx("test", tx); err == nil {
-					lock.Lock()
-					success[string(tx)]++
-					lock.Unlock()
-				}
-			}()
-		}
+		wg.Add(1)
+		tx := txs[i]
+		go func() {
+			defer wg.Done()
+			n := util.RandNum(len(tns))
+			if err := tns[n].AddTx("test", tx); err == nil {
+				lock.Lock()
+				success[string(tx)]++
+				lock.Unlock()
+			}
+		}()
 	}
 	wg.Wait()
 
 	for i := range success {
 		require.Equal(t, 1, success[i])
 	}
+	// then fetch blocks
+	for i := range tns {
+		var txCount = make(map[string]int)
+		var num uint64 = 1
+		for {
+			block, err := tns[i].GetBlock("test", num, true)
+			require.NoError(t, err)
+			for _, tx := range block.GetTxs() {
+				if !util.Contain(txCount, string(tx)) {
+					txCount[string(tx)] = 0
+				}
+				txCount[string(tx)]++
+			}
+			if len(txCount) == txSize {
+				break
+			}
+			num++
+		}
+	}
 }
 
-func TestClose(t *testing.T) {
-
+func TestStop(t *testing.T) {
+	for i := range tns {
+		require.NoError(t, tns[i].Stop())
+	}
+	require.NoError(t, os.RemoveAll(getTestPath()))
 }
 
 func getConfigPath(node int) string {
 	return getNodePath(node) + "/orderer.yaml"
 }
 
-func getNodePath(node int) string {
+func initEnv() error {
+
+	return nil
+}
+
+func getTestPath() string {
 	gopath := os.Getenv("GOPATH")
-	nodePath, _ := util.MakeFileAbs(fmt.Sprintf("src/madledger/consensus/tendermint/.test/env/orderers/%d", node), gopath)
-	return nodePath
+	testPath, _ := util.MakeFileAbs("src/madledger/consensus/tendermint/.test", gopath)
+	return testPath
+}
+
+func getNodePath(node int) string {
+	return fmt.Sprintf("%s/orderers/%d", getTestPath(), node)
 }
 
 func randomTx() []byte {

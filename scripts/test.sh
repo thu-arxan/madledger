@@ -22,6 +22,7 @@ go test madledger/executor/evm -count=1
 
 #run consensus test
 go test madledger/consensus/solo -count=1
+go test madledger/consensus/tendermint -count=1
 
 # run orderer test
 # rm -rf $GOPATH/src/madledger/orderer/config/.orderer.yaml

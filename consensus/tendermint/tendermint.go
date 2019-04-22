@@ -69,7 +69,6 @@ func (c *Consensus) SyncBlocks(channelID string, ch *chan consensus.Block) error
 }
 
 // Stop is the implementation of interface
-// todo: implement the stop function
 func (c *Consensus) Stop() error {
 	c.app.Stop()
 	c.node.Stop()
@@ -77,7 +76,6 @@ func (c *Consensus) Stop() error {
 }
 
 // GetBlock is the implementation of interface
-// TODO: Implementation it.
 func (c *Consensus) GetBlock(channelID string, num uint64, async bool) (consensus.Block, error) {
 	return c.app.GetBlock(channelID, num, async)
 }

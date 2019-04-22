@@ -133,7 +133,7 @@ func (g *Glue) Commit() types.ResponseCommit {
 				txs:       txs[channelID],
 			}
 			g.blocks[channelID] = append(g.blocks[channelID], block)
-			fmt.Printf("Done block %s\n", fmt.Sprintf("%s:%d", channelID, num))
+			log.Infof("Done block %s\n", fmt.Sprintf("%s:%d", channelID, num))
 			g.hub.Done(fmt.Sprintf("%s:%d", channelID, num), nil)
 			// todo: if we haven't set sync channel, here will lost the block
 			go func(channelID string) {
@@ -212,12 +212,13 @@ func (g *Glue) GetBlock(channelID string, num uint64, async bool) (consensus.Blo
 	g.lock.Lock()
 	for i := range g.blocks[channelID] {
 		if g.blocks[channelID][i].GetNumber() == num {
+			g.lock.Unlock()
 			return g.blocks[channelID][i], nil
 		}
 	}
 	g.lock.Unlock()
 	if async {
-		fmt.Printf("Watch block %s\n", fmt.Sprintf("%s:%d", channelID, num))
+		log.Infof("Watch block %s\n", fmt.Sprintf("%s:%d", channelID, num))
 		g.hub.Watch(fmt.Sprintf("%s:%d", channelID, num), nil)
 		g.lock.Lock()
 		defer g.lock.Unlock()
