@@ -21,8 +21,11 @@ func NewClient(port int) (*Client, error) {
 }
 
 // AddTx send a tx into tendermint network
-// TODO: We just ignore the error. However this is wrong.
+// TODO: We should read the document to understand the return of BroadcastTxSync
 func (c *Client) AddTx(tx []byte) error {
-	c.tc.BroadcastTxSync(tx)
+	_, err := c.tc.BroadcastTxSync(tx)
+	if err != nil {
+		return err
+	}
 	return nil
 }

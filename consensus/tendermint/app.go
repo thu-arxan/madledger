@@ -87,7 +87,6 @@ func (g *Glue) Stop() {
 
 // CheckTx always return OK
 func (g *Glue) CheckTx(tx []byte) types.ResponseCheckTx {
-	// log.Info("CheckTx")
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
@@ -212,7 +211,7 @@ func (g *Glue) GetBlock(channelID string, num uint64, async bool) (consensus.Blo
 	g.lock.Lock()
 	for i := range g.blocks[channelID] {
 		if g.blocks[channelID][i].GetNumber() == num {
-			g.lock.Unlock()
+			defer g.lock.Unlock()
 			return g.blocks[channelID][i], nil
 		}
 	}
