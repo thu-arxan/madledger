@@ -311,7 +311,7 @@ func findBlock(line string) *block {
 			}
 		}
 	} else if strings.Contains(line, "Run block test") {
-		blockRegexp := regexp.MustCompile(`^.+?Run block test:([\d]+).+`)
+		blockRegexp := regexp.MustCompile(`^.+?Run block test:.?([\d]+).+`)
 		params := blockRegexp.FindStringSubmatch(line)
 		if len(params) >= 1 {
 			num, _ := strconv.Atoi(params[1])
