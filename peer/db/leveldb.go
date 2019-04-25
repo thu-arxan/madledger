@@ -3,11 +3,12 @@ package db
 import (
 	"encoding/json"
 	"errors"
-	"github.com/sirupsen/logrus"
 	"madledger/common"
 	"madledger/common/util"
 	"madledger/core/types"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -237,7 +238,10 @@ func (db *LevelDB) addHistory(address []byte, channelID, txID string) {
 			if !util.Contain(txs, channelID) {
 				txs[channelID] = []string{txID}
 			} else {
-				txs[channelID] = append(txs[channelID], txID)
+				// todo: temporary fix the bug that duplicate txs, but this is not enough
+				if !util.Contain(txs[channelID], txID) {
+					txs[channelID] = append(txs[channelID], txID)
+				}
 			}
 			value, _ := json.Marshal(txs)
 			db.connect.Put(address, value, nil)
