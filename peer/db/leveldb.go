@@ -3,6 +3,7 @@ package db
 import (
 	"encoding/json"
 	"errors"
+	"github.com/sirupsen/logrus"
 	"madledger/common"
 	"madledger/common/util"
 	"madledger/core/types"
@@ -23,6 +24,10 @@ type LevelDB struct {
 	dir     string
 	connect *leveldb.DB
 }
+
+var (
+	log = logrus.WithFields(logrus.Fields{"app": "peer", "package": "db"})
+)
 
 // NewLevelDB is the constructor of LevelDB
 func NewLevelDB(dir string) (DB, error) {
@@ -208,6 +213,12 @@ func (db *LevelDB) ListTxHistory(address []byte) map[string][]string {
 	if ok, _ := db.connect.Has(address, nil); ok {
 		value, _ := db.connect.Get(address, nil)
 		json.Unmarshal(value, &txs)
+	}
+
+	for channel, tx := range  txs {
+		for _, id := range tx {
+			log.Infof("db/ListTxHistory: Channel %s, tx.ID %s",channel,id)
+		}
 	}
 	return txs
 }

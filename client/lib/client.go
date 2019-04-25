@@ -103,11 +103,6 @@ func getPeerClients(cfg *config.Config) ([]pb.PeerClient, error) {
 	return clients, nil
 }
 
-// GetPrivKey return the private key
-func (c *Client) GetPrivKey() crypto.PrivateKey {
-	return c.privKey
-}
-
 // ListChannel list the info of channel
 func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 	var channelInfos []ChannelInfo
@@ -274,6 +269,13 @@ func (c *Client) GetHistory(address []byte) (*pb.TxHistory, error) {
 	result, err := collector.Wait()
 	if err != nil {
 		return nil, err
+	} else {
+		txHistorys := result.(*pb.TxHistory)
+		for channel, txs := range txHistorys.Txs {
+			for i, id := range txs.Value {
+				fmt.Printf("No.%d: Channel %s, tx.ID %s\n", i, channel, id)
+			}
+		}
 	}
 
 	return result.(*pb.TxHistory), err
@@ -297,4 +299,9 @@ func membersContain(members []*types.Member, member *types.Member) bool {
 		}
 	}
 	return false
+}
+
+// GetPrivKey return the private key
+func (c *Client) GetPrivKey() crypto.PrivateKey {
+	return c.privKey
 }
