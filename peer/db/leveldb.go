@@ -215,9 +215,9 @@ func (db *LevelDB) ListTxHistory(address []byte) map[string][]string {
 		json.Unmarshal(value, &txs)
 	}
 
-	for channel, tx := range  txs {
+	for channel, tx := range txs {
 		for _, id := range tx {
-			log.Infof("db/ListTxHistory: Channel %s, tx.ID %s",channel,id)
+			log.Infof("db/ListTxHistory: Channel %s, tx.ID %s", channel, id)
 		}
 	}
 	return txs
@@ -229,6 +229,7 @@ func (db *LevelDB) addHistory(address []byte, channelID, txID string) {
 		txs[channelID] = []string{txID}
 		value, _ := json.Marshal(txs)
 		db.connect.Put(address, value, nil)
+		log.Infoln("account ", address, " Channel ", channelID, "add ", txID, "to db")
 	} else {
 		value, err := db.connect.Get(address, nil)
 		if err == nil {
@@ -240,6 +241,7 @@ func (db *LevelDB) addHistory(address []byte, channelID, txID string) {
 			}
 			value, _ := json.Marshal(txs)
 			db.connect.Put(address, value, nil)
+			log.Infoln("account ", address, " Channel ", channelID, "add ", txID, "to db")
 		}
 	}
 }
