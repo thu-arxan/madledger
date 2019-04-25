@@ -16,7 +16,7 @@ Debug: true
 BlockChain:
   # default: $GOPATH/src/madledger/peer/data/blocks
   # But in the production environment, you must provide a path
-  Path: 
+  Path: data/blocks 
 
 # Address of orderers
 Orderer:
@@ -25,6 +25,7 @@ Orderer:
     - localhost:23456
     - localhost:34567
     - localhost:45678
+
 # DB only support leveldb now
 DB:
   Type: leveldb
@@ -32,8 +33,8 @@ DB:
   LevelDB:
     # default: $GOPATH/src/madledger/peer/data/leveldb
     # But in the production environment, you must provide a path
-    Dir: 
+    Dir: data/leveldb 
 
 # KeyStore manage some private keys
 KeyStore:
-  Key: .keystore/fe3678e56f015f4e114bc07ce498f2affa982de69902a742329ebee35c77416a
+  Key: .keystore/ad4bf348a753f8db96f5f140922b6df2aef4c50b7ae9ed8ae19955ac2cf35c3e
