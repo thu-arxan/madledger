@@ -154,5 +154,5 @@ func testTxHistory(t *testing.T, client *client.Client) {
 	require.Len(t, history.Txs["private"].Value, 9)
 	// check cahnnel config
 	require.Contains(t, history.Txs, types.CONFIGCHANNELID)
-	require.Len(t, history.Txs[types.CONFIGCHANNELID].Value, 4)
+	require.Len(t, history.Txs[types.CONFIGCHANNELID].Value, 2)
 }

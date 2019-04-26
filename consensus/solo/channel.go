@@ -64,9 +64,7 @@ func (c *channel) start() error {
 
 // AddTx will try to add a tx
 func (c *channel) AddTx(tx []byte) error {
-	c.lock.Lock()
 	err := c.addTx(tx)
-	c.lock.Unlock()
 	if err != nil {
 		return err
 	}

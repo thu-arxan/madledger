@@ -26,8 +26,8 @@ func (manager *Manager) AddConfigBlock(block *types.Block) error {
 				return err
 			}
 			// create genesis block here
-			// The genesis only contain the create tx now.
-			genesisBlock := types.NewBlock(channelID, 0, types.GenesisBlockPrevHash, []*types.Tx{tx})
+			// Note: the genesis block will contain no tx
+			genesisBlock := types.NewBlock(channelID, 0, types.GenesisBlockPrevHash, []*types.Tx{})
 			err = channel.AddBlock(genesisBlock)
 			if err != nil {
 				return err

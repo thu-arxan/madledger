@@ -239,10 +239,7 @@ func (db *LevelDB) addHistory(address []byte, channelID, txID string) {
 			if !util.Contain(txs, channelID) {
 				txs[channelID] = []string{txID}
 			} else {
-				// todo: temporary fix the bug that duplicate txs, but this is not enough
-				if !util.Contain(txs[channelID], txID) {
-					txs[channelID] = append(txs[channelID], txID)
-				}
+				txs[channelID] = append(txs[channelID], txID)
 			}
 			value, _ := json.Marshal(txs)
 			db.connect.Put(address, value, nil)

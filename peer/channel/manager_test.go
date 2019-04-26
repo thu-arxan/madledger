@@ -122,7 +122,7 @@ func TestAnalyse(t *testing.T) {
 		default:
 			testNumber = block.number
 		}
-		if testNumber > globalNumber-2 {
+		if testNumber != 0 && testNumber > globalNumber-2 {
 			t.Fatal(fmt.Sprintf("Run test block %d too early because global block is still %d", testNumber, globalNumber))
 		}
 	}

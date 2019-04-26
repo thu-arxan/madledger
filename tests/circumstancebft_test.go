@@ -90,6 +90,7 @@ func TestBFTCreateChannels(t *testing.T) {
 	}
 	wg.Wait()
 	// then we will check if all channels are create successful
+	time.Sleep(2 * time.Second)
 	for i := range bftClients {
 		wg.Add(1)
 		go func(t *testing.T, i int) {
