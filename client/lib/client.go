@@ -123,13 +123,13 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 			// 打印出每一个出错信息
 			// 如果最后一个ordererClient仍然失败，需要return
 			if times == len(c.ordererClients) {
-				fmt.Printf("try %d times (the last time) but failed to get the info of channels because %s\n", times, err)
+				fmt.Printf("lib/client/ListChannel: try %d times (the last time) but failed to get the info of channels because %s\n", times, err)
 				return channelInfos, err
 			} else {
-				fmt.Printf("try %d times but failed to get the info of channels because %s\n", times, err)
+				fmt.Printf("lib/client/ListChannel: try %d times but failed to get the info of channels because %s\n", times, err)
 			}
 		} else {
-			fmt.Printf("try %d times and success to get %d channels' info\n", times, len(infos.Channels))
+			fmt.Printf("lib/client/ListChannel: try %d times and success to get %d channels' info\n", times, len(infos.Channels))
 			// 获取信息成功，break
 			break
 		}
@@ -184,14 +184,14 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 		if err != nil {
 			// 继续使用其他ordererClient进行尝试，直到最后一个ordererClient仍然报错
 			if times == len(c.ordererClients) {
-				fmt.Printf("try %d times (the last time) but failed to create channel %s because %s\n", times, channelID, err)
+				fmt.Printf("lib/client/CreateChannel: try %d times (the last time) but failed to create channel %s because %s\n", times, channelID, err)
 				return err
 			} else {
-				fmt.Printf("try %d times but failed to create channel %s because %s\n", times, channelID, err)
+				fmt.Printf("lib/client/CreateChannel: try %d times but failed to create channel %s because %s\n", times, channelID, err)
 			}
 		} else {
 			// 创建成功，打印信息并退出循环退出循环
-			fmt.Printf("try %d times and success to create channel %s\n", times, channelID)
+			fmt.Printf("lib/client/CreateChannel: try %d times and success to create channel %s\n", times, channelID)
 			break
 		}
 	}
@@ -215,14 +215,14 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 		if err != nil {
 			// 继续使用其他ordererClient进行尝试，直到最后一个ordererClient仍然报错
 			if times == len(c.ordererClients) {
-				fmt.Printf("try %d times(the last time) but fail to add tx %s because %s\n", times, tx.ID, err)
+				fmt.Printf("lib/client/AddTx: try %d times(the last time) but fail to add tx %s because %s\n", times, tx.ID, err)
 				return nil, err
 			} else {
-				fmt.Printf("try %d times but fail to add tx %s because %s\n", times, tx.ID, err)
+				fmt.Printf("lib/client/AddTx: try %d times but fail to add tx %s because %s\n", times, tx.ID, err)
 			}
 		} else {
 			// 添加tx成功，打印信息并退出循环
-			fmt.Printf("try %d times and success to add tx %s\n", times, tx.ID)
+			fmt.Printf("lib/client/AddTx: try %d times and success to add tx %s\n", times, tx.ID)
 			break
 		}
 	}
@@ -237,8 +237,10 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 			})
 			if err != nil {
 				collector.Add(nil, err)
+				//fmt.Printf("lib/client/AddTx: peerClient[%d] failed to get tx status because %s\n", i, err)
 			} else {
 				collector.Add(status, nil)
+				//fmt.Printf("lib/client/AddTx: peerClient[%d] success to get tx status\n", i)
 			}
 		}(i)
 	}
@@ -269,14 +271,14 @@ func (c *Client) GetHistory(address []byte) (*pb.TxHistory, error) {
 	result, err := collector.Wait()
 	if err != nil {
 		return nil, err
-	} else {
+	} /*else {
 		txHistorys := result.(*pb.TxHistory)
 		for channel, txs := range txHistorys.Txs {
 			for i, id := range txs.Value {
 				fmt.Printf("No.%d: Channel %s, tx.ID %s\n", i, channel, id)
 			}
 		}
-	}
+	}*/
 
 	return result.(*pb.TxHistory), err
 }
