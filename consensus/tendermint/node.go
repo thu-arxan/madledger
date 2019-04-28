@@ -2,10 +2,15 @@ package tendermint
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	tc "github.com/tendermint/tendermint/config"
+	dbm "github.com/tendermint/tendermint/libs/db"
+	"github.com/tendermint/tendermint/p2p"
+	"github.com/tendermint/tendermint/privval"
+	"github.com/tendermint/tendermint/proxy"
 
 	node "github.com/tendermint/tendermint/node"
 )
@@ -13,8 +18,9 @@ import (
 // Node obtains a tendermint node
 type Node struct {
 	// tendermintNode
-	tn   *node.Node
-	conf *tc.Config
+	tn    *node.Node
+	tnDBs map[string]dbm.DB
+	conf  *tc.Config
 }
 
 // NewNode is the constructor of Node
@@ -37,8 +43,62 @@ func NewNode(cfg *Config, app abci.Application) (*Node, error) {
 
 // Start runs the node
 func (n *Node) Start() error {
+	// tn, err := n.StartTendermintNode()
+	// if err != nil {
+	// 	return err
+	// }
+	// n.tn = tn
+	err := n.StartTendermintNode()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Stop stop the node
+func (n *Node) Stop() {
+	if n.tn != nil {
+		n.tn.Stop()
+		for _, db := range n.tnDBs {
+			db.Close()
+		}
+	}
+}
+
+// StartTendermintNode is a copy of tendermint.DefaultNewNode
+// The reason why we need this is that we want to close db connection
+func (n *Node) StartTendermintNode() error {
 	logger := NewLogger()
-	tn, err := node.DefaultNewNode(n.conf, logger)
+	config := n.conf
+
+	n.tnDBs = make(map[string]dbm.DB)
+
+	nodeKey, err := p2p.LoadOrGenNodeKey(config.NodeKeyFile())
+	if err != nil {
+		return err
+	}
+
+	oldPrivVal := config.OldPrivValidatorFile()
+	newPrivValKey := config.PrivValidatorKeyFile()
+	newPrivValState := config.PrivValidatorStateFile()
+	if _, err := os.Stat(oldPrivVal); !os.IsNotExist(err) {
+		oldPV, err := privval.LoadOldFilePV(oldPrivVal)
+		if err != nil {
+			return fmt.Errorf("Error reading OldPrivValidator from %s: %s", oldPrivVal, err)
+		}
+		oldPV.Upgrade(newPrivValKey, newPrivValState)
+	}
+
+	tn, err := node.NewNode(config,
+		privval.LoadOrGenFilePV(newPrivValKey, newPrivValState),
+		nodeKey,
+		proxy.DefaultClientCreator(config.ProxyApp, config.ABCI, config.DBDir()),
+		node.DefaultGenesisDocProviderFunc(config),
+		NewDBProvide(n),
+		node.DefaultMetricsProvider(config.Instrumentation),
+		logger,
+	)
 	if err != nil {
 		return err
 	}
@@ -51,9 +111,12 @@ func (n *Node) Start() error {
 	return nil
 }
 
-// Stop stop the node
-func (n *Node) Stop() {
-	if n.tn != nil {
-		n.tn.Stop()
+// NewDBProvide will set node some dbs
+func NewDBProvide(n *Node) func(ctx *node.DBContext) (dbm.DB, error) {
+	return func(ctx *node.DBContext) (dbm.DB, error) {
+		dbType := dbm.DBBackendType(ctx.Config.DBBackend)
+		db := dbm.NewDB(ctx.ID, dbType, ctx.Config.DBDir())
+		n.tnDBs[ctx.ID] = db
+		return db, nil
 	}
 }

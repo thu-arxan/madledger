@@ -20,6 +20,8 @@ import (
 var (
 	// tendermint nodes
 	tns [4]consensus.Consensus
+	// txSize records txs send
+	txSize int
 )
 
 func TestMain(m *testing.M) {
@@ -63,7 +65,7 @@ func TestStart(t *testing.T) {
 }
 
 func TestSendDuplicateTxs(t *testing.T) {
-	var txSize = 128
+	txSize = 128
 	var txs [][]byte
 	var success = make(map[string]int)
 	var lock sync.Mutex
@@ -95,6 +97,46 @@ func TestSendDuplicateTxs(t *testing.T) {
 	}
 	fmt.Println("End success compare")
 	// then fetch blocks and compare
+	compareBlocks(t)
+}
+
+func TestSendTxWithNodeRestart(t *testing.T) {
+	// Here we will stop a node and start it, then check if we get same blocks
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func(t *testing.T) {
+		defer wg.Done()
+		for i := 0; i < 100; i++ {
+			tx := randomTx()
+			require.NoError(t, tns[0].AddTx("test", tx))
+			time.Sleep(50 * time.Millisecond)
+		}
+	}(t)
+
+	wg.Add(1)
+	go func(t *testing.T) {
+		defer wg.Done()
+		require.NoError(t, tns[1].Stop())
+		time.Sleep(2000 * time.Millisecond)
+		require.NoError(t, tns[1].Start())
+	}(t)
+
+	wg.Wait()
+	// then we check if all node get same result
+	txSize += 100
+	compareBlocks(t)
+}
+
+func TestStop(t *testing.T) {
+	for i := range tns {
+		require.NoError(t, tns[i].Stop())
+	}
+	require.NoError(t, os.RemoveAll(getTestPath()))
+}
+
+func compareBlocks(t *testing.T) {
+	// then fetch blocks and compare
 	var blocks = make(map[uint64]consensus.Block)
 	for i := range tns {
 		var txCount = make(map[string]int)
@@ -119,38 +161,6 @@ func TestSendDuplicateTxs(t *testing.T) {
 			num++
 		}
 	}
-}
-
-// func TestSendTxWithNodeRestart(t *testing.T) {
-// 	// Here we will stop a node and start it, then check if we get same blocks
-// 	var wg sync.WaitGroup
-
-// 	wg.Add(1)
-// 	go func(t *testing.T) {
-// 		defer wg.Done()
-// 		for i := 0; i < 100; i++ {
-// 			tx := randomTx()
-// 			require.NoError(t, tns[0].AddTx("test", tx))
-// 			time.Sleep(50 * time.Millisecond)
-// 		}
-// 	}(t)
-
-// 	wg.Add(1)
-// 	go func(t *testing.T) {
-// 		defer wg.Done()
-// 		require.NoError(t, tns[1].Stop())
-// 		time.Sleep(2000 * time.Millisecond)
-// 		require.NoError(t, tns[1].Start())
-// 	}(t)
-
-// 	wg.Wait()
-// }
-
-func TestStop(t *testing.T) {
-	for i := range tns {
-		require.NoError(t, tns[i].Stop())
-	}
-	require.NoError(t, os.RemoveAll(getTestPath()))
 }
 
 func getConfigPath(node int) string {
