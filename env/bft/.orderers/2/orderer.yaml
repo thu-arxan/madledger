@@ -36,13 +36,13 @@ Consensus:
       RPC: 26663
       APP: 26664
     # ID means to identity in p2p connections
-    ID: 98c4225a96ab4a13da6257182a5d5830955c96b3
+    ID: 39856b8fa3e7d7df9d2f4ae2dff74d4713a968d3
     # P2P Persistent Address, like c395828cc2baaa6f6af2bd13ce62d1e9484919c8@localhost:36656
     P2PAddress:
-      - d8ebf69f3a8ed265bd4eacc31ddfa3cbcbfd608f@localhost:26656
-      - 083443f30072621df2a95f9a0745325e6cb5eea8@localhost:26659
-      - 98c4225a96ab4a13da6257182a5d5830955c96b3@localhost:26662
-      - 7301749f7baf8b5f42f91e93ec48f777568659ba@localhost:26665
+      - 7f9f0ae5b8c3d783cc51b4ff88eae507cf1787b9@localhost:26656
+      - 7d5289771cf1bbb93779f2c95559ae27b16cea6e@localhost:26659
+      - 39856b8fa3e7d7df9d2f4ae2dff74d4713a968d3@localhost:26662
+      - ee09051fd72c8065b79f034aa1a82c861555f223@localhost:26665
 
 # DB only support leveldb now
 DB:

@@ -22,18 +22,16 @@ func NewNode(cfg *Config, app abci.Application) (*Node, error) {
 	n := new(Node)
 
 	conf := tc.DefaultConfig()
-	conf.RootDir = cfg.Dir
-	conf.Consensus.RootDir = cfg.Dir
-	conf.Mempool.RootDir = cfg.Dir
-	conf.P2P.RootDir = cfg.Dir
+	conf.SetRoot(cfg.Dir)
 	conf.P2P.ListenAddress = fmt.Sprintf("tcp://0.0.0.0:%d", cfg.Port.P2P)
 	conf.RPC.ListenAddress = fmt.Sprintf("tcp://0.0.0.0:%d", cfg.Port.RPC)
 	conf.BaseConfig.ProxyApp = fmt.Sprintf("tcp://0.0.0.0:%d", cfg.Port.App)
 	conf.Consensus.CreateEmptyBlocks = false
+	conf.P2P.AddrBookStrict = false
+	conf.P2P.AllowDuplicateIP = true
 	conf.P2P.PersistentPeers = strings.Join(cfg.P2PAddress, ",")
 
 	n.conf = conf
-
 	return n, nil
 }
 
@@ -49,7 +47,7 @@ func (n *Node) Start() error {
 	if err != nil {
 		return err
 	}
-	n.tn.RunForever()
+
 	return nil
 }
 

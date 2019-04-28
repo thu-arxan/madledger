@@ -65,14 +65,15 @@ func (g *Glue) Start() error {
 		return err
 	}
 	g.srv = srv
-	srv.SetLogger(NewLogger())
+	logger := NewLogger()
+	srv.SetLogger(logger)
 	if err := srv.Start(); err != nil {
 		return err
 	}
 	log.Info("Start glue...")
 
 	// Wait forever
-	cmn.TrapSignal(func() {
+	cmn.TrapSignal(logger, func() {
 		// Cleanup
 		srv.Stop()
 	})
@@ -103,7 +104,6 @@ func (g *Glue) DeliverTx(tx []byte) types.ResponseDeliverTx {
 func (g *Glue) Commit() types.ResponseCommit {
 	g.lock.Lock()
 	defer g.lock.Unlock()
-	log.Infof("Commit %d txs", len(g.txs))
 	if len(g.txs) != 0 {
 		var txs = make(map[string][][]byte)
 		for i := range g.txs {
@@ -132,7 +132,7 @@ func (g *Glue) Commit() types.ResponseCommit {
 				txs:       txs[channelID],
 			}
 			g.blocks[channelID] = append(g.blocks[channelID], block)
-			log.Infof("Done block %s\n", fmt.Sprintf("%s:%d", channelID, num))
+			log.Infof("Done block %s", fmt.Sprintf("%s:%d", channelID, num))
 			g.hub.Done(fmt.Sprintf("%s:%d", channelID, num), nil)
 			// todo: if we haven't set sync channel, here will lost the block
 			go func(channelID string) {
@@ -173,7 +173,10 @@ func (g *Glue) Info(req types.RequestInfo) types.ResponseInfo {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
-	return types.ResponseInfo{LastBlockHeight: g.db.GetHeight(), LastBlockAppHash: g.db.GetHash()}
+	return types.ResponseInfo{
+		LastBlockHeight:  g.db.GetHeight(),
+		LastBlockAppHash: g.db.GetHash(),
+	}
 }
 
 // InitChain just send the init chain message
@@ -217,7 +220,7 @@ func (g *Glue) GetBlock(channelID string, num uint64, async bool) (consensus.Blo
 	}
 	g.lock.Unlock()
 	if async {
-		log.Infof("Watch block %s\n", fmt.Sprintf("%s:%d", channelID, num))
+		log.Infof("Watch block %s", fmt.Sprintf("%s:%d", channelID, num))
 		g.hub.Watch(fmt.Sprintf("%s:%d", channelID, num), nil)
 		g.lock.Lock()
 		defer g.lock.Unlock()

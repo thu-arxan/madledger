@@ -3,10 +3,10 @@ package mock
 import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
+	"github.com/tendermint/tendermint/proxy"
 	"github.com/tendermint/tendermint/rpc/client"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/types"
-	"github.com/tendermint/tendermint/version"
 )
 
 // ABCIApp will send all abci related request to the named app,
@@ -23,7 +23,7 @@ var (
 )
 
 func (a ABCIApp) ABCIInfo() (*ctypes.ResultABCIInfo, error) {
-	return &ctypes.ResultABCIInfo{a.App.Info(abci.RequestInfo{Version: version.Version})}, nil
+	return &ctypes.ResultABCIInfo{Response: a.App.Info(proxy.RequestInfo)}, nil
 }
 
 func (a ABCIApp) ABCIQuery(path string, data cmn.HexBytes) (*ctypes.ResultABCIQuery, error) {
@@ -31,10 +31,18 @@ func (a ABCIApp) ABCIQuery(path string, data cmn.HexBytes) (*ctypes.ResultABCIQu
 }
 
 func (a ABCIApp) ABCIQueryWithOptions(path string, data cmn.HexBytes, opts client.ABCIQueryOptions) (*ctypes.ResultABCIQuery, error) {
-	q := a.App.Query(abci.RequestQuery{Data: data, Path: path, Height: opts.Height, Prove: opts.Trusted})
-	return &ctypes.ResultABCIQuery{q}, nil
+	q := a.App.Query(abci.RequestQuery{
+		Data:   data,
+		Path:   path,
+		Height: opts.Height,
+		Prove:  opts.Prove,
+	})
+	return &ctypes.ResultABCIQuery{Response: q}, nil
 }
 
+// NOTE: Caller should call a.App.Commit() separately,
+// this function does not actually wait for a commit.
+// TODO: Make it wait for a commit and set res.Height appropriately.
 func (a ABCIApp) BroadcastTxCommit(tx types.Tx) (*ctypes.ResultBroadcastTxCommit, error) {
 	res := ctypes.ResultBroadcastTxCommit{}
 	res.CheckTx = a.App.CheckTx(tx)
@@ -42,6 +50,7 @@ func (a ABCIApp) BroadcastTxCommit(tx types.Tx) (*ctypes.ResultBroadcastTxCommit
 		return &res, nil
 	}
 	res.DeliverTx = a.App.DeliverTx(tx)
+	res.Height = -1 // TODO
 	return &res, nil
 }
 
@@ -51,7 +60,7 @@ func (a ABCIApp) BroadcastTxAsync(tx types.Tx) (*ctypes.ResultBroadcastTx, error
 	if !c.IsErr() {
 		go func() { a.App.DeliverTx(tx) }() // nolint: errcheck
 	}
-	return &ctypes.ResultBroadcastTx{c.Code, c.Data, c.Log, tx.Hash()}, nil
+	return &ctypes.ResultBroadcastTx{Code: c.Code, Data: c.Data, Log: c.Log, Hash: tx.Hash()}, nil
 }
 
 func (a ABCIApp) BroadcastTxSync(tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
@@ -60,7 +69,7 @@ func (a ABCIApp) BroadcastTxSync(tx types.Tx) (*ctypes.ResultBroadcastTx, error)
 	if !c.IsErr() {
 		go func() { a.App.DeliverTx(tx) }() // nolint: errcheck
 	}
-	return &ctypes.ResultBroadcastTx{c.Code, c.Data, c.Log, tx.Hash()}, nil
+	return &ctypes.ResultBroadcastTx{Code: c.Code, Data: c.Data, Log: c.Log, Hash: tx.Hash()}, nil
 }
 
 // ABCIMock will send all abci related request to the named app,
@@ -78,7 +87,7 @@ func (m ABCIMock) ABCIInfo() (*ctypes.ResultABCIInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ctypes.ResultABCIInfo{res.(abci.ResponseInfo)}, nil
+	return &ctypes.ResultABCIInfo{Response: res.(abci.ResponseInfo)}, nil
 }
 
 func (m ABCIMock) ABCIQuery(path string, data cmn.HexBytes) (*ctypes.ResultABCIQuery, error) {
@@ -86,12 +95,12 @@ func (m ABCIMock) ABCIQuery(path string, data cmn.HexBytes) (*ctypes.ResultABCIQ
 }
 
 func (m ABCIMock) ABCIQueryWithOptions(path string, data cmn.HexBytes, opts client.ABCIQueryOptions) (*ctypes.ResultABCIQuery, error) {
-	res, err := m.Query.GetResponse(QueryArgs{path, data, opts.Height, opts.Trusted})
+	res, err := m.Query.GetResponse(QueryArgs{path, data, opts.Height, opts.Prove})
 	if err != nil {
 		return nil, err
 	}
 	resQuery := res.(abci.ResponseQuery)
-	return &ctypes.ResultABCIQuery{resQuery}, nil
+	return &ctypes.ResultABCIQuery{Response: resQuery}, nil
 }
 
 func (m ABCIMock) BroadcastTxCommit(tx types.Tx) (*ctypes.ResultBroadcastTxCommit, error) {
@@ -133,10 +142,10 @@ func NewABCIRecorder(client client.ABCIClient) *ABCIRecorder {
 }
 
 type QueryArgs struct {
-	Path    string
-	Data    cmn.HexBytes
-	Height  int64
-	Trusted bool
+	Path   string
+	Data   cmn.HexBytes
+	Height int64
+	Prove  bool
 }
 
 func (r *ABCIRecorder) addCall(call Call) {
@@ -161,7 +170,7 @@ func (r *ABCIRecorder) ABCIQueryWithOptions(path string, data cmn.HexBytes, opts
 	res, err := r.Client.ABCIQueryWithOptions(path, data, opts)
 	r.addCall(Call{
 		Name:     "abci_query",
-		Args:     QueryArgs{path, data, opts.Height, opts.Trusted},
+		Args:     QueryArgs{path, data, opts.Height, opts.Prove},
 		Response: res,
 		Error:    err,
 	})

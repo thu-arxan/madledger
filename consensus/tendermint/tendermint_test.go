@@ -93,6 +93,7 @@ func TestSendDuplicateTxs(t *testing.T) {
 	for i := range success {
 		require.Equal(t, 1, success[i])
 	}
+	fmt.Println("End success compare")
 	// then fetch blocks and compare
 	var blocks = make(map[uint64]consensus.Block)
 	for i := range tns {
@@ -120,30 +121,30 @@ func TestSendDuplicateTxs(t *testing.T) {
 	}
 }
 
-func TestSendTxWithNodeRestart(t *testing.T) {
-	// Here we will stop a node and start it, then check if we get same blocks
-	var wg sync.WaitGroup
+// func TestSendTxWithNodeRestart(t *testing.T) {
+// 	// Here we will stop a node and start it, then check if we get same blocks
+// 	var wg sync.WaitGroup
 
-	wg.Add(1)
-	go func(t *testing.T) {
-		defer wg.Done()
-		for i := 0; i < 100; i++ {
-			tx := randomTx()
-			require.NoError(t, tns[0].AddTx("test", tx))
-			time.Sleep(50 * time.Millisecond)
-		}
-	}(t)
+// 	wg.Add(1)
+// 	go func(t *testing.T) {
+// 		defer wg.Done()
+// 		for i := 0; i < 100; i++ {
+// 			tx := randomTx()
+// 			require.NoError(t, tns[0].AddTx("test", tx))
+// 			time.Sleep(50 * time.Millisecond)
+// 		}
+// 	}(t)
 
-	wg.Add(1)
-	go func(t *testing.T) {
-		defer wg.Done()
-		require.NoError(t, tns[1].Stop())
-		time.Sleep(2000 * time.Millisecond)
-		require.NoError(t, tns[1].Start())
-	}(t)
+// 	wg.Add(1)
+// 	go func(t *testing.T) {
+// 		defer wg.Done()
+// 		require.NoError(t, tns[1].Stop())
+// 		time.Sleep(2000 * time.Millisecond)
+// 		require.NoError(t, tns[1].Start())
+// 	}(t)
 
-	wg.Wait()
-}
+// 	wg.Wait()
+// }
 
 func TestStop(t *testing.T) {
 	for i := range tns {

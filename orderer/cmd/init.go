@@ -83,12 +83,13 @@ func initTendermintEnv(path string) (string, error) {
 	tendermintPath, _ := util.MakeFileAbs(".tendermint", path)
 	os.MkdirAll(tendermintPath+"/config", 0777)
 	var conf = tc.DefaultConfig()
-	privValFile := tendermintPath + "/" + conf.PrivValidatorFile()
+	privValKeyFile := tendermintPath + "/" + conf.PrivValidatorKeyFile()
+	privValStateFile := tendermintPath + "/" + conf.PrivValidatorStateFile()
 	var pv *privval.FilePV
-	if tlc.FileExists(privValFile) {
-		pv = privval.LoadFilePV(privValFile)
+	if tlc.FileExists(privValKeyFile) {
+		pv = privval.LoadFilePV(privValKeyFile, privValStateFile)
 	} else {
-		pv = privval.GenFilePV(privValFile)
+		pv = privval.GenFilePV(privValKeyFile, privValStateFile)
 		pv.Save()
 	}
 	nodeKeyFile := tendermintPath + "/" + conf.NodeKeyFile()
