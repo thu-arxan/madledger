@@ -77,7 +77,9 @@ func (c *Coordinator) Start() error {
 	}
 
 	go c.GM.Start()
+	time.Sleep(100 * time.Millisecond)
 	go c.CM.Start()
+	time.Sleep(100 * time.Millisecond)
 	for _, channelManager := range c.Managers {
 		go channelManager.Start()
 	}

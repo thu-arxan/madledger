@@ -5,12 +5,16 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"sort"
 	"time"
+
+	hashdir "github.com/sger/go-hashdir"
 )
 
 const (
@@ -150,6 +154,75 @@ func RandomString(length int) string {
 func IsLegalChannelName(channelID string) bool {
 	if m, err := regexp.MatchString("^[a-z0-9]{1,32}$", channelID); err != nil || !m {
 		return false
+	}
+	return true
+}
+
+// SHA256Dir return the sha256 of dir
+func SHA256Dir(dir string) string {
+	fmt.Println(dir)
+	hash, err := hashdir.Create(dir, "md5")
+	if err != nil {
+		return ""
+	}
+	return hash
+}
+
+// GetAllFiles return all files of a dir
+func GetAllFiles(dirPth string, abs bool) (files []string, err error) {
+	var dirs []string
+	dir, err := ioutil.ReadDir(dirPth)
+	if err != nil {
+		return nil, err
+	}
+
+	PthSep := string(os.PathSeparator)
+
+	for _, fi := range dir {
+		if fi.IsDir() {
+			dirs = append(dirs, dirPth+PthSep+fi.Name())
+			GetAllFiles(dirPth+PthSep+fi.Name(), abs)
+		} else {
+			if abs {
+				files = append(files, dirPth+PthSep+fi.Name())
+			} else {
+				files = append(files, PthSep+fi.Name())
+			}
+
+		}
+	}
+
+	for _, table := range dirs {
+		temp, _ := GetAllFiles(table, abs)
+		for _, temp1 := range temp {
+			files = append(files, temp1)
+		}
+	}
+
+	return files, nil
+}
+
+// IsDirSame return is two dir contain same files
+// TODO: We are not compare data now
+func IsDirSame(a, b string) bool {
+	aFiles, err := GetAllFiles(a, false)
+	if err != nil {
+		return false
+	}
+	bFiles, err := GetAllFiles(b, false)
+	if err != nil {
+		return false
+	}
+	if len(aFiles) != len(bFiles) {
+		return false
+	}
+	sort.Strings(aFiles)
+	sort.Strings(bFiles)
+	for i := range aFiles {
+		if aFiles[i] != bFiles[i] {
+			fmt.Println(aFiles[i])
+			return false
+		}
 	}
 	return true
 }

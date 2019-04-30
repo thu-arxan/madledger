@@ -50,7 +50,7 @@ func TestNewServer(t *testing.T) {
 	go func() {
 		require.NoError(t, server.Start())
 	}()
-	time.Sleep(300 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 }
 
 func TestListChannelsAtNil(t *testing.T) {
@@ -136,7 +136,7 @@ func TestServerRestart(t *testing.T) {
 	go func() {
 		require.NoError(t, server.Start())
 	}()
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	server.Stop()
 }
 
@@ -151,10 +151,10 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 	server, err = NewServer(cfg)
 	require.NoError(t, err)
 
-	go func() {
+	go func(t *testing.T) {
 		require.NoError(t, server.Start())
-	}()
-	time.Sleep(300 * time.Millisecond)
+	}(t)
+	time.Sleep(500 * time.Millisecond)
 	client, err := getClient()
 	require.NoError(t, err)
 	// compare global genesis block
@@ -186,7 +186,7 @@ func TestCreateChannel(t *testing.T) {
 	go func() {
 		require.NoError(t, server.Start())
 	}()
-	time.Sleep(300 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	// then try to create a channel
 	client, err := getClient()
 	require.NoError(t, err)
@@ -208,7 +208,7 @@ func TestServerRestartWithUserChannel(t *testing.T) {
 	go func() {
 		require.NoError(t, server.Start())
 	}()
-	time.Sleep(300 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	client, _ := getClient()
 	// Then try to send a tx to test channel
 	// then add a tx into test channel
@@ -235,7 +235,7 @@ func TestFetchBlockAsync(t *testing.T) {
 	go func() {
 		require.NoError(t, server.Start())
 	}()
-	time.Sleep(300 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	client, _ := getClient()
 	channelInfos, _ := client.ListChannels(context.Background(), &pb.ListChannelsRequest{
 		System: true,
@@ -315,7 +315,7 @@ func TestAddDuplicateTxs(t *testing.T) {
 	go func() {
 		require.NoError(t, server.Start())
 	}()
-	time.Sleep(300 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	client, _ := getClient()
 	// Then try to send a tx to test channel
 	// then add a tx into test channel

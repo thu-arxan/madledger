@@ -14,9 +14,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/otiai10/copy"
+	"github.com/stretchr/testify/require"
 )
 
 /*
@@ -35,13 +34,7 @@ func TestBFT(t *testing.T) {
 
 func TestBFTRun(t *testing.T) {
 	for i := range bftOrderers {
-		cfgPath := getBFTOrdererConfigPath(i)
-		cfg, err := oc.LoadConfig(cfgPath)
-		require.NoError(t, err)
-		cfg.BlockChain.Path = getBFTOrdererPath(i) + "/" + cfg.BlockChain.Path
-		cfg.DB.LevelDB.Path = getBFTOrdererPath(i) + "/" + cfg.DB.LevelDB.Path
-		cfg.Consensus.Tendermint.Path = getBFTOrdererPath(i) + "/" + cfg.Consensus.Tendermint.Path
-		server, err := orderer.NewServer(cfg)
+		server, err := newBFTOrderer(i)
 		require.NoError(t, err)
 		bftOrderers[i] = server
 	}
@@ -107,6 +100,21 @@ func TestBFTCreateChannels(t *testing.T) {
 	wg.Wait()
 }
 
+func TestBFTOrdererRestart(t *testing.T) {
+	bftOrderers[1].Stop()
+	os.RemoveAll(getBFTOrdererDataPath(1))
+	server, err := newBFTOrderer(1)
+	require.NoError(t, err)
+	bftOrderers[1] = server
+	go func(t *testing.T) {
+		require.NoError(t, bftOrderers[1].Start())
+	}(t)
+	time.Sleep(2000 * time.Millisecond)
+	for i := range bftOrderers {
+		require.True(t, util.IsDirSame(getBFTOrdererBlockPath(0), getBFTOrdererBlockPath(i)), fmt.Sprintf("Orderer %d is not same with 0", i))
+	}
+}
+
 func TestBFTEnd(t *testing.T) {
 	for i := range bftOrderers {
 		bftOrderers[i].Stop()
@@ -130,6 +138,18 @@ func initBFTEnvironment() error {
 	return nil
 }
 
+func newBFTOrderer(node int) (*orderer.Server, error) {
+	cfgPath := getBFTOrdererConfigPath(node)
+	cfg, err := oc.LoadConfig(cfgPath)
+	if err != nil {
+		return nil, err
+	}
+	cfg.BlockChain.Path = getBFTOrdererPath(node) + "/" + cfg.BlockChain.Path
+	cfg.DB.LevelDB.Path = getBFTOrdererPath(node) + "/" + cfg.DB.LevelDB.Path
+	cfg.Consensus.Tendermint.Path = getBFTOrdererPath(node) + "/" + cfg.Consensus.Tendermint.Path
+	return orderer.NewServer(cfg)
+}
+
 func getBFTOrdererPath(node int) string {
 	gopath := os.Getenv("GOPATH")
 	return fmt.Sprintf("%s/src/madledger/tests/.bft/orderers/%d", gopath, node)
@@ -147,4 +167,12 @@ func getBFTClientPath(node int) string {
 
 func getBFTClientConfigPath(node int) string {
 	return getBFTClientPath(node) + "/client.yaml"
+}
+
+func getBFTOrdererDataPath(node int) string {
+	return fmt.Sprintf("%s/data", getBFTOrdererPath(node))
+}
+
+func getBFTOrdererBlockPath(node int) string {
+	return fmt.Sprintf("%s/data/blocks", getBFTOrdererPath(node))
 }

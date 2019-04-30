@@ -80,8 +80,11 @@ func (manager *Manager) Start() {
 					log.Infof("Channel %s add tx %s to global channel.", manager.ID, tx.ID)
 
 					if err := manager.coordinator.GM.AddTx(tx); err != nil {
-						log.Fatalf("Channel %s failed to add tx into global channel because %s", manager.ID, err)
-						return
+						// todo: This is temporary fix
+						if err.Error() != "The tx exist in the blockchain aleardy" {
+							log.Fatalf("Channel %s failed to add tx into global channel because %s", manager.ID, err)
+							return
+						}
 					}
 				}
 				if err := manager.AddBlock(block); err != nil {
@@ -209,6 +212,7 @@ func (manager *Manager) FetchBlockAsync(num uint64) (*types.Block, error) {
 func (manager *Manager) syncBlock() {
 	var num uint64 = 1
 	for {
+		log.Infof("Get block %d of channel %s from consensus", num, manager.ID)
 		cb, err := manager.coordinator.Consensus.GetBlock(manager.ID, num, true)
 		if err != nil {
 			fmt.Println(err)
@@ -245,7 +249,7 @@ func (manager *Manager) getTxsFromConsensusBlock(block consensus.Block) (legal, 
 			count[tx.ID] = true //更新count，否则无法判断block中重复的tx
 			legal = append(legal, tx)
 			log.Infof("getTxsFromConsensusBlock: block %d in %s add tx %s",
-				block.GetNumber(),manager.ID, tx.ID)
+				block.GetNumber(), manager.ID, tx.ID)
 		} else {
 			duplicate = append(duplicate, tx)
 		}

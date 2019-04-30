@@ -2,6 +2,7 @@ package tendermint
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -50,6 +51,31 @@ func (db *DB) GetHash() []byte {
 	if exist, _ := db.connect.Has(key, nil); exist {
 		data, _ := db.connect.Get(key, nil)
 		return data
+	}
+	return nil
+}
+
+// AddBlock add a block
+func (db *DB) AddBlock(block *Block) error {
+	var key = []byte(fmt.Sprintf("%s:%d", block.ChannelID, block.Num))
+	data, err := json.Marshal(block)
+	if err != nil {
+		return err
+	}
+	db.connect.Put(key, data, nil)
+	return nil
+}
+
+// GetBlock get a block
+func (db *DB) GetBlock(channelID string, num uint64) *Block {
+	var key = []byte(fmt.Sprintf("%s:%d", channelID, num))
+	if exist, _ := db.connect.Has(key, nil); exist {
+		data, _ := db.connect.Get(key, nil)
+		var block Block
+		if err := json.Unmarshal(data, &block); err != nil {
+			return nil
+		}
+		return &block
 	}
 	return nil
 }

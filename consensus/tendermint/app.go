@@ -25,11 +25,13 @@ type Glue struct {
 
 	hub *event.Hub
 
-	blocks map[string][]*Block
-	chans  map[string]*chan consensus.Block
-	db     *DB
-	port   int
-	client *Client
+	blocks  map[string][]*Block
+	chans   map[string]*chan consensus.Block
+	dbDir   string
+	db      *DB
+	port    int
+	rpcPort int
+	client  *Client
 
 	srv cmn.Service
 }
@@ -38,27 +40,30 @@ type Glue struct {
 func NewGlue(dbDir string, port *Port) (*Glue, error) {
 	g := new(Glue)
 	g.lock = new(sync.Mutex)
-	db, err := NewDB(dbDir)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to load db at %s because %s", dbDir, err.Error())
-	}
-	g.db = db
-	g.tn = db.GetHeight()
-	g.th = db.GetHash()
-	g.port = port.App
-	g.hub = event.NewHub()
 
-	g.client, err = NewClient(port.RPC)
-	if err != nil {
-		return nil, err
-	}
+	g.dbDir = dbDir
 	g.blocks = make(map[string][]*Block)
 	g.chans = make(map[string]*chan consensus.Block)
+	g.port = port.App
+	g.rpcPort = port.RPC
 	return g, nil
 }
 
 // Start run the glue
 func (g *Glue) Start() error {
+	db, err := NewDB(g.dbDir)
+	if err != nil {
+		return fmt.Errorf("Failed to load db at %s because %s", g.dbDir, err.Error())
+	}
+	g.db = db
+	g.tn = db.GetHeight()
+	g.th = db.GetHash()
+	g.hub = event.NewHub()
+
+	g.client, err = NewClient(g.rpcPort)
+	if err != nil {
+		return err
+	}
 	// Start the listener
 	srv, err := server.NewServer(fmt.Sprintf("tcp://0.0.0.0:%d", g.port), "socket", g)
 	if err != nil {
@@ -84,6 +89,7 @@ func (g *Glue) Start() error {
 // TODO: This way may be too violent
 func (g *Glue) Stop() {
 	g.srv.Stop()
+	g.db.Close()
 }
 
 // CheckTx always return OK
@@ -127,11 +133,12 @@ func (g *Glue) Commit() types.ResponseCommit {
 				}
 			}
 			block := &Block{
-				channelID: channelID,
-				num:       num,
-				txs:       txs[channelID],
+				ChannelID: channelID,
+				Num:       num,
+				Txs:       txs[channelID],
 			}
 			g.blocks[channelID] = append(g.blocks[channelID], block)
+			g.db.AddBlock(block)
 			log.Infof("Done block %s", fmt.Sprintf("%s:%d", channelID, num))
 			g.hub.Done(fmt.Sprintf("%s:%d", channelID, num), nil)
 			// todo: if we haven't set sync channel, here will lost the block
@@ -219,6 +226,12 @@ func (g *Glue) GetBlock(channelID string, num uint64, async bool) (consensus.Blo
 		}
 	}
 	g.lock.Unlock()
+	// But block is not in blocks does not mean it is not exist
+	block := g.db.GetBlock(channelID, num)
+	if block != nil {
+		return block, nil
+	}
+
 	if async {
 		log.Infof("Watch block %s", fmt.Sprintf("%s:%d", channelID, num))
 		g.hub.Watch(fmt.Sprintf("%s:%d", channelID, num), nil)
