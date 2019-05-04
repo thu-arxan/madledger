@@ -13,8 +13,6 @@ import (
 	"regexp"
 	"sort"
 	"time"
-
-	hashdir "github.com/sger/go-hashdir"
 )
 
 const (
@@ -156,16 +154,6 @@ func IsLegalChannelName(channelID string) bool {
 		return false
 	}
 	return true
-}
-
-// SHA256Dir return the sha256 of dir
-func SHA256Dir(dir string) string {
-	fmt.Println(dir)
-	hash, err := hashdir.Create(dir, "md5")
-	if err != nil {
-		return ""
-	}
-	return hash
 }
 
 // GetAllFiles return all files of a dir
