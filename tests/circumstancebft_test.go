@@ -115,6 +115,23 @@ func TestBFTOrdererRestart(t *testing.T) {
 	}
 }
 
+func TestBFTReCreateChannels(t *testing.T) {
+	// Here we recreate 5 channels
+	for i := 0; i < 5; i++ {
+		channel := strings.ToLower(util.RandomString(16))
+		err := bftClients[0].CreateChannel(channel, true, nil, nil)
+		require.NoError(t, err)
+	}
+	time.Sleep(2 * time.Second)
+	// Then we will list channels
+	for i := range bftClients {
+		infos, err := bftClients[i].ListChannel(false)
+		require.NoError(t, err)
+		// todo: compare infos here
+		fmt.Println(infos)
+	}
+}
+
 func TestBFTEnd(t *testing.T) {
 	for i := range bftOrderers {
 		bftOrderers[i].Stop()
