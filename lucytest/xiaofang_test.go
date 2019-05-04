@@ -2,17 +2,18 @@ package lucytest
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
+	cliu "madledger/client/util"
 	oc "madledger/orderer/config"
 	orderer "madledger/orderer/server"
-	cliu "madledger/client/util"
 	"os"
 	"regexp"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -34,7 +35,7 @@ func TestBFTRun(t *testing.T) {
 			require.NoError(t, err)
 		}(t, i)
 	}
-	time.Sleep(2 * time.Second)
+	time.Sleep(5 * time.Second)
 }
 
 func TestBFTLoadClients(t *testing.T) {
