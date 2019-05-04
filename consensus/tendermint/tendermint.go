@@ -1,8 +1,10 @@
 package tendermint
 
 import (
+	"errors"
 	"fmt"
 	"madledger/consensus"
+	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -18,8 +20,10 @@ var (
 
 // Consensus is the implementation of tendermint
 type Consensus struct {
-	app  *Glue
-	node *Node
+	lock   sync.Mutex
+	status consensus.Status
+	app    *Glue
+	node   *Node
 }
 
 // NewConsensus is the constructor of tendermint.Consensus
@@ -35,19 +39,25 @@ func NewConsensus(channels map[string]consensus.Config, cfg *Config) (consensus.
 		return nil, err
 	}
 	return &Consensus{
-		app:  app,
-		node: node,
+		status: consensus.Stopped,
+		app:    app,
+		node:   node,
 	}, nil
 }
 
 // Start is the implementation of interface
 func (c *Consensus) Start() error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
 	log.Info("Trying to start consensus")
 	go c.app.Start()
 	time.Sleep(200 * time.Millisecond)
 	go c.node.Start()
 	time.Sleep(300 * time.Millisecond)
 	log.Info("Start consensus...")
+	c.status = consensus.Started
+
 	return nil
 }
 
@@ -59,6 +69,12 @@ func (c *Consensus) AddChannel(channelID string, cfg consensus.Config) error {
 
 // AddTx is the implementation of interface
 func (c *Consensus) AddTx(channelID string, tx []byte) error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	if c.status != consensus.Started {
+		return errors.New("The service is not started")
+	}
 	return c.app.AddTx(channelID, tx)
 }
 
@@ -69,8 +85,14 @@ func (c *Consensus) SyncBlocks(channelID string, ch *chan consensus.Block) error
 }
 
 // Stop is the implementation of interface
+// todo: we need to make sure that the consensus will not provide service
 func (c *Consensus) Stop() error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	c.status = consensus.Stopped
 	c.app.Stop()
+	time.Sleep(300 * time.Millisecond)
 	c.node.Stop()
 	return nil
 }

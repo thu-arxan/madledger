@@ -61,7 +61,7 @@ func TestStart(t *testing.T) {
 		tns[i] = consensus
 		require.NoError(t, consensus.Start())
 	}
-	time.Sleep(2 * time.Second)
+	time.Sleep(5 * time.Second)
 }
 
 func TestSendDuplicateTxs(t *testing.T) {
@@ -95,7 +95,6 @@ func TestSendDuplicateTxs(t *testing.T) {
 	for i := range success {
 		require.Equal(t, 1, success[i])
 	}
-	fmt.Println("End success compare")
 	// then fetch blocks and compare
 	compareBlocks(t)
 }
@@ -123,12 +122,14 @@ func TestSendTxWithNodeRestart(t *testing.T) {
 	}(t)
 
 	wg.Wait()
+	time.Sleep(2 * time.Second)
 	// then we check if all node get same result
 	txSize += 100
 	compareBlocks(t)
 }
 
 func TestStop(t *testing.T) {
+	// time.Sleep(2 * time.Second)
 	for i := range tns {
 		require.NoError(t, tns[i].Stop())
 	}

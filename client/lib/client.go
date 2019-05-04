@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"madledger/common/crypto"
 	"madledger/core/types"
+	"sort"
 	"strings"
 	"time"
 
@@ -146,6 +147,17 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 			channelInfos[i].System = true
 		}
 	}
+
+	// sort slice
+	sort.Slice(channelInfos, func(i, j int) bool {
+		if channelInfos[i].System != channelInfos[j].System {
+			if channelInfos[i].System {
+				return true
+			}
+			return false
+		}
+		return channelInfos[i].Name < channelInfos[j].Name
+	})
 
 	return channelInfos, nil
 }
