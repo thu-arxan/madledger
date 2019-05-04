@@ -25,8 +25,9 @@ func NewClient(port int) (*Client, error) {
 // Note: BroadcastTxSync may return error because the tx in the cache aleardy
 func (c *Client) AddTx(tx []byte) error {
 	_, err := c.tc.BroadcastTxSync(tx)
-	if err != nil {
+	if err.Error() != "Response error: RPC error -32603 - Internal error: Tx already exists in cache"{
 		log.Infof("AddTx meets an error:%s\n", err)
 	}
+
 	return nil
 }
