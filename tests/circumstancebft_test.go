@@ -69,7 +69,7 @@ func TestBFTCreateChannels(t *testing.T) {
 	var channels []string
 	for i := range bftClients {
 		// each client will create 5 channels
-		for m := 0; m < 1; m++ {
+		for m := 0; m < 5; m++ {
 			wg.Add(1)
 			go func(t *testing.T, i int) {
 				defer wg.Done()
@@ -117,11 +117,11 @@ func TestBFTOrdererRestart(t *testing.T) {
 
 func TestBFTReCreateChannels(t *testing.T) {
 	// Here we recreate 5 channels
-	// for i := 0; i < 1; i++ {
-	// 	channel := strings.ToLower(util.RandomString(16))
-	// 	err := bftClients[0].CreateChannel(channel, true, nil, nil)
-	// 	require.NoError(t, err)
-	// }
+	for i := 0; i < 5; i++ {
+		channel := strings.ToLower(util.RandomString(16))
+		err := bftClients[0].CreateChannel(channel, true, nil, nil)
+		require.NoError(t, err)
+	}
 	time.Sleep(2 * time.Second)
 	var prevChannels []string
 	// Then we will list channels
@@ -145,8 +145,8 @@ func TestBFTEnd(t *testing.T) {
 	for i := range bftOrderers {
 		bftOrderers[i].Stop()
 	}
-	// gopath := os.Getenv("GOPATH")
-	// require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/.bft"))
+	gopath := os.Getenv("GOPATH")
+	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/.bft"))
 }
 
 // initBFTEnvironment will remove old test folders and copy necessary folders
