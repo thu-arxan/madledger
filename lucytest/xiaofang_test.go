@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/otiai10/copy"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,6 +21,25 @@ var (
 	bftOrderers [4]*orderer.Server
 	bftClients  [4]*client.Client
 )
+
+func TestInitEnv(t *testing.T) {
+	require.NoError(t, initBFTEnvironment())
+}
+
+// initBFTEnvironment will remove old test folders and copy necessary folders
+func initBFTEnvironment() error {
+	gopath := os.Getenv("GOPATH")
+	if err := os.RemoveAll(gopath + "/src/madledger/tests/bft"); err != nil {
+		return err
+	}
+	if err := copy.Copy(gopath+"/src/madledger/env/bft/.orderers", gopath+"/src/madledger/tests/bft/orderers"); err != nil {
+		return err
+	}
+	if err := copy.Copy(gopath+"/src/madledger/env/bft/.clients", gopath+"/src/madledger/tests/bft/clients"); err != nil {
+		return err
+	}
+	return nil
+}
 
 func TestBFTRun(t *testing.T) {
 	for i := range bftOrderers {
@@ -55,12 +75,10 @@ func TestBFTLoadClients(t *testing.T) {
 }
 
 func TestBFTCreateChannels(t *testing.T) {
-	var channels []string
 	// client-0 create 4 channels
 	client0 := bftClients[0]
 	for i := 1; i <= 4; i++ {
 		channel := "test" + strconv.Itoa(i)
-		channels = append(channels, channel)
 		err := client0.CreateChannel(channel, true, nil, nil)
 		require.NoError(t, err)
 	}
@@ -69,8 +87,15 @@ func TestBFTCreateChannels(t *testing.T) {
 
 	// then we will check if channels created by client-0 are create successful
 	// query by client-0 and client-1
-	infos, err := client0.ListChannel(false)
-	require.NoError(t, err)
+	require.NoError(t, listChannel())
+}
+
+func listChannel() error {
+	client0 := bftClients[0]
+	infos, err := client0.ListChannel(true)
+	if err != nil {
+		return err
+	}
 	table := cliu.NewTable()
 	table.SetHeader("Name", "System", "BlockSize", "Identity")
 	for _, info := range infos {
@@ -79,23 +104,62 @@ func TestBFTCreateChannels(t *testing.T) {
 	table.Render()
 
 	client1 := bftClients[1]
-	infos, err = client1.ListChannel(false)
-	require.NoError(t, err)
+	infos, err = client1.ListChannel(true)
+	if err != nil {
+		return err
+	}
 	table = cliu.NewTable()
 	table.SetHeader("Name", "System", "BlockSize", "Identity")
 	for _, info := range infos {
 		table.AddRow(info.Name, info.System, info.BlockSize, info.Identity)
 	}
 	table.Render()
+
+	return nil
 }
 
-func getBFTClientPath(node int) string {
-	gopath := os.Getenv("GOPATH")
-	return fmt.Sprintf("%s/src/madledger/env/bft/clients/%d", gopath, node)
-}
+// 关闭orderer 1，关闭期间通过client 0创建test5通道，然后重启orderer 1，查询数据
+func TestNodeRestart(t *testing.T) {
+	/*bftOrderers[1].Stop()
 
-func getBFTClientConfigPath(node int) string {
-	return getBFTClientPath(node) + "/client.yaml"
+	//client 0创建test5通道
+	client0 := bftClients[0]
+	channel := "test5"
+	err := client0.CreateChannel(channel, true, nil, nil)
+	require.NoError(t, err)
+	time.Sleep(2 * time.Second)
+
+	fmt.Println("Restart orderer 1 ...")
+	require.NoError(t, bftOrderers[1].Start())
+	time.Sleep(5 * time.Second)
+
+	require.NoError(t, listChannel())*/
+
+	/*for i := range bftOrderers {
+		require.True(t, util.IsDirSame(getBFTOrdererBlockPath(0), getBFTOrdererBlockPath(i)), fmt.Sprintf("Orderer %d is not same with 0", i))
+	}*/
+
+	bftOrderers[1].Stop()
+	os.RemoveAll(getBFTOrdererDataPath(1))
+
+	//client 0创建test5通道
+	client0 := bftClients[0]
+	channel := "test5"
+	err := client0.CreateChannel(channel, true, nil, nil)
+	require.NoError(t, err)
+	time.Sleep(2 * time.Second)
+
+	fmt.Println("Restart orderer 1 ...")
+	server, err := newBFTOrderer(1)
+	require.NoError(t, err)
+	bftOrderers[1] = server
+	go func(t *testing.T) {
+		require.NoError(t, bftOrderers[1].Start())
+	}(t)
+	time.Sleep(5 * time.Second)
+
+	require.NoError(t, listChannel())
+
 }
 
 func newBFTOrderer(node int) (*orderer.Server, error) {
@@ -110,12 +174,29 @@ func newBFTOrderer(node int) (*orderer.Server, error) {
 	return orderer.NewServer(cfg)
 }
 
-func getBFTOrdererConfigPath(node int) string {
-	gopath := os.Getenv("GOPATH")
-	return fmt.Sprintf("%s/src/madledger/env/bft/orderers/%d/orderer.yaml", gopath, node)
+func getBFTOrdererDataPath(node int) string {
+	return fmt.Sprintf("%s/data", getBFTOrdererPath(node))
 }
 
 func getBFTOrdererPath(node int) string {
 	gopath := os.Getenv("GOPATH")
-	return fmt.Sprintf("%s/src/madledger/env/bft/orderers/%d", gopath, node)
+	return fmt.Sprintf("%s/src/madledger/tests/bft/orderers/%d", gopath, node)
+}
+
+func getBFTOrdererBlockPath(node int) string {
+	return fmt.Sprintf("%s/data/blocks", getBFTOrdererPath(node))
+}
+
+func getBFTOrdererConfigPath(node int) string {
+	gopath := os.Getenv("GOPATH")
+	return fmt.Sprintf("%s/src/madledger/tests/bft/orderers/%d/orderer.yaml", gopath, node)
+}
+
+func getBFTClientPath(node int) string {
+	gopath := os.Getenv("GOPATH")
+	return fmt.Sprintf("%s/src/madledger/tests/bft/clients/%d", gopath, node)
+}
+
+func getBFTClientConfigPath(node int) string {
+	return getBFTClientPath(node) + "/client.yaml"
 }
