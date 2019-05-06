@@ -99,7 +99,7 @@ func (db *DB) Close() error {
 // SetChannelBlockNumber set the block number of channel
 func (db *DB) SetChannelBlockNumber(channelID string, num uint64) {
 	var key = []byte(fmt.Sprintf("number:%s", channelID))
-	data := util.Uint64ToBytes(num + 1)
+	data := util.Uint64ToBytes(num)
 	db.connect.Put(key, data, nil)
 }
 
@@ -110,9 +110,9 @@ func (db *DB) GetChannelBlockNumber(channelID string) uint64 {
 		data, _ := db.connect.Get(key, nil)
 		num, err := util.BytesToUint64(data)
 		if err != nil {
-			return 1
+			return 0
 		}
 		return num
 	}
-	return 1
+	return 0
 }

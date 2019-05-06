@@ -132,7 +132,7 @@ func (g *Glue) Commit() types.ResponseCommit {
 			var num uint64
 			if !util.Contain(g.blocks, channelID) {
 				g.blocks[channelID] = make([]*Block, 0)
-				num = g.db.GetChannelBlockNumber(channelID)
+				num = g.db.GetChannelBlockNumber(channelID) + 1
 			} else {
 				if len(g.blocks[channelID]) != 0 {
 					num = g.blocks[channelID][len(g.blocks[channelID])-1].GetNumber() + 1
