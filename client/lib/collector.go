@@ -3,7 +3,6 @@ package lib
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"madledger/common/util"
 	"sync"
 )
@@ -41,16 +40,16 @@ func (c *Collector) Add(result interface{}, err error) {
 	}
 	if err != nil {
 		c.errors = append(c.errors, err)
-		fmt.Printf("lib/collector/Add: collector add %d error: %s\n", len(c.errors), err)
+		//fmt.Printf("lib/collector/Add: collector add %d error: %s\n", len(c.errors), err)
 	} else {
 		data, _ := json.Marshal(result)
 		s := util.Hex(data)
 		if util.Contain(c.results, s) {
 			c.results[s]++
-			fmt.Printf("lib/collector/Add: collector add %s, now it has %d same results\n", data, c.results[s])
+			//fmt.Printf("lib/collector/Add: collector add %s, now it has %d same results\n", data, c.results[s])
 		} else {
 			c.results[s] = 1
-			fmt.Printf("lib/collector/Add: collector add %s, now it has 1 same results\n", data)
+			//fmt.Printf("lib/collector/Add: collector add %s, now it has 1 same results\n", data)
 		}
 		if c.results[s] >= (c.max/2 + 1) {
 			c.result = result

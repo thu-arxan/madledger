@@ -17,7 +17,7 @@ var (
 	log = logrus.WithFields(logrus.Fields{"app": "peer", "package": "server"})
 )
 
-// Server provide the serve of orderer
+// Server provide the serve of peer
 type Server struct {
 	config         *config.ServerConfig
 	rpcServer      *grpc.Server

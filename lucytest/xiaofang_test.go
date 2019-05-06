@@ -1,15 +1,23 @@
 package lucytest
 
 import (
+	"encoding/hex"
 	"fmt"
+	"github.com/syndtr/goleveldb/leveldb"
+	"io/ioutil"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	cliu "madledger/client/util"
+	comu "madledger/common/util"
+	"madledger/common"
+	"madledger/common/abi"
+	"madledger/core/types"
 	oc "madledger/orderer/config"
 	orderer "madledger/orderer/server"
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -77,22 +85,21 @@ func TestBFTLoadClients(t *testing.T) {
 func TestBFTCreateChannels(t *testing.T) {
 	// client-0 create 4 channels
 	client0 := bftClients[0]
-	for i := 1; i <= 4; i++ {
+	for i := 0; i <= 2; i++ {
 		channel := "test" + strconv.Itoa(i)
 		err := client0.CreateChannel(channel, true, nil, nil)
 		require.NoError(t, err)
 	}
-	//第一次创建时，不需要sleep可以正确运行
-	//time.Sleep(2 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	// then we will check if channels created by client-0 are create successful
-	// query by client-0 and client-1
-	require.NoError(t, listChannel())
+	// query by client-1
+	require.NoError(t,listChannel(1))
 }
 
-func listChannel() error {
-	client0 := bftClients[0]
-	infos, err := client0.ListChannel(true)
+func listChannel(node int) error {
+	client := bftClients[node]
+	infos, err := client.ListChannel(true)
 	if err != nil {
 		return err
 	}
@@ -103,29 +110,17 @@ func listChannel() error {
 	}
 	table.Render()
 
-	client1 := bftClients[1]
-	infos, err = client1.ListChannel(true)
-	if err != nil {
-		return err
-	}
-	table = cliu.NewTable()
-	table.SetHeader("Name", "System", "BlockSize", "Identity")
-	for _, info := range infos {
-		table.AddRow(info.Name, info.System, info.BlockSize, info.Identity)
-	}
-	table.Render()
-
 	return nil
 }
 
-// 关闭orderer 1，关闭期间通过client 0创建test5通道，然后重启orderer 1，查询数据
+// 关闭orderer 1，关闭期间通过client 0创建test3通道，然后重启orderer 1，查询数据
 func TestNodeRestart(t *testing.T) {
 	bftOrderers[1].Stop()
 	os.RemoveAll(getBFTOrdererDataPath(1))
 
-	//client 0创建test5通道
+	//client 0创建test3通道
 	client0 := bftClients[0]
-	channel := "test5"
+	channel := "test3"
 	err := client0.CreateChannel(channel, true, nil, nil)
 	require.NoError(t, err)
 	time.Sleep(2 * time.Second)
@@ -139,22 +134,109 @@ func TestNodeRestart(t *testing.T) {
 	}(t)
 	time.Sleep(10 * time.Second)
 
-	require.NoError(t, listChannel())
+	// query by client 1
+	require.NoError(t, listChannel(1))
 
 }
 
-func TestCreateChannelByOrderer1(t *testing.T) {
-	//client 0创建test5通道
+func TestCreateChannelAfterRestart(t *testing.T) {
+	//client 1创建通道test4
 	client1 := bftClients[1]
-	for i := 6; i < 8; i++ {
-		channel := "test" + strconv.Itoa(i)
-		err := client1.CreateChannel(channel, true, nil, nil)
-		require.NoError(t, err)
-	}
-
+	channel := "test4"
+	err := client1.CreateChannel(channel, true, nil, nil)
+	require.NoError(t, err)
 	time.Sleep(2 * time.Second)
 
-	require.NoError(t, listChannel())
+	// query by client 1
+	require.NoError(t, listChannel(1))
+}
+
+func readCodes(file string) ([]byte, error) {
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+	return hex.DecodeString(string(data))
+}
+
+func TestTendermintDB(t *testing.T) {
+	for i := 0; i < 2; i++ {
+		path := fmt.Sprint(getBFTOrdererPath(i)+"/.tendermint/.glue")
+		db, err := leveldb.OpenFile(path, nil)
+		require.NoError(t, err)
+		iter := db.NewIterator(nil, nil)
+		// 遍历key-value
+		fmt.Println("Get glue db from ",path)
+		for iter.Next() {
+			key := string(iter.Key())
+			value := iter.Value()
+			if strings.HasPrefix(string(key), "number") {
+				number, _ := comu.BytesToUint64(value)
+				fmt.Println(string(key), ", ", number)
+			} else {
+				fmt.Println(string(key), ", ", string(value))
+			}
+		}
+		err = iter.Error()
+		require.NoError(t, err)
+		iter.Release()
+		db.Close()
+	}
+}
+
+func TestCreateTxAfterRestart(t *testing.T) {
+	//client 1创建智能合约
+	contractCodes, err := readCodes(getBFTClientPath(1) + "/MyTest.bin")
+	require.NoError(t, err)
+
+	client := bftClients[1]
+	tx, err := types.NewTx("test4", common.ZeroAddress, contractCodes, client.GetPrivKey())
+	require.NoError(t, err)
+
+	status, err := client.AddTx(tx)
+	require.NoError(t, err)
+
+	// Then print the status
+	table := cliu.NewTable()
+	table.SetHeader("BlockNumber", "BlockIndex", "ContractAddress")
+	if status.Err != "" {
+		table.AddRow(status.BlockNumber, status.BlockIndex, status.Err)
+	} else {
+		table.AddRow(status.BlockNumber, status.BlockIndex, status.ContractAddress)
+	}
+	table.Render()
+}
+
+func TestCallTxAfterRestart(t *testing.T) {
+	//client 1调用智能合约
+	abiPath := fmt.Sprintf(getBFTClientPath(1) + "/MyTest.abi")
+	funcName := "getNum"
+	var inputs []string = make([]string, 0)
+	payloadBytes, err := abi.GetPayloadBytes(abiPath, funcName, inputs)
+	require.NoError(t, err)
+
+	client := bftClients[1]
+	tx, err := types.NewTx("test4", common.HexToAddress("0x0619e2393802cc99e90cf892b92a113f19af5887"), payloadBytes, client.GetPrivKey())
+	require.NoError(t, err)
+
+	status, err := client.AddTx(tx)
+	require.NoError(t, err)
+
+	// Then print the status
+	table := cliu.NewTable()
+	table.SetHeader("BlockNumber", "BlockIndex", "Output")
+	if status.Err != "" {
+		table.AddRow(status.BlockNumber, status.BlockIndex, status.Err)
+	} else {
+		values, err := abi.Unpacker(abiPath, funcName, status.Output)
+		require.NoError(t, err)
+		var output []string
+		for _, value := range values {
+			output = append(output, value.Value)
+		}
+		table.AddRow(status.BlockNumber, status.BlockIndex, output)
+	}
+	table.Render()
 }
 
 func newBFTOrderer(node int) (*orderer.Server, error) {
@@ -195,4 +277,3 @@ func getBFTClientPath(node int) string {
 func getBFTClientConfigPath(node int) string {
 	return getBFTClientPath(node) + "/client.yaml"
 }
-
