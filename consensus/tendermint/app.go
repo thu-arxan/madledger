@@ -25,6 +25,11 @@ type Glue struct {
 
 	hub *event.Hub
 
+	// tendermint block number
+	tbn int64
+	// tendermint block hash
+	tbh []byte
+
 	blocks  map[string][]*Block
 	chans   map[string]*chan consensus.Block
 	dbDir   string
@@ -110,6 +115,7 @@ func (g *Glue) DeliverTx(tx []byte) types.ResponseDeliverTx {
 func (g *Glue) Commit() types.ResponseCommit {
 	g.lock.Lock()
 	defer g.lock.Unlock()
+
 	if len(g.txs) != 0 {
 		var txs = make(map[string][][]byte)
 		for i := range g.txs {
@@ -126,7 +132,7 @@ func (g *Glue) Commit() types.ResponseCommit {
 			var num uint64
 			if !util.Contain(g.blocks, channelID) {
 				g.blocks[channelID] = make([]*Block, 0)
-				num = 1
+				num = g.db.GetChannelBlockNumber(channelID) + 1
 			} else {
 				if len(g.blocks[channelID]) != 0 {
 					num = g.blocks[channelID][len(g.blocks[channelID])-1].GetNumber() + 1

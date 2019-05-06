@@ -3,6 +3,7 @@ package tendermint
 import (
 	"encoding/json"
 	"fmt"
+	"madledger/common/util"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -63,6 +64,7 @@ func (db *DB) AddBlock(block *Block) error {
 		return err
 	}
 	db.connect.Put(key, data, nil)
+	db.SetChannelBlockNumber(block.ChannelID, block.Num)
 	return nil
 }
 
@@ -92,4 +94,25 @@ func (db *DB) Close() error {
 		return db.connect.Close()
 	}
 	return nil
+}
+
+// SetChannelBlockNumber set the block number of channel
+func (db *DB) SetChannelBlockNumber(channelID string, num uint64) {
+	var key = []byte(fmt.Sprintf("number:%s", channelID))
+	data := util.Uint64ToBytes(num)
+	db.connect.Put(key, data, nil)
+}
+
+// GetChannelBlockNumber return the block number of channel
+func (db *DB) GetChannelBlockNumber(channelID string) uint64 {
+	var key = []byte(fmt.Sprintf("number:%s", channelID))
+	if exist, _ := db.connect.Has(key, nil); exist {
+		data, _ := db.connect.Get(key, nil)
+		num, err := util.BytesToUint64(data)
+		if err != nil {
+			return 0
+		}
+		return num
+	}
+	return 0
 }

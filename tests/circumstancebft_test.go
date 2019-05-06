@@ -123,12 +123,19 @@ func TestBFTReCreateChannels(t *testing.T) {
 		require.NoError(t, err)
 	}
 	time.Sleep(2 * time.Second)
+	var prevChannels []string
 	// Then we will list channels
 	for i := range bftClients {
 		infos, err := bftClients[i].ListChannel(false)
 		require.NoError(t, err)
-		// todo: compare infos here
-		fmt.Println(infos)
+		var channels []string
+		for i := range infos {
+			channels = append(channels, infos[i].Name)
+		}
+		if len(prevChannels) != 0 {
+			require.Equal(t, prevChannels, channels)
+		}
+		prevChannels = channels
 	}
 }
 
