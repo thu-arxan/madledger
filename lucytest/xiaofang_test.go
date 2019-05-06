@@ -82,8 +82,8 @@ func TestBFTCreateChannels(t *testing.T) {
 		err := client0.CreateChannel(channel, true, nil, nil)
 		require.NoError(t, err)
 	}
-
-	time.Sleep(2 * time.Second)
+	//第一次创建时，不需要sleep可以正确运行
+	//time.Sleep(2 * time.Second)
 
 	// then we will check if channels created by client-0 are create successful
 	// query by client-0 and client-1
@@ -120,25 +120,6 @@ func listChannel() error {
 
 // 关闭orderer 1，关闭期间通过client 0创建test5通道，然后重启orderer 1，查询数据
 func TestNodeRestart(t *testing.T) {
-	/*bftOrderers[1].Stop()
-
-	//client 0创建test5通道
-	client0 := bftClients[0]
-	channel := "test5"
-	err := client0.CreateChannel(channel, true, nil, nil)
-	require.NoError(t, err)
-	time.Sleep(2 * time.Second)
-
-	fmt.Println("Restart orderer 1 ...")
-	require.NoError(t, bftOrderers[1].Start())
-	time.Sleep(5 * time.Second)
-
-	require.NoError(t, listChannel())*/
-
-	/*for i := range bftOrderers {
-		require.True(t, util.IsDirSame(getBFTOrdererBlockPath(0), getBFTOrdererBlockPath(i)), fmt.Sprintf("Orderer %d is not same with 0", i))
-	}*/
-
 	bftOrderers[1].Stop()
 	os.RemoveAll(getBFTOrdererDataPath(1))
 
@@ -156,10 +137,24 @@ func TestNodeRestart(t *testing.T) {
 	go func(t *testing.T) {
 		require.NoError(t, bftOrderers[1].Start())
 	}(t)
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	require.NoError(t, listChannel())
 
+}
+
+func TestCreateChannelByOrderer1(t *testing.T) {
+	//client 0创建test5通道
+	client1 := bftClients[1]
+	for i := 6; i < 8; i++ {
+		channel := "test" + strconv.Itoa(i)
+		err := client1.CreateChannel(channel, true, nil, nil)
+		require.NoError(t, err)
+	}
+
+	time.Sleep(2 * time.Second)
+
+	require.NoError(t, listChannel())
 }
 
 func newBFTOrderer(node int) (*orderer.Server, error) {
@@ -200,3 +195,4 @@ func getBFTClientPath(node int) string {
 func getBFTClientConfigPath(node int) string {
 	return getBFTClientPath(node) + "/client.yaml"
 }
+

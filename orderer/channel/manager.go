@@ -212,11 +212,14 @@ func (manager *Manager) FetchBlockAsync(num uint64) (*types.Block, error) {
 func (manager *Manager) syncBlock() {
 	var num uint64 = 1
 	for {
-		log.Infof("Get block %d of channel %s from consensus", num, manager.ID)
+		log.Infof("Going to get block %d of channel %s from consensus", num, manager.ID)
 		cb, err := manager.coordinator.Consensus.GetBlock(manager.ID, num, true)
 		if err != nil {
-			fmt.Println(err)
+			log.Infof("Get block %d of channel %s from consensus failed, because %s", num, manager.ID, err.Error())
+			//fmt.Println(err)
 			continue
+		} else {
+			log.Infof("Get block %d of channel %s from consensus", num, manager.ID)
 		}
 		num++
 		manager.cbc <- cb

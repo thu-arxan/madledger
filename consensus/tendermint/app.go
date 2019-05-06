@@ -222,6 +222,7 @@ func (g *Glue) GetBlock(channelID string, num uint64, async bool) (consensus.Blo
 	for i := range g.blocks[channelID] {
 		if g.blocks[channelID][i].GetNumber() == num {
 			defer g.lock.Unlock()
+			log.Infof("consensus/tendermint/app: get block %d from g.blocks[%s]", num, channelID)
 			return g.blocks[channelID][i], nil
 		}
 	}
@@ -229,6 +230,7 @@ func (g *Glue) GetBlock(channelID string, num uint64, async bool) (consensus.Blo
 	// But block is not in blocks does not mean it is not exist
 	block := g.db.GetBlock(channelID, num)
 	if block != nil {
+		log.Infof("consensus/tendermint/app: get block %d from g.db and key is %s", num, channelID)
 		return block, nil
 	}
 
@@ -239,6 +241,7 @@ func (g *Glue) GetBlock(channelID string, num uint64, async bool) (consensus.Blo
 		defer g.lock.Unlock()
 		for i := range g.blocks[channelID] {
 			if g.blocks[channelID][i].GetNumber() == num {
+				log.Infof("consensus/tendermint/app: get block %d from g.blocks[%s] asynchronously", num, channelID)
 				return g.blocks[channelID][i], nil
 			}
 		}
