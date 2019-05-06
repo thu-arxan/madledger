@@ -23,13 +23,7 @@ type Glue struct {
 	th  []byte
 	txs [][]byte
 
-	hub *event.Hub
-
-	// tendermint block number
-	tbn int64
-	// tendermint block hash
-	tbh []byte
-
+	hub     *event.Hub
 	blocks  map[string][]*Block
 	chans   map[string]*chan consensus.Block
 	dbDir   string
