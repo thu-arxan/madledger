@@ -252,15 +252,14 @@ func getBFTPeerPath(node int) string {
 	gopath := os.Getenv("GOPATH")
 	return fmt.Sprintf("%s/src/madledger/tests/bft/peers/%d", gopath, node)
 }
+func getBFTPeerConfigPath(node int) string {
+	gopath := os.Getenv("GOPATH")
+	return fmt.Sprintf("%s/src/madledger/tests/bft/peers/%d/peer.yaml", gopath, node)
+}
 
 func getBFTOrdererConfigPath(node int) string {
 	gopath := os.Getenv("GOPATH")
 	return fmt.Sprintf("%s/src/madledger/tests/bft/orderers/%d/orderer.yaml", gopath, node)
-}
-
-func getBFTPeerConfigPath(node int) string {
-	gopath := os.Getenv("GOPATH")
-	return fmt.Sprintf("%s/src/madledger/tests/bft/peers/%d/peer.yaml", gopath, node)
 }
 
 func getBFTClientPath(node int) string {

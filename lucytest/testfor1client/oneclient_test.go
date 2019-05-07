@@ -12,6 +12,8 @@ import (
 	"madledger/core/types"
 	oc "madledger/orderer/config"
 	orderer "madledger/orderer/server"
+	peer "madledger/peer/server"
+	pc "madledger/peer/config"
 	"os"
 	"regexp"
 	"strconv"
@@ -25,6 +27,7 @@ import (
 var (
 	bftOrderers [4]*orderer.Server
 	bftClients  [4]*client.Client
+	bftPeers    [4]*peer.Server
 )
 
 func TestInitEnv(t *testing.T) {
@@ -41,6 +44,9 @@ func initBFTEnvironment() error {
 		return err
 	}
 	if err := copy.Copy(gopath+"/src/madledger/env/bft/.clients", gopath+"/src/madledger/tests/bft/clients"); err != nil {
+		return err
+	}
+	if err := copy.Copy(gopath+"/src/madledger/env/bft/.peers", gopath+"/src/madledger/tests/bft/peers"); err != nil {
 		return err
 	}
 	return nil
@@ -61,6 +67,36 @@ func TestBFTRun(t *testing.T) {
 		}(t, i)
 	}
 	time.Sleep(5 * time.Second)
+}
+
+func TestBFTPeersStart(t *testing.T) {
+	for i := 0; i < 4; i++ {
+		cfg := getPeerConfig(i)
+		server, err := peer.NewServer(cfg)
+		require.NoError(t, err)
+		bftPeers[i] = server
+	}
+
+	for i := range bftPeers {
+		go func(t *testing.T, i int) {
+			err := bftPeers[i].Start()
+			require.NoError(t, err)
+		}(t, i)
+	}
+
+	time.Sleep(5 * time.Second)
+}
+
+func getPeerConfig(node int) *pc.Config {
+	cfgFilePath := getBFTPeerConfigPath(node)
+	cfg, _ := pc.LoadConfig(cfgFilePath)
+
+	cfg.BlockChain.Path = getBFTPeerPath(node) + "/" + cfg.BlockChain.Path
+	cfg.DB.LevelDB.Dir = getBFTPeerPath(node) + "/" + cfg.DB.LevelDB.Dir
+
+	// then set key
+	cfg.KeyStore.Key = getBFTPeerPath(node) + "/" + cfg.KeyStore.Key
+	return cfg
 }
 
 func TestBFTLoadClients(t *testing.T) {
@@ -186,7 +222,6 @@ func TestBFTCreateTxAfterRestart(t *testing.T) {
 	//client 1创建智能合约
 	contractCodes, err := readCodes(getBFTClientPath(1) + "/MyTest.bin")
 	require.NoError(t, err)
-
 	client := bftClients[1]
 	tx, err := types.NewTx("test4", common.ZeroAddress, contractCodes, client.GetPrivKey())
 	require.NoError(t, err)
@@ -265,6 +300,15 @@ func getBFTOrdererBlockPath(node int) string {
 func getBFTOrdererConfigPath(node int) string {
 	gopath := os.Getenv("GOPATH")
 	return fmt.Sprintf("%s/src/madledger/tests/bft/orderers/%d/orderer.yaml", gopath, node)
+}
+
+func getBFTPeerPath(node int) string {
+	gopath := os.Getenv("GOPATH")
+	return fmt.Sprintf("%s/src/madledger/tests/bft/peers/%d", gopath, node)
+}
+func getBFTPeerConfigPath(node int) string {
+	gopath := os.Getenv("GOPATH")
+	return fmt.Sprintf("%s/src/madledger/tests/bft/peers/%d/peer.yaml", gopath, node)
 }
 
 func getBFTClientPath(node int) string {
