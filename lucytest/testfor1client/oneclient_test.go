@@ -12,8 +12,8 @@ import (
 	"madledger/core/types"
 	oc "madledger/orderer/config"
 	orderer "madledger/orderer/server"
-	peer "madledger/peer/server"
 	pc "madledger/peer/config"
+	peer "madledger/peer/server"
 	"os"
 	"regexp"
 	"strconv"
@@ -192,32 +192,6 @@ func readCodes(file string) ([]byte, error) {
 	return hex.DecodeString(string(data))
 }
 
-/*func TestBFTDB(t *testing.T) {
-	for i := 0; i < 2; i++ {
-		//path := fmt.Sprint(getBFTOrdererPath(i)+"/.tendermint/.glue")
-		path := fmt.Sprintf("/home/hadoop/GOPATH/src/madledger/env/bft/orderers/%d/data/leveldb", i)
-		db, err := leveldb.OpenFile(path, nil)
-		require.NoError(t, err)
-		iter := db.NewIterator(nil, nil)
-		// 遍历key-value
-		fmt.Println("Get glue db from ", path)
-		for iter.Next() {
-			key := string(iter.Key())
-			value := iter.Value()
-			if strings.HasPrefix(string(key), "number") {
-				number, _ := comu.BytesToUint64(value)
-				fmt.Println(string(key), ", ", number)
-			} else {
-				fmt.Println(string(key), ", ", string(value))
-			}
-		}
-		err = iter.Error()
-		require.NoError(t, err)
-		iter.Release()
-		db.Close()
-	}
-}*/
-
 func TestBFTCreateTxAfterRestart(t *testing.T) {
 	//client 1创建智能合约
 	contractCodes, err := readCodes(getBFTClientPath(1) + "/MyTest.bin")
@@ -271,6 +245,33 @@ func TestBFTCallTxAfterRestart(t *testing.T) {
 	}
 	table.Render()
 }
+
+// query db data to check if operations success
+/*func TestBFTDB(t *testing.T) {
+	for i := 0; i < 2; i++ {
+		//path := fmt.Sprint(getBFTOrdererPath(i)+"/.tendermint/.glue")
+		path := fmt.Sprint(getBFTOrdererPath(i) + "/data/leveldb")
+		db, err := leveldb.OpenFile(path, nil)
+		require.NoError(t, err)
+		iter := db.NewIterator(nil, nil)
+		// 遍历key-value
+		fmt.Println("Get orderer db from ", path)
+		for iter.Next() {
+			key := string(iter.Key())
+			value := iter.Value()
+			if strings.HasPrefix(string(key), "number") {
+				number, _ := comu.BytesToUint64(value)
+				fmt.Println(string(key), ", ", number)
+			} else {
+				fmt.Println(string(key), ", ", string(value))
+			}
+		}
+		err = iter.Error()
+		require.NoError(t, err)
+		iter.Release()
+		db.Close()
+	}
+}*/
 
 func newBFTOrderer(node int) (*orderer.Server, error) {
 	cfgPath := getBFTOrdererConfigPath(node)

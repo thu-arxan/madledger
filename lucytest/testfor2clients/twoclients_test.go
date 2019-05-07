@@ -2,7 +2,6 @@ package testfor2clients
 
 import (
 	"fmt"
-	"github.com/syndtr/goleveldb/leveldb"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	cliu "madledger/client/util"
@@ -14,7 +13,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -185,15 +183,16 @@ func listChannel(node int) error {
 	return nil
 }
 
-func TestBFTDB(t *testing.T) {
+// query db data to check if operations success
+/*func TestBFTDB(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		//path := fmt.Sprint(getBFTOrdererPath(i)+"/.tendermint/.glue")
-		path := fmt.Sprintf("/home/hadoop/GOPATH/src/madledger/tests/bft/orderers/%d/data/leveldb", i)
+		path := fmt.Sprint(getBFTOrdererPath(i) + "/data/leveldb")
 		db, err := leveldb.OpenFile(path, nil)
 		require.NoError(t, err)
 		iter := db.NewIterator(nil, nil)
 		// 遍历key-value
-		fmt.Println("Get glue db from ", path)
+		fmt.Println("Get orderer db from ", path)
 		for iter.Next() {
 			key := string(iter.Key())
 			value := iter.Value()
@@ -209,7 +208,7 @@ func TestBFTDB(t *testing.T) {
 		iter.Release()
 		db.Close()
 	}
-}
+}*/
 
 func newBFTOrderer(node int) (*orderer.Server, error) {
 	cfgPath := getBFTOrdererConfigPath(node)
