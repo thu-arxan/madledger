@@ -111,7 +111,7 @@ func listChannel(node int) error {
 }
 
 // 关闭orderer 1，关闭期间通过client 0创建test3通道，然后重启orderer 1，查询数据
-func TestNodeRestart(t *testing.T) {
+func TestBFTNodeRestart(t *testing.T) {
 	bftOrderers[1].Stop()
 	os.RemoveAll(getBFTOrdererDataPath(1))
 
@@ -136,7 +136,7 @@ func TestNodeRestart(t *testing.T) {
 
 }
 
-func TestCreateChannelAfterRestart(t *testing.T) {
+func TestBFTCreateChannelAfterRestart(t *testing.T) {
 	//client 1创建通道test4
 	client1 := bftClients[1]
 	channel := "test4"
@@ -156,7 +156,7 @@ func readCodes(file string) ([]byte, error) {
 	return hex.DecodeString(string(data))
 }
 
-/*func TestTendermintDB(t *testing.T) {
+/*func TestBFTDB(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		//path := fmt.Sprint(getBFTOrdererPath(i)+"/.tendermint/.glue")
 		path := fmt.Sprintf("/home/hadoop/GOPATH/src/madledger/env/bft/orderers/%d/data/leveldb", i)
@@ -182,7 +182,7 @@ func readCodes(file string) ([]byte, error) {
 	}
 }*/
 
-func TestCreateTxAfterRestart(t *testing.T) {
+func TestBFTCreateTxAfterRestart(t *testing.T) {
 	//client 1创建智能合约
 	contractCodes, err := readCodes(getBFTClientPath(1) + "/MyTest.bin")
 	require.NoError(t, err)
@@ -205,7 +205,7 @@ func TestCreateTxAfterRestart(t *testing.T) {
 	table.Render()
 }
 
-func TestCallTxAfterRestart(t *testing.T) {
+func TestBFTCallTxAfterRestart(t *testing.T) {
 	//client 1调用智能合约
 	abiPath := fmt.Sprintf(getBFTClientPath(1) + "/MyTest.abi")
 	funcName := "getNum"

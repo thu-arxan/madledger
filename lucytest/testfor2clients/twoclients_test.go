@@ -9,6 +9,8 @@ import (
 	comu "madledger/common/util"
 	oc "madledger/orderer/config"
 	orderer "madledger/orderer/server"
+	pc "madledger/peer/config"
+	peer "madledger/peer/server"
 	"os"
 	"regexp"
 	"strconv"
@@ -23,6 +25,7 @@ import (
 var (
 	bftOrderers [4]*orderer.Server
 	bftClients  [4]*client.Client
+	bftPeers    [4]*peer.Server
 )
 
 func TestInitEnv(t *testing.T) {
@@ -39,6 +42,9 @@ func initBFTEnvironment() error {
 		return err
 	}
 	if err := copy.Copy(gopath+"/src/madledger/env/bft/.clients", gopath+"/src/madledger/tests/bft/clients"); err != nil {
+		return err
+	}
+	if err := copy.Copy(gopath+"/src/madledger/env/bft/.peers", gopath+"/src/madledger/tests/bft/peers"); err != nil {
 		return err
 	}
 	return nil
@@ -58,6 +64,24 @@ func TestBFTRun(t *testing.T) {
 			require.NoError(t, err)
 		}(t, i)
 	}
+	time.Sleep(5 * time.Second)
+}
+
+func TestBFTPeersStart(t *testing.T) {
+	for i := 0; i < 4; i++ {
+		cfg := getPeerConfig(i)
+		server, err := peer.NewServer(cfg)
+		require.NoError(t, err)
+		bftPeers[i] = server
+	}
+
+	for i := range bftPeers {
+		go func(t *testing.T, i int) {
+			err := bftPeers[i].Start()
+			require.NoError(t, err)
+		}(t, i)
+	}
+
 	time.Sleep(5 * time.Second)
 }
 
@@ -133,8 +157,10 @@ func compareChannels(channels []string) error {
 		}
 
 		for i := range infos {
-			if (infos[i].Name != "_config" && infos[i].Name != "_global") && !comu.Contain(channels, infos[i].Name) {
-				return fmt.Errorf("channel name doesn't exit in channels")
+			if infos[i].Name != "_config" && infos[i].Name != "_global" {
+				if !comu.Contain(channels, infos[i].Name) {
+					return fmt.Errorf("channel name doesn't exit in channels")
+				}
 			}
 		}
 
@@ -159,7 +185,7 @@ func listChannel(node int) error {
 	return nil
 }
 
-func TestTendermintDB(t *testing.T) {
+func TestBFTDB(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		//path := fmt.Sprint(getBFTOrdererPath(i)+"/.tendermint/.glue")
 		path := fmt.Sprintf("/home/hadoop/GOPATH/src/madledger/tests/bft/orderers/%d/data/leveldb", i)
@@ -197,6 +223,18 @@ func newBFTOrderer(node int) (*orderer.Server, error) {
 	return orderer.NewServer(cfg)
 }
 
+func getPeerConfig(node int) *pc.Config {
+	cfgFilePath := getBFTPeerConfigPath(node)
+	cfg, _ := pc.LoadConfig(cfgFilePath)
+
+	cfg.BlockChain.Path = getBFTPeerPath(node) + "/" + cfg.BlockChain.Path
+	cfg.DB.LevelDB.Dir = getBFTPeerPath(node) + "/" + cfg.DB.LevelDB.Dir
+
+	// then set key
+	cfg.KeyStore.Key = getBFTPeerPath(node) + "/" + cfg.KeyStore.Key
+	return cfg
+}
+
 func getBFTOrdererDataPath(node int) string {
 	return fmt.Sprintf("%s/data", getBFTOrdererPath(node))
 }
@@ -210,9 +248,19 @@ func getBFTOrdererBlockPath(node int) string {
 	return fmt.Sprintf("%s/data/blocks", getBFTOrdererPath(node))
 }
 
+func getBFTPeerPath(node int) string {
+	gopath := os.Getenv("GOPATH")
+	return fmt.Sprintf("%s/src/madledger/tests/bft/peers/%d", gopath, node)
+}
+
 func getBFTOrdererConfigPath(node int) string {
 	gopath := os.Getenv("GOPATH")
 	return fmt.Sprintf("%s/src/madledger/tests/bft/orderers/%d/orderer.yaml", gopath, node)
+}
+
+func getBFTPeerConfigPath(node int) string {
+	gopath := os.Getenv("GOPATH")
+	return fmt.Sprintf("%s/src/madledger/tests/bft/peers/%d/peer.yaml", gopath, node)
 }
 
 func getBFTClientPath(node int) string {
