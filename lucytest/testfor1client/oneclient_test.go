@@ -1,14 +1,12 @@
-package lucytest
+package testfor1client
 
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/syndtr/goleveldb/leveldb"
 	"io/ioutil"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	cliu "madledger/client/util"
-	comu "madledger/common/util"
 	"madledger/common"
 	"madledger/common/abi"
 	"madledger/core/types"
@@ -17,7 +15,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -94,7 +91,7 @@ func TestBFTCreateChannels(t *testing.T) {
 
 	// then we will check if channels created by client-0 are create successful
 	// query by client-1
-	require.NoError(t,listChannel(1))
+	require.NoError(t, listChannel(1))
 }
 
 func listChannel(node int) error {
@@ -159,14 +156,15 @@ func readCodes(file string) ([]byte, error) {
 	return hex.DecodeString(string(data))
 }
 
-func TestTendermintDB(t *testing.T) {
+/*func TestTendermintDB(t *testing.T) {
 	for i := 0; i < 2; i++ {
-		path := fmt.Sprint(getBFTOrdererPath(i)+"/.tendermint/.glue")
+		//path := fmt.Sprint(getBFTOrdererPath(i)+"/.tendermint/.glue")
+		path := fmt.Sprintf("/home/hadoop/GOPATH/src/madledger/env/bft/orderers/%d/data/leveldb", i)
 		db, err := leveldb.OpenFile(path, nil)
 		require.NoError(t, err)
 		iter := db.NewIterator(nil, nil)
 		// 遍历key-value
-		fmt.Println("Get glue db from ",path)
+		fmt.Println("Get glue db from ", path)
 		for iter.Next() {
 			key := string(iter.Key())
 			value := iter.Value()
@@ -182,7 +180,7 @@ func TestTendermintDB(t *testing.T) {
 		iter.Release()
 		db.Close()
 	}
-}
+}*/
 
 func TestCreateTxAfterRestart(t *testing.T) {
 	//client 1创建智能合约
