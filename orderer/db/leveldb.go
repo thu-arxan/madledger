@@ -16,7 +16,7 @@ import (
 *  3. Tx: key is combine of []byte(channelID) and []byte(txID), value is []byte("true")
  */
 
-// LevelDB is the implementation of DB on leveldb
+// LevelDB is the implementation of DB on orderer/data/leveldb
 type LevelDB struct {
 	// the dir of data
 	dir     string
@@ -64,6 +64,7 @@ func (db *LevelDB) HasChannel(id string) bool {
 func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
 	var key = getChannelProfileKey(id)
 	if !db.HasChannel(id) {
+		// 更新key为_config的记录，简单记录所有的test通道。 _config,  ["test11","test10","test21","test20"]
 		err := db.addChannel(id)
 		if err != nil {
 			return err
@@ -73,6 +74,7 @@ func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
 	if err != nil {
 		return err
 	}
+	//更新key为_config@id的记录, 具体内容示例_config@test30 ,  {"Public":true,"Dependencies":null,"Members":[],"Admins":[{"PK":"BN2PLBpBd5BrSLfTY7QEBYQT0h6lFvWlZyuAVt3/bfEz1g5QJ2lIEXP2Zk15B6E2MWpA/Q4Yxnl+XjFGObvAKTY=","Name":"admin"}]}
 	err = db.connect.Put(key, data, nil)
 	if err != nil {
 		return err

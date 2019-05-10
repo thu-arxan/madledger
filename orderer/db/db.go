@@ -5,7 +5,7 @@ import (
 	"madledger/core/types"
 )
 
-// DB is the interface of db
+// DB is the interface of db, and it is the implementation of DB on orderer/.tendermint/.glue
 type DB interface {
 	ListChannel() []string
 	HasChannel(id string) bool

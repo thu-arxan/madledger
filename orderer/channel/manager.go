@@ -130,14 +130,11 @@ func (manager *Manager) AddBlock(block *types.Block) error {
 	if err := manager.db.AddBlock(block); err != nil {
 		log.Infof("manager.db.AddBlock error: %s add block %d, %s",
 			manager.ID, block.Header.Number, err.Error())
-		//log.Info("manager.db.AddBlock error: ",manager.ID," add block ",block.Header.Number, ", ", err)
 		return err
 	}
 	if err := manager.cm.AddBlock(block); err != nil {
-		log.Infof("manager.db.AddBlock error: %s add block %d, %s",
+		log.Infof("manager.cm.AddBlock error: %s add block %d, %s",
 			manager.ID, block.Header.Number, err.Error())
-
-		//log.Info("manager.db.AddBlock error: ",manager.ID," add block ",block.Header.Number, ", ", err)
 		return err
 	}
 	// check is there is any need to update local state of orderer

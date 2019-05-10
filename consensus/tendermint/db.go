@@ -63,7 +63,10 @@ func (db *DB) AddBlock(block *Block) error {
 	if err != nil {
 		return err
 	}
-	db.connect.Put(key, data, nil)
+	err = db.connect.Put(key, data, nil)
+	if err != nil {
+		return err
+	}
 	db.SetChannelBlockNumber(block.ChannelID, block.Num)
 	return nil
 }
