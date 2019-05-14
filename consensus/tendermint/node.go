@@ -21,6 +21,7 @@ type Node struct {
 	tn    *node.Node
 	tnDBs map[string]dbm.DB
 	conf  *tc.Config
+	app   abci.Application
 }
 
 // NewNode is the constructor of Node
@@ -36,18 +37,17 @@ func NewNode(cfg *Config, app abci.Application) (*Node, error) {
 	conf.P2P.AddrBookStrict = false
 	conf.P2P.AllowDuplicateIP = true
 	conf.P2P.PersistentPeers = strings.Join(cfg.P2PAddress, ",")
+	// conf.Mempool.Broadcast = false
+	// conf.P2P.Seeds = conf.P2P.PersistentPeers
 
 	n.conf = conf
+
+	n.app = app
 	return n, nil
 }
 
 // Start runs the node
 func (n *Node) Start() error {
-	// tn, err := n.StartTendermintNode()
-	// if err != nil {
-	// 	return err
-	// }
-	// n.tn = tn
 	err := n.StartTendermintNode()
 	if err != nil {
 		return err
@@ -60,6 +60,7 @@ func (n *Node) Start() error {
 func (n *Node) Stop() {
 	if n.tn != nil {
 		n.tn.Stop()
+		n.tn.Wait()
 		for _, db := range n.tnDBs {
 			db.Close()
 		}
@@ -93,7 +94,8 @@ func (n *Node) StartTendermintNode() error {
 	tn, err := node.NewNode(config,
 		privval.LoadOrGenFilePV(newPrivValKey, newPrivValState),
 		nodeKey,
-		proxy.DefaultClientCreator(config.ProxyApp, config.ABCI, config.DBDir()),
+		// proxy.DefaultClientCreator(config.ProxyApp, config.ABCI, config.DBDir()),
+		proxy.NewLocalClientCreator(n.app),
 		node.DefaultGenesisDocProviderFunc(config),
 		NewDBProvide(n),
 		node.DefaultMetricsProvider(config.Instrumentation),

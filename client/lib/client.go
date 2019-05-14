@@ -193,6 +193,7 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 		})
 
 		times := i + 1
+		log.Infof("[%d]Client try to create channel %s", times, channelID)
 		if err != nil {
 			// 继续使用其他ordererClient进行尝试，直到最后一个ordererClient仍然报错
 			if times == len(c.ordererClients) {

@@ -110,6 +110,7 @@ func TestBFTCreateChannels(t *testing.T) {
 				bftOrderers[0].Stop()
 				require.NoError(t, os.RemoveAll(getBFTOrdererDataPath(0)))
 			}(t)
+			time.Sleep(2 * time.Second)
 		}
 		if m == 6 { // restart orderer0
 			go func(t *testing.T) {
@@ -121,6 +122,7 @@ func TestBFTCreateChannels(t *testing.T) {
 				err = bftOrderers[0].Start()
 				require.NoError(t, err)
 			}(t)
+			time.Sleep(2 * time.Second)
 		}
 		// client 0 create channel
 		channel := "test" + strconv.Itoa(m) + "0"
@@ -135,7 +137,7 @@ func TestBFTCreateChannels(t *testing.T) {
 		require.NoError(t, err)
 
 	}
-	time.Sleep(20 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	// then we will check if channels are create successful
 	require.NoError(t, compareChannels(channels))

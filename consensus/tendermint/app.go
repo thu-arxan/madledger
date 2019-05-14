@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/tendermint/tendermint/abci/example/code"
-	"github.com/tendermint/tendermint/abci/server"
 	"github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 )
@@ -64,40 +63,52 @@ func (g *Glue) Start() error {
 		return err
 	}
 	// Start the listener
-	srv, err := server.NewServer(fmt.Sprintf("tcp://0.0.0.0:%d", g.port), "socket", g)
-	if err != nil {
-		return err
-	}
-	g.srv = srv
-	logger := NewLogger()
-	srv.SetLogger(logger)
-	if err := srv.Start(); err != nil {
-		return err
-	}
+	// srv, err := server.NewServer(fmt.Sprintf("tcp://0.0.0.0:%d", g.port), "socket", g)
+	// if err != nil {
+	// 	return err
+	// }
+	// g.srv = srv
+	// logger := NewLogger()
+	// srv.SetLogger(logger)
+	// if err := srv.Start(); err != nil {
+	// 	return err
+	// }
+	// time.Sleep(500 * time.Millisecond)
 	log.Info("Start glue...")
 
 	// Wait forever
-	cmn.TrapSignal(logger, func() {
-		// Cleanup
-		srv.Stop()
-	})
+	// cmn.TrapSignal(logger, func() {
+	// 	// Cleanup
+	// 	log.Infof("[%d]Receive stop signal", g.port)
+	// 	srv.Stop()
+	// })
 	return nil
 }
 
 // Stop stop the glue service
 // TODO: This way may be too violent
 func (g *Glue) Stop() {
-	g.srv.Stop()
+	// log.Infof("[%d]Begin to stop the glue", g.port)
+	// g.srv.Stop()
+	// log.Info("stop the srv")
+	// ch := g.srv.Quit()
+	// <-ch
+	// log.Info("Recevie srv stop signal")
 	g.db.Close()
+	log.Info("Succeed to stop the glue")
 }
 
 // CheckTx always return OK
 func (g *Glue) CheckTx(tx []byte) types.ResponseCheckTx {
+	t, _ := BytesToTx(tx)
+	log.Infof("[%d]Check Tx %s", g.port, string(t.Data))
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
 // DeliverTx add tx into txs and return OK
 func (g *Glue) DeliverTx(tx []byte) types.ResponseDeliverTx {
+	t, _ := BytesToTx(tx)
+	log.Infof("[%d]Deliever Tx %s", g.port, string(t.Data))
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
@@ -107,6 +118,7 @@ func (g *Glue) DeliverTx(tx []byte) types.ResponseDeliverTx {
 
 // Commit will generate a block and init the txs
 func (g *Glue) Commit() types.ResponseCommit {
+	log.Infof("[%d]Commit at block %d", g.port, g.tn)
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
@@ -143,7 +155,7 @@ func (g *Glue) Commit() types.ResponseCommit {
 			g.hub.Done(fmt.Sprintf("%s:%d", channelID, num), nil)
 			// todo: if we haven't set sync channel, here will lost the block
 			go func(channelID string) {
-				log.Infof("Send block of channel %s", channelID)
+				log.Infof("[%d]Send block of channel %s:%d", g.port, channelID, block.GetNumber())
 				if util.Contain(g.chans, channelID) {
 					(*g.chans[channelID]) <- block
 				}
@@ -154,11 +166,14 @@ func (g *Glue) Commit() types.ResponseCommit {
 
 	g.db.SetHeight(g.tn)
 	g.db.SetHash(g.th)
+
+	log.Infof("[%d]Commit at block %d done", g.port, g.tn)
 	return types.ResponseCommit{}
 }
 
 // BeginBlock set height and hash
 func (g *Glue) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock {
+	log.Infof("[%d]Begin block %d", g.port, req.Header.Height)
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
@@ -169,14 +184,17 @@ func (g *Glue) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock 
 
 // EndBlock is not support validator updates now
 func (g *Glue) EndBlock(req types.RequestEndBlock) types.ResponseEndBlock {
+	log.Infof("[%d]End block %d", g.port, g.tn)
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
+	log.Infof("[%d]End block %d done", g.port, g.tn)
 	return types.ResponseEndBlock{}
 }
 
 // Info is used to avoid load all blocks
 func (g *Glue) Info(req types.RequestInfo) types.ResponseInfo {
+	log.Infof("[%d]Info", g.port)
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
@@ -282,5 +300,6 @@ func (t *Tx) Bytes() []byte {
 
 // AddTx add a tx
 func (g *Glue) AddTx(channelID string, tx []byte) error {
+	log.Infof("[%d]Channel %s add tx %s", g.port, channelID, string(tx))
 	return g.client.AddTx(NewTx(channelID, tx).Bytes())
 }

@@ -246,6 +246,16 @@ func TestBFTCallTxAfterRestart(t *testing.T) {
 	table.Render()
 }
 
+func TestBFTEnd(t *testing.T) {
+	for i := range bftPeers {
+		bftPeers[i].Stop()
+	}
+
+	for i := range bftOrderers {
+		bftOrderers[i].Stop()
+	}
+}
+
 // query db data to check if operations success
 /*func TestBFTDB(t *testing.T) {
 	for i := 0; i < 2; i++ {
