@@ -81,7 +81,11 @@ func (c *Coordinator) Start() error {
 	go c.CM.Start()
 	time.Sleep(100 * time.Millisecond)
 	for _, channelManager := range c.Managers {
-		go channelManager.Start()
+		// 开启manager之前，应该判断manager的init是否为true
+		if ! channelManager.init {
+			log.Infof("coordinator/Start: start channel %s", channelManager.ID)
+			go channelManager.Start()
+		}
 	}
 	time.Sleep(10 * time.Millisecond)
 	return nil
@@ -204,7 +208,7 @@ func (c *Coordinator) createChannel(tx *types.Tx) error {
 
 	c.db.WatchChannel(channelID)
 
-	return err
+	return nil
 }
 
 // getChannelManager return the manager of the channel
@@ -299,6 +303,7 @@ func (c *Coordinator) loadUserChannel() error {
 				return err
 			}
 			c.Managers[channelID] = manager
+			log.Infof("loadUserChannel: load channel %s from leveldb", channelID)
 		}
 	}
 	return nil

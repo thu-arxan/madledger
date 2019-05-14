@@ -17,7 +17,8 @@ func (manager *Manager) AddConfigBlock(block *types.Block) error {
 		var payload cc.Payload
 		json.Unmarshal(tx.Data.Payload, &payload)
 		var channelID = payload.ChannelID
-		// This is a create channel tx
+		// This is a create channel tx,从leveldb中查询是否已经存在channelID
+		// 这里并没有对channelID已经存在做出响应,而是在coordinator的createChannel做出响应
 		if !manager.db.HasChannel(channelID) {
 			// then start the consensus
 			err := manager.coordinator.Consensus.AddChannel(channelID, consensus.DefaultConfig())
@@ -34,10 +35,13 @@ func (manager *Manager) AddConfigBlock(block *types.Block) error {
 			}
 			// then start the channel
 			go func() {
+				log.Infof("system/AddConfigBlock: start channel %s", channelID)
 				channel.Start()
 			}()
+			// 更新coordinator.Managers(map类型）
 			manager.coordinator.Managers[channelID] = channel
 		}
+		// 更新leveldb
 		err := manager.db.UpdateChannel(channelID, payload.Profile)
 		if err != nil {
 			return err

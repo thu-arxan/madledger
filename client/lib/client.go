@@ -187,13 +187,13 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload, c.GetPrivKey())
 	pbTx, _ := pb.NewTx(typesTx)
 
+	var times int
 	for i, ordererClient := range c.ordererClients {
+		//fmt.Printf("Going to create channel %s by ordererClient[%d]\n", channelID, i)
 		_, err = ordererClient.CreateChannel(context.Background(), &pb.CreateChannelRequest{
 			Tx: pbTx,
 		})
-
-		times := i + 1
-		log.Infof("[%d]Client try to create channel %s", times, channelID)
+		times = i + 1
 		if err != nil {
 			// 继续使用其他ordererClient进行尝试，直到最后一个ordererClient仍然报错
 			if times == len(c.ordererClients) {
@@ -209,6 +209,7 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 		}
 	}
 
+	//fmt.Printf("orderer number: %d, try %d times to create chennel %s now return\n", len(c.ordererClients), times, channelID)
 	return nil
 }
 

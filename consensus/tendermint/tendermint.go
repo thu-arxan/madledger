@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"madledger/consensus"
 	"sync"
-	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -51,10 +50,14 @@ func (c *Consensus) Start() error {
 	defer c.lock.Unlock()
 
 	log.Info("Trying to start consensus")
-	go c.app.Start()
-	time.Sleep(200 * time.Millisecond)
-	go c.node.Start()
-	time.Sleep(300 * time.Millisecond)
+	err := c.app.Start()
+	if err != nil {
+		return err
+	}
+	err = c.node.Start()
+	if err != nil {
+		return err
+	}
 	log.Info("Start consensus...")
 	c.status = consensus.Started
 
