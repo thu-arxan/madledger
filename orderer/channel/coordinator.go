@@ -208,7 +208,7 @@ func (c *Coordinator) createChannel(tx *types.Tx) error {
 
 	c.db.WatchChannel(channelID)
 
-	return err
+	return nil
 }
 
 // getChannelManager return the manager of the channel

@@ -51,8 +51,14 @@ func (c *Consensus) Start() error {
 	defer c.lock.Unlock()
 
 	log.Info("Trying to start consensus")
-	c.app.Start()
-	c.node.Start()
+	err := c.app.Start()
+	if err != nil {
+		return err
+	}
+	err = c.node.Start()
+	if err != nil {
+		return err
+	}
 	log.Info("Start consensus...")
 	c.status = consensus.Started
 

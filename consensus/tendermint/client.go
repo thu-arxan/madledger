@@ -7,7 +7,8 @@ import (
 
 // Client contain the rpcclient of tendermint
 type Client struct {
-	tc *rc.HTTP
+	tc   *rc.HTTP
+	port int
 }
 
 // NewClient is the constructor of Client
@@ -15,7 +16,8 @@ func NewClient(port int) (*Client, error) {
 	client := rc.NewHTTP(fmt.Sprintf("tcp://0.0.0.0:%d", port), "/websocket")
 
 	return &Client{
-		tc: client,
+		tc:   client,
+		port: port,
 	}, nil
 }
 
@@ -26,8 +28,10 @@ func (c *Client) AddTx(tx []byte) error {
 	_, err := c.tc.BroadcastTxSync(tx)
 	//broadcast_tx_sync: Response error: RPC error -32603 - Internal error: EOF
 	if err != nil && err.Error() != "broadcast_tx_sync: Response error: RPC error -32603 - Internal error: Tx already exists in cache" {
-		log.Infof("AddTx meets an error: %s\n", err)
+		log.Infof("AddTx meets an error: %s, rpc port: %d, tx %s", err, c.port, string(tx))
+		return err
 	}
+
 
 	return nil
 }

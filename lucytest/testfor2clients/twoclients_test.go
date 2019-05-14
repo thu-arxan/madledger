@@ -3,13 +3,10 @@ package testfor2clients
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/syndtr/goleveldb/leveldb"
 	"io/ioutil"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
-	"madledger/common"
 	comu "madledger/common/util"
-	"madledger/core/types"
 	oc "madledger/orderer/config"
 	orderer "madledger/orderer/server"
 	pc "madledger/peer/config"
@@ -17,7 +14,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -67,7 +63,7 @@ func TestBFTRun(t *testing.T) {
 			require.NoError(t, err)
 		}(t, i)
 	}
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 }
 
 func TestBFTPeersStart(t *testing.T) {
@@ -120,6 +116,7 @@ func TestBFTCreateChannels(t *testing.T) {
 	for m := 1; m <= 8; m++ {
 		if m == 4 { // stop orderer0
 			go func(t *testing.T) {
+				fmt.Println("Start to stop orderer 0")
 				bftOrderers[0].Stop()
 				require.NoError(t, os.RemoveAll(getBFTOrdererDataPath(0)))
 			}(t)
@@ -138,12 +135,14 @@ func TestBFTCreateChannels(t *testing.T) {
 		// client 0 create channel
 		channel := "test" + strconv.Itoa(m) + "0"
 		channels = append(channels, channel)
+		fmt.Printf("Creat channel %s\n", channel)
 		err := client0.CreateChannel(channel, true, nil, nil)
 		require.NoError(t, err)
 
 		// client 1 create channel
 		channel = "test" + strconv.Itoa(m) + "1"
 		channels = append(channels, channel)
+		fmt.Printf("Creat channel %s\n", channel)
 		err = client1.CreateChannel(channel, true, nil, nil)
 		require.NoError(t, err)
 
@@ -154,12 +153,13 @@ func TestBFTCreateChannels(t *testing.T) {
 	require.NoError(t, compareChannels(channels))
 }
 
-func TestBFTCreateTxAfterRestart(t *testing.T) {
+/*func TestBFTCreateTx(t *testing.T) {
 	client0 := bftClients[0]
 	client1 := bftClients[1]
 	for m := 1; m <= 6; m++ {
 		if m == 3 { // stop orderer0
 			go func(t *testing.T) {
+				fmt.Println("Start to stop orderer 0")
 				bftOrderers[0].Stop()
 				require.NoError(t, os.RemoveAll(getBFTOrdererDataPath(0)))
 			}(t)
@@ -179,6 +179,7 @@ func TestBFTCreateTxAfterRestart(t *testing.T) {
 		contractCodes, err := readCodes(getBFTClientPath(1) + "/MyTest.bin")
 		require.NoError(t, err)
 		channel := "test" + strconv.Itoa(m) + "0"
+		fmt.Printf("Creat contract %d on channel %s\n", m, channel)
 		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, client0.GetPrivKey())
 		require.NoError(t, err)
 
@@ -189,6 +190,7 @@ func TestBFTCreateTxAfterRestart(t *testing.T) {
 		contractCodes, err = readCodes(getBFTClientPath(1) + "/MyTest.bin")
 		require.NoError(t, err)
 		channel = "test" + strconv.Itoa(m) + "1"
+		fmt.Printf("Creat contract %d on channel %s\n", m, channel)
 		tx, err = types.NewTx(channel, common.ZeroAddress, contractCodes, client1.GetPrivKey())
 		require.NoError(t, err)
 
@@ -196,7 +198,7 @@ func TestBFTCreateTxAfterRestart(t *testing.T) {
 		require.NoError(t, err)
 	}
 }
-
+*/
 func compareChannels(channels []string) error {
 	lenChannels := len(channels) + 2
 	for i := 0; i < 2; i++ {
@@ -224,7 +226,7 @@ func compareChannels(channels []string) error {
 }
 
 // query db data to check if operations success
-func TestBFTDB(t *testing.T) {
+/*func TestBFTDB(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		//path := fmt.Sprint(getBFTOrdererPath(i)+"/.tendermint/.glue")
 		path := fmt.Sprintf("/home/hadoop/GOPATH/src/madledger/env/bft/orderers/%d/data/leveldb", i)
@@ -249,7 +251,7 @@ func TestBFTDB(t *testing.T) {
 		iter.Release()
 		db.Close()
 	}
-}
+}*/
 
 func newBFTOrderer(node int) (*orderer.Server, error) {
 	cfgPath := getBFTOrdererConfigPath(node)

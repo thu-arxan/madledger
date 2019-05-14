@@ -189,10 +189,10 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 
 	var times int
 	for i, ordererClient := range c.ordererClients {
+		//fmt.Printf("Going to create channel %s by ordererClient[%d]\n", channelID, i)
 		_, err = ordererClient.CreateChannel(context.Background(), &pb.CreateChannelRequest{
 			Tx: pbTx,
 		})
-
 		times = i + 1
 		if err != nil {
 			// 继续使用其他ordererClient进行尝试，直到最后一个ordererClient仍然报错

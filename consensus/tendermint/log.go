@@ -25,12 +25,14 @@ func (l *Logger) Debug(msg string, keyvals ...interface{}) {
 
 // Info is the implementation of interface
 func (l *Logger) Info(msg string, keyvals ...interface{}) {
-	// l.logger.Info(msg, keyvals)
+	//l.logger.Info(msg, "info", keyvals)
+	//l.logger.Info(msg, keyvals)
 }
 
 // Error is the implementation of interface
 func (l *Logger) Error(msg string, keyvals ...interface{}) {
-	// l.logger.Error(msg, keyvals)
+	l.logger.Error(msg, "err", keyvals)
+	//l.logger.Error(msg, keyvals)
 }
 
 // With is the implementation of interface
