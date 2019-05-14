@@ -9,23 +9,27 @@ import (
 	cliu "madledger/client/util"
 	"madledger/common"
 	"madledger/common/abi"
+	"madledger/common/util"
 	"madledger/core/types"
 	oc "madledger/orderer/config"
 	orderer "madledger/orderer/server"
 	pc "madledger/peer/config"
 	peer "madledger/peer/server"
 	"os"
+	"os/exec"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/otiai10/copy"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 )
 
 var (
-	bftOrderers [4]*orderer.Server
+	bftOrderers [4]string
 	bftClients  [4]*client.Client
 	bftPeers    [4]*peer.Server
 )
@@ -36,6 +40,12 @@ func TestInitEnv(t *testing.T) {
 
 // initBFTEnvironment will remove old test folders and copy necessary folders
 func initBFTEnvironment() error {
+	// kill all Orderers
+	pids := getOrderersPid()
+	for _, pid := range pids {
+		stopOrderer(pid)
+	}
+
 	gopath := os.Getenv("GOPATH")
 	if err := os.RemoveAll(gopath + "/src/madledger/tests/bft"); err != nil {
 		return err
@@ -49,24 +59,22 @@ func initBFTEnvironment() error {
 	if err := copy.Copy(gopath+"/src/madledger/env/bft/.peers", gopath+"/src/madledger/tests/bft/peers"); err != nil {
 		return err
 	}
+
+	for i := range bftOrderers {
+		if err := absBFTOrdererConfig(i); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
-func TestBFTRun(t *testing.T) {
-	for i := range bftOrderers {
-		server, err := newBFTOrderer(i)
-		require.NoError(t, err)
-		bftOrderers[i] = server
-	}
-
+func TestBFTOrdererStart(t *testing.T) {
 	// then we can run orderers
 	for i := range bftOrderers {
-		go func(t *testing.T, i int) {
-			err := bftOrderers[i].Start()
-			require.NoError(t, err)
-		}(t, i)
+		pid := startOrderer(i)
+		bftOrderers[i] = pid
 	}
-	time.Sleep(5 * time.Second)
 }
 
 func TestBFTPeersStart(t *testing.T) {
@@ -148,7 +156,7 @@ func listChannel(node int) error {
 
 // 关闭orderer 1，关闭期间通过client 0创建test3通道，然后重启orderer 1，查询数据
 func TestBFTNodeRestart(t *testing.T) {
-	bftOrderers[1].Stop()
+	stopOrderer(bftOrderers[1])
 	os.RemoveAll(getBFTOrdererDataPath(1))
 
 	//client 0创建test3通道
@@ -159,13 +167,8 @@ func TestBFTNodeRestart(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	fmt.Println("Restart orderer 1 ...")
-	server, err := newBFTOrderer(1)
-	require.NoError(t, err)
-	bftOrderers[1] = server
-	go func(t *testing.T) {
-		require.NoError(t, bftOrderers[1].Start())
-	}(t)
-	time.Sleep(10 * time.Second)
+	bftOrderers[1] = startOrderer(1)
+	time.Sleep(2 * time.Second)
 
 	// query by client 1
 	require.NoError(t, listChannel(1))
@@ -247,41 +250,70 @@ func TestBFTCallTxAfterRestart(t *testing.T) {
 }
 
 func TestBFTEnd(t *testing.T) {
-	for i := range bftPeers {
-		bftPeers[i].Stop()
+	for _, pid := range bftOrderers {
+		stopOrderer(pid)
 	}
-
-	for i := range bftOrderers {
-		bftOrderers[i].Stop()
-	}
+	gopath := os.Getenv("GOPATH")
+	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/bft"))
 }
 
-// query db data to check if operations success
-/*func TestBFTDB(t *testing.T) {
-	for i := 0; i < 2; i++ {
-		//path := fmt.Sprint(getBFTOrdererPath(i)+"/.tendermint/.glue")
-		path := fmt.Sprint(getBFTOrdererPath(i) + "/data/leveldb")
-		db, err := leveldb.OpenFile(path, nil)
-		require.NoError(t, err)
-		iter := db.NewIterator(nil, nil)
-		// 遍历key-value
-		fmt.Println("Get orderer db from ", path)
-		for iter.Next() {
-			key := string(iter.Key())
-			value := iter.Value()
-			if strings.HasPrefix(string(key), "number") {
-				number, _ := comu.BytesToUint64(value)
-				fmt.Println(string(key), ", ", number)
-			} else {
-				fmt.Println(string(key), ", ", string(value))
+func absBFTOrdererConfig(node int) error {
+	cfgPath := getBFTOrdererConfigPath(node)
+	cfg, err := oc.LoadConfig(cfgPath)
+	if err != nil {
+		return err
+	}
+	cfg.BlockChain.Path = getBFTOrdererPath(node) + "/" + cfg.BlockChain.Path
+	cfg.DB.LevelDB.Path = getBFTOrdererPath(node) + "/" + cfg.DB.LevelDB.Path
+	cfg.Consensus.Tendermint.Path = getBFTOrdererPath(node) + "/" + cfg.Consensus.Tendermint.Path
+
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(cfgPath, data, os.ModePerm)
+}
+
+func getOrderersPid() []string {
+	cmd := exec.Command("/bin/sh", "-c", "pidof orderer")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil
+	}
+
+	pids := strings.Split(string(output), " ")
+	return pids
+}
+
+// stopOrderer stop an orderer
+func stopOrderer(pid string) {
+	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("kill -TERM %s", pid))
+	cmd.Output()
+}
+
+// startOrderer run orderer and return pid
+func startOrderer(node int) string {
+	before := getOrderersPid()
+	go func() {
+		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("orderer start -c %s", getBFTOrdererConfigPath(node)))
+		_, err := cmd.Output()
+		if err != nil {
+			panic("Run orderer failed")
+		}
+	}()
+
+	for {
+		after := getOrderersPid()
+		if len(after) != len(before) {
+			for _, pid := range after {
+				if !util.Contain(before, pid) {
+					return pid
+				}
 			}
 		}
-		err = iter.Error()
-		require.NoError(t, err)
-		iter.Release()
-		db.Close()
+		time.Sleep(1 * time.Second)
 	}
-}*/
+}
 
 func newBFTOrderer(node int) (*orderer.Server, error) {
 	cfgPath := getBFTOrdererConfigPath(node)
