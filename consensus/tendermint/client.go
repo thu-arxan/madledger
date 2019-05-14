@@ -29,6 +29,9 @@ func NewClient(port int) (*Client, error) {
 func (c *Client) AddTx(tx []byte) error {
 	t, _ := BytesToTx(tx)
 	log.Infof("[%d]Here client add tx %s", c.port, string(t.Data))
+	defer func() {
+		log.Infof("[%d]Done client add tx %s", c.port, string(t.Data))
+	}()
 	_, err := c.tc.BroadcastTxSync(tx)
 	//broadcast_tx_sync: Response error: RPC error -32603 - Internal error: EOF
 	if err != nil && err.Error() != "broadcast_tx_sync: Response error: RPC error -32603 - Internal error: Tx already exists in cache" {

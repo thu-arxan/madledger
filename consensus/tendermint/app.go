@@ -62,38 +62,14 @@ func (g *Glue) Start() error {
 	if err != nil {
 		return err
 	}
-	// Start the listener
-	// srv, err := server.NewServer(fmt.Sprintf("tcp://0.0.0.0:%d", g.port), "socket", g)
-	// if err != nil {
-	// 	return err
-	// }
-	// g.srv = srv
-	// logger := NewLogger()
-	// srv.SetLogger(logger)
-	// if err := srv.Start(); err != nil {
-	// 	return err
-	// }
-	// time.Sleep(500 * time.Millisecond)
 	log.Info("Start glue...")
 
-	// Wait forever
-	// cmn.TrapSignal(logger, func() {
-	// 	// Cleanup
-	// 	log.Infof("[%d]Receive stop signal", g.port)
-	// 	srv.Stop()
-	// })
 	return nil
 }
 
 // Stop stop the glue service
 // TODO: This way may be too violent
 func (g *Glue) Stop() {
-	// log.Infof("[%d]Begin to stop the glue", g.port)
-	// g.srv.Stop()
-	// log.Info("stop the srv")
-	// ch := g.srv.Quit()
-	// <-ch
-	// log.Info("Recevie srv stop signal")
 	g.db.Close()
 	log.Info("Succeed to stop the glue")
 }
@@ -101,6 +77,7 @@ func (g *Glue) Stop() {
 // CheckTx always return OK
 func (g *Glue) CheckTx(tx []byte) types.ResponseCheckTx {
 	t, _ := BytesToTx(tx)
+
 	log.Infof("[%d]Check Tx %s", g.port, string(t.Data))
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }

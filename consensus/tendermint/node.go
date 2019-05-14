@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	tc "github.com/tendermint/tendermint/config"
@@ -37,6 +38,8 @@ func NewNode(cfg *Config, app abci.Application) (*Node, error) {
 	conf.P2P.AddrBookStrict = false
 	conf.P2P.AllowDuplicateIP = true
 	conf.P2P.PersistentPeers = strings.Join(cfg.P2PAddress, ",")
+	// conf.Mempool.Size = 0
+	// conf.Mempool.CacheSize = 0
 	// conf.Mempool.Broadcast = false
 	// conf.P2P.Seeds = conf.P2P.PersistentPeers
 
@@ -61,6 +64,7 @@ func (n *Node) Stop() {
 	if n.tn != nil {
 		n.tn.Stop()
 		n.tn.Wait()
+		time.Sleep(1 * time.Second)
 		for _, db := range n.tnDBs {
 			db.Close()
 		}

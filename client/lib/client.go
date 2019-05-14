@@ -251,10 +251,10 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 			})
 			if err != nil {
 				collector.Add(nil, err)
-				//fmt.Printf("lib/client/AddTx: peerClient[%d] failed to get tx status because %s\n", i, err)
+				fmt.Printf("lib/client/AddTx: peerClient[%d] failed to get tx status because %s\n", i, err)
 			} else {
 				collector.Add(status, nil)
-				//fmt.Printf("lib/client/AddTx: peerClient[%d] success to get tx status\n", i)
+				fmt.Printf("lib/client/AddTx: peerClient[%d] success to get tx status\n", i)
 			}
 		}(i)
 	}
