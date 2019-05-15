@@ -22,7 +22,7 @@ type Server struct {
 	config         *config.ServerConfig
 	rpcServer      *grpc.Server
 	ChannelManager *ChannelManager
-	ordererClient  *orderer.Client
+	ordererClients  []*orderer.Client
 }
 
 // NewServer is the constructor of server
@@ -40,14 +40,19 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 	// load orderer config
-	ordererCfg, err := cfg.GetOrdererConfig()
+	ordererClients,err := getOrdererClients(cfg)
+	if err != nil {
+		return nil, err
+	}
+	/*ordererCfg, err := cfg.GetOrdererConfig()
 	if err != nil {
 		return nil, err
 	}
 	ordererClient, err := orderer.NewClient(ordererCfg.Address[0])
 	if err != nil {
 		return nil, err
-	}
+	}*/
+
 	// load chain config
 	chainCfg, err := cfg.GetBlockChainConfig()
 	if err != nil {
@@ -58,14 +63,35 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	channelManager, err := NewChannelManager(dbCfg.LevelDB.Dir, identity, chainCfg, ordererClient)
+	channelManager, err := NewChannelManager(dbCfg.LevelDB.Dir, identity, chainCfg, ordererClients[0])
 	if err != nil {
 		return nil, err
 	}
 	server.ChannelManager = channelManager
-	server.ordererClient = ordererClient
+	server.ordererClients = ordererClients
+	if err != nil {
+		return nil, err
+	}
 
 	return server, nil
+}
+
+// 获取ordererClient数组
+func getOrdererClients(cfg *config.Config) ([]*orderer.Client, error) {
+	var clients []*orderer.Client
+	// load orderer config
+	ordererCfg, err := cfg.GetOrdererConfig()
+	if err != nil {
+		return nil, err
+	}
+	for i := range ordererCfg.Address {
+		clients[i], err = orderer.NewClient(ordererCfg.Address[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return clients, nil
 }
 
 // Start starts the server

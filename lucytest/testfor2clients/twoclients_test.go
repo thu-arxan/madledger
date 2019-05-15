@@ -128,14 +128,14 @@ func TestBFTCreateChannels(t *testing.T) {
 		// client 0 create channel
 		channel := "test" + strconv.Itoa(m) + "0"
 		channels = append(channels, channel)
-		fmt.Printf("Create channel %s\n", channel)
+		fmt.Printf("Create channel %s ...\n", channel)
 		err := client0.CreateChannel(channel, true, nil, nil)
 		require.NoError(t, err)
 
 		// client 1 create channel
 		channel = "test" + strconv.Itoa(m) + "1"
 		channels = append(channels, channel)
-		fmt.Printf("Create channel %s\n", channel)
+		fmt.Printf("Create channel %s ...\n", channel)
 		err = client1.CreateChannel(channel, true, nil, nil)
 		require.NoError(t, err)
 
@@ -162,7 +162,7 @@ func TestBFTCreateTx(t *testing.T) {
 		contractCodes, err := readCodes(getBFTClientPath(1) + "/MyTest.bin")
 		require.NoError(t, err)
 		channel := "test" + strconv.Itoa(m) + "0"
-		fmt.Printf("Create contract %d on channel %s\n", m, channel)
+		fmt.Printf("Create contract %d on channel %s ...\n", m, channel)
 		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, client0.GetPrivKey())
 		require.NoError(t, err)
 
@@ -173,7 +173,7 @@ func TestBFTCreateTx(t *testing.T) {
 		contractCodes, err = readCodes(getBFTClientPath(1) + "/MyTest.bin")
 		require.NoError(t, err)
 		channel = "test" + strconv.Itoa(m) + "1"
-		fmt.Printf("Create contract %d on channel %s\n", m, channel)
+		fmt.Printf("Create contract %d on channel %s ...\n", m, channel)
 		tx, err = types.NewTx(channel, common.ZeroAddress, contractCodes, client1.GetPrivKey())
 		require.NoError(t, err)
 

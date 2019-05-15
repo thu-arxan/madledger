@@ -25,7 +25,6 @@ var (
 
 // Client is the Client to communicate with orderer
 type Client struct {
-	//ordererClient pb.OrdererClient
 	ordererClients []pb.OrdererClient
 	peerClients    []pb.PeerClient
 	privKey        crypto.PrivateKey
@@ -48,7 +47,6 @@ func NewClientFromConfig(cfg *config.Config) (*Client, error) {
 		return nil, err
 	}
 	// get clients
-	//ordererClient, err := getOrdererClient(cfg)
 	ordererClients, err := getOrdererClients(cfg)
 	if err != nil {
 		return nil, err
@@ -59,20 +57,10 @@ func NewClientFromConfig(cfg *config.Config) (*Client, error) {
 	}
 
 	return &Client{
-		//ordererClient: ordererClient,
 		ordererClients: ordererClients,
 		peerClients:    peerClients,
 		privKey:        keyStore.Keys[0],
 	}, nil
-}
-
-func getOrdererClient(cfg *config.Config) (pb.OrdererClient, error) {
-	conn, err := grpc.Dial(cfg.Orderer.Address[0], grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
-	if err != nil {
-		return nil, err
-	}
-	ordererClient := pb.NewOrdererClient(conn)
-	return ordererClient, nil
 }
 
 // 获取ordererClient数组
@@ -244,6 +232,7 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 	collector := NewCollector(len(c.peerClients))
 	for i := range c.peerClients {
 		go func(i int) {
+			fmt.Printf("lib/client/AddTx: going to get tx status from peerClient[%d]\n", i)
 			status, err := c.peerClients[i].GetTxStatus(context.Background(), &pb.GetTxStatusRequest{
 				ChannelID: tx.Data.ChannelID,
 				TxID:      tx.ID,
