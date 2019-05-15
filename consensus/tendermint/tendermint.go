@@ -75,8 +75,6 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	fmt.Printf("[%d]Add tx\n", c.app.port)
-
 	if c.status != consensus.Started {
 		return errors.New("The service is not started")
 	}
@@ -95,7 +93,6 @@ func (c *Consensus) Stop() error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	fmt.Printf("[%d]Begin to stop consensus\n", c.app.port)
 	c.status = consensus.Stopped
 	c.node.Stop()
 	c.app.Stop()

@@ -150,14 +150,13 @@ func TestBFTCreateTx(t *testing.T) {
 	client0 := bftClients[0]
 	client1 := bftClients[1]
 	for m := 1; m <= 6; m++ {
-		// todo: find the reason why we the peer can not get newest block if orderer stopped, hope this is the bug of peer
-		// if m == 3 { // stop orderer0
-		// 	stopOrderer(bftOrderers[0])
-		// 	require.NoError(t, os.RemoveAll(getBFTOrdererDataPath(0)))
-		// }
-		// if m == 4 { // restart orderer0
-		// 	bftOrderers[0] = startOrderer(0)
-		// }
+		if m == 3 { // stop orderer0
+			stopOrderer(bftOrderers[0])
+			require.NoError(t, os.RemoveAll(getBFTOrdererDataPath(0)))
+		}
+		if m == 4 { // restart orderer0
+			bftOrderers[0] = startOrderer(0)
+		}
 		// client 0 create contract
 		contractCodes, err := readCodes(getBFTClientPath(1) + "/MyTest.bin")
 		require.NoError(t, err)

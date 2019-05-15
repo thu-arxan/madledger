@@ -7,6 +7,7 @@ import (
 	"madledger/executor/evm"
 	"madledger/peer/db"
 	"madledger/peer/orderer"
+	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -25,12 +26,12 @@ type Manager struct {
 	db db.DB
 	// chain manager
 	cm          *blockchain.Manager
-	client      *orderer.Client
+	clients     []*orderer.Client
 	coordinator *Coordinator
 }
 
 // NewManager is the constructor of Manager
-func NewManager(id, dir string, identity *types.Member, db db.DB, client *orderer.Client, coordinator *Coordinator) (*Manager, error) {
+func NewManager(id, dir string, identity *types.Member, db db.DB, clients []*orderer.Client, coordinator *Coordinator) (*Manager, error) {
 	cm, err := blockchain.NewManager(id, dir)
 	if err != nil {
 		return nil, err
@@ -40,7 +41,7 @@ func NewManager(id, dir string, identity *types.Member, db db.DB, client *ordere
 		id:          id,
 		db:          db,
 		cm:          cm,
-		client:      client,
+		clients:     clients,
 		coordinator: coordinator,
 	}, nil
 }
@@ -158,6 +159,42 @@ func (m *Manager) RunBlock(num uint64) error {
 	return nil
 }
 
+// todo: here we should support evil orderer
 func (m *Manager) fetchBlock() (*types.Block, error) {
-	return m.client.FetchBlock(m.id, m.cm.GetExcept(), true)
+	var lock sync.Mutex
+	var ch = make(chan bool, 1)
+	var errors = make([]error, len(m.clients))
+	var blocks = make([]*types.Block, len(m.clients))
+	id := m.id
+	except := m.cm.GetExcept()
+	for i := range m.clients {
+		go func(i int) {
+			block, err := m.clients[i].FetchBlock(id, except, true)
+			if err != nil {
+				errors[i] = err
+				lock.Lock()
+				defer lock.Unlock()
+				for i := range errors {
+					if errors[i] == nil {
+						return
+					}
+				}
+				ch <- false
+			} else {
+				blocks[i] = block
+				ch <- true
+			}
+		}(i)
+	}
+
+	ok := <-ch
+
+	if ok {
+		for i := range blocks {
+			if blocks[i] != nil {
+				return blocks[i], nil
+			}
+		}
+	}
+	return nil, errors[0]
 }
