@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	tc "github.com/tendermint/tendermint/config"
@@ -64,7 +63,6 @@ func (n *Node) Stop() {
 	if n.tn != nil {
 		n.tn.Stop()
 		n.tn.Wait()
-		time.Sleep(1 * time.Second)
 		for _, db := range n.tnDBs {
 			db.Close()
 		}

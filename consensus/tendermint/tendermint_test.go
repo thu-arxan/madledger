@@ -99,34 +99,36 @@ func TestSendDuplicateTxs(t *testing.T) {
 	compareBlocks(t)
 }
 
-func TestSendTxWithNodeRestart(t *testing.T) {
-	// Here we will stop a node and start it, then check if we get same blocks
-	var wg sync.WaitGroup
+// Note: We can not do restart test because the tendermint use the global variables so that we can just start or stop
+// We have to start consensus service indepedent to make sure the variables is not same
+// func TestSendTxWithNodeRestart(t *testing.T) {
+// 	// Here we will stop a node and start it, then check if we get same blocks
+// 	var wg sync.WaitGroup
 
-	wg.Add(1)
-	go func(t *testing.T) {
-		defer wg.Done()
-		for i := 0; i < 100; i++ {
-			tx := randomTx()
-			require.NoError(t, tns[0].AddTx("test", tx))
-			time.Sleep(50 * time.Millisecond)
-		}
-	}(t)
+// 	wg.Add(1)
+// 	go func(t *testing.T) {
+// 		defer wg.Done()
+// 		for i := 0; i < 100; i++ {
+// 			tx := randomTx()
+// 			require.NoError(t, tns[0].AddTx("test", tx))
+// 			time.Sleep(50 * time.Millisecond)
+// 		}
+// 	}(t)
 
-	wg.Add(1)
-	go func(t *testing.T) {
-		defer wg.Done()
-		require.NoError(t, tns[1].Stop())
-		time.Sleep(2000 * time.Millisecond)
-		require.NoError(t, tns[1].Start())
-	}(t)
+// 	wg.Add(1)
+// 	go func(t *testing.T) {
+// 		defer wg.Done()
+// 		require.NoError(t, tns[1].Stop())
+// 		time.Sleep(2000 * time.Millisecond)
+// 		require.NoError(t, tns[1].Start())
+// 	}(t)
 
-	wg.Wait()
-	time.Sleep(2 * time.Second)
-	// then we check if all node get same result
-	txSize += 100
-	compareBlocks(t)
-}
+// 	wg.Wait()
+// 	time.Sleep(2 * time.Second)
+// 	// then we check if all node get same result
+// 	txSize += 100
+// 	compareBlocks(t)
+// }
 
 func TestStop(t *testing.T) {
 	// time.Sleep(2 * time.Second)
