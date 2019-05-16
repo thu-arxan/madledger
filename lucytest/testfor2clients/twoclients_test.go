@@ -7,6 +7,7 @@ import (
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"madledger/common"
+	"madledger/common/abi"
 	"madledger/common/util"
 	comu "madledger/common/util"
 	"madledger/core/types"
@@ -23,7 +24,7 @@ import (
 
 	"github.com/otiai10/copy"
 	"github.com/stretchr/testify/require"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -158,7 +159,7 @@ func TestBFTCreateTx(t *testing.T) {
 			bftOrderers[0] = startOrderer(0)
 		}
 		// client 0 create contract
-		contractCodes, err := readCodes(getBFTClientPath(1) + "/MyTest.bin")
+		contractCodes, err := readCodes(getBFTClientPath(0) + "/MyTest.bin")
 		require.NoError(t, err)
 		channel := "test" + strconv.Itoa(m) + "0"
 		fmt.Printf("Create contract %d on channel %s ...\n", m, channel)
@@ -181,12 +182,171 @@ func TestBFTCreateTx(t *testing.T) {
 	}
 }
 
+func TestBFTCallTx(t *testing.T) {
+	// 为client0和client1分别创建test0和test1
+	require.NoError(t, createChannelForCallTx())
+
+	// 在test0和test1上创建合约
+	require.NoError(t, createContractForCallTx())
+
+	for m := 1; m <= 6; m++ {
+		if m == 3 { // stop orderer0
+			stopOrderer(bftOrderers[0])
+			require.NoError(t, os.RemoveAll(getBFTOrdererDataPath(0)))
+		}
+		if m == 4 { // restart orderer0
+			bftOrderers[0] = startOrderer(0)
+		}
+
+		// client0调用合约的setNum
+		fmt.Printf("Call contract %d on channel test0 ...\n", m)
+		if m%2 == 0 {
+			num := "1" + strconv.Itoa(m-1)
+			require.NoError(t, getNumForCallTx(0, num))
+		} else {
+			num := "1" + strconv.Itoa(m)
+			require.NoError(t, setNumForCallTx(0, num))
+		}
+
+		// client1调用合约的setNum
+		fmt.Printf("Call contract %d on channel test1 ...\n", m)
+		if m%2 == 0 {
+			num := "2" + strconv.Itoa(m-1)
+			require.NoError(t, getNumForCallTx(1, num))
+		} else {
+			num := "2" + strconv.Itoa(m)
+			require.NoError(t, setNumForCallTx(1, num))
+		}
+	}
+
+}
+
 func TestBFTEnd(t *testing.T) {
 	for _, pid := range bftOrderers {
 		stopOrderer(pid)
 	}
 	gopath := os.Getenv("GOPATH")
 	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/bft"))
+}
+
+func createChannelForCallTx() error {
+	// client 0 create channel
+	client := bftClients[0]
+	err := client.CreateChannel("test0", true, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	// client 1 create channel
+	client = bftClients[1]
+	err = client.CreateChannel("test1", true, nil, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func createContractForCallTx() error {
+	// client 0 create contract
+	client := bftClients[0]
+	contractCodes, err := readCodes(getBFTClientPath(0) + "/MyTest.bin")
+	if err != nil {
+		return err
+	}
+	tx, err := types.NewTx("test0", common.ZeroAddress, contractCodes, client.GetPrivKey())
+	if err != nil {
+		return err
+	}
+	_, err = client.AddTx(tx)
+	if err != nil {
+		return err
+	}
+
+	// client 1 create channel
+	client = bftClients[1]
+	contractCodes, err = readCodes(getBFTClientPath(1) + "/MyTest.bin")
+	if err != nil {
+		return err
+	}
+	tx, err = types.NewTx("test1", common.ZeroAddress, contractCodes, client.GetPrivKey())
+	if err != nil {
+		return err
+	}
+
+	_, err = client.AddTx(tx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func setNumForCallTx(node int, num string) error {
+	abiPath := fmt.Sprintf(getBFTClientPath(node) + "/MyTest.abi")
+	inputs := []string{num}
+	payloadBytes, err := abi.GetPayloadBytes(abiPath, "setNum", inputs)
+	if err != nil {
+		return err
+	}
+
+	client := bftClients[node]
+	channel := "test" + strconv.Itoa(node)
+	addr := ""
+	if node == 0 {
+		addr = "0x8de6ce45b289502e16aef93313fd3082993acb1f"
+	} else {
+		addr = "0x1b66001e01d3c8d3893187fee59e3bea1d9bdd9b"
+	}
+	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	if err != nil {
+		return err
+	}
+
+	_, err = client.AddTx(tx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getNumForCallTx(node int, num string) error {
+	abiPath := fmt.Sprintf(getBFTClientPath(node) + "/MyTest.abi")
+	var inputs []string = make([]string,0)
+	payloadBytes, err := abi.GetPayloadBytes(abiPath, "getNum", inputs)
+	if err != nil {
+		return err
+	}
+
+	client := bftClients[node]
+	channel := "test" + strconv.Itoa(node)
+	addr := ""
+	if node == 0 {
+		addr = "0x8de6ce45b289502e16aef93313fd3082993acb1f"
+	} else {
+		addr = "0x1b66001e01d3c8d3893187fee59e3bea1d9bdd9b"
+	}
+	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	if err != nil {
+		return err
+	}
+
+	status, err := client.AddTx(tx)
+	if err != nil {
+		return err
+	}
+
+	values, err := abi.Unpacker(abiPath, "getNum", status.Output)
+	if err != nil {
+		return err
+	}
+
+	var output []string
+	for _, value := range values {
+		output = append(output, value.Value)
+	}
+	if output[0] != num {
+		return fmt.Errorf("call tx on channel test%d: setNum expect %s but receive %s", node, num, output[0])
+	}
+	return nil
 }
 
 func compareChannels(channels []string) error {
