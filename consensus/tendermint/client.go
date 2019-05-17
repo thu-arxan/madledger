@@ -27,10 +27,10 @@ func NewClient(port int) (*Client, error) {
 // TODO: We should read the document to understand the return of BroadcastTxSync
 // Note: BroadcastTxSync may return error because the tx in the cache aleardy
 func (c *Client) AddTx(tx []byte) error {
-	t, _ := BytesToTx(tx)
-	log.Infof("[%d]Here client add tx %s", c.port, string(t.Data))
+	//t, _ := BytesToTx(tx)
+	//log.Infof("[%d]Here client add tx %s", c.port, string(t.Data))
 	defer func() {
-		log.Infof("[%d]Done client add tx %s", c.port, string(t.Data))
+		//log.Infof("[%d]Done client add tx %s", c.port, string(t.Data))
 	}()
 	_, err := c.tc.BroadcastTxSync(tx)
 	//broadcast_tx_sync: Response error: RPC error -32603 - Internal error: EOF

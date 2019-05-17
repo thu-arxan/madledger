@@ -76,16 +76,17 @@ func (g *Glue) Stop() {
 
 // CheckTx always return OK
 func (g *Glue) CheckTx(tx []byte) types.ResponseCheckTx {
-	t, _ := BytesToTx(tx)
+	//t, _ := BytesToTx(tx)
 
-	log.Infof("[%d]Check Tx %s", g.port, string(t.Data))
+	//log.Infof("[%d]Check Tx %s", g.port, string(t.Data))
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
 // DeliverTx add tx into txs and return OK
 func (g *Glue) DeliverTx(tx []byte) types.ResponseDeliverTx {
-	t, _ := BytesToTx(tx)
-	log.Infof("[%d]Deliever Tx %s", g.port, string(t.Data))
+	//t, _ := BytesToTx(tx)
+
+	//log.Infof("[%d]Deliever Tx %s", g.port, string(t.Data))
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
@@ -277,6 +278,6 @@ func (t *Tx) Bytes() []byte {
 
 // AddTx add a tx
 func (g *Glue) AddTx(channelID string, tx []byte) error {
-	log.Infof("[%d]Channel %s add tx %s", g.port, channelID, string(tx))
+	//log.Infof("[%d]Channel %s add tx %s", g.port, channelID, string(tx))
 	return g.client.AddTx(NewTx(channelID, tx).Bytes())
 }

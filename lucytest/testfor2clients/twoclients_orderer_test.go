@@ -9,7 +9,6 @@ import (
 	"madledger/common"
 	"madledger/common/abi"
 	"madledger/common/util"
-	comu "madledger/common/util"
 	"madledger/core/types"
 	oc "madledger/orderer/config"
 	pc "madledger/peer/config"
@@ -199,7 +198,7 @@ func TestBFTCallTx(t *testing.T) {
 		}
 
 		// client0调用合约的setNum
-		fmt.Printf("Call contract %d on channel test0 ...\n", m)
+		fmt.Printf("Call contract %d times on channel test0 ...\n", m)
 		if m%2 == 0 {
 			num := "1" + strconv.Itoa(m-1)
 			require.NoError(t, getNumForCallTx(0, num))
@@ -344,7 +343,7 @@ func getNumForCallTx(node int, num string) error {
 		output = append(output, value.Value)
 	}
 	if output[0] != num {
-		return fmt.Errorf("call tx on channel test%d: setNum expect %s but receive %s", node, num, output[0])
+		return fmt.Errorf("call tx on channel test%d: getNum expect %s but receive %s", node, num, output[0])
 	}
 	return nil
 }
@@ -364,7 +363,7 @@ func compareChannels(channels []string) error {
 
 		for i := range infos {
 			if infos[i].Name != "_config" && infos[i].Name != "_global" {
-				if !comu.Contain(channels, infos[i].Name) {
+				if !util.Contain(channels, infos[i].Name) {
 					return fmt.Errorf("channel name doesn't exit in channels")
 				}
 			}
