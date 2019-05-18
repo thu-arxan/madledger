@@ -191,7 +191,7 @@ func getBFTClientConfigPath(node int) string {
 	return getBFTClientPath(node) + "/client.yaml"
 }
 
-func startPeer(node int) error {
+func initPeer(node int) error {
 	cfg := getPeerConfig(node)
 	server, err := peer.NewServer(cfg)
 	if err != nil {

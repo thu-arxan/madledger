@@ -113,6 +113,6 @@ func (s *Server) Start() error {
 func (s *Server) Stop() error {
 	s.rpcServer.Stop()
 	// s.ChannelManager.stop()
-	log.Info("Succeed to stop the orderer service")
+	log.Info("Succeed to stop the peer service")
 	return nil
 }
