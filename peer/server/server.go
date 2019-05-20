@@ -112,7 +112,7 @@ func (s *Server) Start() error {
 // TODO: The channel manager failed to stop
 func (s *Server) Stop() error {
 	s.rpcServer.Stop()
-	// s.ChannelManager.stop()
+	s.ChannelManager.stop()
 	log.Info("Succeed to stop the peer service")
 	return nil
 }

@@ -20,6 +20,9 @@ type ChannelManager struct {
 	// maybe can use sync.Map, but the advantage is not significant
 	Channels map[string]*channel.Manager
 	lock     sync.RWMutex
+	// signalCh receive stop signal
+	signalCh chan bool
+	stopCh   chan bool
 	// GlobalChannel is the global channel manager
 	GlobalChannel *channel.Manager
 	// ConfigChannel is the config channel manager
@@ -32,6 +35,8 @@ type ChannelManager struct {
 // NewChannelManager is the constructor of ChannelManager
 func NewChannelManager(dbDir string, identity *types.Member, chainCfg *config.BlockChainConfig, ordererClients []*orderer.Client) (*ChannelManager, error) {
 	m := new(ChannelManager)
+	m.signalCh = make(chan bool, 1)
+	m.stopCh = make(chan bool, 1)
 	m.Channels = make(map[string]*channel.Manager)
 	m.identity = identity
 	// set db
@@ -93,12 +98,30 @@ func (m *ChannelManager) start() error {
 						}
 					}
 				}
+			case <-m.signalCh:
+				m.stopCh <- true
+				return
 			}
 
 		}
 	}()
 	time.Sleep(20 * time.Millisecond)
 	return nil
+}
+
+// stop will stop all managers
+func (m *ChannelManager) stop() {
+	log.Info("ChannelManager stop begin")
+	m.GlobalChannel.Stop()
+	log.Info("GlobalChannel stop")
+	m.ConfigChannel.Stop()
+	log.Info("ConfigChannel stop")
+
+	m.signalCh <- true
+	<-m.stopCh
+	for _, manager := range m.Channels {
+		manager.Stop()
+	}
 }
 
 // hasChannel return if a channel exist

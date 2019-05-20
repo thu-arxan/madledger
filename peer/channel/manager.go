@@ -1,6 +1,7 @@
 package channel
 
 import (
+	"errors"
 	"madledger/blockchain"
 	"madledger/common"
 	"madledger/core/types"
@@ -19,6 +20,8 @@ var (
 
 // Manager is the manager of channel
 type Manager struct {
+	signalCh chan bool
+	stopCh   chan bool
 	identity *types.Member
 	// id is the id of channel
 	id string
@@ -37,6 +40,8 @@ func NewManager(id, dir string, identity *types.Member, db db.DB, clients []*ord
 		return nil, err
 	}
 	return &Manager{
+		signalCh:    make(chan bool, 1),
+		stopCh:      make(chan bool, 1),
 		identity:    identity,
 		id:          id,
 		db:          db,
@@ -54,6 +59,9 @@ func (m *Manager) Start() {
 		// fmt.Println("Succeed to fetch block", m.id, ":", block.Header.Number)
 		if err == nil {
 			m.AddBlock(block)
+		} else if err.Error() == "Stop" {
+			m.stopCh <- true
+			return
 		}
 	}
 }
@@ -61,6 +69,8 @@ func (m *Manager) Start() {
 // Stop will stop the manager
 // TODO: find a good way to stop
 func (m *Manager) Stop() {
+	m.signalCh <- true
+	<-m.stopCh
 }
 
 // AddBlock add a block
@@ -163,7 +173,7 @@ func (m *Manager) RunBlock(num uint64) error {
 func (m *Manager) fetchBlock() (*types.Block, error) {
 	var lock sync.Mutex
 	var ch = make(chan bool, 1)
-	var errors = make([]error, len(m.clients))
+	var errs = make([]error, len(m.clients))
 	var blocks = make([]*types.Block, len(m.clients))
 	id := m.id
 	except := m.cm.GetExcept()
@@ -171,11 +181,11 @@ func (m *Manager) fetchBlock() (*types.Block, error) {
 		go func(i int) {
 			block, err := m.clients[i].FetchBlock(id, except, true)
 			if err != nil {
-				errors[i] = err
+				errs[i] = err
 				lock.Lock()
 				defer lock.Unlock()
-				for i := range errors {
-					if errors[i] == nil {
+				for i := range errs {
+					if errs[i] == nil {
 						return
 					}
 				}
@@ -187,14 +197,17 @@ func (m *Manager) fetchBlock() (*types.Block, error) {
 		}(i)
 	}
 
-	ok := <-ch
-
-	if ok {
-		for i := range blocks {
-			if blocks[i] != nil {
-				return blocks[i], nil
+	select {
+	case ok := <-ch:
+		if ok {
+			for i := range blocks {
+				if blocks[i] != nil {
+					return blocks[i], nil
+				}
 			}
 		}
+		return nil, errs[0]
+	case <-m.signalCh:
+		return nil, errors.New("Stop")
 	}
-	return nil, errors[0]
 }

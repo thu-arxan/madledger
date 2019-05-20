@@ -1,4 +1,4 @@
-package lucytest
+package testfor1client
 
 import (
 	"fmt"
@@ -187,10 +187,10 @@ func TestBFTEnd1(t *testing.T) {
 		stopOrderer(pid)
 	}
 
-	for i:=range bftPeers{
+	for i := range bftPeers {
 		bftPeers[i].Stop()
 	}
-	time.Sleep(2*time.Second)
+	time.Sleep(2 * time.Second)
 	gopath := os.Getenv("GOPATH")
 	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/bft"))
 }

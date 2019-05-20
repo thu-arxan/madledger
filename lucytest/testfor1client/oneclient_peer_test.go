@@ -71,7 +71,9 @@ func TestBFTCreateChannels2(t *testing.T) {
 	var channels []string
 	for m := 1; m <= 8; m++ {
 		if m == 4 { // stop peer0
+			fmt.Println("Begin to stop peer 0")
 			bftPeers[0].Stop()
+			fmt.Println("Succeed to sop peer")
 			require.NoError(t, os.RemoveAll(getBFTPeerDataPath(0)))
 		}
 		if m == 6 { // restart peer0
@@ -88,6 +90,7 @@ func TestBFTCreateChannels2(t *testing.T) {
 		channels = append(channels, channel)
 		fmt.Printf("Create channel %s ...\n", channel)
 		err := client.CreateChannel(channel, true, nil, nil)
+		fmt.Printf("Create channel %s done\n", channel)
 		require.NoError(t, err)
 	}
 	time.Sleep(5 * time.Second)
@@ -123,7 +126,7 @@ func TestBFTCreateTx(t *testing.T) {
 		_, err = client.AddTx(tx)
 		require.NoError(t, err)
 	}
-	time.Sleep(5*time.Second)
+	time.Sleep(5 * time.Second)
 }
 
 func TestBFTCallTx(t *testing.T) {
