@@ -1,4 +1,4 @@
-package lucytest
+package testfor2clients
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ func TestBFTOrdererStart1(t *testing.T) {
 
 func TestBFTPeersStart1(t *testing.T) {
 	for i := 0; i < 4; i++ {
-		require.NoError(t, peerStart(i))
+		require.NoError(t, initPeer(i))
 	}
 
 	for i := range bftPeers {

@@ -65,20 +65,19 @@ func TestBFTCreateChannels2(t *testing.T) {
 	for m := 1; m <= 8; m++ {
 		if m == 3 { // stop peer0
 			go func(t *testing.T) {
+				fmt.Println("Begin to stop peer 0")
 				bftPeers[0].Stop()
 				require.NoError(t, os.RemoveAll(getBFTPeerDataPath(0)))
 			}(t)
 		}
 		if m == 5 { // restart peer0
 			require.NoError(t, initPeer(0))
-			err := bftPeers[0].Start()
-			require.NoError(t, err)
-			fmt.Printf("Restart peer0 successfully ...\n")
-			/*go func(t *testing.T) {
+
+			go func(t *testing.T) {
 				err := bftPeers[0].Start()
 				require.NoError(t, err)
 				fmt.Printf("Restart peer0 successfully ...\n")
-			}(t)*/
+			}(t)
 		}
 		// client 0 create channel
 		channel := "test" + strconv.Itoa(m) + "0"
@@ -107,21 +106,18 @@ func TestBFTCreateTx2(t *testing.T) {
 	for m := 1; m <= 6; m++ {
 		if m == 2 { // stop peer0
 			go func(t *testing.T) {
+				fmt.Println("Begin to stop peer 0")
 				bftPeers[0].Stop()
 				require.NoError(t, os.RemoveAll(getBFTPeerDataPath(0)))
 			}(t)
-			time.Sleep(4 * time.Second)
 		}
 		if m == 4 { // restart peer0
 			require.NoError(t, initPeer(0))
-			err := bftPeers[0].Start()
-			require.NoError(t, err)
-			fmt.Printf("Restart peer0 successfully ...\n")
-			/*go func(t *testing.T) {
+			go func(t *testing.T) {
 				err := bftPeers[0].Start()
 				require.NoError(t, err)
 				fmt.Printf("Restart peer0 successfully ...\n")
-			}(t)*/
+			}(t)
 		}
 		// client 0 create contract
 		contractCodes, err := readCodes(getBFTClientPath(0) + "/MyTest.bin")
@@ -146,7 +142,7 @@ func TestBFTCreateTx2(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(2 * time.Second)
 }
 
 func TestBFTCallTx2(t *testing.T) {
@@ -159,20 +155,18 @@ func TestBFTCallTx2(t *testing.T) {
 	for m := 1; m <= 6; m++ {
 		if m == 2 { // stop peer0
 			go func(t *testing.T) {
+				fmt.Println("Begin to stop peer 0")
 				bftPeers[0].Stop()
 				require.NoError(t, os.RemoveAll(getBFTPeerDataPath(0)))
 			}(t)
 		}
 		if m == 4 { // restart peer0
 			require.NoError(t, initPeer(0))
-			err := bftPeers[0].Start()
-			require.NoError(t, err)
-			fmt.Printf("Restart peer0 successfully ...\n")
-			/*go func(t *testing.T) {
+			go func(t *testing.T) {
 				err := bftPeers[0].Start()
 				require.NoError(t, err)
 				fmt.Printf("Restart peer0 successfully ...\n")
-			}(t)*/
+			}(t)
 		}
 
 		// client0调用合约的setNum

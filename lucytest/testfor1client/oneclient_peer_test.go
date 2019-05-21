@@ -71,10 +71,11 @@ func TestBFTCreateChannels2(t *testing.T) {
 	var channels []string
 	for m := 1; m <= 8; m++ {
 		if m == 4 { // stop peer0
-			fmt.Println("Begin to stop peer 0")
-			bftPeers[0].Stop()
-			fmt.Println("Succeed to sop peer")
-			require.NoError(t, os.RemoveAll(getBFTPeerDataPath(0)))
+			go func(t *testing.T) {
+				fmt.Println("Begin to stop peer 0")
+				bftPeers[0].Stop()
+				require.NoError(t, os.RemoveAll(getBFTPeerDataPath(0)))
+			}(t)
 		}
 		if m == 6 { // restart peer0
 			require.NoError(t, initPeer(0))
@@ -103,8 +104,11 @@ func TestBFTCreateTx(t *testing.T) {
 	client := bftClients[0]
 	for m := 1; m <= 6; m++ {
 		if m == 2 { // stop peer0
-			bftPeers[0].Stop()
-			require.NoError(t, os.RemoveAll(getBFTPeerDataPath(0)))
+			go func(t *testing.T) {
+				fmt.Println("Begin to stop peer 0")
+				bftPeers[0].Stop()
+				require.NoError(t, os.RemoveAll(getBFTPeerDataPath(0)))
+			}(t)
 		}
 		if m == 4 { // restart peer0
 			require.NoError(t, initPeer(0))
@@ -138,8 +142,11 @@ func TestBFTCallTx(t *testing.T) {
 
 	for m := 1; m <= 6; m++ {
 		if m == 2 { // stop peer0
-			bftPeers[0].Stop()
-			require.NoError(t, os.RemoveAll(getBFTPeerDataPath(0)))
+			go func(t *testing.T) {
+				fmt.Println("Begin to stop peer 0")
+				bftPeers[0].Stop()
+				require.NoError(t, os.RemoveAll(getBFTPeerDataPath(0)))
+			}(t)
 		}
 		if m == 4 { // restart peer0
 			require.NoError(t, initPeer(0))
