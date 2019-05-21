@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// change the package
 func TestInitEnv1(t *testing.T) {
 	require.NoError(t, initBFTEnvironment())
 }
