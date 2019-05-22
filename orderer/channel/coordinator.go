@@ -82,7 +82,7 @@ func (c *Coordinator) Start() error {
 	time.Sleep(100 * time.Millisecond)
 	for _, channelManager := range c.Managers {
 		// 开启manager之前，应该判断manager的init是否为true
-		if ! channelManager.init {
+		if !channelManager.init {
 			log.Infof("coordinator/Start: start channel %s", channelManager.ID)
 			go channelManager.Start()
 		}
@@ -314,8 +314,8 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 	// set consensus
 	var channels = make(map[string]consensus.Config, 0)
 	defaultCfg := consensus.Config{
-		Timeout: 100,
-		MaxSize: 10,
+		Timeout: c.chainCfg.BatchTimeout,
+		MaxSize: c.chainCfg.BatchSize,
 		Number:  1,
 		Resume:  false,
 	}

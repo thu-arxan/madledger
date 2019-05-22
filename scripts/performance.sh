@@ -1,0 +1,1 @@
+go test madledger/tests/performance -count=1 -v

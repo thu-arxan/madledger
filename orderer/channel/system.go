@@ -21,7 +21,12 @@ func (manager *Manager) AddConfigBlock(block *types.Block) error {
 		// 这里并没有对channelID已经存在做出响应,而是在coordinator的createChannel做出响应
 		if !manager.db.HasChannel(channelID) {
 			// then start the consensus
-			err := manager.coordinator.Consensus.AddChannel(channelID, consensus.DefaultConfig())
+			err := manager.coordinator.Consensus.AddChannel(channelID, consensus.Config{
+				Timeout: manager.coordinator.chainCfg.BatchTimeout,
+				MaxSize: manager.coordinator.chainCfg.BatchSize,
+				Number:  1,
+				Resume:  false,
+			})
 			channel, err := NewManager(channelID, manager.coordinator)
 			if err != nil {
 				return err

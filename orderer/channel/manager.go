@@ -229,24 +229,7 @@ func (manager *Manager) getTxsFromConsensusBlock(block consensus.Block) (legal, 
 	var count = make(map[string]bool)
 	for _, tx := range txs {
 		if !util.Contain(count, tx.ID) && !manager.db.HasTx(tx) {
-			/*// 检查legal中是否已经存在该tx
-			var flag bool = true
-			for _, item := range  legal{
-				if item.ID == tx.ID {
-					flag = false
-					log.Infof("getTxsFromConsensusBlock: block %d in %s already has tx %s",
-						block.GetNumber(),manager.ID, tx.ID)
-					//不break，查看有多少合法的重复的tx
-					break
-				}
-			}
-			// 不重复，向legal中添加tx
-			if flag {
-				log.Infof("getTxsFromConsensusBlock: block %d in %s add tx %s",
-					block.GetNumber(),manager.ID, tx.ID)
-				legal = append(legal, tx)
-			}*/
-			count[tx.ID] = true //更新count，否则无法判断block中重复的tx
+			count[tx.ID] = true
 			legal = append(legal, tx)
 			log.Infof("getTxsFromConsensusBlock: block %d in %s add tx %s",
 				block.GetNumber(), manager.ID, tx.ID)
