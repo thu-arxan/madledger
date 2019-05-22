@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	gopath = os.Getenv("GOPATH")
+	gopath  = os.Getenv("GOPATH")
+	logPath = "performance.out"
 )
 
 // Help fulfillment the test.
@@ -60,4 +61,13 @@ func getTxStatus(abiPath, funcName string, status *pb.TxStatus) (*txStatus, erro
 		txStatus.Output = append(txStatus.Output, value.Value)
 	}
 	return txStatus, nil
+}
+
+func writeLog(log string) error {
+	file, err := os.OpenFile(logPath, os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	_, err = file.WriteString(log)
+	return err
 }

@@ -11,6 +11,7 @@ type Table interface {
 	SetHeader(headers ...interface{})
 	AddRow(items ...interface{})
 	Render()
+	ToString() string
 }
 
 // TermTable is the wrapper of termtables and
@@ -38,4 +39,9 @@ func (t *TermTable) AddRow(items ...interface{}) {
 // Render is the implementation of interface
 func (t *TermTable) Render() {
 	fmt.Print(t.table.Render())
+}
+
+// ToString is the implementation of interface
+func (t *TermTable) ToString() string {
+	return t.table.Render()
 }

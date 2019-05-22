@@ -8,12 +8,14 @@ import (
 	"time"
 
 	client "madledger/client/lib"
+	cutil "madledger/client/util"
 	"madledger/common/util"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestInitCircumstance(t *testing.T) {
+	os.Remove(logPath)
 	err := initDir(".orderer")
 	require.NoError(t, err)
 	err = initDir(".peer")
@@ -53,7 +55,11 @@ func TestPerformance(t *testing.T) {
 	}
 	wg.Wait()
 	duration := (int64)(time.Since(begin)) / 1e6
-	fmt.Printf("TPS is %d\n", int64(callSize*len(clients)*1e3)/(duration))
+	tps := int64(callSize*len(clients)*1e3) / (duration)
+	table := cutil.NewTable()
+	table.SetHeader("Size", "Time", "TPS")
+	table.AddRow(callSize*len(clients), fmt.Sprintf("%v", time.Since(begin)), fmt.Sprintf("%d", tps))
+	require.NoError(t, writeLog(table.ToString()))
 }
 
 func TestRemoveData(t *testing.T) {
