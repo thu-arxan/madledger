@@ -81,9 +81,9 @@ func TestBFTCreateChannels2(t *testing.T) {
 			require.NoError(t, initPeer(0))
 
 			go func(t *testing.T) {
+				fmt.Println("Begin to restart peer 0")
 				err := bftPeers[0].Start()
 				require.NoError(t, err)
-				fmt.Printf("Restart orderer0 successfully ...\n")
 			}(t)
 		}
 		// client 0 create channel
@@ -114,9 +114,9 @@ func TestBFTCreateTx(t *testing.T) {
 			require.NoError(t, initPeer(0))
 
 			go func(t *testing.T) {
+				fmt.Println("Begin to restart peer 0")
 				err := bftPeers[0].Start()
 				require.NoError(t, err)
-				fmt.Printf("Restart peer0 successfully ...\n")
 			}(t)
 		}
 		// client 0 create contract
@@ -152,9 +152,9 @@ func TestBFTCallTx(t *testing.T) {
 			require.NoError(t, initPeer(0))
 
 			go func(t *testing.T) {
+				fmt.Println("Begin to restart peer 0")
 				err := bftPeers[0].Start()
 				require.NoError(t, err)
-				fmt.Printf("Restart peer0 successfully ...\n")
 			}(t)
 		}
 
