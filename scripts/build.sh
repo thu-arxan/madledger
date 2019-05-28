@@ -1,4 +1,6 @@
 # building all modules
+echo "building consensus raft..."
+go install madledger/consensus/raft
 
 echo "building orderer..."
 go install madledger/orderer

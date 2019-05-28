@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package protos;
+
+service Raft {
+    // AddNode add a new node join a cluster
+    rpc AddNode (NodeInfo) returns (AddNodeResponse);
+    // RemoveNode remove an old node from a cluster
+    rpc RemoveNode(NodeInfo) returns (RemoveNodeResponse);
+}
+
+// NodeInfo is the necessacy info of a raft node
+message NodeInfo {
+    // ID is the ID of node, maybe the address of raft service, or something else like public key
+    uint64 ID = 1;
+    // The url of node, maybe ip or domain
+    string URL = 2;
+    // The port of blockchain, and other port could be caculated from the chain port
+    int32 ChainPort = 3;
+}
+
+// AddNodeResponse is the response of AddNode
+message AddNodeResponse {
+    
+}
+
+// RemoveNodeResponse is the response of RemoveNode
+message RemoveNodeResponse {
+
+}
