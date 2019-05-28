@@ -20,8 +20,8 @@ var (
 	ContractAddress common.Address
 )
 
-// createContract is the detail implemtation of testCreateContract
-func createContract(t *testing.T, channelID string, client *client.Client) {
+// CreateContract will create a channel by the client
+func CreateContract(t *testing.T, channelID string, client *client.Client) {
 	contractCodes, err := readCodes(BalanceBin)
 	require.NoError(t, err)
 
@@ -34,7 +34,8 @@ func createContract(t *testing.T, channelID string, client *client.Client) {
 	ContractAddress = common.HexToAddress(status.ContractAddress)
 }
 
-func callContract(t *testing.T, channelID string, client *client.Client, times int) {
+// CallContract will call a contract of a channel
+func CallContract(t *testing.T, channelID string, client *client.Client, times int) {
 	var payload []byte
 	payload, _ = abi.GetPayloadBytes(BalanceAbi, "get", nil)
 	var wg sync.WaitGroup
