@@ -1,10 +1,7 @@
 package raft
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"fmt"
-	"madledger/common/util"
 	pb "madledger/consensus/raft/protos"
 )
 
@@ -22,23 +19,14 @@ type Config struct {
 	peers map[uint64]string
 	// The url of node, maybe ip or domain
 	url string
-	// The port of block chain, and the port of raft service and hashicorp raft can be estimated
-	chainPort int
+	// The port of eraft port
+	eraftPort int
+	// The port of raft port
+	raftPort int
 	// The listen address, it should be consensus with the blockchain service
 	address string
 
 	snapshotInterval uint64
-}
-
-// tlsConfig is the tls config part
-type tlsConfig struct {
-	enable bool
-	// Pool of CA
-	pool     *x509.CertPool
-	caFile   string
-	cert     tls.Certificate
-	certFile string
-	keyFile  string
 }
 
 // NewConfig is the constructor of Config
@@ -57,7 +45,8 @@ func NewConfig(dir, address string, id uint64, nodes map[uint64]string) (*Config
 		snapDir:          fmt.Sprintf("%s/snap", dir),
 		peers:            nodes,
 		url:              url,
-		chainPort:        eraftPort - 2,
+		eraftPort:        eraftPort,
+		raftPort:         eraftPort + 1,
 		address:          address,
 		snapshotInterval: 100,
 	}, nil
@@ -69,25 +58,25 @@ func (c *Config) GetID() uint64 {
 }
 
 func (c *Config) getLocalRaftAddress() string {
-	return fmt.Sprintf("%s:%d", c.address, c.chainPort+1)
+	return fmt.Sprintf("%s:%d", c.address, c.raftPort)
 }
 
 func (c *Config) getRaftAddress() string {
-	return fmt.Sprintf("%s:%d", c.url, c.chainPort+1)
+	return fmt.Sprintf("%s:%d", c.url, c.raftPort)
 }
 
 func (c *Config) getLocalERaftAddress() string {
-	return fmt.Sprintf("%s:%d", c.address, c.chainPort+2)
+	return fmt.Sprintf("%s:%d", c.address, c.eraftPort)
 }
 
 func (c *Config) getERaftAddress() string {
-	return fmt.Sprintf("%s:%d", c.url, c.chainPort+2)
+	return fmt.Sprintf("%s:%d", c.url, c.eraftPort)
 }
 
 // getPeerAddress return the peer blockchain address
-func (c *Config) getPeerAddress(id uint64) string {
-	if util.Contain(c.peers, id) {
-		return pb.ERaftToChain(c.peers[id])
-	}
-	return ""
-}
+// func (c *Config) getPeerAddress(id uint64) string {
+// 	if util.Contain(c.peers, id) {
+// 		return pb.ERaftToChain(c.peers[id])
+// 	}
+// 	return ""
+// }

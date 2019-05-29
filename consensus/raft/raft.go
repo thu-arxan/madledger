@@ -3,16 +3,8 @@ package raft
 import (
 	"errors"
 	"fmt"
-	"net"
 	"sync"
 	"sync/atomic"
-	"time"
-
-	"madledger/consensus"
-	pb "madledger/consensus/raft/protos"
-	core "madledger/core/types"
-
-	"google.golang.org/grpc"
 )
 
 // Raft wrap etcd raft and other things to provide a interface for using
@@ -23,8 +15,7 @@ type Raft struct {
 	eraft *ERaft
 	app   *App
 
-	status    int32
-	rpcServer *grpc.Server
+	status int32
 }
 
 // NewRaft is the constructor of Raft
@@ -62,10 +53,6 @@ func (r *Raft) Start() error {
 		return err
 	}
 
-	if err := r.serve(); err != nil {
-		return err
-	}
-
 	r.setStatus(Running)
 
 	return nil
@@ -80,12 +67,6 @@ func (r *Raft) Stop() {
 		return
 	}
 
-	// r.setStatus(Stopped)
-
-	if r.rpcServer != nil {
-		r.rpcServer.Stop()
-	}
-
 	if r.eraft != nil {
 		r.eraft.Stop()
 	}
@@ -97,26 +78,11 @@ func (r *Raft) Stop() {
 	r.setStatus(Stopped)
 }
 
-// AddTx is the implementation of interface
-func (r *Raft) AddTx(channelID string, tx []byte) error {
-	return errors.New("Not implementation yet")
-}
-
-// AddChannel is the implementation of interface
-func (r *Raft) AddChannel(channelID string, cfg Config) error {
-	return errors.New("Not implementation yet")
-}
-
-// GetBlock is the implementation of interface
-func (r *Raft) GetBlock(channelID string, num uint64, async bool) (consensus.Block, error) {
-	return nil, errors.New("Not implementation yet")
-}
-
 // AddBlock try to add a block, only leader is recommend to add block, however the etcd raft can not
 // gurantee this, so we are trying our best to forbid follower or candidate adding block, but the fact is
 // the first one trying to add block which num is except can succeed, but it maybe leader very possible.
 // And this function should gurantee that return nil if the block is really added(works in the app)
-func (r *Raft) AddBlock(block *core.Block) error {
+func (r *Raft) AddBlock(block *HybridBlock) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -124,9 +90,9 @@ func (r *Raft) AddBlock(block *core.Block) error {
 		return errors.New("The raft service is not running")
 	}
 
-	// if !r.IsLeader() {
-	// 	return fmt.Errorf("Leader is %s", r.GetLeader())
-	// }
+	if !r.IsLeader() {
+		return fmt.Errorf("Leader is %s", r.GetLeader())
+	}
 
 	// Note: Propose succeed means the block become an entry in the log, but it will not make sure that the block is the right block
 	if err := r.eraft.propose(block.Bytes()); err != nil {
@@ -137,27 +103,32 @@ func (r *Raft) AddBlock(block *core.Block) error {
 	return r.app.watch(block)
 }
 
-// serve will listen on address of config and provide service
-func (r *Raft) serve() (err error) {
-	lis, err := net.Listen("tcp", r.cfg.getLocalRaftAddress())
-	if err != nil {
-		return fmt.Errorf("Failed to start the raft service:%s", err)
-	}
+// BlockCh provide a channel to fetch blocks
+func (r *Raft) BlockCh() chan *HybridBlock {
+	return r.app.blockCh
+}
 
-	var opts []grpc.ServerOption
-	r.rpcServer = grpc.NewServer(opts...)
-	pb.RegisterRaftServer(r.rpcServer, r)
+// IsLeader return if the node is leader of the cluster
+func (r *Raft) IsLeader() bool {
+	return r.eraft.isLeader()
+}
 
-	go func() {
-		err = r.rpcServer.Serve(lis)
-		if err != nil {
-			return
-		}
-	}()
+// GetLeader return the leader's chain address
+func (r *Raft) GetLeader() string {
+	// leader := r.eraft.getLeader()
+	// return r.cfg.getPeerAddress(leader)
+	return ""
+}
 
-	time.Sleep(100 * time.Millisecond)
+// NotifyLater provide a mechanism for blockchain system to deal with the block which is too advanced
+func (r *Raft) NotifyLater(block *HybridBlock) {
+	r.app.notifyLater(block)
+}
 
-	return nil
+// FetchBlockDone is used for blockchain notify raft the block is stored on the disk
+// and there is no need to store the blocks before to release the pressure of db
+func (r *Raft) FetchBlockDone(num uint64) {
+	r.app.fetchBlockDone(num)
 }
 
 func (r *Raft) setStatus(status int32) {

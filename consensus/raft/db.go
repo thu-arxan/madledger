@@ -3,13 +3,12 @@ package raft
 import (
 	"encoding/json"
 	"madledger/common/util"
-	core "madledger/core/types"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
 type dbBlocks struct {
-	Blocks []*core.Block
+	Blocks []*HybridBlock
 }
 
 // DB is the database of raft
@@ -38,7 +37,7 @@ func (db *DB) Close() {
 }
 
 // AddBlock add a block into db
-func (db *DB) AddBlock(block *core.Block) {
+func (db *DB) AddBlock(block *HybridBlock) {
 	var key = util.Uint64ToBytes(block.GetNumber())
 	db.connect.Put(key, block.Bytes(), nil)
 }

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package protos;
+
+
+message Tx {
+    bytes Data = 1;
+}
+
+message None {
+
+}
+
+service BlockChain {
+    rpc AddTx(Tx) returns (None){}
+}

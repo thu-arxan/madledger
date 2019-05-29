@@ -6,7 +6,6 @@ import (
 	"madledger/common/crypto"
 	"madledger/common/event"
 	"madledger/common/util"
-	core "madledger/core/types"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -18,8 +17,8 @@ type App struct {
 	cfg    *Config
 	status int32 // only Running and Stopped
 
-	blocks  map[uint64]*core.Block
-	blockCh chan *core.Block
+	blocks  map[uint64]*HybridBlock
+	blockCh chan *HybridBlock
 	hub     *event.Hub
 	// minBlock is the min block number that the blockchain system needed
 	minBlock uint64
@@ -30,8 +29,8 @@ type App struct {
 func NewApp(cfg *Config) (*App, error) {
 	return &App{
 		cfg:     cfg,
-		blocks:  make(map[uint64]*core.Block),
-		blockCh: make(chan *core.Block, 2048),
+		blocks:  make(map[uint64]*HybridBlock),
+		blockCh: make(chan *HybridBlock, 2048),
 		hub:     event.NewHub(),
 		status:  Stopped,
 	}, nil
@@ -76,15 +75,14 @@ func (a *App) Commit(data []byte) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	var block core.Block
-	if err := json.Unmarshal(data, &block); err == nil {
+	if block := UnmarshalHybridBlock(data); block != nil {
 		hash := string(crypto.Hash(block.Bytes()))
 		if !util.Contain(a.blocks, block.GetNumber()) {
-			a.blocks[block.GetNumber()] = &block
+			a.blocks[block.GetNumber()] = block
 			if block.GetNumber() >= a.getMinBlock() {
-				a.db.AddBlock(&block)
+				a.db.AddBlock(block)
 				a.hub.Done(hash, nil)
-				a.blockCh <- &block
+				a.blockCh <- block
 				// a.sendBlocks()
 			}
 		} else {
@@ -108,7 +106,7 @@ func (a *App) Marshal() ([]byte, error) {
 
 // UnMarshal recover from snapshot
 func (a *App) UnMarshal(data []byte) error {
-	var blocks map[uint64]*core.Block
+	var blocks map[uint64]*HybridBlock
 	if err := json.Unmarshal(data, &blocks); err != nil {
 		return err
 	}
@@ -152,14 +150,14 @@ func (a *App) UnMarshal(data []byte) error {
 	return nil
 }
 
-func (a *App) watch(block *core.Block) error {
+func (a *App) watch(block *HybridBlock) error {
 	hash := string(crypto.Hash(block.Bytes()))
 	res := a.hub.Watch(hash, nil)
 	return res.Err
 }
 
 // notifyLater provide a mechanism for blockchain system to deal with the block which is too advanced
-func (a *App) notifyLater(block *core.Block) {
+func (a *App) notifyLater(block *HybridBlock) {
 	a.blockCh <- block
 }
 
@@ -174,33 +172,4 @@ func (a *App) fetchBlockDone(num uint64) {
 
 func (a *App) getMinBlock() uint64 {
 	return atomic.LoadUint64(&(a.minBlock))
-}
-
-// sendBlocks may be a good way, but it need to be designed better
-// todo: redesign the function, maybe need change notifyLater function
-// Note: The function is not used now.
-func (a *App) sendBlocks() {
-	// a.lock.Lock()
-	// defer a.lock.Unlock()
-	var nums = make([]uint64, 0)
-	for num := range a.blocks {
-		nums = append(nums, num)
-	}
-	sort.Slice(nums, func(i, j int) bool {
-		return nums[i] < nums[j]
-	})
-
-	minBlock := a.getMinBlock()
-	if util.Contain(a.blocks, minBlock) {
-		// fmt.Println(a.cfg.id, ":", nums)
-		for _, num := range nums {
-			block := a.blocks[num]
-			if block.GetNumber() >= minBlock {
-				a.blockCh <- block
-			}
-		}
-	} else {
-		log.Infof("[%d] Miss block %d:\n", a.cfg.id, minBlock)
-		log.Info(nums)
-	}
 }
