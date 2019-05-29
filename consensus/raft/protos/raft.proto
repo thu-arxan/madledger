@@ -3,10 +3,6 @@ syntax = "proto3";
 package protos;
 
 service Raft {
-    // AddNode add a new node join a cluster
-    rpc AddNode (NodeInfo) returns (AddNodeResponse);
-    // RemoveNode remove an old node from a cluster
-    rpc RemoveNode(NodeInfo) returns (RemoveNodeResponse);
 }
 
 // NodeInfo is the necessacy info of a raft node
