@@ -1,7 +1,6 @@
 package raft
 
 import (
-	"madledger/common/crypto"
 	"madledger/common/util"
 	"strings"
 )
@@ -36,8 +35,4 @@ func getLeaderFromError(err error) string {
 		return strings.Replace(strings.Replace(e, "Please send tx to", "", 1), " ", "", -1)
 	}
 	return ""
-}
-
-func hash(data []byte) string {
-	return string(crypto.Hash(data))
 }
