@@ -1,13 +1,18 @@
 package raft
 
 import (
+	"context"
 	"errors"
 	"madledger/common/crypto"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
+	pb "madledger/consensus/raft/protos"
+	"net"
 	"sync"
 	"time"
+
+	"google.golang.org/grpc"
 )
 
 // BlockChain will create blockchain in raft
@@ -24,6 +29,8 @@ type BlockChain struct {
 	blocks  map[uint64]*HybridBlock
 	blockCh chan *HybridBlock
 
+	rpcServer *grpc.Server
+
 	quit chan bool
 	done chan bool
 }
@@ -36,6 +43,7 @@ func NewBlockChain(cfg consensus.Config) (*BlockChain, error) {
 		return nil, err
 	}
 
+	// todo: set rpc server
 	return &BlockChain{
 		config:  cfg,
 		txs:     make(chan bool, cfg.MaxSize),
@@ -45,7 +53,33 @@ func NewBlockChain(cfg consensus.Config) (*BlockChain, error) {
 	}, nil
 }
 
+// Start start the blockchain service
+func (chain *BlockChain) Start() error {
+	chain.start()
+
+	lis, err := net.Listen("tcp", "Address")
+	if err != nil {
+		return errors.New("Failed to start the server")
+	}
+	var opts []grpc.ServerOption
+
+	chain.rpcServer = grpc.NewServer(opts...)
+	pb.RegisterBlockChainServer(chain.rpcServer, chain)
+	go func() {
+		err = chain.rpcServer.Serve(lis)
+		if err != nil {
+			log.Error("Start server failed: ", err)
+			return
+		}
+	}()
+
+	return nil
+}
+
+// start chain service
+// todo: use go routine
 func (chain *BlockChain) start() error {
+
 	ticker := time.NewTicker(time.Duration(chain.config.Timeout) * time.Millisecond)
 	defer ticker.Stop()
 
@@ -59,6 +93,8 @@ func (chain *BlockChain) start() error {
 			if chain.pool.getPoolSize() >= chain.config.MaxSize {
 				chain.createBlock(chain.pool.fetchTxs(chain.config.MaxSize))
 			}
+		case <-chain.blockCh:
+			// todo: only blockCh will really create block
 		case <-chain.quit:
 			chain.done <- true
 			return nil
@@ -67,12 +103,18 @@ func (chain *BlockChain) start() error {
 }
 
 // AddTx will try to add a tx
-func (chain *BlockChain) AddTx(tx []byte) error {
+func (chain *BlockChain) AddTx(ctx context.Context, in *pb.Tx) (*pb.None, error) {
+	err := chain.addTx(in.Data)
+	return &pb.None{}, err
+}
+
+func (chain *BlockChain) addTx(tx []byte) error {
 	if !chain.raft.IsLeader() {
 		return errors.New("Please send to leader")
 	}
 
-	err := chain.addTx(tx)
+	err := chain.pool.addTx(tx)
+
 	if err != nil {
 		return err
 	}
@@ -83,10 +125,6 @@ func (chain *BlockChain) AddTx(tx []byte) error {
 
 	result := chain.hub.Watch(util.Hex(crypto.Hash(tx)), nil)
 	return result.Err
-}
-
-func (chain *BlockChain) addTx(tx []byte) error {
-	return chain.pool.addTx(tx)
 }
 
 // Stop will block the work of channel
