@@ -1,7 +1,6 @@
 package raft
 
 import (
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -14,7 +13,6 @@ import (
 	core "madledger/core/types"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 // Raft wrap etcd raft and other things to provide a interface for using
@@ -147,15 +145,6 @@ func (r *Raft) serve() (err error) {
 	}
 
 	var opts []grpc.ServerOption
-	if r.cfg.tls.enable {
-		creds := credentials.NewTLS(&tls.Config{
-			ClientAuth:   tls.RequireAndVerifyClientCert,
-			Certificates: []tls.Certificate{r.cfg.tls.cert},
-			RootCAs:      r.cfg.tls.pool,
-			ClientCAs:    r.cfg.tls.pool,
-		})
-		opts = append(opts, grpc.Creds(creds))
-	}
 	r.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterRaftServer(r.rpcServer, r)
 

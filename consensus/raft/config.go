@@ -3,10 +3,8 @@ package raft
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"fmt"
 	"madledger/common/util"
-	"madledger/consensus"
 	pb "madledger/consensus/raft/protos"
 )
 
@@ -14,8 +12,7 @@ import (
 // The raft will use some linear address to make sure the service can config and run simple
 // If the chain port is 12345, then raft service will use 12346 and etcd raft node will use 12347
 type Config struct {
-	id   uint64
-	join bool
+	id uint64
 	// The work path that raft need
 	dir     string
 	dbDir   string
@@ -29,7 +26,6 @@ type Config struct {
 	chainPort int
 	// The listen address, it should be consensus with the blockchain service
 	address string
-	tls     tlsConfig
 
 	snapshotInterval uint64
 }
@@ -46,51 +42,25 @@ type tlsConfig struct {
 }
 
 // NewConfig is the constructor of Config
-func NewConfig(cfg *consensus.Config) (*Config, error) {
-	// chainCfg := cfg.BlockChain
+// works on dir and listen on address, id is the id of raft node, nodes is a url map of all nodes
+func NewConfig(dir, address string, id uint64, nodes map[uint64]string) (*Config, error) {
+	url, eraftPort, err := pb.ParseERaftAddress(nodes[id])
+	if err != nil {
+		return nil, err
+	}
 
-	// if !chainCfg.Raft.Enable {
-	// 	return nil, errors.New("The raft is not enable")
-	// }
-
-	// dir := fmt.Sprintf("%s/raft", chainCfg.Path)
-
-	// url, eraftPort, err := pb.ParseERaftAddress(chainCfg.Raft.Nodes[chainCfg.Raft.ID])
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// var tlsCfg tlsConfig
-	// if cfg.TLS.Enable {
-	// 	tlsCfg = tlsConfig{
-	// 		enable:   cfg.TLS.Enable,
-	// 		pool:     cfg.TLS.Pool,
-	// 		caFile:   cfg.TLS.CA,
-	// 		cert:     *cfg.TLS.Cert,
-	// 		certFile: cfg.TLS.RawCert,
-	// 		keyFile:  cfg.TLS.Key,
-	// 	}
-	// } else {
-	// 	tlsCfg = tlsConfig{
-	// 		enable: false,
-	// 	}
-	// }
-
-	// return &Config{
-	// 	id:               chainCfg.Raft.ID,
-	// 	join:             chainCfg.Raft.Join,
-	// 	dir:              dir,
-	// 	dbDir:            fmt.Sprintf("%s/db", dir),
-	// 	walDir:           fmt.Sprintf("%s/wal", dir),
-	// 	snapDir:          fmt.Sprintf("%s/snap", dir),
-	// 	peers:            cfg.BlockChain.Raft.Nodes,
-	// 	url:              url,
-	// 	chainPort:        eraftPort - 2,
-	// 	address:          cfg.Address,
-	// 	tls:              tlsCfg,
-	// 	snapshotInterval: 100,
-	// }, nil
-	return nil, errors.New("Not implementation yet")
+	return &Config{
+		id:               id,
+		dir:              dir,
+		dbDir:            fmt.Sprintf("%s/db", dir),
+		walDir:           fmt.Sprintf("%s/wal", dir),
+		snapDir:          fmt.Sprintf("%s/snap", dir),
+		peers:            nodes,
+		url:              url,
+		chainPort:        eraftPort - 2,
+		address:          address,
+		snapshotInterval: 100,
+	}, nil
 }
 
 // GetID return the id

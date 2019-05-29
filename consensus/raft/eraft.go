@@ -2,7 +2,6 @@ package raft
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,7 +24,6 @@ import (
 
 	stats "go.etcd.io/etcd/etcdserver/api/v2stats"
 	"go.etcd.io/etcd/pkg/fileutil"
-	"go.etcd.io/etcd/pkg/transport"
 	"go.etcd.io/etcd/pkg/types"
 
 	"go.etcd.io/etcd/etcdserver/api/rafthttp"
@@ -130,11 +128,7 @@ func (e *ERaft) Start() error {
 	if oldWAL {
 		e.node = er.RestartNode(erCfg)
 	} else {
-		if e.cfg.join {
-			e.node = er.StartNode(erCfg, nil)
-		} else {
-			e.node = er.StartNode(erCfg, peers)
-		}
+		e.node = er.StartNode(erCfg, peers)
 	}
 
 	e.transport = &rafthttp.Transport{
@@ -147,26 +141,13 @@ func (e *ERaft) Start() error {
 		LeaderStats: stats.NewLeaderStats(strconv.FormatUint(e.cfg.id, 10)),
 		ErrorC:      make(chan error),
 	}
-	if e.cfg.tls.enable {
-		e.transport.TLSInfo = transport.TLSInfo{
-			CertFile:       e.cfg.tls.certFile,
-			KeyFile:        e.cfg.tls.keyFile,
-			TrustedCAFile:  e.cfg.tls.caFile,
-			ClientCertAuth: true,
-		}
-	}
 
 	if err := e.transport.Start(); err != nil {
 		return err
 	}
 	for id := range e.cfg.peers {
 		if id != e.cfg.id {
-			if e.cfg.tls.enable {
-				e.transport.AddPeer(types.ID(id), []string{fmt.Sprintf("https://%s", e.cfg.peers[id])})
-			} else {
-				e.transport.AddPeer(types.ID(id), []string{fmt.Sprintf("http://%s", e.cfg.peers[id])})
-			}
-
+			e.transport.AddPeer(types.ID(id), []string{fmt.Sprintf("http://%s", e.cfg.peers[id])})
 		}
 	}
 
@@ -301,28 +282,12 @@ func (e *ERaft) startHTTP() error {
 		return err
 	}
 
-	if e.cfg.tls.enable {
-		e.httpServer = &http.Server{
-			Handler: e.transport.Handler(),
-			TLSConfig: &tls.Config{
-				Certificates: []tls.Certificate{e.cfg.tls.cert},
-				RootCAs:      e.cfg.tls.pool,
-				ClientCAs:    e.cfg.tls.pool,
-				ClientAuth:   tls.RequireAndVerifyClientCert,
-			},
-		}
-	} else {
-		e.httpServer = &http.Server{
-			Handler: e.transport.Handler(),
-		}
+	e.httpServer = &http.Server{
+		Handler: e.transport.Handler(),
 	}
 
 	go func() {
-		if e.cfg.tls.enable {
-			err = e.httpServer.ServeTLS(l, e.cfg.tls.certFile, e.cfg.tls.keyFile)
-		} else {
-			err = e.httpServer.Serve(l)
-		}
+		err = e.httpServer.Serve(l)
 		if err != nil {
 			if err.Error() == "http: Server closed" {
 				return
@@ -460,11 +425,7 @@ func (e *ERaft) publishEntries(ents []raftpb.Entry) error {
 				e.hub.Done(string(crypto.Hash(ccBytes)), nil)
 				if len(cc.Context) > 0 {
 					// context should be the url of the new node etcd raft url
-					if e.cfg.tls.enable {
-						e.transport.AddPeer(types.ID(cc.NodeID), []string{fmt.Sprintf("https://%s", string(cc.Context))})
-					} else {
-						e.transport.AddPeer(types.ID(cc.NodeID), []string{fmt.Sprintf("http://%s", string(cc.Context))})
-					}
+					e.transport.AddPeer(types.ID(cc.NodeID), []string{fmt.Sprintf("http://%s", string(cc.Context))})
 				}
 			case raftpb.ConfChangeRemoveNode:
 				ccBytes, _ := json.Marshal(cc)
