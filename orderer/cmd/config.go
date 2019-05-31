@@ -43,6 +43,15 @@ Consensus:
     # P2P Persistent Address, like c395828cc2baaa6f6af2bd13ce62d1e9484919c8@localhost:36656
     P2PAddress:
       -
+    # Raft is the raft consensus
+    Raft:
+    # The path of raft
+    Path:
+    # ID should be int, and it should not be duplicate
+    ID:
+    # Node should be like 1@localhost:12345
+    Nodes:
+      - 
 
 # DB only support leveldb now
 DB:
