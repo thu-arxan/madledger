@@ -137,7 +137,7 @@ func (a *App) UnMarshal(data []byte) error {
 		sort.Slice(nums, func(i, j int) bool {
 			return nums[i] < nums[j]
 		})
-		// fmt.Println(a.cfg.id, ":", nums)
+
 		for _, num := range nums {
 			block := blocks[num]
 			if block.GetNumber() >= a.getMinBlock() {
