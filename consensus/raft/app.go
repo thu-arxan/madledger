@@ -83,11 +83,11 @@ func (a *App) Commit(data []byte) {
 				a.db.AddBlock(block)
 				a.hub.Done(hash, nil)
 				a.blockCh <- block
-				// a.sendBlocks()
 			}
 		} else {
-			// todo: need finish this
-			// a.hub.Done(hash, fmt.Errorf("[%d] Duplicated block", a.cfg.id))
+			a.hub.Done(hash, &event.Result{
+				Err: errors.New("Duplicated block"),
+			})
 		}
 	}
 }

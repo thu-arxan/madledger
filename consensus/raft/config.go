@@ -95,11 +95,3 @@ func (c *EraftConfig) getLocalERaftAddress() string {
 func (c *EraftConfig) getERaftAddress() string {
 	return fmt.Sprintf("%s:%d", c.url, c.eraftPort)
 }
-
-// getPeerAddress return the peer blockchain address
-// func (c *Config) getPeerAddress(id uint64) string {
-// 	if util.Contain(c.peers, id) {
-// 		return pb.ERaftToChain(c.peers[id])
-// 	}
-// 	return ""
-// }
