@@ -4,7 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"madledger/common/util"
 	"os"
+	"regexp"
+	"strconv"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -22,6 +25,7 @@ type Config struct {
 	Consensus  struct {
 		Type       string           `yaml:"Type"`
 		Tendermint TendermintConfig `yaml:"Tendermint"`
+		Raft       RaftConfig       `yaml:"Raft"`
 	} `yaml:"Consensus"`
 	DB struct {
 		Type    string `yaml:"Type"`
@@ -96,6 +100,7 @@ const (
 type ConsensusConfig struct {
 	Type ConsensusType
 	BFT  TendermintConfig
+	Raft RaftConfig
 }
 
 // TendermintConfig is the config of tendermint
@@ -108,6 +113,15 @@ type TendermintConfig struct {
 	} `yaml:"Port"`
 	ID         string   `yaml:"ID"`
 	P2PAddress []string `yaml:"P2PAddress"`
+}
+
+// RaftConfig is the config of raft
+type RaftConfig struct {
+	Path string `yaml:"Path"`
+	ID   uint64 `yaml:"ID"`
+	// RawNodes should be an array like [1@localhost:12346]
+	RawNodes []string `yaml:"Nodes"`
+	Nodes    map[uint64]string
 }
 
 // GetBlockChainConfig return the BlockChainConfig
@@ -138,6 +152,20 @@ func (cfg *Config) GetConsensusConfig() (*ConsensusConfig, error) {
 		consensus.Type = SOLO
 	case "raft":
 		consensus.Type = RAFT
+		if consensus.Raft.ID <= 0 {
+			return nil, errors.New("Raft id should not be zero")
+		}
+		// then we should parse RawNodes to Nodes
+		for i := range consensus.Raft.RawNodes {
+			id, url, err := parseRaftNode(consensus.Raft.RawNodes[i])
+			if err != nil {
+				return nil, err
+			}
+			consensus.Raft.Nodes[id] = url
+		}
+		if !util.Contain(consensus.Raft.Nodes, consensus.Raft.ID) {
+			return nil, errors.New("Nodes must contain itself")
+		}
 		return nil, errors.New("Raft is not supported yet")
 	case "bft":
 		consensus.Type = BFT
@@ -187,4 +215,16 @@ func (cfg *Config) GetDBConfig() (*DBConfig, error) {
 		return nil, fmt.Errorf("Unsupport db type: %s", cfg.DB.Type)
 	}
 	return &config, nil
+}
+
+func parseRaftNode(node string) (uint64, string, error) {
+	params := regexp.MustCompile(`^([\d]+)@(.+):([0-9]+)$`).FindStringSubmatch(node)
+	if len(params) != 4 {
+		return 0, "", errors.New("Wrong format")
+	}
+	id, err := strconv.ParseUint(params[1], 10, 64)
+	if err != nil || id == 0 {
+		return 0, "", errors.New("Wrong format")
+	}
+	return id, fmt.Sprintf("%s:%s", params[2], params[3]), nil
 }
