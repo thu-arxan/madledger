@@ -93,8 +93,20 @@ func (chain *BlockChain) start() error {
 			if chain.pool.getPoolSize() >= chain.config.MaxSize {
 				chain.createBlock(chain.pool.fetchTxs(chain.config.MaxSize))
 			}
-		case <-chain.blockCh:
-			// todo: only blockCh will really create block
+		case block := <-chain.blockCh:
+			if block.GetNumber() == chain.num+1 {
+				chain.blocks[block.GetNumber()] = block
+				chain.num = block.GetNumber()
+				for _, tx := range block.Txs {
+					hash := util.Hex(crypto.Hash(tx))
+					chain.hub.Done(hash, nil)
+				}
+				chain.hub.Done(string(block.GetNumber()), nil)
+			} else if block.GetNumber() <= chain.num {
+				chain.raft.FetchBlockDone(block.GetNumber())
+			} else {
+				chain.raft.NotifyLater(block)
+			}
 		case <-chain.quit:
 			chain.done <- true
 			return nil
@@ -143,33 +155,26 @@ func (chain *BlockChain) createBlock(txs [][]byte) error {
 	}
 	// then call eraft
 	if err := chain.raft.AddBlock(block); err != nil {
+		// todo: if we failed to create block we should release all txs
 		return err
 	}
-	chain.blocks[block.Num] = block
-	chain.num++
-	// for _, tx := range block.txs {
-	// 	hash := util.Hex(crypto.Hash(tx))
-	// 	c.hub.Done(hash, nil)
-	// }
-
-	// c.hub.Done(string(block.num), nil)
 	return nil
 }
 
-func (chain *BlockChain) getBlock(num uint64, async bool) (*Block, error) {
-	// c.lock.Lock()
-	// if util.Contain(c.blocks, num) {
-	// 	defer c.lock.Unlock()
-	// 	return c.blocks[num], nil
-	// }
-	// c.lock.Unlock()
-	// if async {
-	// 	c.hub.Watch(string(num), nil)
-	// 	c.lock.Lock()
-	// 	defer c.lock.Unlock()
-	// 	return c.blocks[num], nil
-	// }
+// func (chain *BlockChain) getBlock(num uint64, async bool) (*Block, error) {
+// 	// c.lock.Lock()
+// 	// if util.Contain(c.blocks, num) {
+// 	// 	defer c.lock.Unlock()
+// 	// 	return c.blocks[num], nil
+// 	// }
+// 	// c.lock.Unlock()
+// 	// if async {
+// 	// 	c.hub.Watch(string(num), nil)
+// 	// 	c.lock.Lock()
+// 	// 	defer c.lock.Unlock()
+// 	// 	return c.blocks[num], nil
+// 	// }
 
-	// return nil, fmt.Errorf("Block %s:%d is not exist", c.id, c.num)
-	return nil, errors.New("Not implementation")
-}
+// 	// return nil, fmt.Errorf("Block %s:%d is not exist", c.id, c.num)
+// 	return nil, errors.New("Not implementation")
+// }

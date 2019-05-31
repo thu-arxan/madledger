@@ -34,7 +34,7 @@ import (
 
 // ERaft is a wrapper of etcd raft
 type ERaft struct {
-	cfg    *Config
+	cfg    *EraftConfig
 	app    *App
 	status int32
 	hub    *event.Hub
@@ -68,7 +68,7 @@ func (s *state) update(md raftpb.SnapshotMetadata) {
 }
 
 // NewERaft is the constructor of ERaft
-func NewERaft(cfg *Config, app *App) (*ERaft, error) {
+func NewERaft(cfg *EraftConfig, app *App) (*ERaft, error) {
 	return &ERaft{
 		cfg:        cfg,
 		app:        app,

@@ -2,16 +2,40 @@ package raft
 
 import (
 	"fmt"
+	"madledger/consensus"
 	pb "madledger/consensus/raft/protos"
 )
 
-// Config is the config of eraft
+// Config is the config of consensus
+type Config struct {
+	dir string
+	// consensus config
+	cc      consensus.Config
+	address string
+	// eraft config
+	ec *EraftConfig
+}
+
+// NewConfig is the constructor of Config
+func NewConfig(dir, address string, id uint64, nodes map[uint64]string, cc consensus.Config) (*Config, error) {
+	ec, err := NewEraftConfig(dir, address, id, nodes)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Config{
+		address: address,
+		dir:     dir,
+		cc:      cc,
+		ec:      ec,
+	}, nil
+}
+
+// EraftConfig is the config of eraft
 // The raft will use some linear address to make sure the service can config and run simple
 // If the chain port is 12345, then raft service will use 12346 and etcd raft node will use 12347
-type Config struct {
-	id uint64
-	// The work path that raft need
-	dir     string
+type EraftConfig struct {
+	id      uint64
 	dbDir   string
 	walDir  string
 	snapDir string
@@ -21,7 +45,7 @@ type Config struct {
 	url string
 	// The port of eraft port
 	eraftPort int
-	// The port of raft port
+	// The port of raft port, raftPort = eraftPort + 1
 	raftPort int
 	// The listen address, it should be consensus with the blockchain service
 	address string
@@ -29,17 +53,16 @@ type Config struct {
 	snapshotInterval uint64
 }
 
-// NewConfig is the constructor of Config
+// NewEraftConfig is the constructor of EraftConfig
 // works on dir and listen on address, id is the id of raft node, nodes is a url map of all nodes
-func NewConfig(dir, address string, id uint64, nodes map[uint64]string) (*Config, error) {
+func NewEraftConfig(dir, address string, id uint64, nodes map[uint64]string) (*EraftConfig, error) {
 	url, eraftPort, err := pb.ParseERaftAddress(nodes[id])
 	if err != nil {
 		return nil, err
 	}
 
-	return &Config{
+	return &EraftConfig{
 		id:               id,
-		dir:              dir,
 		dbDir:            fmt.Sprintf("%s/db", dir),
 		walDir:           fmt.Sprintf("%s/wal", dir),
 		snapDir:          fmt.Sprintf("%s/snap", dir),
@@ -53,23 +76,23 @@ func NewConfig(dir, address string, id uint64, nodes map[uint64]string) (*Config
 }
 
 // GetID return the id
-func (c *Config) GetID() uint64 {
+func (c *EraftConfig) GetID() uint64 {
 	return c.id
 }
 
-func (c *Config) getLocalRaftAddress() string {
+func (c *EraftConfig) getLocalRaftAddress() string {
 	return fmt.Sprintf("%s:%d", c.address, c.raftPort)
 }
 
-func (c *Config) getRaftAddress() string {
+func (c *EraftConfig) getRaftAddress() string {
 	return fmt.Sprintf("%s:%d", c.url, c.raftPort)
 }
 
-func (c *Config) getLocalERaftAddress() string {
+func (c *EraftConfig) getLocalERaftAddress() string {
 	return fmt.Sprintf("%s:%d", c.address, c.eraftPort)
 }
 
-func (c *Config) getERaftAddress() string {
+func (c *EraftConfig) getERaftAddress() string {
 	return fmt.Sprintf("%s:%d", c.url, c.eraftPort)
 }
 

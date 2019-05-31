@@ -14,7 +14,7 @@ import (
 // App is the application
 type App struct {
 	lock   sync.Mutex
-	cfg    *Config
+	cfg    *EraftConfig
 	status int32 // only Running and Stopped
 
 	blocks  map[uint64]*HybridBlock
@@ -26,7 +26,7 @@ type App struct {
 }
 
 // NewApp is the constructor of App
-func NewApp(cfg *Config) (*App, error) {
+func NewApp(cfg *EraftConfig) (*App, error) {
 	return &App{
 		cfg:     cfg,
 		blocks:  make(map[uint64]*HybridBlock),

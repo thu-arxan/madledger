@@ -11,7 +11,7 @@ import (
 type Raft struct {
 	lock sync.Mutex
 
-	cfg   *Config
+	cfg   *EraftConfig
 	eraft *ERaft
 	app   *App
 
@@ -19,7 +19,7 @@ type Raft struct {
 }
 
 // NewRaft is the constructor of Raft
-func NewRaft(cfg *Config) (*Raft, error) {
+func NewRaft(cfg *EraftConfig) (*Raft, error) {
 	app, err := NewApp(cfg)
 	if err != nil {
 		return nil, err
