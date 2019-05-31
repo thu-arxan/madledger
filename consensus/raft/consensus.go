@@ -1,9 +1,13 @@
 package raft
 
 import (
+	"context"
 	"errors"
 	"madledger/consensus"
 	"time"
+
+	"madledger/common/util"
+	pb "madledger/consensus/raft/protos"
 
 	"google.golang.org/grpc"
 )
@@ -14,6 +18,7 @@ type Consensus struct {
 	cfg     *Config
 	chain   *BlockChain
 	clients []*Client
+	leader  int
 }
 
 // Client is the clients keep connections to blockchain
@@ -36,6 +41,19 @@ func (c *Client) newConn() error {
 	}
 	c.conn = conn
 	return nil
+}
+
+func (c *Client) addTx(channelID string, tx []byte) error {
+	if c.conn == nil {
+		if err := c.newConn(); err != nil {
+			return err
+		}
+	}
+	client := pb.NewBlockChainClient(c.conn)
+	_, err := client.AddTx(context.Background(), &pb.Tx{
+		Data: NewTx(channelID, tx).Bytes(),
+	})
+	return err
 }
 
 // NewConseneus is the constructor of Consensus
@@ -75,7 +93,17 @@ func (c *Consensus) Stop() error {
 
 // AddTx is the implementation of interface
 func (c *Consensus) AddTx(channelID string, tx []byte) error {
-	return errors.New("Not implementation yet")
+	var err error
+	for i := 0; i < 10; i++ {
+		err = c.clients[c.leader].addTx(channelID, tx)
+		if err == nil {
+			return nil
+		}
+		c.leader = util.RandNum(len(c.clients))
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	return err
 }
 
 // AddChannel is the implementation of interface
