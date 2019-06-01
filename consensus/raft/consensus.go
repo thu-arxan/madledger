@@ -58,7 +58,7 @@ func (c *Client) addTx(channelID string, tx []byte) error {
 
 // NewConseneus is the constructor of Consensus
 func NewConseneus(cfg *Config) (*Consensus, error) {
-	chain, err := NewBlockChain(cfg.cc)
+	chain, err := NewBlockChain(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -70,10 +70,12 @@ func NewConseneus(cfg *Config) (*Consensus, error) {
 
 // Start is the implementation of interface
 func (c *Consensus) Start() error {
+	log.Info("Consensus Start function")
 	if err := c.chain.Start(); err != nil {
 		return err
 	}
 
+	log.Info("Create clients...")
 	c.clients = make([]*Client, 0)
 	for _, addr := range c.cfg.ec.peers {
 		client, err := NewClient(addr)
@@ -83,7 +85,7 @@ func (c *Consensus) Start() error {
 		c.clients = append(c.clients, client)
 	}
 
-	return errors.New("Not implementation yet")
+	return nil
 }
 
 // Stop is the implementation of interface
@@ -108,7 +110,7 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 
 // AddChannel is the implementation of interface
 // Note: we can ignore this function now
-func (c *Consensus) AddChannel(channelID string, cfg EraftConfig) error {
+func (c *Consensus) AddChannel(channelID string, cfg consensus.Config) error {
 	return nil
 }
 

@@ -3,6 +3,7 @@ package raft
 import (
 	"context"
 	"errors"
+	"fmt"
 	"madledger/common/crypto"
 	"madledger/common/event"
 	"madledger/common/util"
@@ -36,33 +37,36 @@ type BlockChain struct {
 }
 
 // NewBlockChain is the constructor of blockchain
-func NewBlockChain(cfg consensus.Config) (*BlockChain, error) {
+func NewBlockChain(cfg *Config) (*BlockChain, error) {
 	// todo:here should not be nil
-	raft, err := NewRaft(nil)
+	raft, err := NewRaft(cfg.ec)
 	if err != nil {
 		return nil, err
 	}
 
 	// todo: set rpc server
 	return &BlockChain{
-		config:  cfg,
-		txs:     make(chan bool, cfg.MaxSize),
+		config:  cfg.cc,
+		txs:     make(chan bool, cfg.cc.MaxSize),
 		quit:    make(chan bool, 1),
 		done:    make(chan bool, 1),
 		blockCh: raft.BlockCh(),
+		pool:    newTxPool(),
+		raft:    raft,
 	}, nil
 }
 
 // Start start the blockchain service
 func (chain *BlockChain) Start() error {
-	chain.start()
+	if err := chain.start(); err != nil {
+		return err
+	}
 
-	lis, err := net.Listen("tcp", "Address")
+	lis, err := net.Listen("tcp", chain.raft.cfg.getLocalRaftAddress())
 	if err != nil {
-		return errors.New("Failed to start the server")
+		return fmt.Errorf("Failed to start the server(%s)", err)
 	}
 	var opts []grpc.ServerOption
-
 	chain.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterBlockChainServer(chain.rpcServer, chain)
 	go func() {
@@ -79,39 +83,43 @@ func (chain *BlockChain) Start() error {
 // start chain service
 // todo: use go routine
 func (chain *BlockChain) start() error {
-
 	ticker := time.NewTicker(time.Duration(chain.config.Timeout) * time.Millisecond)
 	defer ticker.Stop()
 
 	log.Infof("Raft blockchain start")
 
-	for {
-		select {
-		case <-ticker.C:
-			chain.createBlock(chain.pool.fetchTxs(chain.config.MaxSize))
-		case <-chain.txs:
-			if chain.pool.getPoolSize() >= chain.config.MaxSize {
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
 				chain.createBlock(chain.pool.fetchTxs(chain.config.MaxSize))
-			}
-		case block := <-chain.blockCh:
-			if block.GetNumber() == chain.num+1 {
-				chain.blocks[block.GetNumber()] = block
-				chain.num = block.GetNumber()
-				for _, tx := range block.Txs {
-					hash := util.Hex(crypto.Hash(tx))
-					chain.hub.Done(hash, nil)
+			case <-chain.txs:
+				if chain.pool.getPoolSize() >= chain.config.MaxSize {
+					chain.createBlock(chain.pool.fetchTxs(chain.config.MaxSize))
 				}
-				chain.hub.Done(string(block.GetNumber()), nil)
-			} else if block.GetNumber() <= chain.num {
-				chain.raft.FetchBlockDone(block.GetNumber())
-			} else {
-				chain.raft.NotifyLater(block)
+			case block := <-chain.blockCh:
+				if block.GetNumber() == chain.num+1 {
+					chain.blocks[block.GetNumber()] = block
+					chain.num = block.GetNumber()
+					for _, tx := range block.Txs {
+						hash := util.Hex(crypto.Hash(tx))
+						chain.hub.Done(hash, nil)
+					}
+					chain.hub.Done(string(block.GetNumber()), nil)
+				} else if block.GetNumber() <= chain.num {
+					chain.raft.FetchBlockDone(block.GetNumber())
+				} else {
+					chain.raft.NotifyLater(block)
+				}
+			case <-chain.quit:
+				chain.done <- true
+				return
 			}
-		case <-chain.quit:
-			chain.done <- true
-			return nil
 		}
-	}
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+	return nil
 }
 
 // AddTx will try to add a tx
