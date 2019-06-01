@@ -35,7 +35,7 @@ func NewClient(addr string) (*Client, error) {
 }
 
 func (c *Client) newConn() error {
-	conn, err := grpc.Dial(c.addr, nil, grpc.WithTimeout(2000*time.Millisecond))
+	conn, err := grpc.Dial(c.addr, grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
 	if err != nil {
 		return err
 	}
@@ -70,12 +70,10 @@ func NewConseneus(cfg *Config) (*Consensus, error) {
 
 // Start is the implementation of interface
 func (c *Consensus) Start() error {
-	log.Info("Consensus Start function")
 	if err := c.chain.Start(); err != nil {
 		return err
 	}
 
-	log.Info("Create clients...")
 	c.clients = make([]*Client, 0)
 	for _, addr := range c.cfg.ec.peers {
 		client, err := NewClient(addr)
@@ -96,15 +94,19 @@ func (c *Consensus) Stop() error {
 // AddTx is the implementation of interface
 func (c *Consensus) AddTx(channelID string, tx []byte) error {
 	var err error
+	log.Infof("Add tx of channel %s", channelID)
 	for i := 0; i < 10; i++ {
+		log.Infof("Try to add tx to %d", c.leader)
 		err = c.clients[c.leader].addTx(channelID, tx)
 		if err == nil {
 			return nil
 		}
 		c.leader = util.RandNum(len(c.clients))
-		time.Sleep(100 * time.Millisecond)
+		log.Infof("Retry %d times and leader is %d", i, c.leader)
+		time.Sleep(200 * time.Millisecond)
 	}
 
+	log.Infof("Add tx failed because %s", err)
 	return err
 }
 

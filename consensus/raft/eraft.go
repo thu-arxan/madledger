@@ -20,6 +20,8 @@ import (
 
 	"go.etcd.io/etcd/raft/raftpb"
 
+	pb "madledger/consensus/raft/protos"
+
 	"go.etcd.io/etcd/etcdserver/api/snap"
 
 	stats "go.etcd.io/etcd/etcdserver/api/v2stats"
@@ -84,6 +86,7 @@ func NewERaft(cfg *EraftConfig, app *App) (*ERaft, error) {
 func (e *ERaft) Start() error {
 	var err error
 
+	log.Info("ERaft Start function")
 	if atomic.LoadInt32(&e.status) != Stopped {
 		return errors.New("The etcd raft is not stopped")
 	}
@@ -132,8 +135,7 @@ func (e *ERaft) Start() error {
 	}
 
 	e.transport = &rafthttp.Transport{
-		Logger: zap.NewNop(),
-		// Logger:      zap.NewExample(),
+		Logger:      zap.NewNop(),
 		ID:          types.ID(e.cfg.id),
 		ClusterID:   0x10,
 		Raft:        e,
@@ -147,7 +149,7 @@ func (e *ERaft) Start() error {
 	}
 	for id := range e.cfg.peers {
 		if id != e.cfg.id {
-			e.transport.AddPeer(types.ID(id), []string{fmt.Sprintf("http://%s", e.cfg.peers[id])})
+			e.transport.AddPeer(types.ID(id), []string{fmt.Sprintf("http://%s", pb.RaftToERaft(e.cfg.peers[id]))})
 		}
 	}
 

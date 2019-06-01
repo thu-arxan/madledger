@@ -33,7 +33,7 @@ func NewConfig(dir, address string, id uint64, nodes map[uint64]string, cc conse
 
 // EraftConfig is the config of eraft
 // The raft will use some linear address to make sure the service can config and run simple
-// If the chain port is 12345, then raft service will use 12346 and etcd raft node will use 12347
+// If raft blockchain use 12346 then eraft service will use 12347
 type EraftConfig struct {
 	id      uint64
 	dbDir   string
@@ -43,10 +43,10 @@ type EraftConfig struct {
 	peers map[uint64]string
 	// The url of node, maybe ip or domain
 	url string
-	// The port of eraft port
+	// The port of eraft port, eraftPort = chainPort + 1
 	eraftPort int
-	// The port of raft port, raftPort = eraftPort + 1
-	raftPort int
+	// The port of raft blockchain port
+	chainPort int
 	// The listen address, it should be consensus with the blockchain service
 	address string
 
@@ -56,7 +56,7 @@ type EraftConfig struct {
 // NewEraftConfig is the constructor of EraftConfig
 // works on dir and listen on address, id is the id of raft node, nodes is a url map of all nodes
 func NewEraftConfig(dir, address string, id uint64, nodes map[uint64]string) (*EraftConfig, error) {
-	url, eraftPort, err := pb.ParseERaftAddress(nodes[id])
+	url, chainPort, err := pb.ParseRaftAddress(nodes[id])
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +68,8 @@ func NewEraftConfig(dir, address string, id uint64, nodes map[uint64]string) (*E
 		snapDir:          fmt.Sprintf("%s/snap", dir),
 		peers:            nodes,
 		url:              url,
-		eraftPort:        eraftPort,
-		raftPort:         eraftPort + 1,
+		eraftPort:        chainPort + 1,
+		chainPort:        chainPort,
 		address:          address,
 		snapshotInterval: 100,
 	}, nil
@@ -80,12 +80,12 @@ func (c *EraftConfig) GetID() uint64 {
 	return c.id
 }
 
-func (c *EraftConfig) getLocalRaftAddress() string {
-	return fmt.Sprintf("%s:%d", c.address, c.raftPort)
+func (c *EraftConfig) getLocalChainAddress() string {
+	return fmt.Sprintf("%s:%d", c.address, c.chainPort)
 }
 
-func (c *EraftConfig) getRaftAddress() string {
-	return fmt.Sprintf("%s:%d", c.url, c.raftPort)
+func (c *EraftConfig) getChainAddress() string {
+	return fmt.Sprintf("%s:%d", c.url, c.chainPort)
 }
 
 func (c *EraftConfig) getLocalERaftAddress() string {

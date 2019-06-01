@@ -38,7 +38,6 @@ type BlockChain struct {
 
 // NewBlockChain is the constructor of blockchain
 func NewBlockChain(cfg *Config) (*BlockChain, error) {
-	// todo:here should not be nil
 	raft, err := NewRaft(cfg.ec)
 	if err != nil {
 		return nil, err
@@ -53,19 +52,26 @@ func NewBlockChain(cfg *Config) (*BlockChain, error) {
 		blockCh: raft.BlockCh(),
 		pool:    newTxPool(),
 		raft:    raft,
+		hub:     event.NewHub(),
+		blocks:  make(map[uint64]*HybridBlock),
 	}, nil
 }
 
 // Start start the blockchain service
 func (chain *BlockChain) Start() error {
+	if err := chain.raft.Start(); err != nil {
+		return err
+	}
+
 	if err := chain.start(); err != nil {
 		return err
 	}
 
-	lis, err := net.Listen("tcp", chain.raft.cfg.getLocalRaftAddress())
+	lis, err := net.Listen("tcp", chain.raft.cfg.getLocalChainAddress())
 	if err != nil {
 		return fmt.Errorf("Failed to start the server(%s)", err)
 	}
+	log.Infof("Listen %s", chain.raft.cfg.getLocalChainAddress())
 	var opts []grpc.ServerOption
 	chain.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterBlockChainServer(chain.rpcServer, chain)
@@ -77,18 +83,18 @@ func (chain *BlockChain) Start() error {
 		}
 	}()
 
+	time.Sleep(300 * time.Millisecond)
 	return nil
 }
 
 // start chain service
-// todo: use go routine
 func (chain *BlockChain) start() error {
-	ticker := time.NewTicker(time.Duration(chain.config.Timeout) * time.Millisecond)
-	defer ticker.Stop()
-
 	log.Infof("Raft blockchain start")
 
 	go func() {
+		ticker := time.NewTicker(time.Duration(chain.config.Timeout) * time.Millisecond)
+		defer ticker.Stop()
+
 		for {
 			select {
 			case <-ticker.C:
@@ -158,10 +164,11 @@ func (chain *BlockChain) createBlock(txs [][]byte) error {
 		return nil
 	}
 	block := &HybridBlock{
-		Num: chain.num,
+		Num: chain.num + 1,
 		Txs: txs,
 	}
 	// then call eraft
+	log.Infof("[%d]Try to add block %d", chain.raft.cfg.id, block.Num)
 	if err := chain.raft.AddBlock(block); err != nil {
 		// todo: if we failed to create block we should release all txs
 		return err

@@ -7,29 +7,9 @@ import (
 	"strings"
 )
 
-// ChainToRaft return the raft service address according to the chain address
-func ChainToRaft(chainAddress string) string {
-	url, port, err := ParseChainAddress(chainAddress)
-	if err != nil {
-		return ""
-	}
-
-	return fmt.Sprintf("%s:%d", url, port+1)
-}
-
-// ChainToERaft return the eraft address according to the chain address
-func ChainToERaft(chainAddress string) string {
-	url, port, err := ParseChainAddress(chainAddress)
-	if err != nil {
-		return ""
-	}
-
-	return fmt.Sprintf("%s:%d", url, port+2)
-}
-
 // ERaftToRaft return the raft service address according to the etcd raft address
 func ERaftToRaft(eraftAddress string) string {
-	url, port, err := ParseERaftAddress(eraftAddress)
+	url, port, err := ParseRaftAddress(eraftAddress)
 	if err != nil {
 		return ""
 	}
@@ -37,18 +17,18 @@ func ERaftToRaft(eraftAddress string) string {
 	return fmt.Sprintf("%s:%d", url, port-1)
 }
 
-// ERaftToChain return the chain address according to the etcd raft address
-func ERaftToChain(eraftAddress string) string {
-	url, port, err := ParseERaftAddress(eraftAddress)
+// RaftToERaft return the eraft service address according the raft address
+func RaftToERaft(raftAddress string) string {
+	url, port, err := ParseRaftAddress(raftAddress)
 	if err != nil {
 		return ""
 	}
 
-	return fmt.Sprintf("%s:%d", url, port-2)
+	return fmt.Sprintf("%s:%d", url, port+1)
 }
 
-// ParseERaftAddress parse etcd raft address
-func ParseERaftAddress(eraftAddress string) (string, int, error) {
+// ParseRaftAddress parse etcd raft address
+func ParseRaftAddress(eraftAddress string) (string, int, error) {
 	eraftAddress = strings.Replace(eraftAddress, " ", "", -1)
 	s := strings.Split(eraftAddress, ":")
 	if len(s) != 2 {
@@ -59,11 +39,6 @@ func ParseERaftAddress(eraftAddress string) (string, int, error) {
 		return "", 0, errors.New("Failed to parse the port")
 	}
 	return s[0], port, nil
-}
-
-// ParseChainAddress parse blockchain address
-func ParseChainAddress(chainAddress string) (string, int, error) {
-	return parseAddress(chainAddress, 1024)
 }
 
 func parseAddress(address string, minPort int) (string, int, error) {

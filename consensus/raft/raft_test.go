@@ -5,7 +5,9 @@ import (
 	"madledger/common/util"
 	"madledger/consensus"
 	"os"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/otiai10/copy"
 	"github.com/stretchr/testify/require"
@@ -39,12 +41,44 @@ func TestStart(t *testing.T) {
 		node, err := NewConseneus(cfg)
 		require.NoError(t, err)
 		rns[i] = node
-		require.NoError(t, node.Start())
+		go func() {
+			require.NoError(t, node.Start())
+		}()
 	}
+	time.Sleep(2 * time.Second)
 }
 
 func TestAddTx(t *testing.T) {
+	txSize = 16
+	var txs [][]byte
+	var success = make(map[string]int)
+	var lock sync.Mutex
 
+	for i := 0; i < txSize; i++ {
+		tx := randomTx()
+		success[string(tx)] = 0
+		txs = append(txs, tx)
+	}
+
+	var wg sync.WaitGroup
+	for i := range txs {
+		wg.Add(1)
+		tx := txs[i]
+		go func() {
+			defer wg.Done()
+			n := util.RandNum(len(rns))
+			if err := rns[n].AddTx("test", tx); err == nil {
+				lock.Lock()
+				success[string(tx)]++
+				lock.Unlock()
+			}
+		}()
+	}
+	wg.Wait()
+
+	for i := range success {
+		require.Equal(t, 1, success[i])
+	}
 }
 
 func TestStop(t *testing.T) {

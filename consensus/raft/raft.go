@@ -45,6 +45,7 @@ func (r *Raft) Start() error {
 	}
 	r.setStatus(OnStarting)
 
+	log.Info("Raft Start function")
 	if err := r.app.Start(); err != nil {
 		return err
 	}
