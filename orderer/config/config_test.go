@@ -84,7 +84,7 @@ func TestGetConsensusConfig(t *testing.T) {
 
 	cfg.Consensus.Type = "raft"
 	consensusCfg, err = cfg.GetConsensusConfig()
-	require.EqualError(t, err, "Raft is not supported yet")
+	require.EqualError(t, err, "Raft id should not be zero")
 
 	cfg.Consensus.Type = "unknown"
 	consensusCfg, err = cfg.GetConsensusConfig()
