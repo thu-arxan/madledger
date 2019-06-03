@@ -71,10 +71,6 @@ func NewConseneus(cfg *Config) (*Consensus, error) {
 
 // Start is the implementation of interface
 func (c *Consensus) Start() error {
-	if err := c.chain.Start(); err != nil {
-		return err
-	}
-
 	c.clients = make([]*Client, 0)
 	for _, addr := range c.cfg.ec.peers {
 		client, err := NewClient(addr)
@@ -82,6 +78,10 @@ func (c *Consensus) Start() error {
 			return err
 		}
 		c.clients = append(c.clients, client)
+	}
+
+	if err := c.chain.Start(); err != nil {
+		return err
 	}
 
 	return nil
