@@ -69,9 +69,11 @@ func createConfigFile(cfgFile, path string, tendermintP2PID string) error {
 	cfg = cfgTemplate
 	blockChainPath, _ := util.MakeFileAbs("data/blocks", path)
 	tendermintPath, _ := util.MakeFileAbs(".tendermint", path)
+	raftPath, _ := util.MakeFileAbs(".raft", path)
 	levelDBPath, _ := util.MakeFileAbs("data/leveldb", path)
 	cfg = strings.Replace(cfg, "<<<BlockChainPath>>>", blockChainPath, 1)
 	cfg = strings.Replace(cfg, "<<<TendermintPath>>>", tendermintPath, 1)
+	cfg = strings.Replace(cfg, "<<<RaftPath>>>", raftPath, 1)
 	cfg = strings.Replace(cfg, "<<<LevelDBPath>>>", levelDBPath, 1)
 	cfg = strings.Replace(cfg, "<<<TendermintP2PID>>>", tendermintP2PID, 1)
 
