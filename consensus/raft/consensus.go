@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"madledger/consensus"
+	"sync/atomic"
 	"time"
 
 	"madledger/common/util"
@@ -18,7 +19,7 @@ type Consensus struct {
 	cfg     *Config
 	chain   *BlockChain
 	clients []*Client
-	leader  int
+	leader  int32
 }
 
 // Client is the clients keep connections to blockchain
@@ -97,11 +98,11 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 	log.Infof("Add tx of channel %s", channelID)
 	for i := 0; i < 10; i++ {
 		log.Infof("Try to add tx to %d", c.leader)
-		err = c.clients[c.leader].addTx(channelID, tx)
+		err = c.clients[c.getLeader()].addTx(channelID, tx)
 		if err == nil {
 			return nil
 		}
-		c.leader = util.RandNum(len(c.clients))
+		c.setLeader(util.RandNum(len(c.clients)))
 		log.Infof("Retry %d times and leader is %d", i, c.leader)
 		time.Sleep(200 * time.Millisecond)
 	}
@@ -119,4 +120,13 @@ func (c *Consensus) AddChannel(channelID string, cfg consensus.Config) error {
 // GetBlock is the implementation of interface
 func (c *Consensus) GetBlock(channelID string, num uint64, async bool) (consensus.Block, error) {
 	return nil, errors.New("Not implementation yet")
+}
+
+func (c *Consensus) setLeader(leader int) {
+	atomic.StoreInt32(&c.leader, int32(leader))
+}
+
+func (c *Consensus) getLeader() int {
+	leader := atomic.LoadInt32(&c.leader)
+	return int(leader)
 }

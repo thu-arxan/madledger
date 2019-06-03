@@ -27,7 +27,7 @@ BlockChain:
 
 # Consensus mechanism configuration
 Consensus:
-  # will support solo, raft, bft. Only support solo yet and bft is constructed now.
+  # will support solo, raft, bft. Support solo and bft yet, raft is being constructed now.
   Type: solo
   # Tendermint is the bft consensus.
   Tendermint:
