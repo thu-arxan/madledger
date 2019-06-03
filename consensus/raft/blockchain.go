@@ -21,7 +21,6 @@ type BlockChain struct {
 	lock sync.Mutex
 
 	raft    *Raft
-	db      *DB
 	config  consensus.Config
 	txs     chan bool
 	pool    *txPool
@@ -105,13 +104,7 @@ func (chain *BlockChain) start() error {
 				}
 			case block := <-chain.blockCh:
 				if block.GetNumber() == chain.num+1 {
-					chain.blocks[block.GetNumber()] = block
-					chain.num = block.GetNumber()
-					for _, tx := range block.Txs {
-						hash := util.Hex(crypto.Hash(tx))
-						chain.hub.Done(hash, nil)
-					}
-					chain.hub.Done(string(block.GetNumber()), nil)
+					chain.addBlock(block)
 				} else if block.GetNumber() <= chain.num {
 					chain.raft.FetchBlockDone(block.GetNumber())
 				} else {
@@ -173,7 +166,19 @@ func (chain *BlockChain) createBlock(txs [][]byte) error {
 		// todo: if we failed to create block we should release all txs
 		return err
 	}
+
+	chain.addBlock(block)
 	return nil
+}
+
+func (chain *BlockChain) addBlock(block *HybridBlock) {
+	chain.blocks[block.GetNumber()] = block
+	chain.num = block.GetNumber()
+	for _, tx := range block.Txs {
+		hash := util.Hex(crypto.Hash(tx))
+		chain.hub.Done(hash, nil)
+	}
+	chain.hub.Done(string(block.GetNumber()), nil)
 }
 
 // func (chain *BlockChain) getBlock(num uint64, async bool) (*Block, error) {

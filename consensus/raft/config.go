@@ -8,7 +8,8 @@ import (
 
 // Config is the config of consensus
 type Config struct {
-	dir string
+	dir   string
+	dbDir string
 	// consensus config
 	cc      consensus.Config
 	address string

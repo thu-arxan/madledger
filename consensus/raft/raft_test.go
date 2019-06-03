@@ -67,7 +67,6 @@ func TestAddTx(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			n := util.RandNum(len(rns))
-			log.Infof("N is %d", n)
 			if err := rns[n].AddTx("test", tx); err == nil {
 				lock.Lock()
 				success[string(tx)]++
@@ -83,7 +82,7 @@ func TestAddTx(t *testing.T) {
 }
 
 func TestStop(t *testing.T) {
-
+	os.RemoveAll(getTestPath())
 }
 
 func getTestPath() string {

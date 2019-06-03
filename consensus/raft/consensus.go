@@ -95,15 +95,15 @@ func (c *Consensus) Stop() error {
 // AddTx is the implementation of interface
 func (c *Consensus) AddTx(channelID string, tx []byte) error {
 	var err error
-	log.Infof("Add tx of channel %s", channelID)
+	// log.Infof("Add tx of channel %s", channelID)
 	for i := 0; i < 10; i++ {
-		log.Infof("Try to add tx to %d", c.leader)
+		// log.Infof("Try to add tx to %d", c.leader)
 		err = c.clients[c.getLeader()].addTx(channelID, tx)
 		if err == nil {
 			return nil
 		}
 		c.setLeader(util.RandNum(len(c.clients)))
-		log.Infof("Retry %d times and leader is %d", i, c.leader)
+		// log.Infof("Retry %d times and leader is %d", i, c.leader)
 		time.Sleep(200 * time.Millisecond)
 	}
 
