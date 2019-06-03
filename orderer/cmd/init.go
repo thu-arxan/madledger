@@ -82,6 +82,7 @@ func createConfigFile(cfgFile, path string, tendermintP2PID string) error {
 func initTendermintEnv(path string) (string, error) {
 	tendermintPath, _ := util.MakeFileAbs(".tendermint", path)
 	os.MkdirAll(tendermintPath+"/config", 0777)
+	os.MkdirAll(tendermintPath+"/data", 0777)
 	var conf = tc.DefaultConfig()
 	privValKeyFile := tendermintPath + "/" + conf.PrivValidatorKeyFile()
 	privValStateFile := tendermintPath + "/" + conf.PrivValidatorStateFile()
