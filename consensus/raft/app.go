@@ -80,7 +80,7 @@ func (a *App) Commit(data []byte) {
 		if !util.Contain(a.blocks, block.GetNumber()) {
 			a.blocks[block.GetNumber()] = block
 			if block.GetNumber() >= a.getMinBlock() {
-				a.db.AddBlock(block)
+				a.db.PutBlock(block)
 				a.hub.Done(hash, nil)
 				a.blockCh <- block
 			}

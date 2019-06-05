@@ -76,10 +76,12 @@ func createConfigFile(cfgFile, path, consensusType string, tendermintP2PID strin
 	cfg = cfgTemplate
 	blockChainPath, _ := util.MakeFileAbs("data/blocks", path)
 	tendermintPath, _ := util.MakeFileAbs(".tendermint", path)
+	raftPath, _ := util.MakeFileAbs(".raft", path)
 	levelDBPath, _ := util.MakeFileAbs("data/leveldb", path)
 	cfg = strings.Replace(cfg, "<<<BlockChainPath>>>", blockChainPath, 1)
 	cfg = strings.Replace(cfg, "<<<ConsensusType>>>", consensusType, 1)
 	cfg = strings.Replace(cfg, "<<<TendermintPath>>>", tendermintPath, 1)
+	cfg = strings.Replace(cfg, "<<<RaftPath>>>", raftPath, 1)
 	cfg = strings.Replace(cfg, "<<<LevelDBPath>>>", levelDBPath, 1)
 	cfg = strings.Replace(cfg, "<<<TendermintP2PID>>>", tendermintP2PID, 1)
 
@@ -90,6 +92,7 @@ func createConfigFile(cfgFile, path, consensusType string, tendermintP2PID strin
 func initTendermintEnv(path string) (string, error) {
 	tendermintPath, _ := util.MakeFileAbs(".tendermint", path)
 	os.MkdirAll(tendermintPath+"/config", 0777)
+	os.MkdirAll(tendermintPath+"/data", 0777)
 	var conf = tc.DefaultConfig()
 	privValKeyFile := tendermintPath + "/" + conf.PrivValidatorKeyFile()
 	privValStateFile := tendermintPath + "/" + conf.PrivValidatorStateFile()

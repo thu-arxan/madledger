@@ -2,6 +2,7 @@ package raft
 
 import (
 	"encoding/json"
+	"errors"
 	"madledger/common/util"
 
 	"github.com/syndtr/goleveldb/leveldb"
@@ -36,10 +37,29 @@ func (db *DB) Close() {
 	db.connect.Close()
 }
 
-// AddBlock add a block into db
-func (db *DB) AddBlock(block *HybridBlock) {
+// PutBlock put a block into db
+func (db *DB) PutBlock(block *HybridBlock) {
 	var key = util.Uint64ToBytes(block.GetNumber())
 	db.connect.Put(key, block.Bytes(), nil)
+}
+
+// GetBlock return the block which Num is num
+// Return nil, errors.New("Not exist") if not exist
+func (db *DB) GetBlock(num uint64) (*HybridBlock, error) {
+	var key = util.Uint64ToBytes(num)
+	has, err := db.connect.Has(key, nil)
+	if err != nil {
+		return nil, err
+	}
+	if has {
+		value, err := db.connect.Get(key, nil)
+		if err != nil {
+			return nil, err
+		}
+		return UnmarshalHybridBlock(value), nil
+	}
+
+	return nil, errors.New("Not exist")
 }
 
 // GetMinBlock return min block number for restore

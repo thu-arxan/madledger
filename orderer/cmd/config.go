@@ -46,7 +46,7 @@ Consensus:
   # Raft is the raft consensus
   Raft:
     # The path of raft
-    Path:
+    Path: <<<RaftPath>>>
     # ID should be int, and it should not be duplicate
     ID:
     # Node should be like 1@localhost:12345

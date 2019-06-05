@@ -49,7 +49,7 @@ func TestStart(t *testing.T) {
 }
 
 func TestAddTx(t *testing.T) {
-	txSize = 16
+	txSize = 128
 	var txs [][]byte
 	var success = make(map[string]int)
 	var lock sync.Mutex
@@ -82,7 +82,7 @@ func TestAddTx(t *testing.T) {
 }
 
 func TestStop(t *testing.T) {
-
+	os.RemoveAll(getTestPath())
 }
 
 func getTestPath() string {
