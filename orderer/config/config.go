@@ -152,10 +152,12 @@ func (cfg *Config) GetConsensusConfig() (*ConsensusConfig, error) {
 		consensus.Type = SOLO
 	case "raft":
 		consensus.Type = RAFT
+		consensus.Raft = cfg.Consensus.Raft
 		if consensus.Raft.ID <= 0 {
 			return nil, errors.New("Raft id should not be zero")
 		}
 		// then we should parse RawNodes to Nodes
+		consensus.Raft.Nodes = make(map[uint64]string)
 		for i := range consensus.Raft.RawNodes {
 			id, url, err := parseRaftNode(consensus.Raft.RawNodes[i])
 			if err != nil {
@@ -166,7 +168,7 @@ func (cfg *Config) GetConsensusConfig() (*ConsensusConfig, error) {
 		if !util.Contain(consensus.Raft.Nodes, consensus.Raft.ID) {
 			return nil, errors.New("Nodes must contain itself")
 		}
-		return nil, errors.New("Raft is not supported yet")
+		return &consensus, nil
 	case "bft":
 		consensus.Type = BFT
 		consensus.BFT = cfg.Consensus.Tendermint

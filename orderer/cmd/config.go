@@ -28,7 +28,7 @@ BlockChain:
 # Consensus mechanism configuration
 Consensus:
   # will support solo, raft, bft. Only support solo yet and bft is constructed now.
-  Type: solo
+  Type: <<<ConsensusType>>>
   # Tendermint is the bft consensus.
   Tendermint:
     # The path of tendermint (default: orderer/.tendermint)
@@ -43,8 +43,8 @@ Consensus:
     # P2P Persistent Address, like c395828cc2baaa6f6af2bd13ce62d1e9484919c8@localhost:36656
     P2PAddress:
       -
-    # Raft is the raft consensus
-    Raft:
+  # Raft is the raft consensus
+  Raft:
     # The path of raft
     Path:
     # ID should be int, and it should not be duplicate

@@ -20,4 +20,4 @@ Peer:
 # KeyStore manage some private keys
 KeyStore:
   Keys:
-    - /home/liuyihua/gopath/src/madledger/env/solo/client/.keystore/6df9354966760f3a6c386b29db40b2b0693d3f9ea874f86b8addd4439378771e
+    - .keystore/6df9354966760f3a6c386b29db40b2b0693d3f9ea874f86b8addd4439378771e

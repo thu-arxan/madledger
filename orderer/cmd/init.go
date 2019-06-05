@@ -27,6 +27,8 @@ var (
 
 func init() {
 	initCmd.RunE = runInit
+	initCmd.Flags().StringP("type", "t", "bft", "The consensus type")
+	initViper.BindPFlag("type", initCmd.Flags().Lookup("type"))
 	initCmd.Flags().StringP("config", "c", "orderer.yaml", "The config file")
 	initViper.BindPFlag("config", initCmd.Flags().Lookup("config"))
 	initCmd.Flags().StringP("path", "p", "", "The path of orderer")
@@ -36,6 +38,10 @@ func init() {
 
 func runInit(cmd *cobra.Command, args []string) error {
 	var err error
+	consensusType := initViper.GetString("type")
+	if consensusType == "" {
+		consensusType = "bft"
+	}
 	cfgFile := initViper.GetString("config")
 	if cfgFile == "" {
 		cfgFile = "orderer.yaml"
@@ -48,17 +54,18 @@ func runInit(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
+
 	var tendermintP2PID string
 	if tendermintP2PID, err = initTendermintEnv(ordererPath); err != nil {
 		return nil
 	}
-	if err = createConfigFile(cfgFile, ordererPath, tendermintP2PID); err != nil {
+	if err = createConfigFile(cfgFile, ordererPath, consensusType, tendermintP2PID); err != nil {
 		return err
 	}
 	return nil
 }
 
-func createConfigFile(cfgFile, path string, tendermintP2PID string) error {
+func createConfigFile(cfgFile, path, consensusType string, tendermintP2PID string) error {
 	cfgAbsPath, err := util.MakeFileAbs(cfgFile, homeDir)
 	if err != nil {
 		return err
@@ -71,6 +78,7 @@ func createConfigFile(cfgFile, path string, tendermintP2PID string) error {
 	tendermintPath, _ := util.MakeFileAbs(".tendermint", path)
 	levelDBPath, _ := util.MakeFileAbs("data/leveldb", path)
 	cfg = strings.Replace(cfg, "<<<BlockChainPath>>>", blockChainPath, 1)
+	cfg = strings.Replace(cfg, "<<<ConsensusType>>>", consensusType, 1)
 	cfg = strings.Replace(cfg, "<<<TendermintPath>>>", tendermintPath, 1)
 	cfg = strings.Replace(cfg, "<<<LevelDBPath>>>", levelDBPath, 1)
 	cfg = strings.Replace(cfg, "<<<TendermintP2PID>>>", tendermintP2PID, 1)
