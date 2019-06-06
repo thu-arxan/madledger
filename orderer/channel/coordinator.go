@@ -6,6 +6,7 @@ import (
 	"madledger/common/crypto"
 	"madledger/common/util"
 	"madledger/consensus"
+	raft "madledger/consensus/raft"
 	"madledger/consensus/solo"
 	"madledger/consensus/tendermint"
 	"madledger/core/types"
@@ -332,6 +333,16 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 			return err
 		}
 		c.Consensus = consensus
+	case config.RAFT:
+		raftConfig, err := getConfig(cfg.Raft.Path, cfg.Raft.ID, cfg.Raft.Nodes)
+		if err != nil {
+			return err
+		}
+		consensus, err := raft.NewConseneus(raftConfig)
+		if err != nil {
+			return nil
+		}
+		c.Consensus = consensus
 	case config.BFT:
 		// TODO: Not finished yet
 		consensus, err := tendermint.NewConsensus(channels, &ct.Config{
@@ -351,4 +362,13 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 		return fmt.Errorf("Unsupport consensus type:%d", cfg.Type)
 	}
 	return nil
+}
+
+func getConfig(path string, id uint64, peers map[uint64]string) (*raft.Config, error) {
+	return raft.NewConfig(path, "127.0.0.1", id, peers, consensus.Config{
+		Timeout: 100,
+		MaxSize: 10,
+		Resume:  false,
+		Number:  1,
+	})
 }

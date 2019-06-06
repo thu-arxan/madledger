@@ -92,7 +92,7 @@ func (m *None) XXX_DiscardUnknown() {
 var xxx_messageInfo_None proto.InternalMessageInfo
 
 func init() {
-	proto.RegisterType((*Tx)(nil), "protos.Tx")
+	proto.RegisterType((*Tx)(nil), "protos.RaftTx")
 	proto.RegisterType((*None)(nil), "protos.None")
 }
 
