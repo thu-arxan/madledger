@@ -82,7 +82,32 @@ func TestAddTx(t *testing.T) {
 }
 
 func TestStop(t *testing.T) {
+	for i := range rns {
+		fmt.Printf("Stop raft %d\n", i)
+		rns[i].Stop()
+	}
 	os.RemoveAll(getTestPath())
+}
+
+func TestReinitEnv(t *testing.T) {
+	gopath := os.Getenv("GOPATH")
+	require.NoError(t, os.RemoveAll(getTestPath()))
+
+	require.NoError(t, copy.Copy(gopath+"/src/madledger/env/bft/.orderers", fmt.Sprintf("%s/orderers", getTestPath())))
+}
+
+func TestRestart(t *testing.T) {
+	for i := range rns {
+		cfg, err := getConfig(i)
+		require.NoError(t, err)
+		node, err := NewConseneus(cfg)
+		require.NoError(t, err)
+		rns[i] = node
+		go func() {
+			require.NoError(t, node.Start())
+		}()
+	}
+	time.Sleep(2 * time.Second)
 }
 
 func getTestPath() string {

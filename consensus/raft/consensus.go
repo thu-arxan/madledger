@@ -89,7 +89,11 @@ func (c *Consensus) Start() error {
 
 // Stop is the implementation of interface
 func (c *Consensus) Stop() error {
-	return errors.New("Not implementation yet")
+	c.chain.Stop()
+	c.chain.raft.Stop()
+	c.chain.rpcServer.Stop()
+	return nil
+	//return errors.New("Not implementation yet")
 }
 
 // AddTx is the implementation of interface

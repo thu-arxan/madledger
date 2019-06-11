@@ -18,7 +18,7 @@ BlockChain:
   # Max txs can be included in a block (defalut: 100)
   BatchSize: 100
   # Path to store the blocks (default: orderer/data/blocks)
-  Path: /home/hadoop/GOPATH/src/madledger/env/raft/orderers/1/data/blocks
+  Path: data/blocks
   # If verify the rightness of blocks (default: false)
   Verify: false
 
@@ -29,21 +29,24 @@ Consensus:
   # Tendermint is the bft consensus.
   Tendermint:
     # The path of tendermint (default: orderer/.tendermint)
-    Path: /home/hadoop/GOPATH/src/madledger/env/raft/orderers/1/.tendermint
+    Path: .tendermint
     # Some ports
     Port:
-      P2P: 26656
-      RPC: 26657
-      APP: 26658
+      P2P: 26659
+      RPC: 26660
+      APP: 26661
     # ID means to identity in p2p connections
     ID: 7d5289771cf1bbb93779f2c95559ae27b16cea6e
     # P2P Persistent Address, like c395828cc2baaa6f6af2bd13ce62d1e9484919c8@localhost:36656
     P2PAddress:
-      -
+      - 7f9f0ae5b8c3d783cc51b4ff88eae507cf1787b9@localhost:26656
+      - 7d5289771cf1bbb93779f2c95559ae27b16cea6e@localhost:26659
+      - 39856b8fa3e7d7df9d2f4ae2dff74d4713a968d3@localhost:26662
+      - ee09051fd72c8065b79f034aa1a82c861555f223@localhost:26665
   # Raft is the raft consensus
   Raft:
     # The path of raft
-    Path: /home/hadoop/GOPATH/src/madledger/env/raft/orderers/1
+    Path: .raft
     # ID should be int, and it should not be duplicate
     ID: 2
     # Node should be like 1@localhost:12345
@@ -52,11 +55,10 @@ Consensus:
       - 2@localhost:23457
       - 3@localhost:34568
 
-
 # DB only support leveldb now
 DB:
   Type: leveldb
   # LevelDB
   LevelDB:
     # The path of leveldb (default: orderer/data/leveldb)
-    Path: /home/hadoop/GOPATH/src/madledger/env/raft/orderers/1/data/leveldb
+    Path: data/leveldb

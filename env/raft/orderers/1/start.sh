@@ -1,5 +1,3 @@
 rm -rf data
-rm -rf wal
-rm -rf db
-rm -rf snap
+rm -rf .raft
 orderer start -c orderer.yaml

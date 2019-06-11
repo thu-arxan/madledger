@@ -25,7 +25,7 @@ BlockChain:
 # Consensus mechanism configuration
 Consensus:
   # will support solo, raft, bft. Only support solo yet and bft is constructed now.
-  Type: bft
+  Type: raft
   # Tendermint is the bft consensus.
   Tendermint:
     # The path of tendermint (default: orderer/.tendermint)
@@ -43,6 +43,17 @@ Consensus:
       - 7d5289771cf1bbb93779f2c95559ae27b16cea6e@localhost:26659
       - 39856b8fa3e7d7df9d2f4ae2dff74d4713a968d3@localhost:26662
       - ee09051fd72c8065b79f034aa1a82c861555f223@localhost:26665
+  # Raft is the raft consensus
+  Raft:
+    # The path of raft
+    Path: .raft
+    # ID should be int, and it should not be duplicate
+    ID: 2
+    # Node should be like 1@localhost:12345
+    Nodes:
+      - 1@localhost:12346
+      - 2@localhost:23457
+      - 3@localhost:34568
 
 # DB only support leveldb now
 DB:
