@@ -2,7 +2,6 @@ package raft
 
 import (
 	"context"
-	"errors"
 	"madledger/consensus"
 	"sync/atomic"
 	"time"
@@ -120,10 +119,10 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 func (c *Consensus) AddChannel(channelID string, cfg consensus.Config) error {
 	return nil
 }
-
+//todo:GetBlock
 // GetBlock is the implementation of interface
 func (c *Consensus) GetBlock(channelID string, num uint64, async bool) (consensus.Block, error) {
-	return nil, errors.New("Not implementation yet")
+	return c.chain.raft.app.GetBlock(channelID,num,async)
 }
 
 func (c *Consensus) setLeader(leader int) {

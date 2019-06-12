@@ -30,6 +30,11 @@ func (b *HybridBlock) GetNumber() uint64 {
 	return b.Num
 }
 
+// GetNumber return txs of block
+func (b *HybridBlock) GetTxs() [][]byte{
+	return b.Txs
+}
+
 // Bytes will return bytes of hybrid block
 func (b *HybridBlock) Bytes() []byte {
 	bytes, _ := json.Marshal(b)
