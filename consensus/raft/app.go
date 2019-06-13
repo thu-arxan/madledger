@@ -3,11 +3,9 @@ package raft
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"madledger/common/crypto"
 	"madledger/common/event"
 	"madledger/common/util"
-	"madledger/consensus"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -81,10 +79,14 @@ func (a *App) Commit(data []byte) {
 		hash := string(crypto.Hash(block.Bytes()))
 		if !util.Contain(a.blocks, block.GetNumber()) {
 			a.blocks[block.GetNumber()] = block
+			a.db.PutBlock(block)
 			if block.GetNumber() >= a.getMinBlock() {
-				a.db.PutBlock(block)
 				a.hub.Done(hash, nil)
 				a.blockCh <- block
+			}
+			// should parse the hybrid block to different channel block
+			if block.GetNumber() == a.getMinBlock() {
+
 			}
 		} else {
 			a.hub.Done(hash, &event.Result{
@@ -176,36 +178,36 @@ func (a *App) getMinBlock() uint64 {
 	return atomic.LoadUint64(&(a.minBlock))
 }
 
-// GetBlock is the implementation of interface
-func (a *App) GetBlock(channelID string, num uint64, async bool) (consensus.Block, error) {
-	a.lock.Lock()
-	for i := range a.blocks {
-		if a.blocks[i].GetNumber() == num {
-			defer a.lock.Unlock()
-			log.Infof("consensus/raft/app: get block %d from app.blocks[%s]", num, channelID)
-			return a.blocks[i], nil
-		}
-	}
-	a.lock.Unlock()
-	// But block is not in blocks does not mean it is not exist
-	// todo: can't get block from db
-	block, _ := a.db.GetBlock(num)
-	if block != nil {
-		log.Infof("consensus/raft/app: get block %d from a.db and key is %s", num, channelID)
-		return block, nil
-	}
+// // GetBlock is the implementation of interface
+// func (a *App) GetBlock(channelID string, num uint64, async bool) (consensus.Block, error) {
+// 	a.lock.Lock()
+// 	for i := range a.blocks {
+// 		if a.blocks[i].GetNumber() == num {
+// 			defer a.lock.Unlock()
+// 			log.Infof("consensus/raft/app: get block %d from app.blocks[%s]", num, channelID)
+// 			return a.blocks[i], nil
+// 		}
+// 	}
+// 	a.lock.Unlock()
+// 	// But block is not in blocks does not mean it is not exist
+// 	// todo: can't get block from db
+// 	block, _ := a.db.GetBlock(num)
+// 	if block != nil {
+// 		log.Infof("consensus/raft/app: get block %d from a.db and key is %s", num, channelID)
+// 		return block, nil
+// 	}
 
-	if async {
-		log.Infof("Watch block %s", fmt.Sprintf("%s:%d", channelID, num))
-		a.hub.Watch(fmt.Sprintf("%s:%d", channelID, num), nil)
-		a.lock.Lock()
-		defer a.lock.Unlock()
-		for i := range a.blocks {
-			if a.blocks[i].GetNumber() == num {
-				log.Infof("consensus/raft/app: get block %d from a.blocks[%s] asynchronously", num, channelID)
-				return a.blocks[i], nil
-			}
-		}
-	}
-	return nil, fmt.Errorf("Block %s:%d is not exist", channelID, num)
-}
+// 	if async {
+// 		log.Infof("Watch block %s", fmt.Sprintf("%s:%d", channelID, num))
+// 		a.hub.Watch(fmt.Sprintf("%s:%d", channelID, num), nil)
+// 		a.lock.Lock()
+// 		defer a.lock.Unlock()
+// 		for i := range a.blocks {
+// 			if a.blocks[i].GetNumber() == num {
+// 				log.Infof("consensus/raft/app: get block %d from a.blocks[%s] asynchronously", num, channelID)
+// 				return a.blocks[i], nil
+// 			}
+// 		}
+// 	}
+// 	return nil, fmt.Errorf("Block %s:%d is not exist", channelID, num)
+// }

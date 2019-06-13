@@ -3,7 +3,9 @@ package raft
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"madledger/common/util"
+	"time"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -43,9 +45,9 @@ func (db *DB) PutBlock(block *HybridBlock) {
 	db.connect.Put(key, block.Bytes(), nil)
 }
 
-// GetBlock return the block which Num is num
+// GetHybridBlock return the hybrid block which Num is num
 // Return nil, errors.New("Not exist") if not exist
-func (db *DB) GetBlock(num uint64) (*HybridBlock, error) {
+func (db *DB) GetHybridBlock(num uint64) (*HybridBlock, error) {
 	var key = util.Uint64ToBytes(num)
 	has, err := db.connect.Has(key, nil)
 	if err != nil {
@@ -78,4 +80,56 @@ func (db *DB) SetMinBlock(num uint64) {
 	var key = []byte("minBlock")
 	data, _ := json.Marshal(num)
 	db.connect.Put(key, data, nil)
+}
+
+// GetPrevBlockNum return the prev block num of channel
+func (db *DB) GetPrevBlockNum(channelID string) uint64 {
+	var key = []byte(channelID)
+	var num uint64
+	if exist, _ := db.connect.Has(key, nil); exist {
+		data, _ := db.connect.Get(key, nil)
+		json.Unmarshal(data, &num)
+	}
+	return num
+}
+
+// SetPrevBlockNum set the prev block num of channel
+func (db *DB) SetPrevBlockNum(channelID string, num uint64) {
+	var key = []byte(channelID)
+	data, _ := json.Marshal(num)
+	db.connect.Put(key, data, nil)
+}
+
+// AddBlock add block
+func (db *DB) AddBlock(block *Block) {
+	var key = []byte(fmt.Sprintf("%s:%d", block.ChannelID, block.Num))
+	db.connect.Put(key, block.Bytes(), nil)
+}
+
+// GetBlock return the block of channel, return nil if not exist
+func (db *DB) GetBlock(channelID string, num uint64, async bool) *Block {
+	block := db.getBlock(channelID, num)
+	if !async || (block != nil) {
+		return block
+	}
+	for {
+		time.Sleep(10 * time.Millisecond)
+		block = db.getBlock(channelID, num)
+		if block != nil {
+			return block
+		}
+	}
+}
+
+// getBlock return the block of channel, return nil if not exist
+func (db *DB) getBlock(channelID string, num uint64) *Block {
+	var key = []byte(fmt.Sprintf("%s:%d", channelID, num))
+	if exist, _ := db.connect.Has(key, nil); exist {
+		var block Block
+		data, _ := db.connect.Get(key, nil)
+		json.Unmarshal(data, &block)
+		return &block
+	}
+
+	return nil
 }

@@ -152,6 +152,7 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 
 // CreateChannel create a channel
 func (c *Client) CreateChannel(channelID string, public bool, admins, members []*types.Member) error {
+	log.Infof("Create channel %s", channelID)
 	self, err := types.NewMember(c.GetPrivKey().PubKey(), "admin")
 	if err != nil {
 		return err

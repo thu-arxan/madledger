@@ -98,11 +98,13 @@ func (c *Consensus) Stop() error {
 // AddTx is the implementation of interface
 func (c *Consensus) AddTx(channelID string, tx []byte) error {
 	var err error
-	// log.Infof("Add tx of channel %s", channelID)
-	for i := 0; i < 10; i++ {
-		// log.Infof("Try to add tx to %d", c.leader)
+	log.Infof("Add tx of channel %s", channelID)
+	// todo: we should parse the leader address other than random choose a leader
+	for i := 0; i < 100; i++ {
+		log.Infof("Try to add tx to %d", c.leader)
 		err = c.clients[c.getLeader()].addTx(channelID, tx)
 		if err == nil {
+			log.Infof("Succeed to add tx to %d", c.leader)
 			return nil
 		}
 		c.setLeader(util.RandNum(len(c.clients)))
@@ -117,13 +119,15 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 // AddChannel is the implementation of interface
 // Note: we can ignore this function now
 func (c *Consensus) AddChannel(channelID string, cfg consensus.Config) error {
+	log.Infof("Add channel %s", channelID)
 	return nil
 }
 
 // GetBlock is the implementation of interface
 // todo
 func (c *Consensus) GetBlock(channelID string, num uint64, async bool) (consensus.Block, error) {
-	return c.chain.raft.app.GetBlock(channelID, num, async)
+	log.Infof("Get block %d of channel %s", num, channelID)
+	return c.chain.getBlock(channelID, num, async)
 }
 
 func (c *Consensus) setLeader(leader int) {

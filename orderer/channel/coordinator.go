@@ -188,6 +188,7 @@ func (c *Coordinator) createChannel(tx *types.Tx) error {
 	}
 
 	var channelID = payload.ChannelID
+	log.Infof("Create channel %s", channelID)
 	switch channelID {
 	case types.GLOBALCHANNELID:
 		return fmt.Errorf("Channel %s is aleardy exist", channelID)

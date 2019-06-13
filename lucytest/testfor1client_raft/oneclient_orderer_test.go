@@ -3,48 +3,62 @@ package testfor1client_raft
 import (
 	cc "madledger/client/config"
 	client "madledger/client/lib"
+	cliu "madledger/client/util"
+	orderer "madledger/orderer/server"
 	peer "madledger/peer/server"
-	"os"
-	"fmt"
 	"regexp"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 )
 
-// change the package
-func TestInitEnv1(t *testing.T) {
-	require.NoError(t, initRAFTEnvironment())
-}
+var (
+	// raft的orderer只需要3个
+	raftOrderers [3]string
+	orderers     [3]*orderer.Server
+	// just 1 is enough, we set 2
+	raftClients [2]*client.Client
+	raftPeers   [4]*peer.Server
+)
 
-func TestRAFTOrdererStart1(t *testing.T) {
-	// then we can run orderers
-	for i := range bftOrderers {
-		pid := startOrderer(i)
-		bftOrderers[i] = pid
+// change the package
+func TestInitEnv(t *testing.T) {
+	require.NoError(t, initRAFTEnvironment())
+	for i := range orderers {
+		server, err := newOrderer(i)
+		require.NoError(t, err)
+		orderers[i] = server
 	}
 }
 
-func TestRAFTPeersStart1(t *testing.T) {
+func TestOrderersStart(t *testing.T) {
+	for i := range orderers {
+		go orderers[i].Start()
+	}
+	time.Sleep(4 * time.Second)
+}
+
+func TestRAFTPeersStart(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		cfg := getPeerConfig(i)
 		server, err := peer.NewServer(cfg)
 		require.NoError(t, err)
-		bftPeers[i] = server
+		raftPeers[i] = server
 	}
 
-	for i := range bftPeers {
+	for i := range raftPeers {
 		go func(t *testing.T, i int) {
-			err := bftPeers[i].Start()
+			err := raftPeers[i].Start()
 			require.NoError(t, err)
 		}(t, i)
 	}
 	time.Sleep(2 * time.Second)
 }
 
-func TestRAFTLoadClients1(t *testing.T) {
-	for i := range bftClients {
+func TestLoadClients(t *testing.T) {
+	for i := range raftClients {
 		clientPath := getRAFTClientPath(i)
 		cfgPath := getRAFTClientConfigPath(i)
 		cfg, err := cc.LoadConfig(cfgPath)
@@ -55,23 +69,23 @@ func TestRAFTLoadClients1(t *testing.T) {
 		}
 		client, err := client.NewClientFromConfig(cfg)
 		require.NoError(t, err)
-		bftClients[i] = client
+		raftClients[i] = client
 	}
 }
 
-func TestRAFTOrdererRestart(t *testing.T) {
-	// kill Orderers 0 and remove data directories
-	fmt.Println("Stop Orderer 0 ...")
-	stopOrderer(bftOrderers[0])
-	// because  raft  cluster is started, we restart orderer 0 by using RestartNode
-	// if we remove .raft, it will use StartNode and cause an error
-	os.RemoveAll(getRAFTOrdererDataPath(0))
+// func TestRAFTOrdererRestart(t *testing.T) {
+// 	// kill Orderers 0 and remove data directories
+// 	fmt.Println("Stop Orderer 0 ...")
+// 	stopOrderer(bftOrderers[0])
+// 	// because  raft  cluster is started, we restart orderer 0 by using RestartNode
+// 	// if we remove .raft, it will use StartNode and cause an error
+// 	os.RemoveAll(getRAFTOrdererDataPath(0))
 
-	//restart Orderers 0
-	fmt.Println("Restart Orderer 0 ...")
-	bftOrderers[0] = startOrderer(0)
-	time.Sleep(5 * time.Second)
-}
+// 	//restart Orderers 0
+// 	fmt.Println("Restart Orderer 0 ...")
+// 	bftOrderers[0] = startOrderer(0)
+// 	time.Sleep(5 * time.Second)
+// }
 
 /*func TestRAFTOrdererRestart(t *testing.T) {
 	// kill Orderers 0
@@ -98,9 +112,9 @@ func TestBFTEnd1(t *testing.T) {
 	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/raft"))
 }*/
 
-/*func TestBFTCreateChannels1(t *testing.T) {
+func TestRaftCreateChannels1(t *testing.T) {
 	// client-0 create 4 channels
-	client0 := bftClients[0]
+	client0 := raftClients[0]
 	for i := 0; i <= 2; i++ {
 		channel := "test" + strconv.Itoa(i)
 		err := client0.CreateChannel(channel, true, nil, nil)
@@ -114,7 +128,7 @@ func TestBFTEnd1(t *testing.T) {
 }
 
 func listChannel(node int) error {
-	client := bftClients[node]
+	client := raftClients[node]
 	infos, err := client.ListChannel(true)
 	if err != nil {
 		return err
@@ -129,6 +143,7 @@ func listChannel(node int) error {
 	return nil
 }
 
+/*
 // 关闭orderer 1，关闭期间通过client 0创建test3通道，然后重启orderer 1，查询数据
 func TestBFTNodeRestart(t *testing.T) {
 	stopOrderer(bftOrderers[1])

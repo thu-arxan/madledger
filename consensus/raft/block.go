@@ -19,6 +19,12 @@ func (block *Block) GetTxs() [][]byte {
 	return block.Txs
 }
 
+// Bytes return bytes of block
+func (block *Block) Bytes() []byte {
+	bytes, _ := json.Marshal(block)
+	return bytes
+}
+
 // HybridBlock will include all txs of different channels
 type HybridBlock struct {
 	Num uint64

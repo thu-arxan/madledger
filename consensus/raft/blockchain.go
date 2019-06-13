@@ -20,14 +20,14 @@ import (
 type BlockChain struct {
 	lock sync.Mutex
 
-	raft    *Raft
-	config  consensus.Config
-	txs     chan bool
-	pool    *txPool
-	hub     *event.Hub
-	num     uint64
-	blocks  map[uint64]*HybridBlock
-	blockCh chan *HybridBlock
+	raft          *Raft
+	config        consensus.Config
+	txs           chan bool
+	pool          *txPool
+	hub           *event.Hub
+	num           uint64
+	hybridBlocks  map[uint64]*HybridBlock
+	hybridBlockCh chan *HybridBlock
 
 	rpcServer *grpc.Server
 
@@ -42,17 +42,16 @@ func NewBlockChain(cfg *Config) (*BlockChain, error) {
 		return nil, err
 	}
 
-	// todo: set rpc server
 	return &BlockChain{
-		config:  cfg.cc,
-		txs:     make(chan bool, cfg.cc.MaxSize),
-		quit:    make(chan bool, 1),
-		done:    make(chan bool, 1),
-		blockCh: raft.BlockCh(),
-		pool:    newTxPool(),
-		raft:    raft,
-		hub:     event.NewHub(),
-		blocks:  make(map[uint64]*HybridBlock),
+		config:        cfg.cc,
+		txs:           make(chan bool, cfg.cc.MaxSize),
+		quit:          make(chan bool, 1),
+		done:          make(chan bool, 1),
+		hybridBlockCh: raft.BlockCh(),
+		pool:          newTxPool(),
+		raft:          raft,
+		hub:           event.NewHub(),
+		hybridBlocks:  make(map[uint64]*HybridBlock),
 	}, nil
 }
 
@@ -102,7 +101,7 @@ func (chain *BlockChain) start() error {
 				if chain.pool.getPoolSize() >= chain.config.MaxSize {
 					chain.createBlock(chain.pool.fetchTxs(chain.config.MaxSize))
 				}
-			case block := <-chain.blockCh:
+			case block := <-chain.hybridBlockCh:
 				if block.GetNumber() == chain.num+1 {
 					chain.addBlock(block)
 				} else if block.GetNumber() <= chain.num {
@@ -131,7 +130,7 @@ func (chain *BlockChain) addTx(tx []byte) error {
 	if !chain.raft.IsLeader() {
 		return errors.New("Please send to leader")
 	}
-
+	log.Infof("[%d] add tx", chain.raft.cfg.id)
 	err := chain.pool.addTx(tx)
 
 	if err != nil {
@@ -142,6 +141,7 @@ func (chain *BlockChain) addTx(tx []byte) error {
 		chain.txs <- true
 	}()
 
+	log.Infof("[%d]Hub watch tx %s", chain.raft.cfg.id, util.Hex(crypto.Hash(tx)))
 	result := chain.hub.Watch(util.Hex(crypto.Hash(tx)), nil)
 	return result.Err
 }
@@ -164,37 +164,46 @@ func (chain *BlockChain) createBlock(txs [][]byte) error {
 	log.Infof("[%d]Try to add block %d", chain.raft.cfg.id, block.Num)
 	if err := chain.raft.AddBlock(block); err != nil {
 		// todo: if we failed to create block we should release all txs
+		log.Infof("[%d]Failed to add block %d because %s", chain.raft.cfg.id, block.Num, err)
 		return err
 	}
 
+	log.Infof("[%d]Succeed to add block %d", chain.raft.cfg.id, block.Num)
 	chain.addBlock(block)
 	return nil
 }
 
 func (chain *BlockChain) addBlock(block *HybridBlock) {
-	chain.blocks[block.GetNumber()] = block
+	chain.hybridBlocks[block.GetNumber()] = block
 	chain.num = block.GetNumber()
+	var txs = make(map[string][][]byte)
 	for _, tx := range block.Txs {
 		hash := util.Hex(crypto.Hash(tx))
+		log.Infof("[%d]Hub done tx %s", chain.raft.cfg.id, hash)
 		chain.hub.Done(hash, nil)
+		t, _ := UnmarshalTx(tx)
+		if !util.Contain(txs, t.ChannelID) {
+			txs[t.ChannelID] = make([][]byte, 0)
+		}
+		txs[t.ChannelID] = append(txs[t.ChannelID], t.Data)
 	}
 	chain.hub.Done(string(block.GetNumber()), nil)
+	for channel := range txs {
+		num := chain.raft.app.db.GetPrevBlockNum(channel) + 1
+		block := &Block{
+			ChannelID: channel,
+			Num:       num,
+			Txs:       txs[channel],
+		}
+		chain.raft.app.db.AddBlock(block)
+		chain.raft.app.db.SetPrevBlockNum(channel, num)
+	}
 }
 
-// func (chain *BlockChain) getBlock(num uint64, async bool) (*Block, error) {
-// 	// c.lock.Lock()
-// 	// if util.Contain(c.blocks, num) {
-// 	// 	defer c.lock.Unlock()
-// 	// 	return c.blocks[num], nil
-// 	// }
-// 	// c.lock.Unlock()
-// 	// if async {
-// 	// 	c.hub.Watch(string(num), nil)
-// 	// 	c.lock.Lock()
-// 	// 	defer c.lock.Unlock()
-// 	// 	return c.blocks[num], nil
-// 	// }
-
-// 	// return nil, fmt.Errorf("Block %s:%d is not exist", c.id, c.num)
-// 	return nil, errors.New("Not implementation")
-// }
+func (chain *BlockChain) getBlock(channelID string, num uint64, async bool) (*Block, error) {
+	block := chain.raft.app.db.GetBlock(channelID, num, async)
+	if block != nil {
+		return block, nil
+	}
+	return nil, errors.New("Not exist")
+}

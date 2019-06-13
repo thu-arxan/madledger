@@ -21,3 +21,11 @@ func (tx *Tx) Bytes() []byte {
 	data, _ := json.Marshal(tx)
 	return data
 }
+
+// UnmarshalTx unmarshal tx from bytes
+func UnmarshalTx(bytes []byte) (*Tx, error) {
+	var tx Tx
+	err := json.Unmarshal(bytes, &tx)
+
+	return &tx, err
+}

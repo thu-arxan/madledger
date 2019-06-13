@@ -1,29 +1,21 @@
 package testfor1client_raft
 
 import (
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"fmt"
-	pc "madledger/peer/config"
-	peer "madledger/peer/server"
-	"madledger/common/util"
 	"encoding/hex"
-	client "madledger/client/lib"
-	"os"
+	"fmt"
+	"io/ioutil"
+	"madledger/common/util"
 	oc "madledger/orderer/config"
+	orderer "madledger/orderer/server"
+	pc "madledger/peer/config"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
 
-	"github.com/otiai10/copy"
-)
+	yaml "gopkg.in/yaml.v2"
 
-var (
-	// raft的orderer只需要3个
-	bftOrderers [3]string
-	// just 1 is enough, we set 2
-	bftClients [2]*client.Client
-	bftPeers   [4]*peer.Server
+	"github.com/otiai10/copy"
 )
 
 // initBFTEnvironment will remove old test folders and copy necessary folders
@@ -48,7 +40,7 @@ func initRAFTEnvironment() error {
 		return err
 	}
 
-	for i := range bftOrderers {
+	for i := range raftOrderers {
 		if err := absRAFTOrdererConfig(i); err != nil {
 			return err
 		}
@@ -164,7 +156,7 @@ func startOrderer(node int) string {
 		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("orderer start -c %s", getRAFTOrdererConfigPath(node)))
 		_, err := cmd.Output()
 		if err != nil {
-			panic("Run orderer failed")
+			panic(fmt.Sprintf("Run orderer failed:%s", err))
 		}
 	}()
 
@@ -179,4 +171,13 @@ func startOrderer(node int) string {
 		}
 		time.Sleep(1 * time.Second)
 	}
+}
+
+func newOrderer(node int) (*orderer.Server, error) {
+	cfgPath := getRAFTOrdererConfigPath(node)
+	cfg, err := oc.LoadConfig(cfgPath)
+	if err != nil {
+		return nil, err
+	}
+	return orderer.NewServer(cfg)
 }
