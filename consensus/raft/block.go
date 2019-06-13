@@ -30,8 +30,8 @@ func (b *HybridBlock) GetNumber() uint64 {
 	return b.Num
 }
 
-// GetNumber return txs of block
-func (b *HybridBlock) GetTxs() [][]byte{
+// GetTxs return txs of block
+func (b *HybridBlock) GetTxs() [][]byte {
 	return b.Txs
 }
 

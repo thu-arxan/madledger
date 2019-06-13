@@ -119,10 +119,11 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 func (c *Consensus) AddChannel(channelID string, cfg consensus.Config) error {
 	return nil
 }
-//todo:GetBlock
+
 // GetBlock is the implementation of interface
+// todo
 func (c *Consensus) GetBlock(channelID string, num uint64, async bool) (consensus.Block, error) {
-	return c.chain.raft.app.GetBlock(channelID,num,async)
+	return c.chain.raft.app.GetBlock(channelID, num, async)
 }
 
 func (c *Consensus) setLeader(leader int) {
