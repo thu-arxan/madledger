@@ -92,7 +92,7 @@ func (r *Raft) AddBlock(block *HybridBlock) error {
 	}
 
 	if !r.IsLeader() {
-		return fmt.Errorf("Leader is %s", r.GetLeader())
+		return fmt.Errorf("Please send to leader %d", r.GetLeader())
 	}
 
 	// Note: Propose succeed means the block become an entry in the log, but it will not make sure that the block is the right block
@@ -114,11 +114,9 @@ func (r *Raft) IsLeader() bool {
 	return r.eraft.isLeader()
 }
 
-// GetLeader return the leader's chain address
-func (r *Raft) GetLeader() string {
-	// leader := r.eraft.getLeader()
-	// return r.cfg.getPeerAddress(leader)
-	return ""
+// GetLeader return the leader's id
+func (r *Raft) GetLeader() uint64 {
+	return r.eraft.getLeader()
 }
 
 // NotifyLater provide a mechanism for blockchain system to deal with the block which is too advanced

@@ -3,6 +3,8 @@ package raft
 import (
 	"context"
 	"madledger/consensus"
+	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -17,8 +19,9 @@ import (
 type Consensus struct {
 	cfg     *Config
 	chain   *BlockChain
-	clients []*Client
-	leader  int32
+	clients map[uint64]*Client
+	ids     []uint64
+	leader  uint64
 }
 
 // Client is the clients keep connections to blockchain
@@ -70,14 +73,17 @@ func NewConseneus(cfg *Config) (*Consensus, error) {
 
 // Start is the implementation of interface
 func (c *Consensus) Start() error {
-	c.clients = make([]*Client, 0)
-	for _, addr := range c.cfg.ec.peers {
+	c.clients = make(map[uint64]*Client)
+	c.ids = make([]uint64, 0)
+	for id, addr := range c.cfg.ec.peers {
 		client, err := NewClient(addr)
 		if err != nil {
 			return err
 		}
-		c.clients = append(c.clients, client)
+		c.clients[id] = client
+		c.ids = append(c.ids, id)
 	}
+	c.setLeader(c.ids[util.RandNum(len(c.ids))])
 
 	if err := c.chain.Start(); err != nil {
 		return err
@@ -103,11 +109,20 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 	for i := 0; i < 100; i++ {
 		log.Infof("Try to add tx to %d", c.leader)
 		err = c.clients[c.getLeader()].addTx(channelID, tx)
-		if err == nil {
+		if err == nil || strings.Contains(err.Error(), "Transaction is aleardy in the pool") {
 			log.Infof("Succeed to add tx to %d", c.leader)
 			return nil
 		}
-		c.setLeader(util.RandNum(len(c.clients)))
+		log.Info(err)
+		// then parse leader id
+		if strings.HasPrefix(err.Error(), "Please send to leader") {
+			id, err := strconv.ParseUint(strings.Replace(err.Error(), "Please send to leader ", "", -1), 10, 64)
+			if err == nil && id != 0 {
+				c.setLeader(id)
+				continue
+			}
+		}
+		c.setLeader(c.ids[util.RandNum(len(c.ids))])
 		// log.Infof("Retry %d times and leader is %d", i, c.leader)
 		time.Sleep(200 * time.Millisecond)
 	}
@@ -124,17 +139,16 @@ func (c *Consensus) AddChannel(channelID string, cfg consensus.Config) error {
 }
 
 // GetBlock is the implementation of interface
-// todo
 func (c *Consensus) GetBlock(channelID string, num uint64, async bool) (consensus.Block, error) {
 	log.Infof("Get block %d of channel %s", num, channelID)
 	return c.chain.getBlock(channelID, num, async)
 }
 
-func (c *Consensus) setLeader(leader int) {
-	atomic.StoreInt32(&c.leader, int32(leader))
+func (c *Consensus) setLeader(leader uint64) {
+	atomic.StoreUint64(&c.leader, leader)
 }
 
-func (c *Consensus) getLeader() int {
-	leader := atomic.LoadInt32(&c.leader)
-	return int(leader)
+func (c *Consensus) getLeader() uint64 {
+	leader := atomic.LoadUint64(&c.leader)
+	return leader
 }

@@ -128,7 +128,7 @@ func (chain *BlockChain) AddTx(ctx context.Context, in *pb.Tx) (*pb.None, error)
 
 func (chain *BlockChain) addTx(tx []byte) error {
 	if !chain.raft.IsLeader() {
-		return errors.New("Please send to leader")
+		return fmt.Errorf("Please send to leader %d", chain.raft.GetLeader())
 	}
 	log.Infof("[%d] add tx", chain.raft.cfg.id)
 	err := chain.pool.addTx(tx)

@@ -2,7 +2,6 @@ package raft
 
 import (
 	"madledger/common/util"
-	"strings"
 )
 
 // Here defines some status
@@ -25,14 +24,14 @@ func randNode(cluster map[uint64]string) string {
 }
 
 // getLeaderFromError try to parse leader address from error
-func getLeaderFromError(err error) string {
-	e := strings.Replace(err.Error(), "rpc error: code = Unknown desc =", "", -1)
-	if strings.Contains(e, "Leader is") {
-		return strings.Replace(strings.Replace(e, "Leader is", "", 1), " ", "", -1)
-	}
+// func getLeaderFromError(err error) string {
+// 	e := strings.Replace(err.Error(), "rpc error: code = Unknown desc =", "", -1)
+// 	if strings.Contains(e, "Leader is") {
+// 		return strings.Replace(strings.Replace(e, "Leader is", "", 1), " ", "", -1)
+// 	}
 
-	if strings.Contains(e, "Please send tx to") {
-		return strings.Replace(strings.Replace(e, "Please send tx to", "", 1), " ", "", -1)
-	}
-	return ""
-}
+// 	if strings.Contains(e, "Please send tx to") {
+// 		return strings.Replace(strings.Replace(e, "Please send tx to", "", 1), " ", "", -1)
+// 	}
+// 	return ""
+// }
