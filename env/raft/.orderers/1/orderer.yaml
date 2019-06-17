@@ -54,6 +54,7 @@ Consensus:
       - 1@localhost:12346
       - 2@localhost:23457
       - 3@localhost:34568
+      - 4@localhost:45679
 
 # DB only support leveldb now
 DB:

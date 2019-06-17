@@ -103,6 +103,7 @@ func (db *DB) SetPrevBlockNum(channelID string, num uint64) {
 // AddBlock add block
 func (db *DB) AddBlock(block *Block) {
 	var key = []byte(fmt.Sprintf("%s:%d", block.ChannelID, block.Num))
+	log.Infof("Put block into raft.db: %s, %d", block.ChannelID, block.Num)
 	db.connect.Put(key, block.Bytes(), nil)
 }
 

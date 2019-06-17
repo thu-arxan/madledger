@@ -18,6 +18,3 @@ peer/data
 env/raft/orderers
 env/raft/peers
 env/raft/clients
-env/raft/.orderers/0/.raft/
-env/raft/.orderers/1/.raft/
-env/raft/.orderers/2/.raft/

@@ -4,18 +4,30 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	client "madledger/client/lib"
+	"madledger/common"
+	"madledger/common/abi"
 	"madledger/common/util"
+	"madledger/core/types"
 	oc "madledger/orderer/config"
-	orderer "madledger/orderer/server"
 	pc "madledger/peer/config"
+	peer "madledger/peer/server"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/otiai10/copy"
+)
+
+var (
+	// we need 4 orderers to test 1 orderer breaking down
+	raftOrderers [4]string
+	// just 1 is enough, we set 2
+	raftClients [2]*client.Client
+	raftPeers   [4]*peer.Server
 )
 
 // initBFTEnvironment will remove old test folders and copy necessary folders
@@ -46,6 +58,16 @@ func initRAFTEnvironment() error {
 		}
 	}
 
+	return nil
+}
+
+func initPeer(node int) error {
+	cfg := getPeerConfig(node)
+	server, err := peer.NewServer(cfg)
+	if err != nil {
+		return err
+	}
+	raftPeers[node] = server
 	return nil
 }
 
@@ -149,6 +171,89 @@ func stopOrderer(pid string) {
 	cmd.Output()
 }
 
+func compareChannels(channels []string) error {
+	lenChannels := len(channels) + 2
+	for i := range raftClients {
+		client := raftClients[i]
+		infos, err := client.ListChannel(true)
+		if err != nil {
+			return err
+		}
+
+		if len(infos) != lenChannels {
+			return fmt.Errorf("the number is not consistent")
+		}
+
+		for i := range infos {
+			if infos[i].Name != "_config" && infos[i].Name != "_global" {
+				if !util.Contain(channels, infos[i].Name) {
+					return fmt.Errorf("channel name doesn't exit in channels")
+				}
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func setNumForCallTx(num string) error {
+	abiPath := fmt.Sprintf(getRAFTClientPath(0) + "/MyTest.abi")
+	inputs := []string{num}
+	payloadBytes, err := abi.GetPayloadBytes(abiPath, "setNum", inputs)
+	if err != nil {
+		return err
+	}
+
+	client := raftClients[0]
+	addr := "0x8de6ce45b289502e16aef93313fd3082993acb1f"
+	tx, err := types.NewTx("test0", common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	if err != nil {
+		return err
+	}
+
+	_, err = client.AddTx(tx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getNumForCallTx(num string) error {
+	abiPath := fmt.Sprintf(getRAFTClientPath(0) + "/MyTest.abi")
+	var inputs []string = make([]string, 0)
+	payloadBytes, err := abi.GetPayloadBytes(abiPath, "getNum", inputs)
+	if err != nil {
+		return err
+	}
+
+	client := raftClients[0]
+	addr := "0x8de6ce45b289502e16aef93313fd3082993acb1f"
+	tx, err := types.NewTx("test0", common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	if err != nil {
+		return err
+	}
+
+	status, err := client.AddTx(tx)
+	if err != nil {
+		return err
+	}
+
+	values, err := abi.Unpacker(abiPath, "getNum", status.Output)
+	if err != nil {
+		return err
+	}
+
+	var output []string
+	for _, value := range values {
+		output = append(output, value.Value)
+	}
+	if output[0] != num {
+		return fmt.Errorf("call tx on channel test%d: getNum expect %s but receive %s", 0, num, output[0])
+	}
+	return nil
+}
+
 // startOrderer run orderer and return pid
 func startOrderer(node int) string {
 	before := getOrderersPid()
@@ -171,13 +276,4 @@ func startOrderer(node int) string {
 		}
 		time.Sleep(1 * time.Second)
 	}
-}
-
-func newOrderer(node int) (*orderer.Server, error) {
-	cfgPath := getRAFTOrdererConfigPath(node)
-	cfg, err := oc.LoadConfig(cfgPath)
-	if err != nil {
-		return nil, err
-	}
-	return orderer.NewServer(cfg)
 }

@@ -15,13 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-/*var (
-	bftOrderers [4]string
-	bftClients  [4]*client.Client
-	bftPeers    [4]*peer.Server
-)
-*/
-
 func TestInitEnv2(t *testing.T) {
 	require.NoError(t, initBFTEnvironment())
 }

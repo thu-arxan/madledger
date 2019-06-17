@@ -3,7 +3,7 @@
 #############################################################################
 
 # Port should be an integer (default: 12345)
-Port: 12345
+Port: 45678
 
 # Bind address for the server (default: localhost)
 Address: localhost
@@ -32,11 +32,11 @@ Consensus:
     Path: .tendermint
     # Some ports
     Port:
-      P2P: 26656
-      RPC: 26657
-      APP: 26658
+      P2P: 26665
+      RPC: 26666
+      APP: 26667
     # ID means to identity in p2p connections
-    ID: 7f9f0ae5b8c3d783cc51b4ff88eae507cf1787b9
+    ID: 39856b8fa3e7d7df9d2f4ae2dff74d4713a968d3
     # P2P Persistent Address, like c395828cc2baaa6f6af2bd13ce62d1e9484919c8@localhost:36656
     P2PAddress:
       - 7f9f0ae5b8c3d783cc51b4ff88eae507cf1787b9@localhost:26656
@@ -48,7 +48,7 @@ Consensus:
     # The path of raft
     Path: .raft
     # ID should be int, and it should not be duplicate
-    ID: 1
+    ID: 4
     # Node should be like 1@localhost:12345
     Nodes:
       - 1@localhost:12346
