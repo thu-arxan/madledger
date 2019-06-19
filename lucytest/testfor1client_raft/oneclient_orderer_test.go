@@ -1,4 +1,4 @@
-package testfor2clients_bft
+package testfor1client_raft
 
 import (
 	"fmt"
@@ -65,6 +65,7 @@ func TestRaftCreateChannels1(t *testing.T) {
 			stopOrderer(raftOrderers[0])
 			// restart orderer0 by RestartNode
 			require.NoError(t, os.RemoveAll(getRAFTOrdererDataPath(0)))
+			copyFile("./0.md", "./00.md")
 		}
 		if i == 6 {
 			fmt.Println("Restart Orderer 0 ...")
@@ -81,6 +82,19 @@ func TestRaftCreateChannels1(t *testing.T) {
 
 	// then we will check if channels are create successful
 	require.NoError(t, compareChannels(channels))
+}
+
+func TestBFTEnd1(t *testing.T) {
+	for _, pid := range raftOrderers {
+		stopOrderer(pid)
+	}
+
+	for i := range raftPeers {
+		raftPeers[i].Stop()
+	}
+	time.Sleep(2 * time.Second)
+	//gopath := os.Getenv("GOPATH")
+	//require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/raft"))
 }
 
 /*func TestRaftCreateTx1(t *testing.T) {

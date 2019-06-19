@@ -42,6 +42,7 @@ func (db *DB) Close() {
 // PutBlock put a block into db
 func (db *DB) PutBlock(block *HybridBlock) {
 	var key = util.Uint64ToBytes(block.GetNumber())
+	log.Infof("Put hybridBlock %d into raft.db", block.GetNumber())
 	db.connect.Put(key, block.Bytes(), nil)
 }
 
@@ -72,6 +73,7 @@ func (db *DB) GetMinBlock() uint64 {
 		data, _ := db.connect.Get(key, nil)
 		json.Unmarshal(data, &num)
 	}
+	log.Infof("GetMinBlock: get minBlock %d", num)
 	return num
 }
 
@@ -103,7 +105,7 @@ func (db *DB) SetPrevBlockNum(channelID string, num uint64) {
 // AddBlock add block
 func (db *DB) AddBlock(block *Block) {
 	var key = []byte(fmt.Sprintf("%s:%d", block.ChannelID, block.Num))
-	log.Infof("Put block into raft.db: %s, %d", block.ChannelID, block.Num)
+	log.Infof("Add block into raft.db: %s, %d", block.ChannelID, block.Num)
 	db.connect.Put(key, block.Bytes(), nil)
 }
 
@@ -111,12 +113,14 @@ func (db *DB) AddBlock(block *Block) {
 func (db *DB) GetBlock(channelID string, num uint64, async bool) *Block {
 	block := db.getBlock(channelID, num)
 	if !async || (block != nil) {
+		log.Infof("Get block %d of channel %s from raft.db", num, channelID)
 		return block
 	}
 	for {
 		time.Sleep(10 * time.Millisecond)
 		block = db.getBlock(channelID, num)
 		if block != nil {
+			log.Infof("Get block %d of channel %s from raft.db asynchronously", num, channelID)
 			return block
 		}
 	}

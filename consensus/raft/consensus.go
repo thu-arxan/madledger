@@ -141,7 +141,7 @@ func (c *Consensus) AddChannel(channelID string, cfg consensus.Config) error {
 
 // GetBlock is the implementation of interface
 func (c *Consensus) GetBlock(channelID string, num uint64, async bool) (consensus.Block, error) {
-	log.Infof("Get block %d of channel %s", num, channelID)
+	// log.Infof("Get block %d of channel %s", num, channelID)
 	return c.chain.getBlock(channelID, num, async)
 }
 

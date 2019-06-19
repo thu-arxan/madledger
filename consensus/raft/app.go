@@ -171,6 +171,7 @@ func (a *App) fetchBlockDone(num uint64) {
 
 	atomic.StoreUint64(&(a.minBlock), num+1)
 	delete(a.blocks, num)
+	log.Infof("fetchBlockDone: set minBlock %d + 1", num)
 	a.db.SetMinBlock(num + 1)
 }
 

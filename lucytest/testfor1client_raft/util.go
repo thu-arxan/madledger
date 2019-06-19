@@ -3,6 +3,7 @@ package testfor1client_raft
 import (
 	"encoding/hex"
 	"fmt"
+	"io"
 	"io/ioutil"
 	client "madledger/client/lib"
 	"madledger/common"
@@ -125,6 +126,27 @@ func getPeerConfig(node int) *pc.Config {
 func getRAFTPeerConfigPath(node int) string {
 	gopath := os.Getenv("GOPATH")
 	return fmt.Sprintf("%s/src/madledger/tests/raft/peers/%d/peer.yaml", gopath, node)
+}
+
+func copyFile(src string, dst string) (writelne int64, err error) {
+	srcFile, err := os.Open(src)
+
+	if err != nil {
+		fmt.Printf("open file err = %v\n", err)
+		return
+	}
+
+	defer srcFile.Close()
+
+	//open destination file
+	dstFile, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE, 0755)
+	if err != nil {
+		fmt.Printf("open file err = %v\n", err)
+		return
+	}
+
+	defer dstFile.Close()
+	return io.Copy(dstFile, srcFile)
 }
 
 func readCodes(file string) ([]byte, error) {
@@ -258,7 +280,9 @@ func getNumForCallTx(num string) error {
 func startOrderer(node int) string {
 	before := getOrderersPid()
 	go func() {
-		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("orderer start -c %s", getRAFTOrdererConfigPath(node)))
+		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("orderer start -c %s > %d.md",
+			getRAFTOrdererConfigPath(node), node))
+		//cmd:=exec.Command("gnome-terminal -e 'bash -c \"echo 'hello'; exec bash\"'")
 		_, err := cmd.Output()
 		if err != nil {
 			panic(fmt.Sprintf("Run orderer failed:%s", err))

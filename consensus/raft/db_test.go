@@ -1,6 +1,8 @@
 package raft
 
 import (
+	"fmt"
+	"github.com/syndtr/goleveldb/leveldb"
 	"madledger/common/util"
 	"os"
 	"testing"
@@ -19,19 +21,20 @@ func TestDB(t *testing.T) {
 	db.Close()
 }
 
-// func TestGetDB(t *testing.T) {
-// 	db, err := leveldb.OpenFile("/home/hadoop/GOPATH/src/madledger/env/raft/orderers/0/.raft/db", nil)
-// 	require.NoError(t, err)
-// 	defer db.Close()
-// 	iter := db.NewIterator(nil, nil)
-// 	for iter.Next() {
-// 		key := string(iter.Key())
-// 		value := string(iter.Value())
-// 		fmt.Printf("(%s, %s)\n", key, value)
-// 	}
-// 	iter.Release()
+func TestGetDB(t *testing.T) {
+	db, err := leveldb.OpenFile("/home/hadoop/GOPATH/src/madledger/tests/raft/orderers/0/.raft/db", nil)
+	//db, err := leveldb.OpenFile("/home/hadoop/GOPATH/src/madledger/tests/raft/orderers/0/data/leveldb", nil)
+	require.NoError(t, err)
+	defer db.Close()
+	iter := db.NewIterator(nil, nil)
+	for iter.Next() {
+		key := string(iter.Key())
+		value := string(iter.Value())
+		fmt.Printf("(%s, %s)\n", key, value)
+	}
+	iter.Release()
 
-// }
+}
 
 func TestBlock(t *testing.T) {
 	db, err := NewDB(getDBPath())
