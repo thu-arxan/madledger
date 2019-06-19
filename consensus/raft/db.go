@@ -92,6 +92,7 @@ func (db *DB) GetPrevBlockNum(channelID string) uint64 {
 		data, _ := db.connect.Get(key, nil)
 		json.Unmarshal(data, &num)
 	}
+	log.Infof("GetPrevBlockNum: get prevBlockNum %d", num)
 	return num
 }
 
@@ -99,6 +100,7 @@ func (db *DB) GetPrevBlockNum(channelID string) uint64 {
 func (db *DB) SetPrevBlockNum(channelID string, num uint64) {
 	var key = []byte(channelID)
 	data, _ := json.Marshal(num)
+	log.Infof("SetPrevBlockNum: set prevBlockNum %d", num)
 	db.connect.Put(key, data, nil)
 }
 

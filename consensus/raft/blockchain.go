@@ -103,6 +103,7 @@ func (chain *BlockChain) start() error {
 				}
 			case block := <-chain.hybridBlockCh:
 				if block.GetNumber() == chain.num+1 {
+					log.Infof("Blockchain.start: call addBlock and the block number is %d",block.GetNumber())
 					chain.addBlock(block)
 				} else if block.GetNumber() <= chain.num {
 					chain.raft.FetchBlockDone(block.GetNumber())
@@ -169,6 +170,7 @@ func (chain *BlockChain) createBlock(txs [][]byte) error {
 	}
 
 	log.Infof("[%d]Succeed to add block %d", chain.raft.cfg.id, block.Num)
+	log.Infof("Blockchain.createBlock: call addBlock adn the block number is %d",block.GetNumber())
 	chain.addBlock(block)
 	return nil
 }

@@ -100,7 +100,6 @@ func (r *Raft) AddBlock(block *HybridBlock) error {
 		return err
 	}
 
-	// fmt.Printf("[%d] Add block %d succeed\n", r.cfg.id, block.GetNumber())
 	return r.app.watch(block)
 }
 

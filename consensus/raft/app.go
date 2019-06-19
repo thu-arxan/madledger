@@ -79,14 +79,15 @@ func (a *App) Commit(data []byte) {
 		hash := string(crypto.Hash(block.Bytes()))
 		if !util.Contain(a.blocks, block.GetNumber()) {
 			a.blocks[block.GetNumber()] = block
-			a.db.PutBlock(block)
-			if block.GetNumber() >= a.getMinBlock() {
+			if block.GetNumber() < a.getMinBlock() {
+				// don't put HybridBlock thing because it's already in raft.db
 				a.hub.Done(hash, nil)
 				a.blockCh <- block
-			}
-			// should parse the hybrid block to different channel block
-			if block.GetNumber() == a.getMinBlock() {
-
+			} else if block.GetNumber() >= a.getMinBlock() {
+				// Put HybridBlock into raft.db and tell raft it's done
+				a.db.PutBlock(block)
+				a.hub.Done(hash, nil)
+				a.blockCh <- block
 			}
 		} else {
 			a.hub.Done(hash, &event.Result{
@@ -169,6 +170,7 @@ func (a *App) fetchBlockDone(num uint64) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
+	log.Infof("fetchBlockDone: set app.minBlock %d + 1", num)
 	atomic.StoreUint64(&(a.minBlock), num+1)
 	delete(a.blocks, num)
 	log.Infof("fetchBlockDone: set minBlock %d + 1", num)
