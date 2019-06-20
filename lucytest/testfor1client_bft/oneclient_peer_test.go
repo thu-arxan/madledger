@@ -59,7 +59,6 @@ func TestBFTLoadClients2(t *testing.T) {
 }
 
 func TestBFTCreateChannels2(t *testing.T) {
-	// client 0 and client 1 create channels concurrently
 	client := bftClients[0]
 	var channels []string
 	for m := 1; m <= 8; m++ {

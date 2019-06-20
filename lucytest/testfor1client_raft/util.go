@@ -162,6 +162,10 @@ func getRAFTPeerPath(node int) string {
 	return fmt.Sprintf("%s/src/madledger/tests/raft/peers/%d", gopath, node)
 }
 
+func getRAFTPeerDataPath(node int) string {
+	return fmt.Sprintf("%s/data", getRAFTPeerPath(node))
+}
+
 func getRAFTClientPath(node int) string {
 	gopath := os.Getenv("GOPATH")
 	return fmt.Sprintf("%s/src/madledger/tests/raft/clients/%d", gopath, node)
@@ -193,7 +197,7 @@ func stopOrderer(pid string) {
 	cmd.Output()
 }
 
-func compareChannels(channels []string) error {
+func compareChannelName(channels []string) error {
 	lenChannels := len(channels) + 2
 	for i := range raftClients {
 		client := raftClients[i]
@@ -214,6 +218,33 @@ func compareChannels(channels []string) error {
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func compareChannelBlocks() error {
+	client0 := raftClients[0]
+	client1 := raftClients[1]
+	infos1, err := client0.ListChannel(true)
+	if err != nil {
+		return err
+	}
+	infos2, err := client1.ListChannel(true)
+	if err != nil {
+		return err
+	}
+
+	if len(infos1) != len(infos2) {
+		return fmt.Errorf("the channel number is not consistent between orderer0 and orderer1")
+	}
+	for i := range infos1 {
+		if infos1[i].BlockSize != infos2[i].BlockSize {
+			return fmt.Errorf("the block size is not consistent between %s "+
+				"in orderer0 and %s in orderer1", infos1[i].Name, infos2[i].Name)
+		}
+		fmt.Printf("%s in orderer0 has %d blocks, %s in orderer1 has %d blocks\n",
+			infos1[i].Name, infos1[i].BlockSize, infos2[i].Name, infos2[i].BlockSize)
 	}
 
 	return nil

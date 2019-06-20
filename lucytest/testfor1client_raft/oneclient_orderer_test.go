@@ -6,6 +6,8 @@ import (
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"os"
+	"madledger/common"
+	"madledger/core/types"
 	"regexp"
 	"strconv"
 	"testing"
@@ -65,7 +67,8 @@ func TestRaftCreateChannels1(t *testing.T) {
 			stopOrderer(raftOrderers[0])
 			// restart orderer0 by RestartNode
 			require.NoError(t, os.RemoveAll(getRAFTOrdererDataPath(0)))
-			copyFile("./0.md", "./00.md")
+			_, err := copyFile("./0.md", "./00.md")
+			require.NoError(t, err)
 		}
 		if i == 6 {
 			fmt.Println("Restart Orderer 0 ...")
@@ -81,7 +84,67 @@ func TestRaftCreateChannels1(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// then we will check if channels are create successful
-	require.NoError(t, compareChannels(channels))
+	require.NoError(t, compareChannelName(channels))
+}
+
+func TestBFTCreateTx1(t *testing.T) {
+	client := raftClients[0]
+	for m := 1; m <= 8; m++ {
+		if m == 4 {
+			fmt.Println("Stop Orderer 0 ...")
+			stopOrderer(raftOrderers[0])
+			// restart orderer0 by RestartNode
+			require.NoError(t, os.RemoveAll(getRAFTOrdererDataPath(0)))
+			_, err := copyFile("./0.md", "./000.md")
+			require.NoError(t, err)
+		}
+		if m == 6 {
+			fmt.Println("Restart Orderer 0 ...")
+			raftOrderers[0] = startOrderer(0)
+		}
+		// client 0 create contract
+		contractCodes, err := readCodes(getRAFTClientPath(0) + "/MyTest.bin")
+		require.NoError(t, err)
+		fmt.Printf("Create contract %d on channel test0 ...\n", m)
+		tx, err := types.NewTx("test0", common.ZeroAddress, contractCodes, client.GetPrivKey())
+		require.NoError(t, err)
+
+		_, err = client.AddTx(tx)
+		require.NoError(t, err)
+	}
+
+	time.Sleep(2 * time.Second)
+	require.NoError(t, compareChannelBlocks())
+}
+
+func TestRaftCallTx1(t *testing.T) {
+	for i := 1; i <= 8; i++ {
+		if i == 4 {
+			fmt.Println("Stop Orderer 0 ...")
+			stopOrderer(raftOrderers[0])
+			// restart orderer0 by RestartNode
+			require.NoError(t, os.RemoveAll(getRAFTOrdererDataPath(0)))
+			_, err := copyFile("./0.md", "./0000.md")
+			require.NoError(t, err)
+		}
+		if i == 6 {
+			fmt.Println("Restart Orderer 0 ...")
+			raftOrderers[0] = startOrderer(0)
+		}
+
+		// odd call setNum, even call GetNum
+		fmt.Printf("Call contract %d times on channel test0 ...\n", i)
+		if i%2 == 0 {
+			num := "1" + strconv.Itoa(i-1)
+			require.NoError(t, getNumForCallTx(num))
+		} else {
+			num := "1" + strconv.Itoa(i)
+			require.NoError(t, setNumForCallTx(num))
+		}
+	}
+	time.Sleep(2 * time.Second)
+
+	require.NoError(t, compareChannelBlocks())
 }
 
 func TestBFTEnd1(t *testing.T) {
@@ -93,161 +156,24 @@ func TestBFTEnd1(t *testing.T) {
 		raftPeers[i].Stop()
 	}
 	time.Sleep(2 * time.Second)
-	//gopath := os.Getenv("GOPATH")
-	//require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/raft"))
-}
 
-/*func TestRaftCreateTx1(t *testing.T) {
-	client := raftClients[0]
-	for i := 0; i < 8; i++ {
-		if i == 3 {
-			fmt.Println("Stop Orderer 0 ...")
-			stopOrderer(raftOrderers[0])
-			// restart orderer0 by RestartNode
-			require.NoError(t, os.RemoveAll(getRAFTOrdererDataPath(0)))
-		}
-		if i == 5 { // restart orderer0
-			fmt.Println("Restart Orderer 0 ...")
-			raftOrderers[0] = startOrderer(0)
-		}
-		// client 0 create contract
-		contractCodes, err := readCodes(getRAFTClientPath(0) + "/MyTest.bin")
-		require.NoError(t, err)
-		channel := "test" + strconv.Itoa(i)
-		fmt.Printf("Create contract %d on channel %s ...\n", i, channel)
-		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, client.GetPrivKey())
-		require.NoError(t, err)
+	// copy orderers log to other directory
+	_, err := copyFile("./0.md", "./orderer_tests/0.md")
+	require.NoError(t, err)
+	_, err = copyFile("./00.md", "./orderer_tests/00.md")
+	require.NoError(t, err)
+	_, err = copyFile("./1.md", "./orderer_tests/1.md")
+	require.NoError(t, err)
+	_, err = copyFile("./000.md", "./orderer_tests/000.md")
+	require.NoError(t, err)
+	_, err = copyFile("./2.md", "./orderer_tests/2.md")
+	require.NoError(t, err)
+	_, err = copyFile("./0000.md", "./orderer_tests/0000.md")
+	require.NoError(t, err)
+	_, err = copyFile("./3.md", "./orderer_tests/3.md")
+	require.NoError(t, err)
 
-		_, err = client.AddTx(tx)
-		require.NoError(t, err)
-	}
-	time.Sleep(2 * time.Second)
-}*/
-
-/*func TestRaftCallTx1(t *testing.T) {
-	for i := 1; i <= 6; i++ {
-		if i == 3 {
-			fmt.Println("Stop Orderer 0 ...")
-			stopOrderer(raftOrderers[0])
-			// restart orderer0 by RestartNode
-			require.NoError(t, os.RemoveAll(getRAFTOrdererDataPath(0)))
-		}
-		if i == 4 {
-			fmt.Println("Restart Orderer 0 ...")
-			raftOrderers[0] = startOrderer(0)
-		}
-
-		// client0调用合约的setNum
-		fmt.Printf("Call contract %d times on channel test0 ...\n", i)
-		if i%2 == 0 {
-			num := "1" + strconv.Itoa(i-1)
-			require.NoError(t, getNumForCallTx(num))
-		} else {
-			num := "1" + strconv.Itoa(i)
-			require.NoError(t, setNumForCallTx(num))
-		}
-	}
-}*/
-
-/*
-func TestBFTEnd1(t *testing.T) {
-	for _, pid := range bftOrderers {
-		stopOrderer(pid)
-	}
-
-	for i := range bftPeers {
-		bftPeers[i].Stop()
-	}
-	time.Sleep(2 * time.Second)
+	// remove raft data
 	gopath := os.Getenv("GOPATH")
 	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/raft"))
-}*/
-
-/*
-// 关闭orderer 1，关闭期间通过client 0创建test3通道，然后重启orderer 1，查询数据
-func TestBFTNodeRestart(t *testing.T) {
-	stopOrderer(bftOrderers[1])
-	os.RemoveAll(getBFTOrdererDataPath(1))
-
-	//client 0创建test3通道
-	client0 := bftClients[0]
-	channel := "test3"
-	err := client0.CreateChannel(channel, true, nil, nil)
-	require.NoError(t, err)
-	time.Sleep(2 * time.Second)
-
-	fmt.Println("Restart orderer 1 ...")
-	bftOrderers[1] = startOrderer(1)
-	time.Sleep(2 * time.Second)
-
-	// query by client 1
-	require.NoError(t, listChannel(1))
-
 }
-
-func TestBFTCreateChannelAfterRestart(t *testing.T) {
-	//client 1创建通道test4
-	client1 := bftClients[1]
-	channel := "test4"
-	err := client1.CreateChannel(channel, true, nil, nil)
-	require.NoError(t, err)
-	time.Sleep(2 * time.Second)
-
-	// query by client 1
-	require.NoError(t, listChannel(1))
-}
-
-func TestBFTCreateTxAfterRestart(t *testing.T) {
-	//client 1创建智能合约
-	contractCodes, err := readCodes(getBFTClientPath(1) + "/MyTest.bin")
-	require.NoError(t, err)
-	client := bftClients[1]
-	tx, err := types.NewTx("test4", common.ZeroAddress, contractCodes, client.GetPrivKey())
-	require.NoError(t, err)
-
-	status, err := client.AddTx(tx)
-	require.NoError(t, err)
-
-	// Then print the status
-	table := cliu.NewTable()
-	table.SetHeader("BlockNumber", "BlockIndex", "ContractAddress")
-	if status.Err != "" {
-		table.AddRow(status.BlockNumber, status.BlockIndex, status.Err)
-	} else {
-		table.AddRow(status.BlockNumber, status.BlockIndex, status.ContractAddress)
-	}
-	table.Render()
-}
-
-func TestBFTCallTxAfterRestart(t *testing.T) {
-	//client 1调用智能合约
-	abiPath := fmt.Sprintf(getBFTClientPath(1) + "/MyTest.abi")
-	funcName := "getNum"
-	var inputs []string = make([]string, 0)
-	payloadBytes, err := abi.GetPayloadBytes(abiPath, funcName, inputs)
-	require.NoError(t, err)
-
-	client := bftClients[1]
-	tx, err := types.NewTx("test4", common.HexToAddress("0x0619e2393802cc99e90cf892b92a113f19af5887"), payloadBytes, client.GetPrivKey())
-	require.NoError(t, err)
-
-	status, err := client.AddTx(tx)
-	require.NoError(t, err)
-
-	// Then print the status
-	table := cliu.NewTable()
-	table.SetHeader("BlockNumber", "BlockIndex", "Output")
-	if status.Err != "" {
-		table.AddRow(status.BlockNumber, status.BlockIndex, status.Err)
-	} else {
-		values, err := abi.Unpacker(abiPath, funcName, status.Output)
-		require.NoError(t, err)
-		var output []string
-		for _, value := range values {
-			output = append(output, value.Value)
-		}
-		table.AddRow(status.BlockNumber, status.BlockIndex, output)
-	}
-	table.Render()
-}
-*/
