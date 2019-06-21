@@ -385,8 +385,8 @@ func backupMdFile2(path string) error {
 	return nil
 }
 
-func setNumForCallTx(num string) error {
-	abiPath := fmt.Sprintf(getRAFTClientPath(0) + "/MyTest.abi")
+func setNumForCallTx(node int, num string) error {
+	abiPath := fmt.Sprintf(getRAFTClientPath(node) + "/MyTest.abi")
 	inputs := []string{num}
 	payloadBytes, err := abi.GetPayloadBytes(abiPath, "setNum", inputs)
 	if err != nil {
@@ -394,8 +394,18 @@ func setNumForCallTx(num string) error {
 	}
 
 	client := raftClients[0]
+	if node == 1 {
+		client = raftClients[1]
+	}
 	addr := "0x8de6ce45b289502e16aef93313fd3082993acb1f"
-	tx, err := types.NewTx("test0", common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	if node == 1 {
+		addr = "0x1b66001e01d3c8d3893187fee59e3bea1d9bdd9b"
+	}
+	channel := "test0"
+	if node == 1 {
+		channel = "test1"
+	}
+	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -407,8 +417,8 @@ func setNumForCallTx(num string) error {
 	return nil
 }
 
-func getNumForCallTx(num string) error {
-	abiPath := fmt.Sprintf(getRAFTClientPath(0) + "/MyTest.abi")
+func getNumForCallTx(node int, num string) error {
+	abiPath := fmt.Sprintf(getRAFTClientPath(node) + "/MyTest.abi")
 	var inputs []string = make([]string, 0)
 	payloadBytes, err := abi.GetPayloadBytes(abiPath, "getNum", inputs)
 	if err != nil {
@@ -416,8 +426,18 @@ func getNumForCallTx(num string) error {
 	}
 
 	client := raftClients[0]
+	if node==1 {
+		client=raftClients[1]
+	}
 	addr := "0x8de6ce45b289502e16aef93313fd3082993acb1f"
-	tx, err := types.NewTx("test0", common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	if node == 1 {
+		addr = "0x1b66001e01d3c8d3893187fee59e3bea1d9bdd9b"
+	}
+	channel:="test0"
+	if node==1 {
+		channel="test1"
+	}
+	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
 	if err != nil {
 		return err
 	}
