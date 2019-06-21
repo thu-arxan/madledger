@@ -14,12 +14,11 @@ import (
 	"time"
 )
 
-// change the package
 func TestInitEnv1(t *testing.T) {
 	require.NoError(t, initRAFTEnvironment())
 }
 
-func TestBFTOrdererStart1(t *testing.T) {
+func TestRaftOrdererStart1(t *testing.T) {
 	// then we can run orderers
 	for i := range raftOrderers {
 		pid := startOrderer(i)
@@ -27,7 +26,7 @@ func TestBFTOrdererStart1(t *testing.T) {
 	}
 }
 
-func TestRAFTPeersStart1(t *testing.T) {
+func TestRaftPeersStart1(t *testing.T) {
 	for i := range raftPeers {
 		require.NoError(t, initPeer(i))
 	}
@@ -87,10 +86,10 @@ func TestRaftCreateChannels1(t *testing.T) {
 	require.NoError(t, compareChannelName(channels))
 }
 
-func TestBFTCreateTx1(t *testing.T) {
+func TestRaftCreateTx1(t *testing.T) {
 	client := raftClients[0]
-	for m := 1; m <= 8; m++ {
-		if m == 4 {
+	for m := 0; m < 8; m++ {
+		if m == 3 {
 			fmt.Println("Stop Orderer 0 ...")
 			stopOrderer(raftOrderers[0])
 			// restart orderer0 by RestartNode
@@ -105,8 +104,9 @@ func TestBFTCreateTx1(t *testing.T) {
 		// client 0 create contract
 		contractCodes, err := readCodes(getRAFTClientPath(0) + "/MyTest.bin")
 		require.NoError(t, err)
-		fmt.Printf("Create contract %d on channel test0 ...\n", m)
-		tx, err := types.NewTx("test0", common.ZeroAddress, contractCodes, client.GetPrivKey())
+		channel := "test" + strconv.Itoa(m)
+		fmt.Printf("Create contract %d on channel %s ...\n", m, channel)
+		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, client.GetPrivKey())
 		require.NoError(t, err)
 
 		_, err = client.AddTx(tx)
@@ -147,7 +147,7 @@ func TestRaftCallTx1(t *testing.T) {
 	require.NoError(t, compareChannelBlocks())
 }
 
-func TestBFTEnd1(t *testing.T) {
+func TestRaftEnd1(t *testing.T) {
 	for _, pid := range raftOrderers {
 		stopOrderer(pid)
 	}
@@ -158,22 +158,9 @@ func TestBFTEnd1(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// copy orderers log to other directory
-	_, err := copyFile("./0.md", "./orderer_tests/0.md")
-	require.NoError(t, err)
-	_, err = copyFile("./00.md", "./orderer_tests/00.md")
-	require.NoError(t, err)
-	_, err = copyFile("./1.md", "./orderer_tests/1.md")
-	require.NoError(t, err)
-	_, err = copyFile("./000.md", "./orderer_tests/000.md")
-	require.NoError(t, err)
-	_, err = copyFile("./2.md", "./orderer_tests/2.md")
-	require.NoError(t, err)
-	_, err = copyFile("./0000.md", "./orderer_tests/0000.md")
-	require.NoError(t, err)
-	_, err = copyFile("./3.md", "./orderer_tests/3.md")
-	require.NoError(t, err)
+	require.NoError(t, backupMdFile1("./orderer_tests/"))
 
 	// remove raft data
-	gopath := os.Getenv("GOPATH")
-	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/raft"))
+	//gopath := os.Getenv("GOPATH")
+	//require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/raft"))
 }

@@ -7,17 +7,18 @@ import (
 	"regexp"
 	"strconv"
 	"testing"
+	"madledger/common"
+	"madledger/core/types"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"time"
 )
 
-// change the package
 func TestInitEnv2(t *testing.T) {
 	require.NoError(t, initRAFTEnvironment())
 }
 
-func TestBFTOrdererStart2(t *testing.T) {
+func TestRaftOrdererStart2(t *testing.T) {
 	// then we can run orderers
 	for i := range raftOrderers {
 		pid := startOrderer(i)
@@ -25,7 +26,7 @@ func TestBFTOrdererStart2(t *testing.T) {
 	}
 }
 
-func TestRAFTPeersStart2(t *testing.T) {
+func TestRaftPeersStart2(t *testing.T) {
 	for i := range raftPeers {
 		require.NoError(t, initPeer(i))
 	}
@@ -55,11 +56,10 @@ func TestLoadClients2(t *testing.T) {
 	}
 }
 
-func TestBFTCreateChannels2(t *testing.T) {
+func TestRaftCreateChannels2(t *testing.T) {
 	client := raftClients[0]
-	var channels []string
-	for m := 1; m <= 8; m++ {
-		if m == 4 {
+	for m := 0; m < 8; m++ {
+		if m == 3 {
 			go func(t *testing.T) {
 				fmt.Println("Stop peer 0")
 				raftPeers[0].Stop()
@@ -77,7 +77,6 @@ func TestBFTCreateChannels2(t *testing.T) {
 		}
 		// client 0 create channel
 		channel := "test" + strconv.Itoa(m)
-		channels = append(channels, channel)
 		fmt.Printf("Create channel %s ...\n", channel)
 		err := client.CreateChannel(channel, true, nil, nil)
 		require.NoError(t, err)
@@ -85,10 +84,83 @@ func TestBFTCreateChannels2(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// then we will check if channels are create successful
-	require.NoError(t, compareChannelName(channels))
+	require.NoError(t, compareClientTx(8, "_config"))
 }
 
-func TestBFTEnd2(t *testing.T) {
+func TestRaftCreateTx2(t *testing.T) {
+	client := raftClients[0]
+	for m := 0; m < 8; m++ {
+		if m == 3 { // stop peer0
+			go func(t *testing.T) {
+				fmt.Println("Begin to stop peer 0")
+				raftPeers[0].Stop()
+				require.NoError(t, os.RemoveAll(getRAFTPeerDataPath(0)))
+			}(t)
+		}
+		if m == 6 { // restart peer0
+			require.NoError(t, initPeer(0))
+
+			go func(t *testing.T) {
+				fmt.Println("Begin to restart peer 0")
+				err := raftPeers[0].Start()
+				require.NoError(t, err)
+			}(t)
+		}
+		// client 0 create contract
+		contractCodes, err := readCodes(getRAFTClientPath(0) + "/MyTest.bin")
+		require.NoError(t, err)
+		channel := "test" + strconv.Itoa(m)
+		fmt.Printf("Create contract %d on channel %s ...\n", m, channel)
+		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, client.GetPrivKey())
+		require.NoError(t, err)
+
+		_, err = client.AddTx(tx)
+		require.NoError(t, err)
+	}
+	time.Sleep(2 * time.Second)
+
+	for i := 0; i < 8; i++ {
+		channel := "test" + strconv.Itoa(i)
+		require.NoError(t, compareClientTx(1, channel))
+	}
+}
+
+func TestBFTCallTx2(t *testing.T) {
+	for m := 1; m <= 8; m++ {
+		if m == 3 {
+			go func(t *testing.T) {
+				fmt.Println("Begin to stop peer 0")
+				raftPeers[0].Stop()
+				require.NoError(t, os.RemoveAll(getRAFTPeerDataPath(0)))
+			}(t)
+		}
+		if m == 6 { // restart peer0
+			require.NoError(t, initPeer(0))
+
+			go func(t *testing.T) {
+				fmt.Println("Begin to restart peer 0")
+				err := raftPeers[0].Start()
+				require.NoError(t, err)
+			}(t)
+		}
+
+		// client0调用合约的setNum
+		fmt.Printf("Call contract %d times on channel test0 ...\n", m)
+		if m%2 == 0 {
+			num := "1" + strconv.Itoa(m-1)
+			require.NoError(t, getNumForCallTx(num))
+		} else {
+			num := "1" + strconv.Itoa(m)
+			require.NoError(t, setNumForCallTx(num))
+		}
+	}
+	time.Sleep(2 * time.Second)
+
+	require.NoError(t,compareClientTx(9,"test0"))
+}
+
+
+func TestRaftEnd2(t *testing.T) {
 	for _, pid := range raftOrderers {
 		stopOrderer(pid)
 	}
@@ -98,6 +170,9 @@ func TestBFTEnd2(t *testing.T) {
 	}
 	time.Sleep(2 * time.Second)
 
-	gopath := os.Getenv("GOPATH")
-	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/raft"))
+	// copy orderers log to other directory
+	require.NoError(t, backupMdFile2("./peer_tests/"))
+
+	//gopath := os.Getenv("GOPATH")
+	//require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/raft"))
 }

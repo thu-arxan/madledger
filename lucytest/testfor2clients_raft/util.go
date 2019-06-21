@@ -1,4 +1,4 @@
-package testfor1client_raft
+package testfor2clients_raft
 
 import (
 	"encoding/hex"
