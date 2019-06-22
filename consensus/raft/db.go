@@ -73,7 +73,7 @@ func (db *DB) GetMinBlock() uint64 {
 		data, _ := db.connect.Get(key, nil)
 		json.Unmarshal(data, &num)
 	}
-	log.Infof("GetMinBlock: set minBlock %d", num)
+	log.Infof("GetMinBlock: get minBlock %d", num)
 	return num
 }
 

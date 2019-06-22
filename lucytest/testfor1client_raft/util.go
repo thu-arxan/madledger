@@ -268,8 +268,8 @@ func compareChannelBlocks() error {
 	}
 	for i := range infos1 {
 		if infos1[i].BlockSize != infos2[i].BlockSize {
-			return fmt.Errorf("the block size is not consistent between %s "+
-				"in orderer0 and %s in orderer1", infos1[i].Name, infos2[i].Name)
+			return fmt.Errorf("the block size is not consistent:%s in orderer0 has %d blocks, "+
+				"%s in orderer1 has %d blocks", infos1[i].Name, infos1[i].BlockSize, infos2[i].Name, infos2[i].BlockSize)
 		}
 		fmt.Printf("%s in orderer0 has %d blocks, %s in orderer1 has %d blocks\n",
 			infos1[i].Name, infos1[i].BlockSize, infos2[i].Name, infos2[i].BlockSize)

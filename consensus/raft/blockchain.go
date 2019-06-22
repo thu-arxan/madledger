@@ -27,7 +27,7 @@ type BlockChain struct {
 	pool          *txPool
 	hub           *event.Hub
 	num           uint64
-	hybridBlocks  map[uint64]*HybridBlock
+	//hybridBlocks  map[uint64]*HybridBlock
 	hybridBlockCh chan *HybridBlock
 
 	rpcServer *grpc.Server
@@ -52,7 +52,7 @@ func NewBlockChain(cfg *Config) (*BlockChain, error) {
 		pool:          newTxPool(),
 		raft:          raft,
 		hub:           event.NewHub(),
-		hybridBlocks:  make(map[uint64]*HybridBlock),
+		//hybridBlocks:  make(map[uint64]*HybridBlock),
 	}, nil
 }
 
@@ -178,7 +178,7 @@ func (chain *BlockChain) createBlock(txs [][]byte) error {
 }
 
 func (chain *BlockChain) addBlock(block *HybridBlock) {
-	chain.hybridBlocks[block.GetNumber()] = block
+	//chain.hybridBlocks[block.GetNumber()] = block
 	chain.num = block.GetNumber()
 	chain.raft.app.db.SetChainNum(block.GetNumber())
 	var txs = make(map[string][][]byte)

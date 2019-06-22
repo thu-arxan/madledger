@@ -209,6 +209,6 @@ func TestRaftEnd2(t *testing.T) {
 	// copy orderers log to other directory
 	require.NoError(t, backupMdFile2("./peer_tests/"))
 
-	//gopath := os.Getenv("GOPATH")
-	//require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/raft"))
+	gopath := os.Getenv("GOPATH")
+	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/raft"))
 }

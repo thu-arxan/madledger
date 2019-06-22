@@ -268,8 +268,8 @@ func compareChannelBlocks() error {
 	}
 	for i := range infos1 {
 		if infos1[i].BlockSize != infos2[i].BlockSize {
-			return fmt.Errorf("the block size is not consistent between %s "+
-				"in orderer0 and %s in orderer1", infos1[i].Name, infos2[i].Name)
+			return fmt.Errorf("the block size is not consistent: %s in orderer0 has %d blocks, %s "+
+				"in orderer1 has %d blocks", infos1[i].Name, infos1[i].BlockSize, infos2[i].Name, infos2[i].BlockSize)
 		}
 		fmt.Printf("%s in orderer0 has %d blocks, %s in orderer1 has %d blocks\n",
 			infos1[i].Name, infos1[i].BlockSize, infos2[i].Name, infos2[i].BlockSize)
@@ -426,16 +426,16 @@ func getNumForCallTx(node int, num string) error {
 	}
 
 	client := raftClients[0]
-	if node==1 {
-		client=raftClients[1]
+	if node == 1 {
+		client = raftClients[1]
 	}
 	addr := "0x8de6ce45b289502e16aef93313fd3082993acb1f"
 	if node == 1 {
 		addr = "0x1b66001e01d3c8d3893187fee59e3bea1d9bdd9b"
 	}
-	channel:="test0"
-	if node==1 {
-		channel="test1"
+	channel := "test0"
+	if node == 1 {
+		channel = "test1"
 	}
 	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
 	if err != nil {
