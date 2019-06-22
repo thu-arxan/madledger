@@ -6,9 +6,9 @@ import (
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"os"
+	"regexp"
 	"madledger/common"
 	"madledger/core/types"
-	"regexp"
 	"strconv"
 	"testing"
 	"time"
@@ -84,6 +84,8 @@ func TestRaftCreateChannels1(t *testing.T) {
 
 	// then we will check if channels are create successful
 	require.NoError(t, compareChannelName(channels))
+	// to avoid block num is not consistent, we should check it
+	require.NoError(t, compareChannelBlocks())
 }
 
 func TestRaftCreateTx1(t *testing.T) {
@@ -161,6 +163,6 @@ func TestRaftEnd1(t *testing.T) {
 	require.NoError(t, backupMdFile1("./orderer_tests/"))
 
 	// remove raft data
-	//gopath := os.Getenv("GOPATH")
-	//require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/raft"))
+	gopath := os.Getenv("GOPATH")
+	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/raft"))
 }

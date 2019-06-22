@@ -22,7 +22,10 @@ func TestDB(t *testing.T) {
 }
 
 func TestGetDB(t *testing.T) {
-	db, err := leveldb.OpenFile("/home/hadoop/GOPATH/src/madledger/tests/raft/orderers/0/.raft/db", nil)
+	//path:="/home/hadoop/GOPATH/src/madledger/tests/raft/orderers/0/.raft/db"
+	path := "/home/hadoop/GOPATH/src/madledger/tests/raft/orderers/0/data/leveldb"
+	db, err := leveldb.OpenFile(path, nil)
+	fmt.Printf("Get raft.db from %s\n", path)
 	//db, err := leveldb.OpenFile("/home/hadoop/GOPATH/src/madledger/tests/raft/orderers/0/data/leveldb", nil)
 	require.NoError(t, err)
 	defer db.Close()

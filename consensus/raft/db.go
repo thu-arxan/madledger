@@ -73,7 +73,7 @@ func (db *DB) GetMinBlock() uint64 {
 		data, _ := db.connect.Get(key, nil)
 		json.Unmarshal(data, &num)
 	}
-	log.Infof("GetMinBlock: get minBlock %d", num)
+	log.Infof("GetMinBlock: set minBlock %d", num)
 	return num
 }
 
@@ -81,6 +81,7 @@ func (db *DB) GetMinBlock() uint64 {
 func (db *DB) SetMinBlock(num uint64) {
 	var key = []byte("minBlock")
 	data, _ := json.Marshal(num)
+	log.Infof("SetMinBlock: get minBlock %d", num)
 	db.connect.Put(key, data, nil)
 }
 
@@ -102,6 +103,24 @@ func (db *DB) SetPrevBlockNum(channelID string, num uint64) {
 	data, _ := json.Marshal(num)
 	log.Infof("SetPrevBlockNum: set prevBlockNum %d", num)
 	db.connect.Put(key, data, nil)
+}
+
+func (db *DB) SetChainNum(num uint64) {
+	var key = []byte("chainNum")
+	data, _ := json.Marshal(num)
+	log.Infof("SetChainNum: set chainNum %d", num)
+	db.connect.Put(key, data, nil)
+}
+
+func (db *DB) GetChainNum() uint64 {
+	var key = []byte("chainNum")
+	var num uint64
+	if exist, _ := db.connect.Has(key, nil); exist {
+		data, _ := db.connect.Get(key, nil)
+		json.Unmarshal(data, &num)
+	}
+	log.Infof("GetChainNum: get chainNum %d", num)
+	return num
 }
 
 // AddBlock add block

@@ -97,6 +97,8 @@ func TestRaftCreateChannels1(t *testing.T) {
 
 	// then we will check if channels are create successful
 	require.NoError(t, compareChannelName(channels))
+	// to avoid block num is not consistent, we should check it
+	require.NoError(t, compareChannelBlocks())
 }
 
 func TestRaftCreateTx1(t *testing.T) {
@@ -132,8 +134,8 @@ func TestRaftCreateTx1(t *testing.T) {
 		// client 0 create contract
 		contractCodes, err = readCodes(getRAFTClientPath(1) + "/MyTest.bin")
 		require.NoError(t, err)
-		channel="test1"
-		if m!=1 {
+		channel = "test1"
+		if m != 1 {
 			channel = "test1" + strconv.Itoa(m)
 		}
 		fmt.Printf("Create contract %d on channel %s ...\n", m, channel)
@@ -167,20 +169,20 @@ func TestRaftCallTx1(t *testing.T) {
 		fmt.Printf("Call contract %d times on channel test0 ...\n", i)
 		if i%2 == 0 {
 			num := "1" + strconv.Itoa(i-1)
-			require.NoError(t, getNumForCallTx(0,num))
+			require.NoError(t, getNumForCallTx(0, num))
 		} else {
 			num := "1" + strconv.Itoa(i)
-			require.NoError(t, setNumForCallTx(0,num))
+			require.NoError(t, setNumForCallTx(0, num))
 		}
 
 		// odd call setNum, even call GetNum
 		fmt.Printf("Call contract %d times on channel test1 ...\n", i)
 		if i%2 == 0 {
 			num := "2" + strconv.Itoa(i-1)
-			require.NoError(t, getNumForCallTx(1,num))
+			require.NoError(t, getNumForCallTx(1, num))
 		} else {
 			num := "2" + strconv.Itoa(i)
-			require.NoError(t, setNumForCallTx(1,num))
+			require.NoError(t, setNumForCallTx(1, num))
 		}
 	}
 	time.Sleep(2 * time.Second)

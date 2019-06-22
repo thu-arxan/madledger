@@ -11,6 +11,7 @@ import (
 	pb "madledger/consensus/raft/protos"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"google.golang.org/grpc"
@@ -60,6 +61,7 @@ func (chain *BlockChain) Start() error {
 	if err := chain.raft.Start(); err != nil {
 		return err
 	}
+	atomic.StoreUint64(&(chain.num), chain.raft.app.db.GetChainNum())
 
 	if err := chain.start(); err != nil {
 		return err
@@ -103,7 +105,7 @@ func (chain *BlockChain) start() error {
 				}
 			case block := <-chain.hybridBlockCh:
 				if block.GetNumber() == chain.num+1 {
-					log.Infof("Blockchain.start: call addBlock and the block number is %d",block.GetNumber())
+					log.Infof("Blockchain.start: call addBlock and the block number is %d", block.GetNumber())
 					chain.addBlock(block)
 				} else if block.GetNumber() <= chain.num {
 					chain.raft.FetchBlockDone(block.GetNumber())
@@ -170,7 +172,7 @@ func (chain *BlockChain) createBlock(txs [][]byte) error {
 	}
 
 	log.Infof("[%d]Succeed to add block %d", chain.raft.cfg.id, block.Num)
-	log.Infof("Blockchain.createBlock: call addBlock adn the block number is %d",block.GetNumber())
+	log.Infof("Blockchain.createBlock: call addBlock adn the block number is %d", block.GetNumber())
 	chain.addBlock(block)
 	return nil
 }
@@ -178,6 +180,7 @@ func (chain *BlockChain) createBlock(txs [][]byte) error {
 func (chain *BlockChain) addBlock(block *HybridBlock) {
 	chain.hybridBlocks[block.GetNumber()] = block
 	chain.num = block.GetNumber()
+	chain.raft.app.db.SetChainNum(block.GetNumber())
 	var txs = make(map[string][][]byte)
 	for _, tx := range block.Txs {
 		hash := util.Hex(crypto.Hash(tx))

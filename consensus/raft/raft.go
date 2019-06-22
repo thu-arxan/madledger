@@ -126,7 +126,9 @@ func (r *Raft) NotifyLater(block *HybridBlock) {
 // FetchBlockDone is used for blockchain notify raft the block is stored on the disk
 // and there is no need to store the blocks before to release the pressure of db
 func (r *Raft) FetchBlockDone(num uint64) {
-	r.app.fetchBlockDone(num)
+	if r.IsLeader() {
+		r.app.fetchBlockDone(num)
+	}
 }
 
 func (r *Raft) setStatus(status int32) {
