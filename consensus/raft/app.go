@@ -50,7 +50,15 @@ func (a *App) Start() error {
 		return err
 	}
 	a.db = db
-	atomic.StoreUint64(&(a.minBlock), db.GetMinBlock())
+	// to avoid add replicated HybridBlock when raft is not leader before closed
+	// minBlock should be zero or chainNum + 1
+	num:=db.GetChainNum()
+	if num!=0{
+		atomic.StoreUint64(&(a.minBlock), num+1)
+	}else {
+		atomic.StoreUint64(&(a.minBlock), 0)
+	}
+	//atomic.StoreUint64(&(a.minBlock), db.GetMinBlock())
 
 	a.status = Running
 

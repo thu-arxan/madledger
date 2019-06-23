@@ -81,7 +81,7 @@ func (db *DB) GetMinBlock() uint64 {
 func (db *DB) SetMinBlock(num uint64) {
 	var key = []byte("minBlock")
 	data, _ := json.Marshal(num)
-	log.Infof("SetMinBlock: get minBlock %d", num)
+	log.Infof("SetMinBlock: set minBlock %d", num)
 	db.connect.Put(key, data, nil)
 }
 
@@ -93,7 +93,7 @@ func (db *DB) GetPrevBlockNum(channelID string) uint64 {
 		data, _ := db.connect.Get(key, nil)
 		json.Unmarshal(data, &num)
 	}
-	log.Infof("GetPrevBlockNum: get prevBlockNum %d", num)
+	log.Infof("GetPrevBlockNum: get prevBlockNum %d in channel %s", num, channelID)
 	return num
 }
 
@@ -101,7 +101,7 @@ func (db *DB) GetPrevBlockNum(channelID string) uint64 {
 func (db *DB) SetPrevBlockNum(channelID string, num uint64) {
 	var key = []byte(channelID)
 	data, _ := json.Marshal(num)
-	log.Infof("SetPrevBlockNum: set prevBlockNum %d", num)
+	log.Infof("SetPrevBlockNum: set prevBlockNum %d in channel %s", num, channelID)
 	db.connect.Put(key, data, nil)
 }
 
