@@ -1,14 +1,15 @@
 package validator
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	coreTypes "madledger/core/types"
-	"madledger/client/lib"
 	"github.com/tendermint/tendermint/abci/types"
+	"madledger/client/lib"
+	"madledger/client/util"
+	coreTypes "madledger/core/types"
 )
 
 var (
@@ -35,23 +36,31 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	if dataS == "" {
 		return errors.New("The pubkey.data of validator can not be nil")
 	}
+	// construct PubKey
+	data, err := base64.StdEncoding.DecodeString(dataS)
+	if err != nil {
+		return err
+	}
 	pubkey := types.PubKey{
 		Type: "ed25519",
-		Data: []byte{},
+		Data: data,
 	}
+
 	power := addViper.GetInt64("power")
 	if power < 0 {
 		return errors.New("The power of validator power must be non-negative")
 	}
+
 	cfgFile := addViper.GetString("config")
 	if cfgFile == "" {
 		return errors.New("The config file of client can not be nil")
 	}
+
 	channelID := addViper.GetString("channelID")
 	if channelID == "" {
 		return errors.New("The channelID of tx can not be nil")
 	}
-	fmt.Printf("validator data: %s, power: %d, channel is %s\n", pubkey.Data, power, channelID)
+	// construct ValidatorUpdate
 	validatorUpdate, err := json.Marshal(types.ValidatorUpdate{
 		PubKey: pubkey,
 		Power:  power,
@@ -64,7 +73,22 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	tx, err := coreTypes.NewTx(channelID,coreTypes.ValidatorUpdateAddress , validatorUpdate, client.GetPrivKey())
-	fmt.Printf("tx.Data.ChannelID is %s\n", tx.Data.ChannelID)
+	tx, err := coreTypes.NewTx(channelID, coreTypes.ValidatorUpdateAddress, validatorUpdate, client.GetPrivKey())
+	if err != nil {
+		return err
+	}
+	status, err := client.AddTx(tx)
+	if err != nil {
+		return err
+	}
+	// Then print the status
+	table := util.NewTable()
+	table.SetHeader("BlockNumber", "BlockIndex","ValidatorAddOk")
+	if status.Err != "" {
+		table.AddRow(status.BlockNumber, status.BlockIndex, status.Err)
+	} else {
+		table.AddRow(status.BlockNumber, status.BlockIndex,"ok")
+	}
+	table.Render()
 	return nil
 }

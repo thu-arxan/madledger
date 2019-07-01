@@ -26,7 +26,6 @@ func TestGetDB(t *testing.T) {
 	path := "/home/hadoop/GOPATH/src/madledger/tests/raft/orderers/0/data/leveldb"
 	db, err := leveldb.OpenFile(path, nil)
 	fmt.Printf("Get raft.db from %s\n", path)
-	//db, err := leveldb.OpenFile("/home/hadoop/GOPATH/src/madledger/tests/raft/orderers/0/data/leveldb", nil)
 	require.NoError(t, err)
 	defer db.Close()
 	iter := db.NewIterator(nil, nil)
@@ -36,7 +35,6 @@ func TestGetDB(t *testing.T) {
 		fmt.Printf("(%s, %s)\n", key, value)
 	}
 	iter.Release()
-
 }
 
 func TestBlock(t *testing.T) {

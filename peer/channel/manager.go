@@ -132,6 +132,11 @@ func (m *Manager) RunBlock(num uint64) error {
 			continue
 		}
 
+		if receiverAddress.String() == types.ValidatorUpdateAddress.String() {
+			m.db.SetTxStatus(tx, status)
+			continue
+		}
+
 		evm := evm.NewEVM(*context, senderAddress, m.db)
 		if receiverAddress.String() != common.ZeroAddress.String() {
 			// log.Info("This is a normal call")
@@ -165,7 +170,6 @@ func (m *Manager) RunBlock(num uint64) error {
 			m.db.SetTxStatus(tx, status)
 		}
 	}
-	// return errors.New("Not implementation yet")
 	return nil
 }
 

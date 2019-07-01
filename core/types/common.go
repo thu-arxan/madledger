@@ -20,5 +20,4 @@ var (
 	CreateChannelContractAddress = common.HexToAddress("0xffffffffffffffffffffffffffffffffffffffff")
 	// Create a validatorUpdate
 	ValidatorUpdateAddress=common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffe")
-
 )
