@@ -134,7 +134,7 @@ func TestBFTCreateTxAfterRestart(t *testing.T) {
 	contractCodes, err := readCodes(getBFTClientPath(1) + "/MyTest.bin")
 	require.NoError(t, err)
 	client := bftClients[1]
-	tx, err := types.NewTx("test4", common.ZeroAddress, contractCodes, client.GetPrivKey())
+	tx, err := types.NewTx("test4", common.ZeroAddress, contractCodes, client.GetPrivKey(), false)
 	require.NoError(t, err)
 
 	status, err := client.AddTx(tx)
@@ -160,7 +160,8 @@ func TestBFTCallTxAfterRestart(t *testing.T) {
 	require.NoError(t, err)
 
 	client := bftClients[1]
-	tx, err := types.NewTx("test4", common.HexToAddress("0x0619e2393802cc99e90cf892b92a113f19af5887"), payloadBytes, client.GetPrivKey())
+	tx, err := types.NewTx("test4", common.HexToAddress("0x0619e2393802cc99e90cf892b92a113f19af5887"),
+		payloadBytes, client.GetPrivKey(), false)
 	require.NoError(t, err)
 
 	status, err := client.AddTx(tx)

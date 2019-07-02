@@ -13,9 +13,10 @@ import (
 // be included while cacluating the hash
 type Tx struct {
 	// ID is the hash of the tx while presented in hex
-	ID   string
-	Data TxData
-	Time int64
+	ID                string
+	IsValidatorUpdate bool
+	Data              TxData
+	Time              int64
 }
 
 // TxData is the data of Tx
@@ -35,7 +36,7 @@ type TxSig struct {
 }
 
 // NewTx is the constructor of Tx
-func NewTx(channelID string, recipient common.Address, payload []byte, privKey crypto.PrivateKey) (*Tx, error) {
+func NewTx(channelID string, recipient common.Address, payload []byte, privKey crypto.PrivateKey, isValidatorUpdate bool) (*Tx, error) {
 	if payload == nil || len(payload) == 0 {
 		return nil, errors.New("The payload can not be empty")
 	}
@@ -48,7 +49,8 @@ func NewTx(channelID string, recipient common.Address, payload []byte, privKey c
 			Version:      1,
 			Sig:          nil,
 		},
-		Time: util.Now(),
+		IsValidatorUpdate: isValidatorUpdate,
+		Time:              util.Now(),
 	}
 	hash := tx.HashWithoutSig()
 	sig, err := privKey.Sign(hash)

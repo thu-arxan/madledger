@@ -6,6 +6,7 @@ import (
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
+	ctypes "madledger/core/types"
 	"sync"
 
 	"github.com/tendermint/tendermint/abci/example/code"
@@ -22,14 +23,15 @@ type Glue struct {
 	th  []byte
 	txs [][]byte
 
-	hub     *event.Hub
-	blocks  map[string][]*Block
-	chans   map[string]*chan consensus.Block
-	dbDir   string
-	db      *DB
-	port    int
-	rpcPort int
-	client  *Client
+	hub              *event.Hub
+	blocks           map[string][]*Block
+	chans            map[string]*chan consensus.Block
+	dbDir            string
+	db               *DB
+	port             int
+	rpcPort          int
+	client           *Client
+	validatorUpdates []types.ValidatorUpdate
 
 	srv cmn.Service
 }
@@ -44,6 +46,7 @@ func NewGlue(dbDir string, port *Port) (*Glue, error) {
 	g.chans = make(map[string]*chan consensus.Block)
 	g.port = port.App
 	g.rpcPort = port.RPC
+	g.validatorUpdates = make([]types.ValidatorUpdate, 0)
 	return g, nil
 }
 
@@ -84,13 +87,30 @@ func (g *Glue) CheckTx(tx []byte) types.ResponseCheckTx {
 
 // DeliverTx add tx into txs and return OK
 func (g *Glue) DeliverTx(tx []byte) types.ResponseDeliverTx {
-	//t, _ := BytesToTx(tx)
-
-	//log.Infof("[%d]Deliever Tx %s", g.port, string(t.Data))
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
 	g.txs = append(g.txs, tx)
+	tempTx, err := BytesToTx(tx)
+	if err != nil {
+		log.Fatalf("DeliverTx: BytesToTx has an error %s", err)
+	}
+
+	var typesTx ctypes.Tx
+	err = json.Unmarshal(tempTx.Data, &typesTx)
+	if err != nil {
+		log.Fatal("DeliverTx: convert data to core/types.Tx failed")
+	}
+	if typesTx.IsValidatorUpdate {
+		var validatorUpdate types.ValidatorUpdate
+		err = json.Unmarshal(typesTx.Data.Payload, &validatorUpdate)
+		if err != nil {
+			log.Fatal("DeliverTx: convert payload to validatorUpdate failed")
+		}
+		// 记录validatorUpdate
+		g.validatorUpdates = append(g.validatorUpdates, validatorUpdate)
+	}
+
 	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
 
@@ -167,7 +187,7 @@ func (g *Glue) EndBlock(req types.RequestEndBlock) types.ResponseEndBlock {
 	defer g.lock.Unlock()
 
 	log.Infof("[%d]End block %d done", g.port, g.tn)
-	return types.ResponseEndBlock{}
+	return types.ResponseEndBlock{ValidatorUpdates: g.validatorUpdates}
 }
 
 // Info is used to avoid load all blocks

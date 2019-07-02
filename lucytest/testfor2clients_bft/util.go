@@ -96,7 +96,7 @@ func createContractForCallTx() error {
 	if err != nil {
 		return err
 	}
-	tx, err := types.NewTx("test0", common.ZeroAddress, contractCodes, client.GetPrivKey())
+	tx, err := types.NewTx("test0", common.ZeroAddress, contractCodes, client.GetPrivKey(), false)
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func createContractForCallTx() error {
 	if err != nil {
 		return err
 	}
-	tx, err = types.NewTx("test1", common.ZeroAddress, contractCodes, client.GetPrivKey())
+	tx, err = types.NewTx("test1", common.ZeroAddress, contractCodes, client.GetPrivKey(), false)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func setNumForCallTx(node int, num string) error {
 	} else {
 		addr = "0x1b66001e01d3c8d3893187fee59e3bea1d9bdd9b"
 	}
-	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey(), false)
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func setNumForCallTx(node int, num string) error {
 
 func getNumForCallTx(node int, num string) error {
 	abiPath := fmt.Sprintf(getBFTClientPath(node) + "/MyTest.abi")
-	var inputs []string = make([]string,0)
+	var inputs []string = make([]string, 0)
 	payloadBytes, err := abi.GetPayloadBytes(abiPath, "getNum", inputs)
 	if err != nil {
 		return err
@@ -167,7 +167,7 @@ func getNumForCallTx(node int, num string) error {
 	} else {
 		addr = "0x1b66001e01d3c8d3893187fee59e3bea1d9bdd9b"
 	}
-	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey(), false)
 	if err != nil {
 		return err
 	}
@@ -273,7 +273,6 @@ func getOrderersPid() []string {
 func getBFTPeerDataPath(node int) string {
 	return fmt.Sprintf("%s/data", getBFTPeerPath(node))
 }
-
 
 // stopOrderer stop an orderer
 func stopOrderer(pid string) {

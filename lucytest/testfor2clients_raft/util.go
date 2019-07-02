@@ -405,7 +405,7 @@ func setNumForCallTx(node int, num string) error {
 	if node == 1 {
 		channel = "test1"
 	}
-	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey(), false)
 	if err != nil {
 		return err
 	}
@@ -437,7 +437,7 @@ func getNumForCallTx(node int, num string) error {
 	if node == 1 {
 		channel = "test1"
 	}
-	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey(), false)
 	if err != nil {
 		return err
 	}

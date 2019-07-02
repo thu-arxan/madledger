@@ -395,7 +395,7 @@ func setNumForCallTx(num string) error {
 
 	client := raftClients[0]
 	addr := "0x8de6ce45b289502e16aef93313fd3082993acb1f"
-	tx, err := types.NewTx("test0", common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	tx, err := types.NewTx("test0", common.HexToAddress(addr), payloadBytes, client.GetPrivKey(), false)
 	if err != nil {
 		return err
 	}
@@ -417,7 +417,7 @@ func getNumForCallTx(num string) error {
 
 	client := raftClients[0]
 	addr := "0x8de6ce45b289502e16aef93313fd3082993acb1f"
-	tx, err := types.NewTx("test0", common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	tx, err := types.NewTx("test0", common.HexToAddress(addr), payloadBytes, client.GetPrivKey(), false)
 	if err != nil {
 		return err
 	}

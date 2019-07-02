@@ -109,7 +109,7 @@ func TestBFTCreateTx1(t *testing.T) {
 		require.NoError(t, err)
 		channel := "test" + strconv.Itoa(m) + "0"
 		fmt.Printf("Create contract %d on channel %s ...\n", m, channel)
-		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, client0.GetPrivKey())
+		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, client0.GetPrivKey(), false)
 		require.NoError(t, err)
 
 		_, err = client0.AddTx(tx)
@@ -120,7 +120,7 @@ func TestBFTCreateTx1(t *testing.T) {
 		require.NoError(t, err)
 		channel = "test" + strconv.Itoa(m) + "1"
 		fmt.Printf("Create contract %d on channel %s ...\n", m, channel)
-		tx, err = types.NewTx(channel, common.ZeroAddress, contractCodes, client1.GetPrivKey())
+		tx, err = types.NewTx(channel, common.ZeroAddress, contractCodes, client1.GetPrivKey(), false)
 		require.NoError(t, err)
 
 		_, err = client1.AddTx(tx)
