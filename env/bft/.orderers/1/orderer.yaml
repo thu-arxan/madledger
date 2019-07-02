@@ -43,6 +43,7 @@ Consensus:
       - 7d5289771cf1bbb93779f2c95559ae27b16cea6e@localhost:26659
       - 39856b8fa3e7d7df9d2f4ae2dff74d4713a968d3@localhost:26662
       - ee09051fd72c8065b79f034aa1a82c861555f223@localhost:26665
+      - 97f383a01584ae415c085800dff1573eced3acf7@localhost:26668
 
 # DB only support leveldb now
 DB:
