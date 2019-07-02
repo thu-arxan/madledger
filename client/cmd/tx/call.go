@@ -68,7 +68,7 @@ func runCall(cmd *cobra.Command, args []string) error {
 	}
 
 	tx, err := types.NewTx(channelID, common.HexToAddress(receiver), payloadBytes, client.GetPrivKey(),
-		false)
+		0)
 	if err != nil {
 		return err
 	}

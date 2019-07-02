@@ -174,7 +174,7 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 		Version: 1,
 	})
 	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload,
-		c.GetPrivKey(), false)
+		c.GetPrivKey(), 0)
 	pbTx, _ := pb.NewTx(typesTx)
 
 	var times int

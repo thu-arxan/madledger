@@ -74,7 +74,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	tx, err := coreTypes.NewTx(channelID, coreTypes.ValidatorUpdateAddress, validatorUpdate,
-		client.GetPrivKey(),true)
+		client.GetPrivKey(),1)
 	if err != nil {
 		return err
 	}

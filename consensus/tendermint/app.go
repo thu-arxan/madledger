@@ -101,7 +101,7 @@ func (g *Glue) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	if err != nil {
 		log.Fatal("DeliverTx: convert data to core/types.Tx failed")
 	}
-	if typesTx.IsValidatorUpdate {
+	if typesTx.Data.IsValidatorUpdate==1 {
 		var validatorUpdate types.ValidatorUpdate
 		err = json.Unmarshal(typesTx.Data.Payload, &validatorUpdate)
 		if err != nil {

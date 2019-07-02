@@ -81,6 +81,7 @@ type TxData struct {
 	Payload              []byte   `protobuf:"bytes,4,opt,name=Payload,proto3" json:"Payload,omitempty"`
 	Version              int32    `protobuf:"varint,5,opt,name=Version,proto3" json:"Version,omitempty"`
 	Sig                  *TxSig   `protobuf:"bytes,6,opt,name=Sig,proto3" json:"Sig,omitempty"`
+	IsValidatorUpdate    int64    `protobuf:"varint,7,opt,name=IsValidatorUpdate,proto3" json:"IsValidatorUpdate,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`

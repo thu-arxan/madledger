@@ -13,20 +13,20 @@ import (
 // be included while cacluating the hash
 type Tx struct {
 	// ID is the hash of the tx while presented in hex
-	ID                string
-	IsValidatorUpdate bool
-	Data              TxData
-	Time              int64
+	ID   string
+	Data TxData
+	Time int64
 }
 
 // TxData is the data of Tx
 type TxData struct {
-	ChannelID    string
-	AccountNonce uint64
-	Recipient    []byte
-	Payload      []byte
-	Version      int32
-	Sig          *TxSig
+	ChannelID         string
+	AccountNonce      uint64
+	Recipient         []byte
+	Payload           []byte
+	Version           int32
+	Sig               *TxSig
+	IsValidatorUpdate int64
 }
 
 // TxSig is the sig of tx
@@ -36,21 +36,21 @@ type TxSig struct {
 }
 
 // NewTx is the constructor of Tx
-func NewTx(channelID string, recipient common.Address, payload []byte, privKey crypto.PrivateKey, isValidatorUpdate bool) (*Tx, error) {
+func NewTx(channelID string, recipient common.Address, payload []byte, privKey crypto.PrivateKey, isValidatorUpdate int64) (*Tx, error) {
 	if payload == nil || len(payload) == 0 {
 		return nil, errors.New("The payload can not be empty")
 	}
 	var tx = &Tx{
 		Data: TxData{
-			ChannelID:    channelID,
-			AccountNonce: util.RandUint64(),
-			Recipient:    recipient.Bytes(),
-			Payload:      payload,
-			Version:      1,
-			Sig:          nil,
+			ChannelID:         channelID,
+			AccountNonce:      util.RandUint64(),
+			Recipient:         recipient.Bytes(),
+			Payload:           payload,
+			Version:           1,
+			Sig:               nil,
+			IsValidatorUpdate: isValidatorUpdate,
 		},
-		IsValidatorUpdate: isValidatorUpdate,
-		Time:              util.Now(),
+		Time: util.Now(),
 	}
 	hash := tx.HashWithoutSig()
 	sig, err := privKey.Sign(hash)
