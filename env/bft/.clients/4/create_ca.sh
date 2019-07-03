@@ -4,7 +4,7 @@ echo 'Test bft consensus by creating contract...'
 for ((i=1; i<=8; i++))
 do
   echo 'create contract '$i
-  client tx create -b ./MyTest.bin -n test3
+  client tx create -b ./MyTest.bin -n test4
   #client channel list
   #echo $i
 done

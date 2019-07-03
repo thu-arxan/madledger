@@ -1,6 +1,7 @@
 package tendermint
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"madledger/common/event"
@@ -101,7 +102,7 @@ func (g *Glue) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	if err != nil {
 		log.Fatal("DeliverTx: convert data to core/types.Tx failed")
 	}
-	if typesTx.Data.IsValidatorUpdate==1 {
+	if typesTx.Data.IsValidatorUpdate == 1 {
 		var validatorUpdate types.ValidatorUpdate
 		err = json.Unmarshal(typesTx.Data.Payload, &validatorUpdate)
 		if err != nil {
@@ -187,6 +188,12 @@ func (g *Glue) EndBlock(req types.RequestEndBlock) types.ResponseEndBlock {
 	defer g.lock.Unlock()
 
 	log.Infof("[%d]End block %d done", g.port, g.tn)
+	if len(g.validatorUpdates) != 0 {
+		log.Infof("pubkey: %s", base64.StdEncoding.EncodeToString(g.validatorUpdates[0].PubKey.Data))
+	}
+	/*res := g.validatorUpdates
+	// clean g.validatorUpdates
+	g.validatorUpdates = make([]types.ValidatorUpdate, 0)*/
 	return types.ResponseEndBlock{ValidatorUpdates: g.validatorUpdates}
 }
 
