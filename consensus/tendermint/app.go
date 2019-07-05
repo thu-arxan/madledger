@@ -46,7 +46,6 @@ func NewGlue(dbDir string, port *Port) (*Glue, error) {
 	g.chans = make(map[string]*chan consensus.Block)
 	g.port = port.App
 	g.rpcPort = port.RPC
-	g.validatorUpdates = make([]types.ValidatorUpdate, 0)
 	return g, nil
 }
 
@@ -157,6 +156,8 @@ func (g *Glue) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock 
 
 	g.tn = req.Header.Height
 	g.th = req.Header.AppHash
+	// reset valset changes
+	g.validatorUpdates = make([]types.ValidatorUpdate, 0)
 	return types.ResponseBeginBlock{}
 }
 
