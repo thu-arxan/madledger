@@ -4,15 +4,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/tendermint/tendermint/abci/example/code"
+	"github.com/tendermint/tendermint/abci/types"
+	cmn "github.com/tendermint/tendermint/libs/common"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
 	ctypes "madledger/core/types"
 	"sync"
-
-	"github.com/tendermint/tendermint/abci/example/code"
-	"github.com/tendermint/tendermint/abci/types"
-	cmn "github.com/tendermint/tendermint/libs/common"
 )
 
 // Glue will connect consensus and tendermint
@@ -92,27 +91,7 @@ func (g *Glue) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	defer g.lock.Unlock()
 
 	g.txs = append(g.txs, tx)
-	tempTx, err := BytesToTx(tx)
-	if err != nil {
-		log.Fatalf("DeliverTx: BytesToTx has an error %s", err)
-	}
-
-	var typesTx ctypes.Tx
-	err = json.Unmarshal(tempTx.Data, &typesTx)
-	if err != nil {
-		log.Fatal("DeliverTx: convert data to core/types.Tx failed")
-	}
-	if typesTx.Data.IsValidatorUpdate == 1 {
-		var validatorUpdate types.ValidatorUpdate
-		err = json.Unmarshal(typesTx.Data.Payload, &validatorUpdate)
-		if err != nil {
-			log.Fatal("DeliverTx: convert payload to validatorUpdate failed")
-		}
-		// 记录validatorUpdate
-		g.validatorUpdates = append(g.validatorUpdates, validatorUpdate)
-	}
-
-	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
+	return g.updateValidator(tx)
 }
 
 // Commit will generate a block and init the txs
@@ -189,7 +168,10 @@ func (g *Glue) EndBlock(req types.RequestEndBlock) types.ResponseEndBlock {
 
 	log.Infof("[%d]End block %d done", g.port, g.tn)
 	if len(g.validatorUpdates) != 0 {
-		log.Infof("pubkey: %s", base64.StdEncoding.EncodeToString(g.validatorUpdates[0].PubKey.Data))
+		for i := range g.validatorUpdates {
+			log.Infof("EndBlock: pubkey %d: %s, power: %d", i,
+				base64.StdEncoding.EncodeToString(g.validatorUpdates[i].PubKey.Data),g.validatorUpdates[i].Power)
+		}
 	}
 	/*res := g.validatorUpdates
 	// clean g.validatorUpdates
@@ -213,7 +195,9 @@ func (g *Glue) Info(req types.RequestInfo) types.ResponseInfo {
 func (g *Glue) InitChain(req types.RequestInitChain) types.ResponseInitChain {
 	g.lock.Lock()
 	defer g.lock.Unlock()
-
+	for _, v := range req.Validators {
+		g.validatorUpdates = append(g.validatorUpdates, v)
+	}
 	return types.ResponseInitChain{}
 }
 
@@ -307,4 +291,46 @@ func (t *Tx) Bytes() []byte {
 func (g *Glue) AddTx(channelID string, tx []byte) error {
 	//log.Infof("[%d]Channel %s add tx %s", g.port, channelID, string(tx))
 	return g.client.AddTx(NewTx(channelID, tx).Bytes())
+}
+
+func (g *Glue) updateValidator(tx []byte) types.ResponseDeliverTx {
+	tempTx, err := BytesToTx(tx)
+	if err != nil {
+		return types.ResponseDeliverTx{
+			Code: code.CodeTypeEncodingError,
+			Log:  fmt.Sprintf("BytesToTx error %s", err)}
+	}
+	var typesTx ctypes.Tx
+	err = json.Unmarshal(tempTx.Data, &typesTx)
+	if err != nil {
+		return types.ResponseDeliverTx{
+			Code: code.CodeTypeEncodingError,
+			Log:  fmt.Sprintf("Unmarshal error %s", err)}
+	}
+	if typesTx.Data.IsValidatorUpdate == 1 {
+		var validatorUpdate types.ValidatorUpdate
+		err = json.Unmarshal(typesTx.Data.Payload, &validatorUpdate)
+		if err != nil {
+			return types.ResponseDeliverTx{
+				Code: code.CodeTypeEncodingError,
+				Log:  fmt.Sprintf("Unmarshal error %s", err)}
+		}
+		key := base64.StdEncoding.EncodeToString(validatorUpdate.PubKey.Data)
+		log.Printf("update validator: key is %s, power is %d", key, validatorUpdate.Power)
+		g.validatorUpdates = append(g.validatorUpdates, validatorUpdate)
+
+		/*if  (validatorUpdate.Power == 0){
+			//close
+			//db.delete(key)
+			log.Printf("close %s power:%d",validatorUpdate.PubKey,validatorUpdate.Power)
+		}else if(validatorUpdate.Power>0){
+			// add or update validator
+			//db.set(key)
+			log.Printf("update %s power:%d",validatorUpdate.PubKey,validatorUpdate.Power)
+			g.validatorUpdates = append(g.validatorUpdates, validatorUpdate)
+
+		}*/
+
+	}
+	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
