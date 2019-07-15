@@ -190,6 +190,11 @@ func (manager *Manager) IsAdmin(member *types.Member) bool {
 	return manager.db.IsAdmin(manager.ID, member)
 }
 
+// IsSystemAdmin return if the member is the system admin
+func (manager *Manager) IsSystemAdmin(member *types.Member) bool {
+	return manager.db.IsSystemAdmin(member)
+}
+
 // FetchBlockAsync will fetch book async.
 // TODO: fix the thread unsafety
 func (manager *Manager) FetchBlockAsync(num uint64) (*types.Block, error) {

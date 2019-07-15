@@ -174,9 +174,6 @@ func (g *Glue) EndBlock(req types.RequestEndBlock) types.ResponseEndBlock {
 				base64.StdEncoding.EncodeToString(g.validatorUpdates[i].PubKey.Data), g.validatorUpdates[i].Power)
 		}
 	}
-	/*res := g.validatorUpdates
-	// clean g.validatorUpdates
-	g.validatorUpdates = make([]types.ValidatorUpdate, 0)*/
 	return types.ResponseEndBlock{ValidatorUpdates: g.validatorUpdates}
 }
 
@@ -319,18 +316,6 @@ func (g *Glue) updateValidator(tx []byte) types.ResponseDeliverTx {
 		key := base64.StdEncoding.EncodeToString(validatorUpdate.PubKey.Data)
 		log.Printf("update validator: key is %s, power is %d", key, validatorUpdate.Power)
 		g.validatorUpdates = append(g.validatorUpdates, validatorUpdate)
-
-		/*if  (validatorUpdate.Power == 0){
-			//close
-			//db.delete(key)
-			log.Printf("close %s power:%d",validatorUpdate.PubKey,validatorUpdate.Power)
-		}else if(validatorUpdate.Power>0){
-			// add or update validator
-			//db.set(key)
-			log.Printf("update %s power:%d",validatorUpdate.PubKey,validatorUpdate.Power)
-			g.validatorUpdates = append(g.validatorUpdates, validatorUpdate)
-
-		}*/
 
 	}
 	return types.ResponseDeliverTx{Code: code.CodeTypeOK}

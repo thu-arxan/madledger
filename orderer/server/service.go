@@ -2,8 +2,10 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"madledger/core/types"
 	pb "madledger/protos"
+	"madledger/common/crypto"
 
 	"golang.org/x/net/context"
 )
@@ -47,6 +49,21 @@ func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus,
 	tx, err := req.Tx.ConvertToTypes()
 	if err != nil {
 		return &status, err
+	}
+	// if tx is for validatorUpdate, we should check if the client is system admin
+	if tx.Data.IsValidatorUpdate == 1 {
+		pk, err := crypto.NewPublicKey(req.PK)
+		if err != nil {
+			return &status, err
+		}
+		// create member to check if the client is system admin
+		member, err := types.NewMember(pk, "")
+		if err != nil {
+			return &status, err
+		}
+		if !s.cc.CM.IsSystemAdmin(member) { // not system admin, return error
+			return &status, fmt.Errorf("the client is not system admin and can not update validator")
+		}
 	}
 	err = s.cc.AddTx(tx)
 	return &status, err

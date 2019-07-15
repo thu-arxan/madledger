@@ -20,4 +20,5 @@ type DB interface {
 	WatchChannel(channelID string)
 	Close() error
 	UpdateSystemAdmin(profile *cc.Profile) error
+	IsSystemAdmin(member *types.Member) bool
 }

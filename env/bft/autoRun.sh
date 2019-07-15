@@ -15,9 +15,9 @@ sleep 1
 cd ../2/
 gnome-terminal -e 'bash -c ". start.sh; exec bash"'
 sleep 1
-cd ../3/
-gnome-terminal -e 'bash -c ". start.sh; exec bash"'
-sleep 1
+#cd ../3/
+#gnome-terminal -e 'bash -c ". start.sh; exec bash"'
+#sleep 1
 
 #run peers
 echo 'run peers'
