@@ -171,7 +171,7 @@ func (g *Glue) EndBlock(req types.RequestEndBlock) types.ResponseEndBlock {
 	if len(g.validatorUpdates) != 0 {
 		for i := range g.validatorUpdates {
 			log.Infof("EndBlock: pubkey %d: %s, power: %d", i,
-				base64.StdEncoding.EncodeToString(g.validatorUpdates[i].PubKey.Data),g.validatorUpdates[i].Power)
+				base64.StdEncoding.EncodeToString(g.validatorUpdates[i].PubKey.Data), g.validatorUpdates[i].Power)
 		}
 	}
 	/*res := g.validatorUpdates
