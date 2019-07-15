@@ -97,6 +97,22 @@ func (db *LevelDB) AddBlock(block *types.Block) error {
 	return nil
 }
 
+func (db *LevelDB) UpdateSystemAdmin(profile *cc.Profile) error {
+	var key = getSystemAdminKey()
+	data, err := json.Marshal(profile)
+	if err != nil {
+		return err
+	}
+	//更新key为_config$admin的记录, 具体内容示例如下：
+	//(_config$admin, {"Public":true,"Dependencies":null,"Members":null,"Admins":
+	// [{"PK":"BGXcjZ3bhemsoLP4HgBwnQ5gsc8VM91b3y8bW0b6knkWu8xCSKO2qiJXARMHcbtZtvU7Jos2A5kFCD1haJ/hLdg=","Name":"SystemAdmin"}]})
+	err = db.connect.Put(key, data, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // HasTx return if the tx is contained
 func (db *LevelDB) HasTx(tx *types.Tx) bool {
 	key := util.BytesCombine([]byte(tx.Data.ChannelID), []byte(tx.ID))
@@ -195,4 +211,8 @@ func (db *LevelDB) addChannel(id string) error {
 
 func getChannelProfileKey(id string) []byte {
 	return []byte(fmt.Sprintf("%s@%s", types.CONFIGCHANNELID, id))
+}
+
+func getSystemAdminKey() []byte {
+	return []byte(fmt.Sprintf("%s$admin", types.CONFIGCHANNELID))
 }

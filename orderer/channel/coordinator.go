@@ -251,7 +251,20 @@ func (c *Coordinator) loadConfigChannel() error {
 	}
 	if !c.CM.HasGenesisBlock() {
 		log.Info("Creating genesis block of channel _config")
-		gb, err := cc.CreateGenesisBlock()
+		// create admins, we just config one admin
+		admins, err := cc.CreateAdmins()
+		if err != nil {
+			return err
+		}
+		gb, err := cc.CreateGenesisBlock(admins)
+		if err != nil {
+			return err
+		}
+		// put  admin's pubkey into leveldb
+		err = c.CM.db.UpdateSystemAdmin(&cc.Profile{
+			Public: true,
+			Admins: admins,
+		})
 		if err != nil {
 			return err
 		}

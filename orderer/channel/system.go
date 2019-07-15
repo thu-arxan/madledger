@@ -43,7 +43,7 @@ func (manager *Manager) AddConfigBlock(block *types.Block) error {
 				log.Infof("system/AddConfigBlock: start channel %s", channelID)
 				channel.Start()
 			}()
-			// 更新coordinator.Managers(map类型）
+			// 更新coordinator.Managers(map类型)
 			manager.coordinator.Managers[channelID] = channel
 		}
 		// 更新leveldb
