@@ -21,7 +21,7 @@ var (
 
 func init() {
 	addCmd.RunE = runAdd
-	addCmd.Flags().StringP("pubkey", "k", "", "The pubkey.data of validator")
+	addCmd.Flags().StringP("pubkey", "k", "", "The pubkey of validator")
 	addViper.BindPFlag("pubkey", addCmd.Flags().Lookup("pubkey"))
 	addCmd.Flags().StringP("power", "p", "10", "The power of validator")
 	addViper.BindPFlag("power", addCmd.Flags().Lookup("power"))
