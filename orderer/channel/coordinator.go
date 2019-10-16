@@ -348,7 +348,7 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 		}
 		c.Consensus = consensus
 	case config.RAFT:
-		raftConfig, err := getConfig(cfg.Raft.Path, cfg.Raft.ID, cfg.Raft.Nodes)
+		raftConfig, err := getConfig(cfg.Raft.Path, cfg.Raft.ID, cfg.Raft.Nodes, cfg.Raft.Join)
 		if err != nil {
 			return err
 		}
@@ -378,8 +378,8 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 	return nil
 }
 
-func getConfig(path string, id uint64, peers map[uint64]string) (*raft.Config, error) {
-	return raft.NewConfig(path, "127.0.0.1", id, peers, consensus.Config{
+func getConfig(path string, id uint64, peers map[uint64]string, join bool) (*raft.Config, error) {
+	return raft.NewConfig(path, "127.0.0.1", id, peers, join, consensus.Config{
 		Timeout: 100,
 		MaxSize: 10,
 		Resume:  false,

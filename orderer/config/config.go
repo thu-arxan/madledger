@@ -121,6 +121,7 @@ type RaftConfig struct {
 	ID   uint64 `yaml:"ID"`
 	// RawNodes should be an array like [1@localhost:12346]
 	RawNodes []string `yaml:"Nodes"`
+	Join bool `yaml:"Join"`
 	Nodes    map[uint64]string
 }
 

@@ -18,8 +18,8 @@ type Config struct {
 }
 
 // NewConfig is the constructor of Config
-func NewConfig(dir, address string, id uint64, nodes map[uint64]string, cc consensus.Config) (*Config, error) {
-	ec, err := NewEraftConfig(dir, address, id, nodes)
+func NewConfig(dir, address string, id uint64, nodes map[uint64]string, join bool, cc consensus.Config) (*Config, error) {
+	ec, err := NewEraftConfig(dir, address, id, nodes, join)
 	if err != nil {
 		return nil, err
 	}
@@ -42,6 +42,7 @@ type EraftConfig struct {
 	snapDir string
 	// peers are eraft address
 	peers map[uint64]string
+	join bool //node is joining an existing cluster
 	// The url of node, maybe ip or domain
 	url string
 	// The port of eraft port, eraftPort = chainPort + 1
@@ -56,7 +57,7 @@ type EraftConfig struct {
 
 // NewEraftConfig is the constructor of EraftConfig
 // works on dir and listen on address, id is the id of raft node, nodes is a url map of all nodes
-func NewEraftConfig(dir, address string, id uint64, nodes map[uint64]string) (*EraftConfig, error) {
+func NewEraftConfig(dir, address string, id uint64, nodes map[uint64]string, join bool) (*EraftConfig, error) {
 	url, chainPort, err := pb.ParseRaftAddress(nodes[id])
 	if err != nil {
 		return nil, err
@@ -68,6 +69,7 @@ func NewEraftConfig(dir, address string, id uint64, nodes map[uint64]string) (*E
 		walDir:           fmt.Sprintf("%s/wal", dir),
 		snapDir:          fmt.Sprintf("%s/snap", dir),
 		peers:            nodes,
+		join:             join,
 		url:              url,
 		eraftPort:        chainPort + 1,
 		chainPort:        chainPort,

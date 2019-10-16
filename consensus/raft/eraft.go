@@ -131,7 +131,13 @@ func (e *ERaft) Start() error {
 	if oldWAL {
 		e.node = er.RestartNode(erCfg)
 	} else {
-		e.node = er.StartNode(erCfg, peers)
+		if e.cfg.join {
+			log.Infof("ERaft: Add a new node to the cluster, join: %t", e.cfg.join)
+			e.node = er.StartNode(erCfg, nil)
+		} else {
+			log.Infof("ERaft: Start a cluster, join: %t", e.cfg.join)
+			e.node = er.StartNode(erCfg, peers)
+		}
 	}
 
 	e.transport = &rafthttp.Transport{
@@ -421,6 +427,8 @@ func (e *ERaft) publishEntries(ents []raftpb.Entry) error {
 			var cc raftpb.ConfChange
 			cc.Unmarshal(entry.Data)
 			e.state.conf = *e.node.ApplyConfChange(cc)
+			log.Printf("publishEntries.EntryConfChange: id: %d, type: %v, nodeId: %d, "+
+				"context: %s", cc.ID, cc.Type, cc.NodeID, string(cc.Context))
 			switch cc.Type {
 			case raftpb.ConfChangeAddNode:
 				ccBytes, _ := json.Marshal(cc)
