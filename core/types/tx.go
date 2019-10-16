@@ -18,6 +18,19 @@ type Tx struct {
 	Time int64
 }
 
+// ConsensusType is the type of consensus
+type TxType int
+
+const (
+	_ TxType = iota
+	// NORMAL is the normal tx
+	NORMAL
+	// VALIDATOR is the tendermint cfgChange tx
+	VALIDATOR
+	// NODE is the raft cfgChange tx
+	NODE
+)
+
 // TxData is the data of Tx
 type TxData struct {
 	ChannelID         string
@@ -26,7 +39,7 @@ type TxData struct {
 	Payload           []byte
 	Version           int32
 	Sig               *TxSig
-	IsValidatorUpdate int64
+	Type TxType
 }
 
 // TxSig is the sig of tx
@@ -36,7 +49,7 @@ type TxSig struct {
 }
 
 // NewTx is the constructor of Tx
-func NewTx(channelID string, recipient common.Address, payload []byte, privKey crypto.PrivateKey, isValidatorUpdate int64) (*Tx, error) {
+func NewTx(channelID string, recipient common.Address, payload []byte, privKey crypto.PrivateKey, Tx_type TxType) (*Tx, error) {
 	if payload == nil || len(payload) == 0 {
 		return nil, errors.New("The payload can not be empty")
 	}
@@ -48,7 +61,7 @@ func NewTx(channelID string, recipient common.Address, payload []byte, privKey c
 			Payload:           payload,
 			Version:           1,
 			Sig:               nil,
-			IsValidatorUpdate: isValidatorUpdate,
+			Type: Tx_type,
 		},
 		Time: util.Now(),
 	}

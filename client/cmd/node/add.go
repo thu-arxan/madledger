@@ -1,15 +1,15 @@
-package validator
+package node
 
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"errors"
 	"github.com/tendermint/tendermint/abci/types"
+	coreTypes "madledger/core/types"
 	"madledger/client/lib"
 	"madledger/client/util"
-	coreTypes "madledger/core/types"
 )
 
 var (
@@ -21,10 +21,12 @@ var (
 
 func init() {
 	addCmd.RunE = runAdd
-	addCmd.Flags().StringP("pubkey", "k", "", "The pubkey of validator")
-	addViper.BindPFlag("pubkey", addCmd.Flags().Lookup("pubkey"))
-	addCmd.Flags().StringP("power", "p", "10", "The power of validator")
-	addViper.BindPFlag("power", addCmd.Flags().Lookup("power"))
+	addCmd.Flags().StringP("nodeID", "i", "4",
+		"The ID of node joining the exiting cluster")
+	addViper.BindPFlag("nodeID", addCmd.Flags().Lookup("nodeID"))
+	addCmd.Flags().StringP("url", "u", "127.0.0.1:45678",
+		"The url of node joining the exiting cluster")
+	addViper.BindPFlag("url", addCmd.Flags().Lookup("url"))
 	addCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
 	addViper.BindPFlag("config", addCmd.Flags().Lookup("config"))
 	addCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
@@ -74,7 +76,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	tx, err := coreTypes.NewTx(channelID, coreTypes.ValidatorUpdateAddress, validatorUpdate,
-		client.GetPrivKey(), coreTypes.NORMAL)
+		client.GetPrivKey(), coreTypes.NODE)
 	if err != nil {
 		return err
 	}

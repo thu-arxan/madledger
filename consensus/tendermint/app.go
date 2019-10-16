@@ -305,7 +305,7 @@ func (g *Glue) updateValidator(tx []byte) types.ResponseDeliverTx {
 			Code: code.CodeTypeEncodingError,
 			Log:  fmt.Sprintf("Unmarshal error %s", err)}
 	}
-	if typesTx.Data.IsValidatorUpdate == 1 {
+	if typesTx.Data.Type == ctypes.VALIDATOR {
 		var validatorUpdate types.ValidatorUpdate
 		err = json.Unmarshal(typesTx.Data.Payload, &validatorUpdate)
 		if err != nil {

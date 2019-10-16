@@ -1,37 +1,36 @@
-package validator
+package node
 
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"errors"
 	"github.com/tendermint/tendermint/abci/types"
+	coreTypes "madledger/core/types"
 	"madledger/client/lib"
 	"madledger/client/util"
-	coreTypes "madledger/core/types"
 )
 
 var (
-	addCmd = &cobra.Command{
-		Use: "add",
+	removeCmd = &cobra.Command{
+		Use: "remove",
 	}
-	addViper = viper.New()
+	removeViper = viper.New()
 )
 
 func init() {
-	addCmd.RunE = runAdd
-	addCmd.Flags().StringP("pubkey", "k", "", "The pubkey of validator")
-	addViper.BindPFlag("pubkey", addCmd.Flags().Lookup("pubkey"))
-	addCmd.Flags().StringP("power", "p", "10", "The power of validator")
-	addViper.BindPFlag("power", addCmd.Flags().Lookup("power"))
-	addCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
-	addViper.BindPFlag("config", addCmd.Flags().Lookup("config"))
-	addCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
-	addViper.BindPFlag("channelID", addCmd.Flags().Lookup("channelID"))
+	removeCmd.RunE = runRemove
+	addCmd.Flags().StringP("nodeID", "i", "4",
+		"The ID of node leaving the exiting cluster")
+	addViper.BindPFlag("nodeID", addCmd.Flags().Lookup("nodeID"))
+	removeCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
+	removeViper.BindPFlag("config", addCmd.Flags().Lookup("config"))
+	removeCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
+	removeViper.BindPFlag("channelID", addCmd.Flags().Lookup("channelID"))
 }
 
-func runAdd(cmd *cobra.Command, args []string) error {
+func runRemove(cmd *cobra.Command, args []string) error {
 	dataS := addViper.GetString("pubkey")
 	if dataS == "" {
 		return errors.New("The pubkey.data of validator can not be nil")
@@ -74,7 +73,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	tx, err := coreTypes.NewTx(channelID, coreTypes.ValidatorUpdateAddress, validatorUpdate,
-		client.GetPrivKey(), coreTypes.NORMAL)
+		client.GetPrivKey(), coreTypes.VALIDATOR)
 	if err != nil {
 		return err
 	}
