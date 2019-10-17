@@ -15,7 +15,6 @@ var (
 // Cmd return the channel command
 func Cmd() *cobra.Command {
 	validatorCmd.AddCommand(addCmd)
-	//channelCmd.AddCommand(listCmd)
 	return validatorCmd
 }
 

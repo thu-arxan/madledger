@@ -1,15 +1,17 @@
 package node
 
 import (
-	"encoding/base64"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"errors"
-	"github.com/tendermint/tendermint/abci/types"
-	coreTypes "madledger/core/types"
+	"go.etcd.io/etcd/raft/raftpb"
 	"madledger/client/lib"
 	"madledger/client/util"
+	coreTypes "madledger/core/types"
+	"strconv"
+	"strings"
 )
 
 var (
@@ -34,23 +36,24 @@ func init() {
 }
 
 func runAdd(cmd *cobra.Command, args []string) error {
-	dataS := addViper.GetString("pubkey")
-	if dataS == "" {
-		return errors.New("The pubkey.data of validator can not be nil")
-	}
-	// construct PubKey
-	data, err := base64.StdEncoding.DecodeString(dataS)
+	nodeID, err := strconv.ParseUint(addViper.GetString("nodeID"), 10, 64)
 	if err != nil {
 		return err
 	}
-	pubkey := types.PubKey{
-		Type: "ed25519",
-		Data: data,
+	if nodeID <= 0 {
+		return errors.New("The ID must be bigger than zero")
 	}
 
-	power := addViper.GetInt64("power")
-	if power < 0 {
-		return errors.New("The power of validator power must be non-negative")
+	urlRaw := addViper.GetString("url")
+	if !strings.Contains(urlRaw, ":") {
+		return errors.New("The url of node must contains ip and port like 127.0.0.1:12345")
+	}
+	port, err := strconv.ParseUint(strings.Split(urlRaw, ":")[1], 10, 64)
+	if err != nil {
+		return err
+	}
+	if port > 65535 {
+		return errors.New("The port can not be bigger than 65535")
 	}
 
 	cfgFile := addViper.GetString("config")
@@ -62,10 +65,12 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	if channelID == "" {
 		return errors.New("The channelID of tx can not be nil")
 	}
-	// construct ValidatorUpdate
-	validatorUpdate, err := json.Marshal(types.ValidatorUpdate{
-		PubKey: pubkey,
-		Power:  power,
+
+	// construct ConfChange
+	cc, err := json.Marshal(raftpb.ConfChange{
+		Type:    raftpb.ConfChangeAddNode,
+		NodeID:  nodeID,
+		Context: []byte(fmt.Sprintf("http://%s", urlRaw)),
 	})
 	if err != nil {
 		return err
@@ -75,7 +80,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	tx, err := coreTypes.NewTx(channelID, coreTypes.ValidatorUpdateAddress, validatorUpdate,
+	tx, err := coreTypes.NewTx(channelID, coreTypes.CfgTendermintAddress, cc,
 		client.GetPrivKey(), coreTypes.NODE)
 	if err != nil {
 		return err
@@ -86,7 +91,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	}
 	// Then print the status
 	table := util.NewTable()
-	table.SetHeader("BlockNumber", "BlockIndex", "ValidatorAddOk")
+	table.SetHeader("BlockNumber", "BlockIndex", "NodeAddOK")
 	if status.Err != "" {
 		table.AddRow(status.BlockNumber, status.BlockIndex, status.Err)
 	} else {

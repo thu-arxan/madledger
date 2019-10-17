@@ -3,6 +3,7 @@ package cmd
 import (
 	"madledger/client/cmd/account"
 	"madledger/client/cmd/channel"
+	"madledger/client/cmd/node"
 	"madledger/client/cmd/tx"
 	"madledger/client/cmd/validator"
 	"os"
@@ -34,6 +35,7 @@ func init() {
 	rootCmd.AddCommand(tx.Cmd())
 	rootCmd.AddCommand(account.Cmd())
 	rootCmd.AddCommand(validator.Cmd())
+	rootCmd.AddCommand(node.Cmd())
 }
 
 // Execute exec the command

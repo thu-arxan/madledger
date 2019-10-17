@@ -50,8 +50,8 @@ func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus,
 	if err != nil {
 		return &status, err
 	}
-	// if tx is for validatorUpdate, we should check if the client is system admin
-	if tx.Data.Type == types.VALIDATOR {
+	// if tx is for confChange, we should check if the client is system admin
+	if tx.Data.Type == types.VALIDATOR || tx.Data.Type == types.NODE{
 		pk, err := crypto.NewPublicKey(req.PK)
 		if err != nil {
 			return &status, err

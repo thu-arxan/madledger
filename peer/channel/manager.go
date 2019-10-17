@@ -132,7 +132,12 @@ func (m *Manager) RunBlock(num uint64) error {
 			continue
 		}
 
-		if receiverAddress.String() == types.ValidatorUpdateAddress.String() {
+		if receiverAddress.String() == types.CfgTendermintAddress.String() {
+			m.db.SetTxStatus(tx, status)
+			continue
+		}
+
+		if receiverAddress.String() == types.CfgRaftAddress.String() {
 			m.db.SetTxStatus(tx, status)
 			continue
 		}

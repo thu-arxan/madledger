@@ -116,7 +116,8 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 		log.Info(err)
 		// then parse leader id
 		if strings.Contains(err.Error(), "Please send to leader") {
-			id, err := strconv.ParseUint(strings.Replace(err.Error(), "rpc error: code = Unknown desc = Please send to leader ", "", -1), 10, 64)
+			id, err := strconv.ParseUint(strings.Replace(err.Error(), "rpc error: code = Unknown " +
+				"desc = Please send to leader ", "", -1), 10, 64)
 			if err == nil && id != 0 {
 				c.setLeader(id)
 				continue

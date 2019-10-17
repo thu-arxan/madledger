@@ -34,7 +34,7 @@ func init() {
 func runAdd(cmd *cobra.Command, args []string) error {
 	dataS := addViper.GetString("pubkey")
 	if dataS == "" {
-		return errors.New("The pubkey.data of validator can not be nil")
+		return errors.New("The pubkey of validator can not be nil")
 	}
 	// construct PubKey
 	data, err := base64.StdEncoding.DecodeString(dataS)
@@ -73,8 +73,8 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	tx, err := coreTypes.NewTx(channelID, coreTypes.ValidatorUpdateAddress, validatorUpdate,
-		client.GetPrivKey(), coreTypes.NORMAL)
+	tx, err := coreTypes.NewTx(channelID, coreTypes.CfgTendermintAddress, validatorUpdate,
+		client.GetPrivKey(), coreTypes.VALIDATOR)
 	if err != nil {
 		return err
 	}

@@ -21,9 +21,9 @@ var (
 
 func init() {
 	removeCmd.RunE = runRemove
-	addCmd.Flags().StringP("nodeID", "i", "4",
+	removeCmd.Flags().StringP("nodeID", "i", "4",
 		"The ID of node leaving the exiting cluster")
-	addViper.BindPFlag("nodeID", addCmd.Flags().Lookup("nodeID"))
+	removeViper.BindPFlag("nodeID", addCmd.Flags().Lookup("nodeID"))
 	removeCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
 	removeViper.BindPFlag("config", addCmd.Flags().Lookup("config"))
 	removeCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
@@ -72,7 +72,7 @@ func runRemove(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	tx, err := coreTypes.NewTx(channelID, coreTypes.ValidatorUpdateAddress, validatorUpdate,
+	tx, err := coreTypes.NewTx(channelID, coreTypes.CfgRaftAddress, validatorUpdate,
 		client.GetPrivKey(), coreTypes.VALIDATOR)
 	if err != nil {
 		return err
