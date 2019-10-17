@@ -19,7 +19,7 @@ type Tx struct {
 }
 
 // ConsensusType is the type of consensus
-type TxType int
+type TxType int64
 
 const (
 	_ TxType = iota
