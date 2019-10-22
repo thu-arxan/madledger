@@ -3,7 +3,6 @@ package node
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.etcd.io/etcd/raft/raftpb"
@@ -26,7 +25,7 @@ func init() {
 	addCmd.Flags().StringP("nodeID", "i", "4",
 		"The ID of node joining the exiting cluster")
 	addViper.BindPFlag("nodeID", addCmd.Flags().Lookup("nodeID"))
-	addCmd.Flags().StringP("url", "u", "127.0.0.1:45678",
+	addCmd.Flags().StringP("url", "u", "127.0.0.1:45679",
 		"The url of node joining the exiting cluster")
 	addViper.BindPFlag("url", addCmd.Flags().Lookup("url"))
 	addCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
@@ -70,7 +69,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	cc, err := json.Marshal(raftpb.ConfChange{
 		Type:    raftpb.ConfChangeAddNode,
 		NodeID:  nodeID,
-		Context: []byte(fmt.Sprintf("http://%s", urlRaw)),
+		Context: []byte(urlRaw),
 	})
 	if err != nil {
 		return err
@@ -80,7 +79,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	tx, err := coreTypes.NewTx(channelID, coreTypes.CfgTendermintAddress, cc,
+	tx, err := coreTypes.NewTx(channelID, coreTypes.CfgRaftAddress, cc,
 		client.GetPrivKey(), coreTypes.NODE)
 	if err != nil {
 		return err

@@ -2,13 +2,16 @@ package raft
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"go.etcd.io/etcd/raft/raftpb"
 	"madledger/common/crypto"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
 	pb "madledger/consensus/raft/protos"
+	"madledger/core/types"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -21,12 +24,12 @@ import (
 type BlockChain struct {
 	lock sync.Mutex
 
-	raft          *Raft
-	config        consensus.Config
-	txs           chan bool
-	pool          *txPool
-	hub           *event.Hub
-	num           uint64
+	raft   *Raft
+	config consensus.Config
+	txs    chan bool
+	pool   *txPool
+	hub    *event.Hub
+	num    uint64
 	//hybridBlocks  map[uint64]*HybridBlock
 	hybridBlockCh chan *HybridBlock
 
@@ -133,8 +136,28 @@ func (chain *BlockChain) addTx(tx []byte) error {
 	if !chain.raft.IsLeader() {
 		return fmt.Errorf("Please send to leader %d", chain.raft.GetLeader())
 	}
+	var raftTx Tx
+	err := json.Unmarshal(tx, &raftTx)
+	var typeTx types.Tx
+	err = json.Unmarshal(raftTx.Data, &typeTx)
+	if err != nil {
+		return err
+	}
+	if typeTx.Data.Type == types.NODE {
+		var cfgChange raftpb.ConfChange
+		err = json.Unmarshal(typeTx.Data.Payload, &cfgChange)
+		if err != nil {
+			return err
+		}
+		log.Infof("BlockChain.addTx: id: %d, nodeId: %d, type: %v", cfgChange.ID, cfgChange.NodeID, cfgChange.Type)
+		err = chain.raft.eraft.proposeConfChange(cfgChange)
+		if err != nil {
+			return err
+		}
+	}
+
 	log.Infof("[%d] add tx", chain.raft.cfg.id)
-	err := chain.pool.addTx(tx)
+	err = chain.pool.addTx(tx)
 
 	if err != nil {
 		return err
