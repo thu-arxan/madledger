@@ -79,8 +79,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	tx, err := coreTypes.NewTx(channelID, coreTypes.CfgRaftAddress, cc,
-		client.GetPrivKey(), coreTypes.NODE)
+	tx, err := coreTypes.NewTx(channelID, coreTypes.CfgRaftAddress, cc, client.GetPrivKey(), coreTypes.NODE)
 	if err != nil {
 		return err
 	}

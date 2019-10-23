@@ -202,7 +202,7 @@ func (e *ERaft) Start() error {
 }
 
 // Stop close etcd raft and something necessary
-func (e *ERaft) Stop() {
+func (e *ERaft)  Stop() {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
@@ -441,14 +441,16 @@ func (e *ERaft) publishEntries(ents []raftpb.Entry) error {
 				ccBytes, _ := json.Marshal(cc)
 				e.hub.Done(string(crypto.Hash(ccBytes)), nil)
 				if cc.NodeID == e.cfg.id {
+					log.Printf("I've been removed from the cluster! Shutting down.")
 					return errors.New("Removed from the cluster")
 				}
 				e.transport.RemovePeer(types.ID(cc.NodeID))
 			}
 		}
-
+		// after commit, update appliedIndex
 		e.state.appliedIndex = entry.Index
 
+		// special nil commit to signal replay has finished
 		if entry.Index == e.state.lastIndex {
 			snapshot, err := e.loadSnapshot()
 			if err == nil && snapshot != nil {

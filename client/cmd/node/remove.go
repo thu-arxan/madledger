@@ -1,15 +1,15 @@
 package node
 
 import (
-	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"errors"
-	"github.com/tendermint/tendermint/abci/types"
-	coreTypes "madledger/core/types"
+	"go.etcd.io/etcd/raft/raftpb"
 	"madledger/client/lib"
 	"madledger/client/util"
+	coreTypes "madledger/core/types"
+	"strconv"
 )
 
 var (
@@ -22,47 +22,37 @@ var (
 func init() {
 	removeCmd.RunE = runRemove
 	removeCmd.Flags().StringP("nodeID", "i", "4",
-		"The ID of node leaving the exiting cluster")
-	removeViper.BindPFlag("nodeID", addCmd.Flags().Lookup("nodeID"))
+		"The ID of node you want to remove from the exiting cluster")
+	removeViper.BindPFlag("nodeID", removeCmd.Flags().Lookup("nodeID"))
 	removeCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
-	removeViper.BindPFlag("config", addCmd.Flags().Lookup("config"))
+	removeViper.BindPFlag("config", removeCmd.Flags().Lookup("config"))
 	removeCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
-	removeViper.BindPFlag("channelID", addCmd.Flags().Lookup("channelID"))
+	removeViper.BindPFlag("channelID", removeCmd.Flags().Lookup("channelID"))
 }
 
 func runRemove(cmd *cobra.Command, args []string) error {
-	dataS := addViper.GetString("pubkey")
-	if dataS == "" {
-		return errors.New("The pubkey.data of validator can not be nil")
-	}
-	// construct PubKey
-	data, err := base64.StdEncoding.DecodeString(dataS)
+	nodeID, err := strconv.ParseUint(removeViper.GetString("nodeID"), 10, 64)
 	if err != nil {
 		return err
 	}
-	pubkey := types.PubKey{
-		Type: "ed25519",
-		Data: data,
+	if nodeID <= 0 {
+		return errors.New("The ID must be bigger than zero")
 	}
 
-	power := addViper.GetInt64("power")
-	if power < 0 {
-		return errors.New("The power of validator power must be non-negative")
-	}
-
-	cfgFile := addViper.GetString("config")
+	cfgFile := removeViper.GetString("config")
 	if cfgFile == "" {
 		return errors.New("The config file of client can not be nil")
 	}
 
-	channelID := addViper.GetString("channelID")
+	channelID := removeViper.GetString("channelID")
 	if channelID == "" {
 		return errors.New("The channelID of tx can not be nil")
 	}
-	// construct ValidatorUpdate
-	validatorUpdate, err := json.Marshal(types.ValidatorUpdate{
-		PubKey: pubkey,
-		Power:  power,
+
+	// construct ConfChange
+	cc, err := json.Marshal(raftpb.ConfChange{
+		Type:   raftpb.ConfChangeRemoveNode,
+		NodeID: nodeID,
 	})
 	if err != nil {
 		return err
@@ -72,8 +62,7 @@ func runRemove(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	tx, err := coreTypes.NewTx(channelID, coreTypes.CfgRaftAddress, validatorUpdate,
-		client.GetPrivKey(), coreTypes.VALIDATOR)
+	tx, err := coreTypes.NewTx(channelID, coreTypes.CfgRaftAddress, cc, client.GetPrivKey(), coreTypes.NODE)
 	if err != nil {
 		return err
 	}
@@ -83,7 +72,7 @@ func runRemove(cmd *cobra.Command, args []string) error {
 	}
 	// Then print the status
 	table := util.NewTable()
-	table.SetHeader("BlockNumber", "BlockIndex", "ValidatorAddOk")
+	table.SetHeader("BlockNumber", "BlockIndex", "NodeRemoveOK")
 	if status.Err != "" {
 		table.AddRow(status.BlockNumber, status.BlockIndex, status.Err)
 	} else {
