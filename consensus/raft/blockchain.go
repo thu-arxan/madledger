@@ -154,6 +154,10 @@ func (chain *BlockChain) addTx(tx []byte) error {
 		if err != nil {
 			return err
 		}
+		// remove cfgChange, lose leader role and can not continue adding tx
+		if cfgChange.Type == raftpb.ConfChangeRemoveNode && chain.raft.cfg.id == cfgChange.NodeID {
+			return errors.New(fmt.Sprintf("[%d] I will stop and can not add tx to chain.", cfgChange.NodeID))
+		}
 	}
 
 	log.Infof("[%d] add tx", chain.raft.cfg.id)
@@ -195,7 +199,7 @@ func (chain *BlockChain) createBlock(txs [][]byte) error {
 	}
 
 	log.Infof("[%d]Succeed to add block %d", chain.raft.cfg.id, block.Num)
-	log.Infof("Blockchain.createBlock: call addBlock adn the block number is %d", block.GetNumber())
+	log.Infof("Blockchain.createBlock: call addBlock and the block number is %d", block.GetNumber())
 	chain.addBlock(block)
 	return nil
 }

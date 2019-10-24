@@ -202,7 +202,7 @@ func (e *ERaft) Start() error {
 }
 
 // Stop close etcd raft and something necessary
-func (e *ERaft)  Stop() {
+func (e *ERaft) Stop() {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
@@ -419,6 +419,7 @@ func (e *ERaft) publishEntries(ents []raftpb.Entry) error {
 		switch entry.Type {
 		case raftpb.EntryNormal:
 			if len(entry.Data) == 0 {
+				// ignore empty messages
 				break
 			}
 			e.hub.Done(string(crypto.Hash(entry.Data)), nil)
