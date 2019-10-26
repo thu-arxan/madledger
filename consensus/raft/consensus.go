@@ -104,15 +104,16 @@ func (c *Consensus) Stop() error {
 // AddTx is the implementation of interface
 func (c *Consensus) AddTx(channelID string, tx []byte) error {
 	var err error
-	log.Infof("raft.Consensus.AddTx: Add tx of channel %s.", channelID)
+	log.Infof("Consensus.AddTx: Add tx of channel %s.", channelID)
 	// todo: we should parse the leader address other than random choose a leader
 	for i := 0; i < 100; i++ {
 		log.Infof("Try to add tx to raft %d, this is %d times' trying.", c.leader, i)
 		err = c.clients[c.getLeader()].addTx(channelID, tx)
 		if err == nil || strings.Contains(err.Error(), "Transaction is aleardy in the pool") {
-			log.Infof("Succeed to add tx to raft %d", c.leader)
+			log.Infof("Succeed to add tx to raft %d, I'm raft %d", c.leader, c.cfg.ec.id)
 			return nil
 		}
+
 		log.Info(err)
 		// then parse leader id
 		if strings.Contains(err.Error(), "Please send to leader") {
@@ -122,11 +123,20 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 				c.setLeader(id)
 				continue
 			}
-		}else if strings.Contains(err.Error(),"I will stop and can not add tx to chain."){
-			return err
+		}
+		// if the leader is not itself, continue to try
+		// if the leader is itself, just return nil
+		if strings.Contains(err.Error(), "I will stop and can not add tx to chain.") {
+			idRaw := strings.Split(err.Error(), "]")[0]
+			id, err := strconv.ParseUint(strings.Replace(idRaw,"rpc error: code = Unknown desc = [","", -1), 10, 64)
+			if err == nil && id == c.cfg.ec.id {
+				break
+			} else {
+				continue
+			}
 		}
 		// error except tx exist and the id is not leader
-		log.Infoln("error except tx exist and the id is not leader, so set leader randomly.")
+		log.Infoln("Error unknown, set leader randomly.")
 		c.setLeader(c.ids[util.RandNum(len(c.ids))])
 		time.Sleep(200 * time.Millisecond)
 	}

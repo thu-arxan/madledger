@@ -13,6 +13,7 @@ import (
 	pb "madledger/consensus/raft/protos"
 	"madledger/core/types"
 	"net"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -152,17 +153,19 @@ func (chain *BlockChain) addTx(tx []byte) error {
 		log.Infof("BlockChain.addTx: id: %d, nodeId: %d, type: %v", cfgChange.ID, cfgChange.NodeID, cfgChange.Type)
 		err = chain.raft.eraft.proposeConfChange(cfgChange)
 		if err != nil {
-			return err
+			log.Error(err.Error())
+			if !strings.Contains(err.Error(), "unexpected removal of unknown remote peer") {
+				return err
+			}
 		}
 		// remove cfgChange, lose leader role and can not continue adding tx
 		if cfgChange.Type == raftpb.ConfChangeRemoveNode && chain.raft.cfg.id == cfgChange.NodeID {
-			return errors.New(fmt.Sprintf("[%d] I will stop and can not add tx to chain.", cfgChange.NodeID))
+			return errors.New(fmt.Sprintf("[%d]I will stop and can not add tx to chain.", cfgChange.NodeID))
 		}
 	}
 
-	log.Infof("[%d] add tx", chain.raft.cfg.id)
+	log.Infof("[%d]add tx", chain.raft.cfg.id)
 	err = chain.pool.addTx(tx)
-
 	if err != nil {
 		return err
 	}
