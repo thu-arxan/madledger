@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go.etcd.io/etcd/pkg/types"
 	"go.etcd.io/etcd/raft/raftpb"
 	"madledger/common/crypto"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
 	pb "madledger/consensus/raft/protos"
-	"madledger/core/types"
+	ctypes "madledger/core/types"
 	"net"
 	"strings"
 	"sync"
@@ -128,29 +129,29 @@ func (chain *BlockChain) start() error {
 }
 
 // AddTx will try to add a tx
-func (chain *BlockChain) AddTx(ctx context.Context, in *pb.Tx) (*pb.None, error) {
-	err := chain.addTx(in.Data)
+func (chain *BlockChain) AddTx(ctx context.Context, in *pb.AddTxRequest) (*pb.None, error) {
+	err := chain.addTx(in.Tx, in.Caller)
 	return &pb.None{}, err
 }
 
-func (chain *BlockChain) addTx(tx []byte) error {
+func (chain *BlockChain) addTx(tx []byte, caller uint64) error {
 	if !chain.raft.IsLeader() {
 		return fmt.Errorf("Please send to leader %d", chain.raft.GetLeader())
 	}
 	var raftTx Tx
 	err := json.Unmarshal(tx, &raftTx)
-	var typeTx types.Tx
+	var typeTx ctypes.Tx
 	err = json.Unmarshal(raftTx.Data, &typeTx)
 	if err != nil {
 		return err
 	}
-	if typeTx.Data.Type == types.NODE {
+	if typeTx.Data.Type == ctypes.NODE {
 		var cfgChange raftpb.ConfChange
 		err = json.Unmarshal(typeTx.Data.Payload, &cfgChange)
 		if err != nil {
 			return err
 		}
-		log.Infof("BlockChain.addTx: id: %d, nodeId: %d, type: %v", cfgChange.ID, cfgChange.NodeID, cfgChange.Type)
+		log.Infof("BlockChain.addTx: caller: %d, id: %d, nodeId: %d, type: %v", caller, cfgChange.ID, cfgChange.NodeID, cfgChange.Type)
 		err = chain.raft.eraft.proposeConfChange(cfgChange)
 		if err != nil {
 			log.Error(err.Error())
@@ -162,6 +163,15 @@ func (chain *BlockChain) addTx(tx []byte) error {
 		if cfgChange.Type == raftpb.ConfChangeRemoveNode && chain.raft.cfg.id == cfgChange.NodeID {
 			return errors.New(fmt.Sprintf("[%d]I will stop and can not add tx to chain.", cfgChange.NodeID))
 		}
+
+		if cfgChange.Type == raftpb.ConfChangeRemoveNode && cfgChange.NodeID == caller {
+			return errors.New(fmt.Sprintf("[%d]I'm caller and I will stop", cfgChange.NodeID))
+		}
+	}
+	// if tx is normal, check if caller has removed
+	log.Infof("tx type: %v, eraft.removed[%d]: %v", typeTx.Data.Type, caller, chain.raft.eraft.removed[types.ID(caller)])
+	if typeTx.Data.Type == ctypes.NORMAL && chain.raft.eraft.removed[types.ID(caller)] {
+		return errors.New(fmt.Sprintf("[%d]I have been removed from the cluster, please try other raft nodes", caller))
 	}
 
 	log.Infof("[%d]add tx", chain.raft.cfg.id)

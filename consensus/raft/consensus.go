@@ -46,15 +46,16 @@ func (c *Client) newConn() error {
 	return nil
 }
 
-func (c *Client) addTx(channelID string, tx []byte) error {
+func (c *Client) addTx(channelID string, tx []byte, caller uint64) error {
 	if c.conn == nil {
 		if err := c.newConn(); err != nil {
 			return err
 		}
 	}
 	client := pb.NewBlockChainClient(c.conn)
-	_, err := client.AddTx(context.Background(), &pb.Tx{
-		Data: NewTx(channelID, tx).Bytes(),
+	_, err := client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: NewTx(channelID, tx).Bytes(),
+		Caller:caller,
 	})
 	return err
 }
@@ -108,7 +109,7 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 	// todo: we should parse the leader address other than random choose a leader
 	for i := 0; i < 100; i++ {
 		log.Infof("Try to add tx to raft %d, this is %d times' trying.", c.leader, i)
-		err = c.clients[c.getLeader()].addTx(channelID, tx)
+		err = c.clients[c.getLeader()].addTx(channelID, tx, c.cfg.ec.id)
 		if err == nil || strings.Contains(err.Error(), "Transaction is aleardy in the pool") {
 			log.Infof("Succeed to add tx to raft %d, I'm raft %d", c.leader, c.cfg.ec.id)
 			return nil
@@ -128,12 +129,20 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 		// if the leader is itself, just return nil
 		if strings.Contains(err.Error(), "I will stop and can not add tx to chain.") {
 			idRaw := strings.Split(err.Error(), "]")[0]
-			id, err := strconv.ParseUint(strings.Replace(idRaw,"rpc error: code = Unknown desc = [","", -1), 10, 64)
+			id, err := strconv.ParseUint(strings.Replace(idRaw, "rpc error: code = Unknown desc = [", "", -1), 10, 64)
 			if err == nil && id == c.cfg.ec.id {
 				break
 			} else {
 				continue
 			}
+		}
+		// if request node is equals to remove id, just break and return error to orderer
+		if strings.Contains(err.Error(),"I'm caller and I will stop"){
+			break
+		}
+		// if request node has removed from cluster, just break and return error to orderer
+		if strings.Contains(err.Error(),"I have been removed from the cluster") {
+			break
 		}
 		// error except tx exist and the id is not leader
 		log.Infoln("Error unknown, set leader randomly.")

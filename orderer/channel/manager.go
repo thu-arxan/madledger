@@ -168,6 +168,7 @@ func (manager *Manager) AddTx(tx *types.Tx) error {
 	if err != nil {
 		return err
 	}
+	
 	// Note: The reason why we must do this is because we must make sure we return the result after we store the block
 	// However, we may find a better way to do this if we allow there are more interactive between the consensus and orderer.
 	result := manager.hub.Watch(util.Hex(tx.Hash()), nil)
