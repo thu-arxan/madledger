@@ -219,7 +219,7 @@ func createContractForCallTx() error {
 	if err != nil {
 		return err
 	}
-	tx, err := types.NewTx("test0", common.ZeroAddress, contractCodes, client.GetPrivKey(), false)
+	tx, err := types.NewTx("test0", common.ZeroAddress, contractCodes, client.GetPrivKey(), types.NORMAL)
 	if err != nil {
 		return err
 	}
@@ -242,7 +242,7 @@ func getNumForCallTx(node int, num string) error {
 	client := bftClients[node]
 	channel := "test" + strconv.Itoa(node)
 	tx, err := types.NewTx(channel, common.HexToAddress("0x8de6ce45b289502e16aef93313fd3082993acb1f"), payloadBytes,
-		client.GetPrivKey(), false)
+		client.GetPrivKey(), types.NORMAL)
 	if err != nil {
 		return err
 	}
@@ -278,7 +278,7 @@ func setNumForCallTx(node int, num string) error {
 	client := bftClients[node]
 	channel := "test" + strconv.Itoa(node)
 	tx, err := types.NewTx(channel, common.HexToAddress("0x8de6ce45b289502e16aef93313fd3082993acb1f"), payloadBytes,
-		client.GetPrivKey(), false)
+		client.GetPrivKey(), types.NORMAL)
 	if err != nil {
 		return err
 	}

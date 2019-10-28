@@ -113,7 +113,7 @@ func TestRaftCreateTx2(t *testing.T) {
 		require.NoError(t, err)
 		channel := "test" + strconv.Itoa(m)
 		fmt.Printf("Create contract %d on channel %s ...\n", m, channel)
-		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, client.GetPrivKey(), false)
+		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, client.GetPrivKey(), types.NORMAL)
 		require.NoError(t, err)
 
 		_, err = client.AddTx(tx)

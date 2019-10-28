@@ -169,7 +169,6 @@ func (chain *BlockChain) addTx(tx []byte, caller uint64) error {
 		}
 	}
 	// if tx is normal, check if caller has removed
-	log.Infof("tx type: %v, eraft.removed[%d]: %v", typeTx.Data.Type, caller, chain.raft.eraft.removed[types.ID(caller)])
 	if typeTx.Data.Type == ctypes.NORMAL && chain.raft.eraft.removed[types.ID(caller)] {
 		return errors.New(fmt.Sprintf("[%d]I have been removed from the cluster, please try other raft nodes", caller))
 	}
