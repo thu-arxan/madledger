@@ -5,5 +5,3 @@ rm -rf clients
 cp -R .clients clients
 rm -rf peers
 cp -R .peers peers
-rm -rf autoRun.sh
-cp .autoRun.sh autoRun.sh

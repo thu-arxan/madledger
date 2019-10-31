@@ -8,14 +8,19 @@ Debug: true
 # Address of orderers
 Orderer:
   Address:
+    - localhost:12345
     - localhost:23456
+    - localhost:34567
   
 # Address of peers
 Peer:
   Address:
-    - localhost:23456
+    - localhost:20500
+    - localhost:20501
+    - localhost:20502
+    - localhost:20503
 
 # KeyStore manage some private keys
 KeyStore:
   Keys:
-    - /home/liuyihua/gopath/src/madledger/env/bft/clients/admin/.keystore/96469c3247ae0b8a489d878f8034a9fa64aa5e2e5903651fff7dbc5c5eb5fa72
+    - .keystore/a1011a273f588ece9de950f147a2f0498f8927659024f5612bd58bb48859c7f1

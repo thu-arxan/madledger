@@ -51,7 +51,7 @@ func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus,
 		return &status, err
 	}
 	// if tx is for confChange, we should check if the client is system admin
-	if tx.Data.Type == types.VALIDATOR {
+	if tx.Data.Type == types.VALIDATOR || tx.Data.Type == types.NODE {
 		pk, err := crypto.NewPublicKey(req.PK)
 		if err != nil {
 			return &status, err
@@ -62,7 +62,7 @@ func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus,
 			return &status, err
 		}
 		if !s.cc.CM.IsSystemAdmin(member) { // not system admin, return error
-			return &status, fmt.Errorf("the client is not system admin and can not update validator")
+			return &status, fmt.Errorf("The client is not system admin and can't config the cluster.")
 		}
 	}
 	err = s.cc.AddTx(tx)
