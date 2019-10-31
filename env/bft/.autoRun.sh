@@ -21,8 +21,8 @@ cd ../1/
 gnome-terminal -e 'bash -c ". start.sh; exec bash"'
 cd ../2/
 gnome-terminal -e 'bash -c ". start.sh; exec bash"'
-#cd ../3/
-#gnome-terminal -e 'bash -c ". start.sh; exec bash"'
+cd ../3/
+gnome-terminal -e 'bash -c ". start.sh; exec bash"'
 
 #list
 echo 'list channels'

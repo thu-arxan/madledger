@@ -161,7 +161,7 @@ func (g *Glue) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock 
 	return types.ResponseBeginBlock{}
 }
 
-// EndBlock is not support validator updates now
+// EndBlock is support validator updates now
 func (g *Glue) EndBlock(req types.RequestEndBlock) types.ResponseEndBlock {
 	log.Infof("[%d]End block %d", g.port, g.tn)
 	g.lock.Lock()
