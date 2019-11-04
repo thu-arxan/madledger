@@ -25,7 +25,7 @@ func init() {
 	addCmd.Flags().StringP("nodeID", "i", "4",
 		"The ID of node joining the exiting cluster")
 	addViper.BindPFlag("nodeID", addCmd.Flags().Lookup("nodeID"))
-	addCmd.Flags().StringP("url", "u", "127.0.0.1:45679",
+	addCmd.Flags().StringP("url", "u", "127.0.0.1:45680",
 		"The url of node joining the exiting cluster")
 	addViper.BindPFlag("url", addCmd.Flags().Lookup("url"))
 	addCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
