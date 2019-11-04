@@ -54,8 +54,8 @@ func (c *Client) addTx(channelID string, tx []byte, caller uint64) error {
 	}
 	client := pb.NewBlockChainClient(c.conn)
 	_, err := client.AddTx(context.Background(), &pb.AddTxRequest{
-		Tx: NewTx(channelID, tx).Bytes(),
-		Caller:caller,
+		Tx:     NewTx(channelID, tx).Bytes(),
+		Caller: caller,
 	})
 	return err
 }
@@ -124,6 +124,9 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 				c.setLeader(id)
 				continue
 			}
+		}
+		if strings.Contains(err.Error(), "I've been removed from cluster") {
+			return err
 		}
 		// error except tx exist and the id is not leader
 		log.Infoln("Error unknown, set leader randomly.")

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go.etcd.io/etcd/pkg/types"
 	"go.etcd.io/etcd/raft/raftpb"
 	"madledger/common/crypto"
 	"madledger/common/event"
@@ -137,6 +138,11 @@ func (chain *BlockChain) AddTx(ctx context.Context, in *pb.AddTxRequest) (*pb.No
 }
 
 func (chain *BlockChain) addTx(tx []byte, caller uint64) error {
+	// check if the node has been removed
+	if chain.raft.eraft.removed[types.ID(caller)] {
+		log.Infof("[%d]I've been removed from cluster.", caller)
+		return fmt.Errorf("[%d]I've been removed from cluster", caller)
+	}
 	if !chain.raft.IsLeader() {
 		return fmt.Errorf("Please send to leader %d", chain.raft.GetLeader())
 	}
