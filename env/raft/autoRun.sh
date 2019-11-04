@@ -1,6 +1,4 @@
 #!/bin/bash
-#run init.sh
-gnome-terminal -e 'bash -c ". init.sh"'
 
 #run orderers
 echo 'run orderers'

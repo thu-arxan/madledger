@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.etcd.io/etcd/pkg/types"
 	"go.etcd.io/etcd/raft/raftpb"
 	"madledger/common/crypto"
 	"madledger/common/event"
@@ -34,6 +33,8 @@ type BlockChain struct {
 	num    uint64
 	//hybridBlocks  map[uint64]*HybridBlock
 	hybridBlockCh chan *HybridBlock
+	// record confChange
+	cfgChanges []raftpb.ConfChange
 
 	rpcServer *grpc.Server
 
@@ -58,6 +59,7 @@ func NewBlockChain(cfg *Config) (*BlockChain, error) {
 		raft:          raft,
 		hub:           event.NewHub(),
 		//hybridBlocks:  make(map[uint64]*HybridBlock),
+		cfgChanges: make([]raftpb.ConfChange, 0),
 	}, nil
 }
 
@@ -138,43 +140,9 @@ func (chain *BlockChain) addTx(tx []byte, caller uint64) error {
 	if !chain.raft.IsLeader() {
 		return fmt.Errorf("Please send to leader %d", chain.raft.GetLeader())
 	}
-	var raftTx Tx
-	err := json.Unmarshal(tx, &raftTx)
-	var typeTx ctypes.Tx
-	err = json.Unmarshal(raftTx.Data, &typeTx)
-	if err != nil {
-		return err
-	}
-	if typeTx.Data.Type == ctypes.NODE {
-		var cfgChange raftpb.ConfChange
-		err = json.Unmarshal(typeTx.Data.Payload, &cfgChange)
-		if err != nil {
-			return err
-		}
-		log.Infof("BlockChain.addTx: caller: %d, id: %d, nodeId: %d, type: %v", caller, cfgChange.ID, cfgChange.NodeID, cfgChange.Type)
-		err = chain.raft.eraft.proposeConfChange(cfgChange)
-		if err != nil {
-			log.Error(err.Error())
-			if !strings.Contains(err.Error(), "unexpected removal of unknown remote peer") {
-				return err
-			}
-		}
-		// remove cfgChange, lose leader role and can not continue adding tx
-		if cfgChange.Type == raftpb.ConfChangeRemoveNode && chain.raft.cfg.id == cfgChange.NodeID {
-			return errors.New(fmt.Sprintf("[%d]I will stop and can not add tx to chain.", cfgChange.NodeID))
-		}
-
-		if cfgChange.Type == raftpb.ConfChangeRemoveNode && cfgChange.NodeID == caller {
-			return errors.New(fmt.Sprintf("[%d]I'm caller and I will stop", cfgChange.NodeID))
-		}
-	}
-	// if tx is normal, check if caller has removed
-	if typeTx.Data.Type == ctypes.NORMAL && chain.raft.eraft.removed[types.ID(caller)] {
-		return errors.New(fmt.Sprintf("[%d]I have been removed from the cluster, please try other raft nodes", caller))
-	}
 
 	log.Infof("[%d]add tx", chain.raft.cfg.id)
-	err = chain.pool.addTx(tx)
+	err := chain.pool.addTx(tx)
 	if err != nil {
 		return err
 	}
@@ -212,15 +180,15 @@ func (chain *BlockChain) createBlock(txs [][]byte) error {
 
 	log.Infof("[%d]Succeed to add block %d", chain.raft.cfg.id, block.Num)
 	log.Infof("Blockchain.createBlock: call addBlock and the block number is %d", block.GetNumber())
-	chain.addBlock(block)
-	return nil
+	return chain.addBlock(block)
 }
 
-func (chain *BlockChain) addBlock(block *HybridBlock) {
+func (chain *BlockChain) addBlock(block *HybridBlock) error {
 	//chain.hybridBlocks[block.GetNumber()] = block
 	chain.num = block.GetNumber()
 	chain.raft.app.db.SetChainNum(block.GetNumber())
 	var txs = make(map[string][][]byte)
+	var err error
 	for _, tx := range block.Txs {
 		hash := util.Hex(crypto.Hash(tx))
 		log.Infof("[%d]Hub done tx %s", chain.raft.cfg.id, hash)
@@ -230,6 +198,19 @@ func (chain *BlockChain) addBlock(block *HybridBlock) {
 			txs[t.ChannelID] = make([][]byte, 0)
 		}
 		txs[t.ChannelID] = append(txs[t.ChannelID], t.Data)
+		// every node need get confChange to avoid leader change
+		cfgChange, err := chain.getConfChange(t)
+		if err != nil {
+			if !strings.Contains(err.Error(), "It's not raft config change tx.") {
+				log.Infoln(err.Error())
+				return err
+			}
+		} else {
+			log.Printf("Append cfgChange into cfgChanges, id: %d, type: %v, nodeId: %d, context: %s,"+
+				" I'm raft %d", cfgChange.ID, cfgChange.Type, cfgChange.NodeID, string(cfgChange.Context), chain.raft.cfg.id)
+			chain.cfgChanges = append(chain.cfgChanges, cfgChange)
+		}
+
 	}
 	chain.hub.Done(string(block.GetNumber()), nil)
 	for channel := range txs {
@@ -241,7 +222,41 @@ func (chain *BlockChain) addBlock(block *HybridBlock) {
 		}
 		chain.raft.app.db.AddBlock(block)
 		chain.raft.app.db.SetPrevBlockNum(channel, num)
+		// propose confChange when the channel is global
+		// so the removed node can log global channel's block data
+		if channel == "_global" && len(chain.cfgChanges) > 0 {
+			if chain.raft.IsLeader() {
+				for _, change := range chain.cfgChanges {
+					err = chain.raft.eraft.proposeConfChange(change)
+					if err != nil {
+						return err
+					}
+				}
+			}
+			// every node need clear the cfgChanges if the channel is global
+			chain.cfgChanges = make([]raftpb.ConfChange, 0)
+		}
 	}
+
+	return nil
+}
+
+func (chain *BlockChain) getConfChange(tx *Tx) (raftpb.ConfChange, error) {
+	var typesTx ctypes.Tx
+	var cfgChange raftpb.ConfChange
+	err := json.Unmarshal(tx.Data, &typesTx)
+	if err != nil {
+		return cfgChange, err
+	}
+	if typesTx.Data.Type == ctypes.NODE {
+		err = json.Unmarshal(typesTx.Data.Payload, &cfgChange)
+		if err != nil {
+			return cfgChange, err
+		}
+	} else {
+		return cfgChange, fmt.Errorf("It's not raft config change tx.")
+	}
+	return cfgChange, err
 }
 
 func (chain *BlockChain) getBlock(channelID string, num uint64, async bool) (*Block, error) {

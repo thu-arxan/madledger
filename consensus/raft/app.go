@@ -178,7 +178,6 @@ func (a *App) fetchBlockDone(num uint64) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	log.Infof("fetchBlockDone: set app.minBlock %d + 1", num)
 	atomic.StoreUint64(&(a.minBlock), num+1)
 	delete(a.blocks, num)
 	log.Infof("fetchBlockDone: set minBlock %d + 1", num)

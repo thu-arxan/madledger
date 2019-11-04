@@ -125,25 +125,6 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 				continue
 			}
 		}
-		// if the leader is not itself, continue to try
-		// if the leader is itself, just return nil
-		if strings.Contains(err.Error(), "I will stop and can not add tx to chain.") {
-			idRaw := strings.Split(err.Error(), "]")[0]
-			id, err := strconv.ParseUint(strings.Replace(idRaw, "rpc error: code = Unknown desc = [", "", -1), 10, 64)
-			if err == nil && id == c.cfg.ec.id {
-				break
-			} else {
-				continue
-			}
-		}
-		// if request node is equals to remove id, just break and return error to orderer
-		if strings.Contains(err.Error(),"I'm caller and I will stop"){
-			break
-		}
-		// if request node has removed from cluster, just break and return error to orderer
-		if strings.Contains(err.Error(),"I have been removed from the cluster") {
-			break
-		}
 		// error except tx exist and the id is not leader
 		log.Infoln("Error unknown, set leader randomly.")
 		c.setLeader(c.ids[util.RandNum(len(c.ids))])

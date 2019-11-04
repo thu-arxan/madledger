@@ -350,7 +350,7 @@ func (e *ERaft) proposeConfChange(cc raftpb.ConfChange) error {
 		return fmt.Errorf("unexpected removal of unknown remote peer")
 	}
 
-	log.Infof("I'm raft %d, propose ConfChange.", e.cfg.id)
+	log.Infof("I'm leader %d, propose ConfChange.", e.cfg.id)
 	ccBytes, err := json.Marshal(cc)
 	if err != nil {
 		return err
