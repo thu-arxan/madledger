@@ -92,35 +92,19 @@ func TestBFTRemoveNode1(t *testing.T) {
 		if i == 1 {
 			require.NoError(t, addOrRemoveNode("eWdg85+iQWQzasBP8x/wOovhhUVk8yAQefW56OCQ6d4=", 0, "test1"))
 		}
-		if i == 3 { // 2 orderers left can't success
+		/*if i == 3 { // 2 orderers left can't success
 			fmt.Println("Stop orderer 2, two orderers left can't achieve consensus")
 			stopOrderer(bftOrderers[3])
-		}
+		}*/
 		// call contract,even call getNum, odd call setNum
 		if i%2 != 0 {
 			fmt.Printf("%d: getNumForCallTx ...\n", i)
-			if i == 3 {
-				go getNumForCallTx(strconv.Itoa(i), strconv.Itoa(num))
-				select {
-				case <-time.After(10 * time.Second):
-					fmt.Println("run too long")
-				}
-			} else {
-				require.NoError(t, getNumForCallTx(strconv.Itoa(i), strconv.Itoa(num)))
-			}
+			require.NoError(t, getNumForCallTx(strconv.Itoa(i), strconv.Itoa(num)))
 			num = num + 4
 		}
 		if i%2 == 0 {
 			fmt.Printf("%d: setNumForCallTx ...\n", i)
-			if i == 4 {
-				go setNumForCallTx(strconv.Itoa(i), strconv.Itoa(num))
-				select {
-				case <-time.After(10 * time.Second):
-					fmt.Println("run too long")
-				}
-			} else {
-				require.NoError(t, setNumForCallTx(strconv.Itoa(i), strconv.Itoa(num)))
-			}
+			require.NoError(t, setNumForCallTx(strconv.Itoa(i), strconv.Itoa(num)))
 		}
 	}
 }
@@ -134,3 +118,4 @@ func TestBFTEND1(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/bft"))
 }
+

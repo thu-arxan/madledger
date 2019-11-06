@@ -1,8 +1,4 @@
 #!/bin/bash
-#run init.sh
-echo 'run init.sh'
-. init.sh
-sleep 2
 
 #run orderers
 echo 'run orderers'
