@@ -1,4 +1,4 @@
-package testfor1client_bft
+package testfor1client_CfgBft
 
 import (
 	"encoding/base64"

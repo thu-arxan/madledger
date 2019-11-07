@@ -8,7 +8,7 @@ Debug: true
 # Address of orderers
 Orderer:
   Address:
-    - localhost:12345
+    - localhost:45678
     - localhost:23456
     - localhost:34567
   
