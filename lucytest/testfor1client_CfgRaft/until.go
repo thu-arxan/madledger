@@ -28,7 +28,6 @@ import (
 
 var (
 	raftOrderers [4]string
-	// just 1 is enough, we set 2
 	raftClient [2]*client.Client
 	raftAdmin  *client.Client
 	//bftPeers  [4]*peer.Server

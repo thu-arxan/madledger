@@ -1,4 +1,4 @@
-package testfor1client_CfgBft
+package testfor2celints_CfgBft
 
 import (
 	"encoding/base64"
@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"github.com/tendermint/tendermint/abci/types"
 	"io/ioutil"
+	cc "madledger/client/config"
 	client "madledger/client/lib"
 	cliu "madledger/client/util"
 	"madledger/common"
-	"madledger/common/abi"
 	"madledger/common/util"
 	coreTypes "madledger/core/types"
 	oc "madledger/orderer/config"
@@ -18,6 +18,7 @@ import (
 	pc "madledger/peer/config"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"time"
 
@@ -27,10 +28,10 @@ import (
 
 var (
 	bftOrderers [4]string
-	bftClient *client.Client
-	bftAdmin  *client.Client
+	bftClient   [2]*client.Client
+	bftAdmin    *client.Client
 	//bftPeers  [4]*peer.Server
-	bftPeers  [4]string
+	bftPeers [4]string
 )
 
 // initBFTEnvironment will remove old test folders and copy necessary folders
@@ -108,6 +109,24 @@ func absBFTPeerConfig(node int) error {
 		return err
 	}
 	return ioutil.WriteFile(cfgPath, data, os.ModePerm)
+}
+
+func loadClient(node string) (*client.Client, error) {
+	clientPath := getBFTClientPath(node)
+	cfgPath := getBFTClientConfigPath(node)
+	cfg, err := cc.LoadConfig(cfgPath)
+	if err != nil {
+		return nil, err
+	}
+	re, _ := regexp.Compile("^.*[.]keystore")
+	for i := range cfg.KeyStore.Keys {
+		cfg.KeyStore.Keys[i] = clientPath + "/.keystore" + re.ReplaceAllString(cfg.KeyStore.Keys[i], "")
+	}
+	client, err := client.NewClientFromConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
 }
 
 func getOrderersPid() []string {
@@ -265,7 +284,7 @@ func getBFTClientConfigPath(node string) string {
 	return getBFTClientPath(node) + "/client.yaml"
 }
 
-func addOrRemoveNode(pubKey string, power int64,channel string) error {
+func addOrRemoveNode(pubKey string, power int64, channel string) error {
 	// construct PubKey
 	data, err := base64.StdEncoding.DecodeString(pubKey)
 	if err != nil {
@@ -317,8 +336,50 @@ func listChannel(client *client.Client) error {
 	return nil
 }
 
+func compareChannels(client1 *client.Client, client2 *client.Client) error {
+	infos1, err := client1.ListChannel(true)
+	if err != nil {
+		return err
+	}
+	infos2, err := client2.ListChannel(true)
+	if err != nil {
+		return err
+	}
+	if len(infos1) != len(infos2) {
+		return fmt.Errorf("the number is not consistent")
+	}
+	for i := range infos1 {
+		if infos1[i].Name != infos2[i].Name {
+			return fmt.Errorf("the name is not consistent")
+		}
+		if infos1[i].BlockSize != infos2[i].BlockSize {
+			return fmt.Errorf("the blockSize is not consistent, %d in client1, %d in client2", infos1[i].BlockSize, infos2[i].BlockSize)
+		}
+	}
 
-func createChannelForCallTx() error {
+	fmt.Println("CompareChannels: channels between two orderers are the same.")
+	return nil
+}
+
+func createContractForCallTx(channel string, node string, bftClient *client.Client) error {
+	// client 0 create contract
+	contractCodes, err := readCodes(getBFTClientPath(node) + "/MyTest.bin")
+	if err != nil {
+		return err
+	}
+	tx, err := coreTypes.NewTx(channel, common.ZeroAddress, contractCodes, bftClient.GetPrivKey(), coreTypes.NORMAL)
+	if err != nil {
+		return err
+	}
+	_, err = bftClient.AddTx(tx)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/*func createChannelForCallTx() error {
 	// client 0 create channel
 	err := bftClient.CreateChannel("test0", true, nil, nil)
 	if err != nil {
@@ -345,30 +406,7 @@ func createContractForCallTx(node string) error {
 	return nil
 }
 
-func compareChannels() error {
-	infos1, err := bftClient.ListChannel(true)
-	if err != nil {
-		return err
-	}
-	infos2, err := bftAdmin.ListChannel(true)
-	if err != nil {
-		return err
-	}
-	if len(infos1) != len(infos2) {
-		return fmt.Errorf("the number is not consistent")
-	}
-	for i := range infos1 {
-		if infos1[i].Name != infos2[i].Name {
-			return fmt.Errorf("the name is not consistent")
-		}
-		if infos1[i].BlockSize != infos2[i].BlockSize {
-			return fmt.Errorf("the blockSize is not consistent, %d in client, %d in admin", infos1[i].BlockSize, infos2[i].BlockSize)
-		}
-	}
 
-	fmt.Println("CompareChannels: channels between two orderers are the same.")
-	return nil
-}
 
 func getNumForCallTx(node string, num string) error {
 	abiPath := fmt.Sprintf(getBFTClientPath("0") + "/MyTest.abi")
@@ -426,3 +464,4 @@ func setNumForCallTx(node string, num string) error {
 	}
 	return nil
 }
+*/

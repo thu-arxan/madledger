@@ -93,7 +93,7 @@ func TestBFTRemoveNode1(t *testing.T) {
 			require.NoError(t, addOrRemoveNode("eWdg85+iQWQzasBP8x/wOovhhUVk8yAQefW56OCQ6d4=", 0, "test1"))
 		}
 		if i == 3 { // 2 orderers left can't success
-			fmt.Println("Stop orderer 2, two orderers left can't achieve consensus")
+			fmt.Println("Stop orderer 3, two orderers left can't achieve consensus")
 			stopOrderer(bftOrderers[3])
 		}
 		// call contract,even call getNum, odd call setNum
@@ -123,6 +123,8 @@ func TestBFTRemoveNode1(t *testing.T) {
 			}
 		}
 	}
+	// compare channel in differnt orderer
+	time.Sleep(2 * time.Second)
 	require.NoError(t, compareChannels())
 }
 
