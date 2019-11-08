@@ -33,26 +33,17 @@ func TestBFTPeersStart1(t *testing.T) {
 
 func TestBFTLoadClient1(t *testing.T) {
 	client, err := loadClient("0")
-	if err == nil {
-		bftClient[0] = client
-	} else {
-		require.NoError(t, err)
-	}
+	require.NoError(t,err)
+	bftClient[0]=client
 	client, err = loadClient("1")
-	if err == nil {
-		bftClient[1] = client
-	} else {
-		require.NoError(t, err)
-	}
+	require.NoError(t,err)
+	bftClient[1]=client
 }
 
 func TestBFTLoadAdmin1(t *testing.T) {
 	client, err := loadClient("admin")
-	if err == nil {
-		bftAdmin = client
-	} else {
-		require.NoError(t, err)
-	}
+	require.NoError(t,err)
+	bftAdmin=client
 }
 
 // create channel and create contract on channel
@@ -111,7 +102,7 @@ func TestBFTRemoveNode1(t *testing.T) {
 			go func() {
 				err := addOrRemoveNode("eWdg85+iQWQzasBP8x/wOovhhUVk8yAQefW56OCQ6d4=", 0, "test01")
 				if err != nil {
-					panic(fmt.Sprintf("Add node failed, because %s!", err.Error()))
+					panic(fmt.Sprintf("Remove node failed, because %s!", err.Error()))
 				}
 			}()
 		}
