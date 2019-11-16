@@ -2,6 +2,9 @@ package orderer
 
 import (
 	"context"
+	"crypto/tls"
+	"google.golang.org/grpc/credentials"
+	"madledger/peer/config"
 	"time"
 
 	"madledger/core/types"
@@ -16,15 +19,27 @@ type Client struct {
 }
 
 // NewClient is the constructor of Client
-func NewClient(addr string) (*Client, error) {
+func NewClient(addr string,cfg *config.Config) (*Client, error) {
+	var opts []grpc.DialOption
 	var conn *grpc.ClientConn
 	var err error
-	conn, err = grpc.Dial(addr, grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
+	if cfg.TLS.Enable {
+		creds := credentials.NewTLS(&tls.Config{
+			Certificates: []tls.Certificate{*(cfg.TLS.Cert)},
+			RootCAs:      cfg.TLS.Pool,
+		})
+		opts = append(opts, grpc.WithTransportCredentials(creds))
+	} else {
+		opts = append(opts, grpc.WithInsecure())
+	}
+	opts = append(opts, grpc.WithTimeout(2000*time.Millisecond))
+
+	conn, err = grpc.Dial(addr, opts...)
 	if err != nil {
 		return nil, err
 	}
-	ordererClient := pb.NewOrdererClient(conn)
 
+	ordererClient := pb.NewOrdererClient(conn)
 	return &Client{
 		ordererClient: ordererClient,
 	}, nil

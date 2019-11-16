@@ -72,6 +72,10 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = cfg.GetTLSConfig()
+	if err != nil {
+		return nil, err
+	}
 	return &cfg, nil
 }
 
@@ -83,55 +87,46 @@ func (cfg *Config) GetServerConfig() (*ServerConfig, error) {
 	if cfg.Address == "" {
 		return nil, errors.New("The address can not be empty")
 	}
-	tlsConfig, err := cfg.GetTLSConfig()
-	if err != nil {
-		return nil, err
-	}
+
 	return &ServerConfig{
 		Port:    cfg.Port,
 		Address: cfg.Address,
 		Debug:   cfg.Debug,
-		TLS:     tlsConfig,
+		TLS:     cfg.TLS,
 	}, nil
 }
 
 // checkTLSConfig check the tls config and set necessary things
-func (cfg *Config) GetTLSConfig() (TLSConfig, error) {
-	var tlsConfig TLSConfig
-	tlsConfig.Enable = cfg.TLS.Enable
-	tlsConfig.CA = cfg.TLS.CA
-	tlsConfig.RawCert = cfg.TLS.RawCert
-	tlsConfig.Key = cfg.TLS.Key
-
+func (cfg *Config) GetTLSConfig() error {
 	if cfg.TLS.Enable {
-		if tlsConfig.CA == "" {
-			return tlsConfig, errors.New("The CA can not be empty")
+		if cfg.TLS.CA == "" {
+			return errors.New("The CA can not be empty")
 		}
-		if tlsConfig.RawCert == "" {
-			return tlsConfig, errors.New("The cert can not be empty")
+		if cfg.TLS.RawCert == "" {
+			return errors.New("The cert can not be empty")
 		}
-		if tlsConfig.Key == "" {
-			return tlsConfig, errors.New("The key can not be empty")
+		if cfg.TLS.Key == "" {
+			return errors.New("The key can not be empty")
 		}
 		// load pool
 		pool := x509.NewCertPool()
 		ca, err := ioutil.ReadFile(cfg.TLS.CA)
 		if err != nil {
-			return tlsConfig, err
+			return err
 		}
 		ok := pool.AppendCertsFromPEM(ca)
 		if !ok {
-			return tlsConfig, fmt.Errorf("Failed to load ca file: %s", tlsConfig.CA)
+			return fmt.Errorf("Failed to load ca file: %s", cfg.TLS.CA)
 		}
 		// load cert
-		cert, err := tls.LoadX509KeyPair(tlsConfig.RawCert, tlsConfig.Key)
+		cert, err := tls.LoadX509KeyPair(cfg.TLS.RawCert, cfg.TLS.Key)
 		if err != nil {
-			return tlsConfig, err
+			return err
 		}
-		tlsConfig.Pool = pool
-		tlsConfig.Cert = &cert
+		cfg.TLS.Pool = pool
+		cfg.TLS.Cert = &cert
 	}
-	return tlsConfig, nil
+	return nil
 }
 
 // OrdererConfig is the config of orderer

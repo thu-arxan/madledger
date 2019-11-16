@@ -2,15 +2,16 @@ package lib
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc/credentials"
 	"madledger/common/crypto"
 	"madledger/core/types"
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/sirupsen/logrus"
 
 	"google.golang.org/grpc"
 
@@ -67,7 +68,20 @@ func NewClientFromConfig(cfg *config.Config) (*Client, error) {
 func getOrdererClients(cfg *config.Config) ([]pb.OrdererClient, error) {
 	var clients []pb.OrdererClient
 	for _, address := range cfg.Orderer.Address {
-		conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
+		var opts []grpc.DialOption
+		var conn *grpc.ClientConn
+		var err error
+		if cfg.TLS.Enable {
+			creds := credentials.NewTLS(&tls.Config{
+				Certificates: []tls.Certificate{*(cfg.TLS.Cert)},
+				RootCAs:      cfg.TLS.Pool,
+			})
+			opts = append(opts, grpc.WithTransportCredentials(creds))
+		} else {
+			opts = append(opts, grpc.WithInsecure())
+		}
+		opts = append(opts, grpc.WithTimeout(2000*time.Millisecond))
+		conn, err = grpc.Dial(address, opts...)
 		if err != nil {
 			return nil, err
 		}
@@ -81,10 +95,25 @@ func getOrdererClients(cfg *config.Config) ([]pb.OrdererClient, error) {
 func getPeerClients(cfg *config.Config) ([]pb.PeerClient, error) {
 	var clients []pb.PeerClient
 	for _, address := range cfg.Peer.Address {
-		conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
+		var opts []grpc.DialOption
+		var conn *grpc.ClientConn
+		var err error
+		if cfg.TLS.Enable {
+			creds := credentials.NewTLS(&tls.Config{
+				Certificates: []tls.Certificate{*(cfg.TLS.Cert)},
+				RootCAs:      cfg.TLS.Pool,
+			})
+			opts = append(opts, grpc.WithTransportCredentials(creds))
+		} else {
+			opts = append(opts, grpc.WithInsecure())
+		}
+		opts = append(opts, grpc.WithTimeout(2000*time.Millisecond))
+
+		conn, err = grpc.Dial(address, opts...)
 		if err != nil {
 			return nil, err
 		}
+
 		peerClient := pb.NewPeerClient(conn)
 		clients = append(clients, peerClient)
 	}
