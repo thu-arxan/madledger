@@ -1,6 +1,8 @@
 package config
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -18,9 +20,11 @@ var (
 
 // Config is the combination of all config
 type Config struct {
-	Port       int              `yaml:"Port"`
-	Address    string           `yaml:"Address"`
-	Debug      bool             `yaml:"Debug"`
+	Port    int    `yaml:"Port"`
+	Address string `yaml:"Address"`
+	Debug   bool   `yaml:"Debug"`
+	// TLS
+	TLS        TLSConfig        `yaml:"TLS"`
 	BlockChain BlockChainConfig `yaml:"BlockChain"`
 	Orderer    OrdererConfig    `yaml:"Orderer"`
 	DB         struct {
@@ -34,6 +38,16 @@ type Config struct {
 	} `yaml:"KeyStore"`
 }
 
+type TLSConfig struct {
+	Enable  bool   `yaml:"Enable"`
+	CA      string `yaml:"CA"`
+	RawCert string `yaml:"Cert"`
+	Key     string `yaml:"Key"`
+	// Pool of CA
+	Pool *x509.CertPool
+	Cert *tls.Certificate
+}
+
 // ServerConfig is the config of server
 type ServerConfig struct {
 	// Listening port for the server
@@ -42,6 +56,8 @@ type ServerConfig struct {
 	Address string `yaml:"Address"`
 	// Debug
 	Debug bool `yaml:"Debug"`
+	// TLS
+	TLS TLSConfig `yaml:"TLS"`
 }
 
 // LoadConfig load config from the config file
@@ -67,11 +83,55 @@ func (cfg *Config) GetServerConfig() (*ServerConfig, error) {
 	if cfg.Address == "" {
 		return nil, errors.New("The address can not be empty")
 	}
+	tlsConfig, err := cfg.GetTLSConfig()
+	if err != nil {
+		return nil, err
+	}
 	return &ServerConfig{
 		Port:    cfg.Port,
 		Address: cfg.Address,
 		Debug:   cfg.Debug,
+		TLS:     tlsConfig,
 	}, nil
+}
+
+// checkTLSConfig check the tls config and set necessary things
+func (cfg *Config) GetTLSConfig() (TLSConfig, error) {
+	var tlsConfig TLSConfig
+	tlsConfig.Enable = cfg.TLS.Enable
+	tlsConfig.CA = cfg.TLS.CA
+	tlsConfig.RawCert = cfg.TLS.RawCert
+	tlsConfig.Key = cfg.TLS.Key
+
+	if cfg.TLS.Enable {
+		if tlsConfig.CA == "" {
+			return tlsConfig, errors.New("The CA can not be empty")
+		}
+		if tlsConfig.RawCert == "" {
+			return tlsConfig, errors.New("The cert can not be empty")
+		}
+		if tlsConfig.Key == "" {
+			return tlsConfig, errors.New("The key can not be empty")
+		}
+		// load pool
+		pool := x509.NewCertPool()
+		ca, err := ioutil.ReadFile(cfg.TLS.CA)
+		if err != nil {
+			return tlsConfig, err
+		}
+		ok := pool.AppendCertsFromPEM(ca)
+		if !ok {
+			return tlsConfig, fmt.Errorf("Failed to load ca file: %s", tlsConfig.CA)
+		}
+		// load cert
+		cert, err := tls.LoadX509KeyPair(tlsConfig.RawCert, tlsConfig.Key)
+		if err != nil {
+			return tlsConfig, err
+		}
+		tlsConfig.Pool = pool
+		tlsConfig.Cert = &cert
+	}
+	return tlsConfig, nil
 }
 
 // OrdererConfig is the config of orderer

@@ -93,6 +93,7 @@ func (cfg *Config) GetTLSConfig() (TLSConfig, error) {
 	tlsConfig.CA = cfg.TLS.CA
 	tlsConfig.RawCert = cfg.TLS.RawCert
 	tlsConfig.Key = cfg.TLS.Key
+
 	if cfg.TLS.Enable {
 		if tlsConfig.CA == "" {
 			return tlsConfig, errors.New("The CA can not be empty")

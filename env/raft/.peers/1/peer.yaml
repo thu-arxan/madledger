@@ -12,6 +12,17 @@ Address: localhost
 # Should be false or true (default: true)
 Debug: true
 
+# Configure for the TLS
+TLS:
+  # Should be true of false (default: true)
+  Enable: true
+  # The path of CA cert, it should not be empty if Enable is true
+  CA: cert/ca.pem
+  # Cert of the Blockchain, it should not be empty if Enable is true
+  Cert: cert/peer.pem
+  # Key of the Blockchain, it should not be empty if Enable is true
+  Key: cert/peer-key.pem
+
 # Configure for the BlockChain
 BlockChain:
   # default: $GOPATH/src/madledger/peer/data/blocks

@@ -4,31 +4,23 @@
 echo 'run orderers'
 cd ./orderers/0/
 gnome-terminal -e 'bash -c ". start.sh; exec bash"'
-sleep 1
 cd ../1/
 gnome-terminal -e 'bash -c ". start.sh; exec bash"'
-sleep 1
 cd ../2/
 gnome-terminal -e 'bash -c ". start.sh; exec bash"'
-sleep 1
 cd ../3/
 gnome-terminal -e 'bash -c ". start.sh; exec bash"'
-sleep 1
 
 #run peers
 echo 'run peers'
 cd ../../peers/0/
 gnome-terminal -e 'bash -c ". start.sh; exec bash"'
-sleep 1
 cd ../1/
 gnome-terminal -e 'bash -c ". start.sh; exec bash"'
-sleep 1
 cd ../2/
 gnome-terminal -e 'bash -c ". start.sh; exec bash"'
-sleep 1
 cd ../3/
 gnome-terminal -e 'bash -c ". start.sh; exec bash"'
-sleep 1
 
 #list
 echo 'list channels'

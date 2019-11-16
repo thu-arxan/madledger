@@ -72,7 +72,7 @@ func (s *Server) Start() error {
 	}
 
 	var opts []grpc.ServerOption
-	if s.config.TLS.Enable{
+	if s.config.TLS.Enable {
 		creds := credentials.NewTLS(&tls.Config{
 			//ClientAuth:   tls.NoClientCert,
 			Certificates: []tls.Certificate{*(s.config.TLS.Cert)},
