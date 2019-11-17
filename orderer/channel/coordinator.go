@@ -348,10 +348,11 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 		}
 		c.Consensus = consensus
 	case config.RAFT:
-		raftConfig, err := getConfig(cfg.Raft.Path, cfg.Raft.ID, cfg.Raft.Nodes, cfg.Raft.Join)
+		raftConfig, err := getConfig(cfg.Raft.Path, cfg.Raft.ID, cfg.Raft.Nodes, cfg.Raft.Join, cfg.Raft.TLS)
 		if err != nil {
 			return err
 		}
+
 		consensus, err := raft.NewConseneus(raftConfig)
 		if err != nil {
 			return nil
@@ -378,11 +379,20 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 	return nil
 }
 
-func getConfig(path string, id uint64, peers map[uint64]string, join bool) (*raft.Config, error) {
-	return raft.NewConfig(path, "127.0.0.1", id, peers, join, consensus.Config{
+func getConfig(path string, id uint64, peers map[uint64]string, join bool, tlsConfig config.TLSConfig) (*raft.Config, error) {
+	tlsCfg := consensus.TLSConfig{
+		Enable:  tlsConfig.Enable,
+		CA:      tlsConfig.CA,
+		RawCert: tlsConfig.RawCert,
+		Key:     tlsConfig.Key,
+		Pool:    tlsConfig.Pool,
+		Cert:    tlsConfig.Cert,
+	}
+	return raft.NewConfig(path, "localhost", id, peers, join, consensus.Config{
 		Timeout: 100,
 		MaxSize: 10,
 		Resume:  false,
 		Number:  1,
+		TLS:     tlsCfg,
 	})
 }

@@ -2,6 +2,8 @@ package raft
 
 import (
 	"context"
+	"crypto/tls"
+	"google.golang.org/grpc/credentials"
 	"madledger/consensus"
 	"strconv"
 	"strings"
@@ -28,17 +30,34 @@ type Consensus struct {
 type Client struct {
 	addr string
 	conn *grpc.ClientConn
+	TLS  consensus.TLSConfig
 }
 
 // NewClient is the constructor of Client
-func NewClient(addr string) (*Client, error) {
+func NewClient(addr string, tlsConfig consensus.TLSConfig) (*Client, error) {
 	return &Client{
 		addr: addr,
+		TLS:  tlsConfig,
 	}, nil
 }
 
 func (c *Client) newConn() error {
-	conn, err := grpc.Dial(c.addr, grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
+	var opts []grpc.DialOption
+	var conn *grpc.ClientConn
+	var err error
+	if c.TLS.Enable {
+		creds := credentials.NewTLS(&tls.Config{
+			ServerName:   "orderer.madledger.com",
+			Certificates: []tls.Certificate{*(c.TLS.Cert)},
+			RootCAs:      c.TLS.Pool,
+		})
+		opts = append(opts, grpc.WithTransportCredentials(creds))
+	} else {
+		opts = append(opts, grpc.WithInsecure())
+	}
+
+	opts = append(opts, grpc.WithTimeout(2000*time.Millisecond))
+	conn, err = grpc.Dial(c.addr, opts...)
 	if err != nil {
 		return err
 	}
@@ -77,7 +96,7 @@ func (c *Consensus) Start() error {
 	c.clients = make(map[uint64]*Client)
 	c.ids = make([]uint64, 0)
 	for id, addr := range c.cfg.ec.peers {
-		client, err := NewClient(addr)
+		client, err := NewClient(addr, c.cfg.cc.TLS)
 		if err != nil {
 			return err
 		}

@@ -177,6 +177,8 @@ type RaftConfig struct {
 	RawNodes []string `yaml:"Nodes"`
 	Join     bool     `yaml:"Join"`
 	Nodes    map[uint64]string
+	// TLS
+	TLS TLSConfig `yaml:"TLS"`
 }
 
 // GetBlockChainConfig return the BlockChainConfig
@@ -223,6 +225,7 @@ func (cfg *Config) GetConsensusConfig() (*ConsensusConfig, error) {
 		if !util.Contain(consensus.Raft.Nodes, consensus.Raft.ID) {
 			return nil, errors.New("Nodes must contain itself")
 		}
+		consensus.Raft.TLS = cfg.TLS
 		return &consensus, nil
 	case "bft":
 		consensus.Type = BFT

@@ -2,11 +2,13 @@ package raft
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"go.etcd.io/etcd/pkg/types"
 	"go.etcd.io/etcd/raft/raftpb"
+	"google.golang.org/grpc/credentials"
 	"madledger/common/crypto"
 	"madledger/common/event"
 	"madledger/common/util"
@@ -81,6 +83,14 @@ func (chain *BlockChain) Start() error {
 	}
 	log.Infof("Listen %s", chain.raft.cfg.getLocalChainAddress())
 	var opts []grpc.ServerOption
+	if chain.config.TLS.Enable {
+		creds := credentials.NewTLS(&tls.Config{
+			ClientAuth:   tls.RequireAndVerifyClientCert,
+			Certificates: []tls.Certificate{*(chain.config.TLS.Cert)},
+			ClientCAs:    chain.config.TLS.Pool,
+		})
+		opts = append(opts, grpc.Creds(creds))
+	}
 	chain.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterBlockChainServer(chain.rpcServer, chain)
 	go func() {
