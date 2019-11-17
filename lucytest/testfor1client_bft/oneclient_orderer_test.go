@@ -8,7 +8,6 @@ import (
 	"madledger/common"
 	"madledger/common/abi"
 	"madledger/core/types"
-	peer "madledger/peer/server"
 	"os"
 	"regexp"
 	"strconv"
@@ -32,21 +31,11 @@ func TestBFTOrdererStart1(t *testing.T) {
 }
 
 func TestBFTPeersStart1(t *testing.T) {
-	for i := 0; i < 4; i++ {
-		cfg := getPeerConfig(i)
-		server, err := peer.NewServer(cfg)
-		require.NoError(t, err)
-		bftPeers[i] = server
-	}
-
+	// then we can run peers
 	for i := range bftPeers {
-		go func(t *testing.T, i int) {
-			err := bftPeers[i].Start()
-			require.NoError(t, err)
-		}(t, i)
+		pid := startPeer(i)
+		bftPeers[i] = pid
 	}
-
-	time.Sleep(2 * time.Second)
 }
 
 func TestBFTLoadClients1(t *testing.T) {
@@ -66,71 +55,48 @@ func TestBFTLoadClients1(t *testing.T) {
 }
 
 func TestBFTCreateChannels1(t *testing.T) {
-	// client-0 create 4 channels
-	client0 := bftClients[0]
-	for i := 0; i <= 2; i++ {
+	// client0 create 3 channels
+	for i := 0; i < 3; i++ {
 		channel := "test" + strconv.Itoa(i)
-		err := client0.CreateChannel(channel, true, nil, nil)
+		err := bftClients[0].CreateChannel(channel, true, nil, nil)
 		require.NoError(t, err)
 	}
+
+	// compare channel in differnt orderer
 	time.Sleep(2 * time.Second)
-
-	// then we will check if channels created by client-0 are create successful
-	// query by client-1
-	require.NoError(t, listChannel(1))
+	require.NoError(t, compareChannels())
 }
 
-func listChannel(node int) error {
-	client := bftClients[node]
-	infos, err := client.ListChannel(true)
-	if err != nil {
-		return err
-	}
-	table := cliu.NewTable()
-	table.SetHeader("Name", "System", "BlockSize", "Identity")
-	for _, info := range infos {
-		table.AddRow(info.Name, info.System, info.BlockSize, info.Identity)
-	}
-	table.Render()
-
-	return nil
-}
-
-// 关闭orderer 1，关闭期间通过client 0创建test3通道，然后重启orderer 1，查询数据
+// stop orderer1 while client0 create channel test3
+// then restart orderer1 and compare channel infos
 func TestBFTNodeRestart(t *testing.T) {
 	stopOrderer(bftOrderers[1])
 	os.RemoveAll(getBFTOrdererDataPath(1))
 
-	//client 0创建test3通道
-	client0 := bftClients[0]
+	//client0 create channel test3
+	fmt.Println("Create channel test3 ...")
 	channel := "test3"
-	err := client0.CreateChannel(channel, true, nil, nil)
+	err := bftClients[0].CreateChannel(channel, true, nil, nil)
 	require.NoError(t, err)
-	time.Sleep(2 * time.Second)
 
 	fmt.Println("Restart orderer 1 ...")
 	bftOrderers[1] = startOrderer(1)
-	time.Sleep(2 * time.Second)
 
-	// query by client 1
-	require.NoError(t, listChannel(1))
+	// compare channel in differnt orderer
+	time.Sleep(2 * time.Second)
+	require.NoError(t, compareChannels())
 
 }
 
 func TestBFTCreateChannelAfterRestart(t *testing.T) {
-	//client 1创建通道test4
-	client1 := bftClients[1]
+	//client1 create channel test4
 	channel := "test4"
-	err := client1.CreateChannel(channel, true, nil, nil)
+	err := bftClients[1].CreateChannel(channel, true, nil, nil)
 	require.NoError(t, err)
-	time.Sleep(2 * time.Second)
-
-	// query by client 1
-	require.NoError(t, listChannel(1))
 }
 
 func TestBFTCreateTxAfterRestart(t *testing.T) {
-	//client 1创建智能合约
+	//client1 create smart contract
 	contractCodes, err := readCodes(getBFTClientPath(1) + "/MyTest.bin")
 	require.NoError(t, err)
 	client := bftClients[1]
@@ -152,19 +118,19 @@ func TestBFTCreateTxAfterRestart(t *testing.T) {
 }
 
 func TestBFTCallTxAfterRestart(t *testing.T) {
-	//client 1调用智能合约
+	//client1 call smart contract
 	abiPath := fmt.Sprintf(getBFTClientPath(1) + "/MyTest.abi")
 	funcName := "getNum"
 	var inputs []string = make([]string, 0)
 	payloadBytes, err := abi.GetPayloadBytes(abiPath, funcName, inputs)
 	require.NoError(t, err)
 
-	client := bftClients[1]
+
 	tx, err := types.NewTx("test4", common.HexToAddress("0x0619e2393802cc99e90cf892b92a113f19af5887"),
-		payloadBytes, client.GetPrivKey(), types.NORMAL)
+		payloadBytes, bftClients[1].GetPrivKey(), types.NORMAL)
 	require.NoError(t, err)
 
-	status, err := client.AddTx(tx)
+	status, err := bftClients[1].AddTx(tx)
 	require.NoError(t, err)
 
 	// Then print the status
@@ -182,6 +148,10 @@ func TestBFTCallTxAfterRestart(t *testing.T) {
 		table.AddRow(status.BlockNumber, status.BlockIndex, output)
 	}
 	table.Render()
+
+	// compare channel in differnt orderer
+	time.Sleep(2 * time.Second)
+	require.NoError(t, compareChannels())
 }
 
 func TestBFTEnd1(t *testing.T) {
@@ -189,9 +159,10 @@ func TestBFTEnd1(t *testing.T) {
 		stopOrderer(pid)
 	}
 
-	for i := range bftPeers {
-		bftPeers[i].Stop()
+	for _, pid := range bftPeers {
+		stopPeer(pid)
 	}
+
 	time.Sleep(2 * time.Second)
 	gopath := os.Getenv("GOPATH")
 	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/bft"))

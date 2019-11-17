@@ -26,8 +26,8 @@ Orderer:
 # Address of peers
 Peer:
   Address:
-    - localhost:20500
     - localhost:20501
+    - localhost:20500
     - localhost:20502
     - localhost:20503
 

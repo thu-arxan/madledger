@@ -43,6 +43,15 @@
       },
       "power": "10",
       "name": ""
+    },
+    {
+      "address": "FB4E889F41E6C07236CAD9197B408951680EDA30",
+      "pub_key": {
+        "type": "tendermint/PubKeyEd25519",
+        "value": "J0juvEKWlK6FAjw4b/oTMM7EYIH1NpHeNOcZ65tIHP8="
+      },
+      "power": "10",
+      "name": ""
     }
   ],
   "app_hash": ""

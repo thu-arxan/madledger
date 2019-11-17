@@ -2,17 +2,14 @@ package testfor1client_bft
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/require"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
-	"madledger/common"
-	"madledger/core/types"
 	"os"
 	"regexp"
 	"strconv"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/require"
 )
 
 func TestInitEnv2(t *testing.T) {
@@ -28,18 +25,11 @@ func TestBFTOrdererStart2(t *testing.T) {
 }
 
 func TestBFTPeersStart2(t *testing.T) {
-	for i := 0; i < 4; i++ {
-		require.NoError(t, initPeer(i))
-	}
-
+	// then we can run peers
 	for i := range bftPeers {
-		go func(t *testing.T, i int) {
-			err := bftPeers[i].Start()
-			require.NoError(t, err)
-		}(t, i)
+		pid := startPeer(i)
+		bftPeers[i] = pid
 	}
-
-	time.Sleep(2 * time.Second)
 }
 
 func TestBFTLoadClients2(t *testing.T) {
@@ -59,72 +49,39 @@ func TestBFTLoadClients2(t *testing.T) {
 }
 
 func TestBFTCreateChannels2(t *testing.T) {
-	client := bftClients[0]
-	var channels []string
 	for m := 1; m <= 8; m++ {
-		if m == 4 { // stop peer0
+		if m == 3 { // stop peer0
 			go func(t *testing.T) {
-				fmt.Println("Begin to stop peer 0")
-				bftPeers[0].Stop()
+				fmt.Println("Begin to stop peer 0 ...")
+				stopPeer(bftPeers[0])
 				require.NoError(t, os.RemoveAll(getBFTPeerDataPath(0)))
 			}(t)
 		}
 		if m == 6 { // restart peer0
-			require.NoError(t, initPeer(0))
-
-			go func(t *testing.T) {
-				fmt.Println("Begin to restart peer 0")
-				err := bftPeers[0].Start()
-				require.NoError(t, err)
-			}(t)
+			go func() {
+				fmt.Println("Begin to restart peer 0 ...")
+				bftPeers[0]=startPeer(0)
+			}()
 		}
-		// client 0 create channel
+
+		// client0 create channel
 		channel := "test" + strconv.Itoa(m) + "0"
-		channels = append(channels, channel)
 		fmt.Printf("Create channel %s ...\n", channel)
-		err := client.CreateChannel(channel, true, nil, nil)
-		fmt.Printf("Create channel %s done\n", channel)
+		err := bftClients[0].CreateChannel(channel, true, nil, nil)
 		require.NoError(t, err)
 	}
-	time.Sleep(5 * time.Second)
 
-	// then we will check if channels are create successful
-	require.NoError(t, compareChannels(channels))
+	// compare channel in differnt orderer
+	time.Sleep(2 * time.Second)
+	require.NoError(t, compareTxs())
 }
 
-func TestBFTCreateTx(t *testing.T) {
-	client := bftClients[0]
-	for m := 1; m <= 6; m++ {
-		if m == 2 { // stop peer0
-			go func(t *testing.T) {
-				fmt.Println("Begin to stop peer 0")
-				bftPeers[0].Stop()
-				require.NoError(t, os.RemoveAll(getBFTPeerDataPath(0)))
-			}(t)
-		}
-		if m == 4 { // restart peer0
-			require.NoError(t, initPeer(0))
 
-			go func(t *testing.T) {
-				fmt.Println("Begin to restart peer 0")
-				err := bftPeers[0].Start()
-				require.NoError(t, err)
-			}(t)
-		}
-		// client 0 create contract
-		contractCodes, err := readCodes(getBFTClientPath(0) + "/MyTest.bin")
-		require.NoError(t, err)
-		channel := "test" + strconv.Itoa(m) + "0"
-		fmt.Printf("Create contract %d on channel %s ...\n", m, channel)
-		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, client.GetPrivKey(), types.NORMAL)
-		require.NoError(t, err)
 
-		_, err = client.AddTx(tx)
-		require.NoError(t, err)
-	}
-	time.Sleep(5 * time.Second)
-}
 
+
+
+/*
 func TestBFTCallTx(t *testing.T) {
 	// 为client0和client1分别创建test0
 	require.NoError(t, createChannelForCallTx())
@@ -173,3 +130,4 @@ func TestBFTEnd2(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/bft"))
 }
+*/
