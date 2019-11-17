@@ -73,6 +73,7 @@ func getOrdererClients(cfg *config.Config) ([]pb.OrdererClient, error) {
 		var err error
 		if cfg.TLS.Enable {
 			creds := credentials.NewTLS(&tls.Config{
+				ServerName:   "orderer.madledger.com",
 				Certificates: []tls.Certificate{*(cfg.TLS.Cert)},
 				RootCAs:      cfg.TLS.Pool,
 			})
@@ -100,6 +101,7 @@ func getPeerClients(cfg *config.Config) ([]pb.PeerClient, error) {
 		var err error
 		if cfg.TLS.Enable {
 			creds := credentials.NewTLS(&tls.Config{
+				ServerName:   "peer.madledger.com",
 				Certificates: []tls.Certificate{*(cfg.TLS.Cert)},
 				RootCAs:      cfg.TLS.Pool,
 			})

@@ -77,7 +77,7 @@ func (chain *BlockChain) Start() error {
 
 	lis, err := net.Listen("tcp", chain.raft.cfg.getLocalChainAddress())
 	if err != nil {
-		return fmt.Errorf("Failed to start the server(%s)", err)
+		return fmt.Errorf("Failed to start the server, because %s)", err)
 	}
 	log.Infof("Listen %s", chain.raft.cfg.getLocalChainAddress())
 	var opts []grpc.ServerOption
