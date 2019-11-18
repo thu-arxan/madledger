@@ -53,28 +53,34 @@ func TestBFTLoadClients1(t *testing.T) {
 
 func TestBFTCreateChannels1(t *testing.T) {
 	// client 0 and client 1 create channels concurrently
-	for m := 1; m <= 8; m++ {
-		if m == 3 { // stop orderer0
+	for m := 0; m < 8; m++ {
+		if m == 2 { // stop orderer0
 			go func(t *testing.T) {
 				fmt.Println("Begin to stop orderer 0 ...")
 				stopOrderer(bftOrderers[0])
 				require.NoError(t, os.RemoveAll(getBFTOrdererDataPath(0)))
 			}(t)
 		}
-		if m == 6 { // restart orderer0
+		if m == 5 { // restart orderer0
 			go func() {
 				fmt.Println("Restart orderer 0 ...")
 				bftOrderers[0] = startOrderer(0)
 			}()
 		}
 		// client 0 create channel
-		channel := "test" + strconv.Itoa(m) + "0"
+		channel := "test0"
+		if m != 0 {
+			channel = "test0" + strconv.Itoa(m)
+		}
 		fmt.Printf("Create channel %s by client0 ...\n", channel)
 		err := bftClients[0].CreateChannel(channel, true, nil, nil)
 		require.NoError(t, err)
 
 		// client 1 create channel
-		channel = "test" + strconv.Itoa(m) + "1"
+		channel = "test1"
+		if m != 1 {
+			channel = "test1" + strconv.Itoa(m)
+		}
 		fmt.Printf("Create channel %s by client1 ...\n", channel)
 		err = bftClients[1].CreateChannel(channel, true, nil, nil)
 		require.NoError(t, err)
@@ -86,24 +92,27 @@ func TestBFTCreateChannels1(t *testing.T) {
 }
 
 func TestBFTCreateTx1(t *testing.T) {
-	for m := 1; m <= 8; m++ {
-		if m == 3 { // stop orderer0
+	for m := 0; m < 8; m++ {
+		if m == 2 { // stop orderer0
 			go func(t *testing.T) {
 				fmt.Println("Begin to stop orderer 0 ...")
 				stopOrderer(bftOrderers[0])
 				require.NoError(t, os.RemoveAll(getBFTOrdererDataPath(0)))
 			}(t)
 		}
-		if m == 6 { // restart orderer0
+		if m == 5 { // restart orderer0
 			go func() {
 				fmt.Println("Restart orderer 0 ...")
 				bftOrderers[0] = startOrderer(0)
 			}()
 		}
 		// client 0 create contract
+		channel := "test0"
+		if m != 0 {
+			channel = "test0" + strconv.Itoa(m)
+		}
 		contractCodes, err := readCodes(getBFTClientPath(0) + "/MyTest.bin")
 		require.NoError(t, err)
-		channel := "test" + strconv.Itoa(m) + "0"
 		fmt.Printf("Create contract %d on channel %s by client0 ...\n", m, channel)
 		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, bftClients[0].GetPrivKey(), types.NORMAL)
 		require.NoError(t, err)
@@ -112,9 +121,12 @@ func TestBFTCreateTx1(t *testing.T) {
 		require.NoError(t, err)
 
 		// client 1 create channel
+		channel = "test1"
+		if m != 1 {
+			channel = "test1" + strconv.Itoa(m)
+		}
 		contractCodes, err = readCodes(getBFTClientPath(1) + "/MyTest.bin")
 		require.NoError(t, err)
-		channel = "test" + strconv.Itoa(m) + "1"
 		fmt.Printf("Create contract %d on channel %s by client1 ...\n", m, channel)
 		tx, err = types.NewTx(channel, common.ZeroAddress, contractCodes, bftClients[1].GetPrivKey(), types.NORMAL)
 		require.NoError(t, err)
@@ -128,12 +140,6 @@ func TestBFTCreateTx1(t *testing.T) {
 }
 
 func TestBFTCallTx1(t *testing.T) {
-	// create channel test0 for client0 and test1 for client1
-	require.NoError(t, createChannelForCallTx())
-
-	// create smart contract on channel test0 and test1
-	require.NoError(t, createContractForCallTx())
-
 	for m := 1; m <= 8; m++ {
 		if m == 3 { // stop orderer0
 			go func(t *testing.T) {

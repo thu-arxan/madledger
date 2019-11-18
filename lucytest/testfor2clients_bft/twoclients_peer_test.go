@@ -52,35 +52,36 @@ func TestBFTLoadClients2(t *testing.T) {
 
 func TestBFTCreateChannels2(t *testing.T) {
 	// client 0 and client 1 create channels concurrently
-	client0 := bftClients[0]
-	client1 := bftClients[1]
-	var channels []string
-	for m := 1; m <= 8; m++ {
-		if m == 3 { // stop peer0
+	for m := 0; m < 8; m++ {
+		if m == 2 { // stop peer0
 			go func(t *testing.T) {
 				fmt.Println("Begin to stop peer 0 ... ")
 				stopPeer(bftPeers[0])
 				require.NoError(t, os.RemoveAll(getBFTPeerDataPath(0)))
 			}(t)
 		}
-		if m == 6 { // restart peer0
+		if m == 5 { // restart peer0
 			go func() {
 				fmt.Println("Restart peer 0 ...")
 				bftPeers[0]=startPeer(0)
 			}()
 		}
 		// client 0 create channel
-		channel := "test" + strconv.Itoa(m) + "0"
-		channels = append(channels, channel)
+		channel := "test0"
+		if m != 0 {
+			channel = "test0" + strconv.Itoa(m)
+		}
 		fmt.Printf("Create channel %s by client0 ...\n", channel)
-		err := client0.CreateChannel(channel, true, nil, nil)
+		err := bftClients[0].CreateChannel(channel, true, nil, nil)
 		require.NoError(t, err)
 
 		// client 1 create channel
-		channel = "test" + strconv.Itoa(m) + "1"
-		channels = append(channels, channel)
+		channel = "test1"
+		if m != 1 {
+			channel = "test1" + strconv.Itoa(m)
+		}
 		fmt.Printf("Create channel %s by client1 ...\n", channel)
-		err = client1.CreateChannel(channel, true, nil, nil)
+		err = bftClients[1].CreateChannel(channel, true, nil, nil)
 		require.NoError(t, err)
 
 	}
@@ -90,24 +91,27 @@ func TestBFTCreateChannels2(t *testing.T) {
 }
 
 func TestBFTCreateTx2(t *testing.T) {
-	for m := 1; m <= 8; m++ {
-		if m == 3 { // stop peer0
+	for m := 0; m < 8; m++ {
+		if m == 2 { // stop peer0
 			go func(t *testing.T) {
 				fmt.Println("Begin to stop peer 0 ...")
 				stopPeer(bftPeers[0])
 				require.NoError(t, os.RemoveAll(getBFTPeerDataPath(0)))
 			}(t)
 		}
-		if m == 6 { // restart peer0
+		if m == 5 { // restart peer0
 			go func() {
 				fmt.Println("Restart peer 0 ...")
 				bftPeers[0]=startPeer(0)
 			}()
 		}
 		// client 0 create contract
+		channel := "test0"
+		if m != 0 {
+			channel = "test0" + strconv.Itoa(m)
+		}
 		contractCodes, err := readCodes(getBFTClientPath(0) + "/MyTest.bin")
 		require.NoError(t, err)
-		channel := "test" + strconv.Itoa(m) + "0"
 		fmt.Printf("Create contract %d on channel %s by client0 ...\n", m, channel)
 		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, bftClients[0].GetPrivKey(), types.NORMAL)
 		require.NoError(t, err)
@@ -116,9 +120,12 @@ func TestBFTCreateTx2(t *testing.T) {
 		require.NoError(t, err)
 
 		// client 1 create channel
+		channel = "test1"
+		if m != 1 {
+			channel = "test1" + strconv.Itoa(m)
+		}
 		contractCodes, err = readCodes(getBFTClientPath(1) + "/MyTest.bin")
 		require.NoError(t, err)
-		channel = "test" + strconv.Itoa(m) + "1"
 		fmt.Printf("Create contract %d on channel %s by client1 ...\n", m, channel)
 		tx, err = types.NewTx(channel, common.ZeroAddress, contractCodes, bftClients[1].GetPrivKey(), types.NORMAL)
 		require.NoError(t, err)
@@ -132,12 +139,6 @@ func TestBFTCreateTx2(t *testing.T) {
 }
 
 func TestBFTCallTx2(t *testing.T) {
-	// create channel test0 for client0 and test1 for client1
-	require.NoError(t, createChannelForCallTx())
-
-	// create smart contract on channel test0 and test1
-	require.NoError(t, createContractForCallTx())
-
 	for m := 1; m <= 8; m++ {
 		if m == 2 { // stop peer0
 			go func(t *testing.T) {
