@@ -320,6 +320,7 @@ func (c *Client) GetHistory(address []byte) (*pb.TxHistory, error) {
 		}
 	}*/
 
+	fmt.Println("lib/client/GetHistory: get tx history successfully")
 	return result.(*pb.TxHistory), err
 }
 

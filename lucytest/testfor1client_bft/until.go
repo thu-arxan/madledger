@@ -378,7 +378,6 @@ func compareTxs() error {
 	}
 
 	fmt.Println("CompareTxs: txs between two peers are consistent.")
-
 	return nil
 }
 

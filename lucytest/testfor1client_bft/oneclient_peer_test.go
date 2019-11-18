@@ -71,7 +71,7 @@ func TestBFTCreateChannels2(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	// compare channel in differnt orderer
+	// compare tx, one is peer0 starting another is peer0 stopped
 	time.Sleep(2 * time.Second)
 	require.NoError(t, compareTxs())
 }
@@ -107,7 +107,7 @@ func TestBFTCallTx(t *testing.T) {
 			require.NoError(t, setNumForCallTx(0, num))
 		}
 	}
-	// compare channel in differnt orderer
+	// compare tx, one is peer0 starting another is peer0 stopped
 	time.Sleep(2 * time.Second)
 	require.NoError(t, compareTxs())
 }
