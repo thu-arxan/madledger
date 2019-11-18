@@ -125,29 +125,12 @@ func TestBFTCallTxAfterRestart(t *testing.T) {
 	payloadBytes, err := abi.GetPayloadBytes(abiPath, funcName, inputs)
 	require.NoError(t, err)
 
-
 	tx, err := types.NewTx("test4", common.HexToAddress("0x0619e2393802cc99e90cf892b92a113f19af5887"),
 		payloadBytes, bftClients[1].GetPrivKey(), types.NORMAL)
 	require.NoError(t, err)
 
-	status, err := bftClients[1].AddTx(tx)
+	_, err = bftClients[1].AddTx(tx)
 	require.NoError(t, err)
-
-	// Then print the status
-	table := cliu.NewTable()
-	table.SetHeader("BlockNumber", "BlockIndex", "Output")
-	if status.Err != "" {
-		table.AddRow(status.BlockNumber, status.BlockIndex, status.Err)
-	} else {
-		values, err := abi.Unpacker(abiPath, funcName, status.Output)
-		require.NoError(t, err)
-		var output []string
-		for _, value := range values {
-			output = append(output, value.Value)
-		}
-		table.AddRow(status.BlockNumber, status.BlockIndex, output)
-	}
-	table.Render()
 
 	// compare channel in differnt orderer
 	time.Sleep(2 * time.Second)
@@ -158,7 +141,6 @@ func TestBFTEnd1(t *testing.T) {
 	for _, pid := range bftOrderers {
 		stopOrderer(pid)
 	}
-
 	for _, pid := range bftPeers {
 		stopPeer(pid)
 	}

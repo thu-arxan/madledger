@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
-	cliu "madledger/client/util"
 	"madledger/common"
 	"madledger/common/abi"
 	"madledger/common/util"
@@ -38,7 +37,6 @@ func initBFTEnvironment() error {
 	for _, pid := range pids {
 		stopOrderer(pid)
 	}
-
 	// kill all Peers
 	pids = getPeerPid()
 	for _, pid := range pids {
@@ -336,35 +334,27 @@ func compareTxs() error {
 		return err
 	}
 	// get tx history from peer1
-	address2, err := bftClients[1].GetPrivKey().PubKey().Address()
+	stopPeer(bftPeers[0])
+	address2, err := bftClients[0].GetPrivKey().PubKey().Address()
 	if err != nil {
 		return err
 	}
 
-	history2, err := bftClients[1].GetHistory(address2.Bytes())
+	history2, err := bftClients[0].GetHistory(address2.Bytes())
 	if err != nil {
 		return err
 	}
-
-	table1 := cliu.NewTable()
+	bftPeers[0] = startPeer(0)
+	/*table1 := cliu.NewTable()
 	table1.SetHeader("Channel", "TxID")
 	for channel, txs := range history1.Txs {
 		for _, id := range txs.Value {
 			table1.AddRow(channel, id)
 		}
 	}
-	table1.Render()
+	table1.Render()*/
 
-	table2 := cliu.NewTable()
-	table2.SetHeader("Channel", "TxID")
-	for channel, txs := range history2.Txs {
-		for _, id := range txs.Value {
-			table2.AddRow(channel, id)
-		}
-	}
-	table2.Render()
-
-	/*if len(history1.Txs) != len(history2.Txs) {
+	if len(history1.Txs) != len(history2.Txs) {
 		return fmt.Errorf("the count of txs is not consistent")
 	}
 	var txs1 = make(map[string]string)
@@ -387,7 +377,8 @@ func compareTxs() error {
 		}
 	}
 
-	fmt.Println("CompareTxs: txs between two peers are consistent.")*/
+	fmt.Println("CompareTxs: txs between two peers are consistent.")
+
 	return nil
 }
 
@@ -431,8 +422,7 @@ func startPeer(node int) string {
 
 func createChannelForCallTx() error {
 	// client 0 create channel
-	client := bftClients[0]
-	err := client.CreateChannel("test0", true, nil, nil)
+	err := bftClients[0].CreateChannel("test0", true, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -441,16 +431,15 @@ func createChannelForCallTx() error {
 
 func createContractForCallTx() error {
 	// client 0 create contract
-	client := bftClients[0]
 	contractCodes, err := readCodes(getBFTClientPath(0) + "/MyTest.bin")
 	if err != nil {
 		return err
 	}
-	tx, err := types.NewTx("test0", common.ZeroAddress, contractCodes, client.GetPrivKey(), types.NORMAL)
+	tx, err := types.NewTx("test0", common.ZeroAddress, contractCodes, bftClients[0].GetPrivKey(), types.NORMAL)
 	if err != nil {
 		return err
 	}
-	_, err = client.AddTx(tx)
+	_, err = bftClients[0].AddTx(tx)
 	if err != nil {
 		return err
 	}
