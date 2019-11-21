@@ -3,6 +3,7 @@ package db
 import (
 	"madledger/common"
 	"madledger/core/types"
+	stateDB "madledger/executor/evm"
 )
 
 // TxStatus return the status of tx
@@ -39,4 +40,5 @@ type DB interface {
 	DeleteChannel(channelID string)
 	GetChannels() []string
 	ListTxHistory(address []byte) map[string][]string
+	NewWriteBatch() stateDB.WriteBatch
 }

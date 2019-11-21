@@ -6,8 +6,8 @@ import (
 	"madledger/common"
 	"madledger/common/util"
 	"madledger/core/types"
+	stateDB "madledger/executor/evm"
 	"time"
-
 	"github.com/sirupsen/logrus"
 
 	"github.com/syndtr/goleveldb/leveldb"
@@ -252,4 +252,40 @@ func (db *LevelDB) setChannels(channels []string) {
 	var key = []byte("channels")
 	value, _ := json.Marshal(channels)
 	db.connect.Put(key, value, nil)
+}
+
+func (db *LevelDB) NewWriteBatch() stateDB.WriteBatch {
+	batch := new(leveldb.Batch)
+	return &WriteBatchWrapper{batch: batch,}
+}
+
+type WriteBatchWrapper struct {
+	batch *leveldb.Batch
+}
+
+// SetAccount is the implementation of interface
+func (wb *WriteBatchWrapper)SetAccount(account common.Account) error{
+	var key = util.BytesCombine([]byte("account:"), account.GetAddress().Bytes())
+	value, err := account.Bytes()
+	if err != nil {
+		return err
+	}
+	wb.batch.Put(key,value)
+	return nil
+
+}
+
+// RemoveAccount is the implementation of interface
+func (wb *WriteBatchWrapper)RemoveAccount(address common.Address) error{
+	var key = util.BytesCombine([]byte("account:"), address.Bytes())
+	wb.batch.Delete(key)
+	return nil
+}
+
+
+// SetNativeStorage is the implementation of interface
+func (wb *WriteBatchWrapper) SetStorage(address common.Address, key common.Word256, value common.Word256) error{
+	storageKey := util.BytesCombine(address.Bytes(), key.Bytes())
+	wb.batch.Put(storageKey,value.Bytes())
+	return nil
 }
