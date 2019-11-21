@@ -8,17 +8,18 @@ import (
 // GetTxStatus is the implementation of protos
 func (s *Server) GetTxStatus(ctx context.Context, req *pb.GetTxStatusRequest) (*pb.TxStatus, error) {
 	status, err := s.ChannelManager.GetTxStatus(req.ChannelID, req.TxID, true)
-	log.Infof("peer.service.GetTxStatus: get tx %s status in channel %s",req.TxID,req.ChannelID)
+	log.Infof("peer.service.GetTxStatus: get tx %s status in channel %s", req.TxID, req.ChannelID)
 	if err != nil {
 		return &pb.TxStatus{}, nil
 	}
-	return &pb.TxStatus{
+	result := &pb.TxStatus{
 		Err:             status.Err,
 		BlockNumber:     status.BlockNumber,
 		BlockIndex:      int32(status.BlockIndex),
 		Output:          status.Output,
 		ContractAddress: status.ContractAddress,
-	}, nil
+	}
+	return result, nil
 }
 
 // ListTxHistory is the implementation of protos

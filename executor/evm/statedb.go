@@ -1,12 +1,8 @@
 package evm
 
-import "madledger/common"
-
-type WriteBatch interface {
-	RemoveAccount(address common.Address) error
-	SetAccount(account common.Account) error
-	SetStorage(address common.Address, key common.Word256, value common.Word256) error
-}
+import (
+	"madledger/common"
+)
 
 // StateDB provide a interface for evm to access the global state
 type StateDB interface {
@@ -22,5 +18,5 @@ type StateDB interface {
 	GetStorage(address common.Address, key common.Word256) (common.Word256, error)
 	// SetStorage sets the value of a key belongs to an address
 	SetStorage(address common.Address, key common.Word256, value common.Word256) error
-	NewWriteBatch() WriteBatch
+	//NewWriteBatch() WriteBatch
 }
