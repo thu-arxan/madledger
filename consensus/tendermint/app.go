@@ -1,16 +1,17 @@
 package tendermint
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"madledger/common/event"
-	"madledger/common/util"
-	"madledger/consensus"
-	"sync"
-
 	"github.com/tendermint/tendermint/abci/example/code"
 	"github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
+	"madledger/common/event"
+	"madledger/common/util"
+	"madledger/consensus"
+	ctypes "madledger/core/types"
+	"sync"
 )
 
 // Glue will connect consensus and tendermint
@@ -22,14 +23,15 @@ type Glue struct {
 	th  []byte
 	txs [][]byte
 
-	hub     *event.Hub
-	blocks  map[string][]*Block
-	chans   map[string]*chan consensus.Block
-	dbDir   string
-	db      *DB
-	port    int
-	rpcPort int
-	client  *Client
+	hub              *event.Hub
+	blocks           map[string][]*Block
+	chans            map[string]*chan consensus.Block
+	dbDir            string
+	db               *DB
+	port             int
+	rpcPort          int
+	client           *Client
+	validatorUpdates []types.ValidatorUpdate
 
 	srv cmn.Service
 }
@@ -84,14 +86,11 @@ func (g *Glue) CheckTx(tx []byte) types.ResponseCheckTx {
 
 // DeliverTx add tx into txs and return OK
 func (g *Glue) DeliverTx(tx []byte) types.ResponseDeliverTx {
-	//t, _ := BytesToTx(tx)
-
-	//log.Infof("[%d]Deliever Tx %s", g.port, string(t.Data))
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
 	g.txs = append(g.txs, tx)
-	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
+	return g.updateValidator(tx)
 }
 
 // Commit will generate a block and init the txs
@@ -157,17 +156,25 @@ func (g *Glue) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock 
 
 	g.tn = req.Header.Height
 	g.th = req.Header.AppHash
+	// reset valset changes
+	g.validatorUpdates = make([]types.ValidatorUpdate, 0)
 	return types.ResponseBeginBlock{}
 }
 
-// EndBlock is not support validator updates now
+// EndBlock is support validator updates now
 func (g *Glue) EndBlock(req types.RequestEndBlock) types.ResponseEndBlock {
 	log.Infof("[%d]End block %d", g.port, g.tn)
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
 	log.Infof("[%d]End block %d done", g.port, g.tn)
-	return types.ResponseEndBlock{}
+	if len(g.validatorUpdates) != 0 {
+		for i := range g.validatorUpdates {
+			log.Infof("EndBlock: pubkey %d: %s, power: %d", i,
+				base64.StdEncoding.EncodeToString(g.validatorUpdates[i].PubKey.Data), g.validatorUpdates[i].Power)
+		}
+	}
+	return types.ResponseEndBlock{ValidatorUpdates: g.validatorUpdates}
 }
 
 // Info is used to avoid load all blocks
@@ -186,7 +193,9 @@ func (g *Glue) Info(req types.RequestInfo) types.ResponseInfo {
 func (g *Glue) InitChain(req types.RequestInitChain) types.ResponseInitChain {
 	g.lock.Lock()
 	defer g.lock.Unlock()
-
+	for _, v := range req.Validators {
+		g.validatorUpdates = append(g.validatorUpdates, v)
+	}
 	return types.ResponseInitChain{}
 }
 
@@ -280,4 +289,34 @@ func (t *Tx) Bytes() []byte {
 func (g *Glue) AddTx(channelID string, tx []byte) error {
 	//log.Infof("[%d]Channel %s add tx %s", g.port, channelID, string(tx))
 	return g.client.AddTx(NewTx(channelID, tx).Bytes())
+}
+
+func (g *Glue) updateValidator(tx []byte) types.ResponseDeliverTx {
+	tempTx, err := BytesToTx(tx)
+	if err != nil {
+		return types.ResponseDeliverTx{
+			Code: code.CodeTypeEncodingError,
+			Log:  fmt.Sprintf("BytesToTx error %s", err)}
+	}
+	var typesTx ctypes.Tx
+	err = json.Unmarshal(tempTx.Data, &typesTx)
+	if err != nil {
+		return types.ResponseDeliverTx{
+			Code: code.CodeTypeEncodingError,
+			Log:  fmt.Sprintf("Unmarshal error %s", err)}
+	}
+	if typesTx.Data.Type == ctypes.VALIDATOR {
+		var validatorUpdate types.ValidatorUpdate
+		err = json.Unmarshal(typesTx.Data.Payload, &validatorUpdate)
+		if err != nil {
+			return types.ResponseDeliverTx{
+				Code: code.CodeTypeEncodingError,
+				Log:  fmt.Sprintf("Unmarshal error %s", err)}
+		}
+		key := base64.StdEncoding.EncodeToString(validatorUpdate.PubKey.Data)
+		log.Printf("update validator: key is %s, power is %d", key, validatorUpdate.Power)
+		g.validatorUpdates = append(g.validatorUpdates, validatorUpdate)
+
+	}
+	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
 }

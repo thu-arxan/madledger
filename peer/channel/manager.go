@@ -91,7 +91,15 @@ func (m *Manager) AddBlock(block *types.Block) error {
 		for {
 			if m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
 				log.Infof("Run block %s: %d", m.id, block.Header.Number)
-				m.RunBlock(block.Header.Number)
+				wb, err := m.RunBlock(block.Header.Number)
+				if err != nil {
+					return err
+				}
+				batch := wb.GetBatch()
+				err = m.db.SyncWriteBatch(batch)
+				if err != nil {
+					return err
+				}
 				return nil
 			}
 			time.Sleep(10 * time.Millisecond)
@@ -104,12 +112,13 @@ func (m *Manager) AddBlock(block *types.Block) error {
 // It will return after the block is runned.
 // In the future, this will contains chains which rely on something or nothing
 // TODO: transfer is not implementation yet
-func (m *Manager) RunBlock(num uint64) error {
+func (m *Manager) RunBlock(num uint64) (db.WriteBatch, error) {
 	block, err := m.cm.GetBlock(num)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	context := evm.NewContext(block)
+	wb := m.db.NewWriteBatch()
 	for i, tx := range block.Transactions {
 		senderAddress, err := tx.GetSender()
 		status := &db.TxStatus{
@@ -120,7 +129,8 @@ func (m *Manager) RunBlock(num uint64) error {
 		}
 		if err != nil {
 			status.Err = err.Error()
-			m.db.SetTxStatus(tx, status)
+			//m.db.SetTxStatus(tx, status)
+			wb.SetTxStatus(tx, status)
 			continue
 		}
 		receiverAddress := tx.GetReceiver()
@@ -128,7 +138,20 @@ func (m *Manager) RunBlock(num uint64) error {
 		sender, err := m.db.GetAccount(senderAddress)
 		if err != nil {
 			status.Err = err.Error()
-			m.db.SetTxStatus(tx, status)
+			//m.db.SetTxStatus(tx, status)
+			wb.SetTxStatus(tx, status)
+			continue
+		}
+
+		if receiverAddress.String() == types.CfgTendermintAddress.String() {
+			//m.db.SetTxStatus(tx, status)
+			wb.SetTxStatus(tx, status)
+			continue
+		}
+
+		if receiverAddress.String() == types.CfgRaftAddress.String() {
+			//m.db.SetTxStatus(tx, status)
+			wb.SetTxStatus(tx, status)
 			continue
 		}
 
@@ -138,35 +161,38 @@ func (m *Manager) RunBlock(num uint64) error {
 			// if the length of payload is not zero, this is a contract call
 			if len(tx.Data.Payload) != 0 && !m.db.AccountExist(receiverAddress) {
 				status.Err = "Invalid Address"
-				m.db.SetTxStatus(tx, status)
+				//m.db.SetTxStatus(tx, status)
+				wb.SetTxStatus(tx, status)
 				continue
 			}
 
 			receiver, err := m.db.GetAccount(receiverAddress)
 			if err != nil {
 				status.Err = err.Error()
-				m.db.SetTxStatus(tx, status)
+				//m.db.SetTxStatus(tx, status)
+				wb.SetTxStatus(tx, status)
 				continue
 			}
-			output, err := evm.Call(sender, receiver, receiver.GetCode(), tx.Data.Payload, 0)
+			output, err := evm.Call(sender, receiver, receiver.GetCode(), tx.Data.Payload, 0, wb)
 			status.Output = output
 			if err != nil {
 				status.Err = err.Error()
 			}
-			m.db.SetTxStatus(tx, status)
+			//m.db.SetTxStatus(tx, status)
+			wb.SetTxStatus(tx, status)
 		} else {
 			log.Info("This is a create call")
-			output, addr, err := evm.Create(sender, tx.Data.Payload, []byte{}, 0)
+			output, addr, err := evm.Create(sender, tx.Data.Payload, []byte{}, 0, wb)
 			status.Output = output
 			status.ContractAddress = addr.String()
 			if err != nil {
 				status.Err = err.Error()
 			}
-			m.db.SetTxStatus(tx, status)
+			//m.db.SetTxStatus(tx, status)
+			wb.SetTxStatus(tx, status)
 		}
 	}
-	// return errors.New("Not implementation yet")
-	return nil
+	return wb, nil
 }
 
 // todo: here we should support evil orderer

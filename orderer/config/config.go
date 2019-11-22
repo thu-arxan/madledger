@@ -1,6 +1,8 @@
 package config
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -21,6 +23,7 @@ type Config struct {
 	Port       int              `yaml:"Port"`
 	Address    string           `yaml:"Address"`
 	Debug      bool             `yaml:"Debug"`
+	TLS        TLSConfig        `yaml:"TLS"`
 	BlockChain BlockChainConfig `yaml:"BlockChain"`
 	Consensus  struct {
 		Type       string           `yaml:"Type"`
@@ -43,6 +46,8 @@ type ServerConfig struct {
 	Address string `yaml:"Address"`
 	// Debug
 	Debug bool `yaml:"Debug"`
+	// TLS
+	TLS TLSConfig `yaml:"TLS"`
 }
 
 // LoadConfig load config from the config file
@@ -57,6 +62,10 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = cfg.GetTLSConfig()
+	if err != nil {
+		return nil, err
+	}
 	return &cfg, nil
 }
 
@@ -68,11 +77,46 @@ func (cfg *Config) GetServerConfig() (*ServerConfig, error) {
 	if cfg.Address == "" {
 		return nil, errors.New("The address can not be empty")
 	}
+
 	return &ServerConfig{
 		Port:    cfg.Port,
 		Address: cfg.Address,
 		Debug:   cfg.Debug,
+		TLS:     cfg.TLS,
 	}, nil
+}
+
+// checkTLSConfig check the tls config and set necessary things
+func (cfg *Config) GetTLSConfig() error {
+	if cfg.TLS.Enable {
+		if cfg.TLS.CA == "" {
+			return errors.New("The CA can not be empty")
+		}
+		if cfg.TLS.RawCert == "" {
+			return errors.New("The cert can not be empty")
+		}
+		if cfg.TLS.Key == "" {
+			return errors.New("The key can not be empty")
+		}
+		// load pool
+		pool := x509.NewCertPool()
+		ca, err := ioutil.ReadFile(cfg.TLS.CA)
+		if err != nil {
+			return err
+		}
+		ok := pool.AppendCertsFromPEM(ca)
+		if !ok {
+			return fmt.Errorf("Failed to load ca file: %s", cfg.TLS.CA)
+		}
+		// load cert
+		cert, err := tls.LoadX509KeyPair(cfg.TLS.RawCert, cfg.TLS.Key)
+		if err != nil {
+			return err
+		}
+		cfg.TLS.Pool = pool
+		cfg.TLS.Cert = &cert
+	}
+	return nil
 }
 
 // BlockChainConfig is the config of blockchain
@@ -81,6 +125,16 @@ type BlockChainConfig struct {
 	BatchSize    int    `yaml:"BatchSize"`
 	Path         string `yaml:"Path"`
 	Verify       bool   `yaml:"Verify"`
+}
+
+type TLSConfig struct {
+	Enable  bool   `yaml:"Enable"`
+	CA      string `yaml:"CA"`
+	RawCert string `yaml:"Cert"`
+	Key     string `yaml:"Key"`
+	// Pool of CA
+	Pool *x509.CertPool
+	Cert *tls.Certificate
 }
 
 // ConsensusType is the type of consensus
@@ -121,7 +175,10 @@ type RaftConfig struct {
 	ID   uint64 `yaml:"ID"`
 	// RawNodes should be an array like [1@localhost:12346]
 	RawNodes []string `yaml:"Nodes"`
+	Join     bool     `yaml:"Join"`
 	Nodes    map[uint64]string
+	// TLS
+	TLS TLSConfig `yaml:"TLS"`
 }
 
 // GetBlockChainConfig return the BlockChainConfig
@@ -168,6 +225,7 @@ func (cfg *Config) GetConsensusConfig() (*ConsensusConfig, error) {
 		if !util.Contain(consensus.Raft.Nodes, consensus.Raft.ID) {
 			return nil, errors.New("Nodes must contain itself")
 		}
+		consensus.Raft.TLS = cfg.TLS
 		return &consensus, nil
 	case "bft":
 		consensus.Type = BFT

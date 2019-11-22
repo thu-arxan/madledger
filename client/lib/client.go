@@ -2,15 +2,16 @@ package lib
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc/credentials"
 	"madledger/common/crypto"
 	"madledger/core/types"
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/sirupsen/logrus"
 
 	"google.golang.org/grpc"
 
@@ -67,7 +68,21 @@ func NewClientFromConfig(cfg *config.Config) (*Client, error) {
 func getOrdererClients(cfg *config.Config) ([]pb.OrdererClient, error) {
 	var clients []pb.OrdererClient
 	for _, address := range cfg.Orderer.Address {
-		conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
+		var opts []grpc.DialOption
+		var conn *grpc.ClientConn
+		var err error
+		if cfg.TLS.Enable {
+			creds := credentials.NewTLS(&tls.Config{
+				ServerName:   "orderer.madledger.com",
+				Certificates: []tls.Certificate{*(cfg.TLS.Cert)},
+				RootCAs:      cfg.TLS.Pool,
+			})
+			opts = append(opts, grpc.WithTransportCredentials(creds))
+		} else {
+			opts = append(opts, grpc.WithInsecure())
+		}
+		opts = append(opts, grpc.WithTimeout(2000*time.Millisecond))
+		conn, err = grpc.Dial(address, opts...)
 		if err != nil {
 			return nil, err
 		}
@@ -81,10 +96,26 @@ func getOrdererClients(cfg *config.Config) ([]pb.OrdererClient, error) {
 func getPeerClients(cfg *config.Config) ([]pb.PeerClient, error) {
 	var clients []pb.PeerClient
 	for _, address := range cfg.Peer.Address {
-		conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
+		var opts []grpc.DialOption
+		var conn *grpc.ClientConn
+		var err error
+		if cfg.TLS.Enable {
+			creds := credentials.NewTLS(&tls.Config{
+				ServerName:   "peer.madledger.com",
+				Certificates: []tls.Certificate{*(cfg.TLS.Cert)},
+				RootCAs:      cfg.TLS.Pool,
+			})
+			opts = append(opts, grpc.WithTransportCredentials(creds))
+		} else {
+			opts = append(opts, grpc.WithInsecure())
+		}
+		opts = append(opts, grpc.WithTimeout(2000*time.Millisecond))
+
+		conn, err = grpc.Dial(address, opts...)
 		if err != nil {
 			return nil, err
 		}
+
 		peerClient := pb.NewPeerClient(conn)
 		clients = append(clients, peerClient)
 	}
@@ -152,7 +183,7 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 
 // CreateChannel create a channel
 func (c *Client) CreateChannel(channelID string, public bool, admins, members []*types.Member) error {
-	log.Infof("Create channel %s", channelID)
+	// log.Infof("Create channel %s", channelID)
 	self, err := types.NewMember(c.GetPrivKey().PubKey(), "admin")
 	if err != nil {
 		return err
@@ -173,7 +204,7 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 		},
 		Version: 1,
 	})
-	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload, c.GetPrivKey())
+	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload, c.GetPrivKey(), types.NORMAL)
 	pbTx, _ := pb.NewTx(typesTx)
 
 	var times int
@@ -184,7 +215,7 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 		})
 		times = i + 1
 		if err != nil {
-			// 继续使用其他ordererClient进行尝试，直到最后一个ordererClient仍然报错
+			// try to use other ordererClients until the last one still returns an error
 			if times == len(c.ordererClients) {
 				fmt.Printf("lib/client/CreateChannel: try %d times (the last time) but failed to create channel %s because %s\n", times, channelID, err)
 				return err
@@ -192,13 +223,12 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 				fmt.Printf("lib/client/CreateChannel: try %d times but failed to create channel %s because %s\n", times, channelID, err)
 			}
 		} else {
-			// 创建成功，打印信息并退出循环退出循环
+			// create channel successfully and exit the loop
 			fmt.Printf("lib/client/CreateChannel: try %d times and success to create channel %s\n", times, channelID)
 			break
 		}
 	}
 
-	//fmt.Printf("orderer number: %d, try %d times to create chennel %s now return\n", len(c.ordererClients), times, channelID)
 	return nil
 }
 
@@ -208,15 +238,21 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	// give client.pubkey to orderer
+	pk, err := c.GetPrivKey().PubKey().Bytes()
 	for i, ordererClient := range c.ordererClients {
 		_, err = ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
 			Tx: pbTx,
+			PK: pk,
 		})
 
 		times := i + 1
 		if err != nil {
-			// 继续使用其他ordererClient进行尝试，直到最后一个ordererClient仍然报错
+			// if the client is not system admin, just exit the loop
+			if strings.Contains(err.Error(), "the client is not system admin and can not update validator") {
+				return nil, err
+			}
+			// try to use other ordererClients until the last one still returns an error
 			if times == len(c.ordererClients) {
 				fmt.Printf("lib/client/AddTx: try %d times(the last time) but fail to add tx %s because %s\n", times, tx.ID, err)
 				return nil, err
@@ -224,7 +260,7 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 				fmt.Printf("lib/client/AddTx: try %d times but fail to add tx %s because %s\n", times, tx.ID, err)
 			}
 		} else {
-			// 添加tx成功，打印信息并退出循环
+			// add tx successfully and exit the loop
 			fmt.Printf("lib/client/AddTx: try %d times and success to add tx %s\n", times, tx.ID)
 			break
 		}
@@ -233,7 +269,7 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 	collector := NewCollector(len(c.peerClients))
 	for i := range c.peerClients {
 		go func(i int) {
-			fmt.Printf("lib/client/AddTx: going to get tx status from peerClient[%d]\n", i)
+			// fmt.Printf("lib/client/AddTx: going to get tx status from peerClient[%d]\n", i)
 			status, err := c.peerClients[i].GetTxStatus(context.Background(), &pb.GetTxStatusRequest{
 				ChannelID: tx.Data.ChannelID,
 				TxID:      tx.ID,
@@ -244,7 +280,7 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 				fmt.Printf("lib/client/AddTx: peerClient[%d] failed to get tx status because %s\n", i, err)
 			} else {
 				collector.Add(status, nil)
-				fmt.Printf("lib/client/AddTx: peerClient[%d] success to get tx status\n", i)
+				// fmt.Printf("lib/client/AddTx: peerClient[%d] success to get tx status\n", i)
 			}
 		}(i)
 	}
@@ -284,6 +320,7 @@ func (c *Client) GetHistory(address []byte) (*pb.TxHistory, error) {
 		}
 	}*/
 
+	fmt.Println("lib/client/GetHistory: get tx history successfully")
 	return result.(*pb.TxHistory), err
 }
 

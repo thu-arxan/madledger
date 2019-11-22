@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"madledger/common"
 	"madledger/common/util"
+	"madledger/peer/db"
 )
 
 // Cache cache on a statedb.
@@ -115,20 +116,20 @@ func (cache *Cache) SetStorage(address common.Address, key common.Word256, value
 // Also, this function may deal with the address and key in an order, so this
 // function should be rethink if necessary.
 // TODO: Sync should panic rather than return an error
-func (cache *Cache) Sync() error {
+func (cache *Cache) Sync(wb db.WriteBatch) error {
 	var err error
 	for address, account := range cache.accounts {
 		if account.removed {
-			if err = cache.db.RemoveAccount(address); err != nil {
+			if err = wb.RemoveAccount(address); err != nil {
 				return err
 			}
 		} else if account.updated {
-			err = cache.db.SetAccount(account.account)
+			err = wb.SetAccount(account.account)
 			if err != nil {
 				return err
 			}
 			for key, value := range account.storage {
-				if err = cache.db.SetStorage(address, key, value); err != nil {
+				if err = wb.SetStorage(address, key, value); err != nil {
 					return err
 				}
 			}

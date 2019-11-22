@@ -1,8 +1,10 @@
 package server
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
+	"google.golang.org/grpc/credentials"
 	"madledger/peer/config"
 	"madledger/peer/orderer"
 	"net"
@@ -76,7 +78,7 @@ func getOrdererClients(cfg *config.Config) ([]*orderer.Client, error) {
 	}
 	var clients = make([]*orderer.Client, len(ordererCfg.Address))
 	for i := range ordererCfg.Address {
-		clients[i], err = orderer.NewClient(ordererCfg.Address[i])
+		clients[i], err = orderer.NewClient(ordererCfg.Address[i],cfg)
 		if err != nil {
 			return nil, err
 		}
@@ -98,6 +100,14 @@ func (s *Server) Start() error {
 		return err
 	}
 	var opts []grpc.ServerOption
+	if s.config.TLS.Enable {
+		creds := credentials.NewTLS(&tls.Config{
+			ClientAuth:   tls.RequireAndVerifyClientCert,
+			Certificates: []tls.Certificate{*(s.config.TLS.Cert)},
+			ClientCAs:    s.config.TLS.Pool,
+		})
+		opts = append(opts, grpc.Creds(creds))
+	}
 	s.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterPeerServer(s.rpcServer, s)
 	err = s.rpcServer.Serve(lis)

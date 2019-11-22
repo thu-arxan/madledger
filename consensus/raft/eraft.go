@@ -52,6 +52,9 @@ type ERaft struct {
 	lock       sync.Mutex
 	stopCh     chan bool
 	stopDoneCh chan bool
+	// removed contains the ids of removed members in the cluster.
+	// removed id cannot be reused.
+	removed map[types.ID]bool
 }
 
 // state includes some necessary values
@@ -79,6 +82,7 @@ func NewERaft(cfg *EraftConfig, app *App) (*ERaft, error) {
 		status:     Stopped,
 		stopCh:     make(chan bool, 1),
 		stopDoneCh: make(chan bool, 1),
+		removed:    make(map[types.ID]bool),
 	}, nil
 }
 
@@ -131,7 +135,13 @@ func (e *ERaft) Start() error {
 	if oldWAL {
 		e.node = er.RestartNode(erCfg)
 	} else {
-		e.node = er.StartNode(erCfg, peers)
+		if e.cfg.join {
+			log.Infof("ERaft: Add a new node to the cluster, join: %t", e.cfg.join)
+			e.node = er.StartNode(erCfg, nil)
+		} else {
+			log.Infof("ERaft: Start a cluster, join: %t", e.cfg.join)
+			e.node = er.StartNode(erCfg, peers)
+		}
 	}
 
 	e.transport = &rafthttp.Transport{
@@ -334,6 +344,13 @@ func (e *ERaft) propose(data []byte) error {
 }
 
 func (e *ERaft) proposeConfChange(cc raftpb.ConfChange) error {
+	// avoid proposing the same cfgChange again
+	if cc.Type == raftpb.ConfChangeRemoveNode && e.transport.Raft.IsIDRemoved(cc.NodeID) {
+		log.Infof("proposeConfChange: %d has removed", cc.NodeID)
+		return fmt.Errorf("unexpected removal of unknown remote peer")
+	}
+
+	log.Infof("I'm leader %d, propose ConfChange.", e.cfg.id)
 	ccBytes, err := json.Marshal(cc)
 	if err != nil {
 		return err
@@ -413,14 +430,18 @@ func (e *ERaft) publishEntries(ents []raftpb.Entry) error {
 		switch entry.Type {
 		case raftpb.EntryNormal:
 			if len(entry.Data) == 0 {
+				// ignore empty messages
 				break
 			}
+			log.Infof("publishEntries.EntryNormal: I'm raft %d", e.cfg.id)
 			e.hub.Done(string(crypto.Hash(entry.Data)), nil)
 			e.app.Commit(entry.Data)
 		case raftpb.EntryConfChange:
 			var cc raftpb.ConfChange
 			cc.Unmarshal(entry.Data)
 			e.state.conf = *e.node.ApplyConfChange(cc)
+			log.Printf("publishEntries.EntryConfChange: id: %d, type: %v, nodeId: %d, context: %s,"+
+				" I'm raft %d", cc.ID, cc.Type, cc.NodeID, string(cc.Context), e.cfg.id)
 			switch cc.Type {
 			case raftpb.ConfChangeAddNode:
 				ccBytes, _ := json.Marshal(cc)
@@ -433,14 +454,17 @@ func (e *ERaft) publishEntries(ents []raftpb.Entry) error {
 				ccBytes, _ := json.Marshal(cc)
 				e.hub.Done(string(crypto.Hash(ccBytes)), nil)
 				if cc.NodeID == e.cfg.id {
+					log.Printf("I've been removed from the cluster! Shutting down.")
 					return errors.New("Removed from the cluster")
 				}
 				e.transport.RemovePeer(types.ID(cc.NodeID))
+				e.removed[types.ID(cc.NodeID)] = true
 			}
 		}
-
+		// after commit, update appliedIndex
 		e.state.appliedIndex = entry.Index
 
+		// special nil commit to signal replay has finished
 		if entry.Index == e.state.lastIndex {
 			snapshot, err := e.loadSnapshot()
 			if err == nil && snapshot != nil {
@@ -555,7 +579,9 @@ func (e *ERaft) Process(ctx context.Context, m raftpb.Message) error {
 }
 
 // IsIDRemoved is the implemetation of etcd raft
-func (e *ERaft) IsIDRemoved(id uint64) bool { return false }
+func (e *ERaft) IsIDRemoved(id uint64) bool {
+	return e.removed[types.ID(id)]
+}
 
 // ReportUnreachable is the implemetation of etcd raft
 func (e *ERaft) ReportUnreachable(id uint64) {}

@@ -5,10 +5,10 @@ import (
 	"github.com/stretchr/testify/require"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
-	"os"
-	"regexp"
 	"madledger/common"
 	"madledger/core/types"
+	"os"
+	"regexp"
 	"strconv"
 	"testing"
 	"time"
@@ -27,17 +27,11 @@ func TestRaftOrdererStart1(t *testing.T) {
 }
 
 func TestRaftPeersStart1(t *testing.T) {
+	// then we can run peers
 	for i := range raftPeers {
-		require.NoError(t, initPeer(i))
+		pid := startPeer(i)
+		raftPeers[i] = pid
 	}
-
-	for i := range raftPeers {
-		go func(t *testing.T, i int) {
-			err := raftPeers[i].Start()
-			require.NoError(t, err)
-		}(t, i)
-	}
-	time.Sleep(2 * time.Second)
 }
 
 func TestLoadClients1(t *testing.T) {
@@ -57,81 +51,77 @@ func TestLoadClients1(t *testing.T) {
 }
 
 func TestRaftCreateChannels1(t *testing.T) {
-	// client-0 create 4 channels
-	client := raftClients[0]
-	var channels []string
+	// client0 create 8 channels
 	for i := 0; i < 8; i++ {
-		if i == 4 {
-			fmt.Println("Stop Orderer 0 ...")
-			stopOrderer(raftOrderers[0])
-			// restart orderer0 by RestartNode
-			require.NoError(t, os.RemoveAll(getRAFTOrdererDataPath(0)))
-			_, err := copyFile("./0.md", "./00.md")
-			require.NoError(t, err)
+		if i == 2 {
+			go func(t *testing.T) {
+				fmt.Println("Stop Orderer 0 ...")
+				stopOrderer(raftOrderers[0])
+				require.NoError(t, os.RemoveAll(getRAFTOrdererDataPath(0)))
+			}(t)
 		}
-		if i == 6 {
-			fmt.Println("Restart Orderer 0 ...")
-			raftOrderers[0] = startOrderer(0)
+		if i == 5 {
+			go func() {
+				fmt.Println("Restart Orderer 0 ...")
+				raftOrderers[0] = startOrderer(0)
+			}()
 		}
-		// client 0 create channel
+		// client0 create channel
 		channel := "test" + strconv.Itoa(i)
-		channels = append(channels, channel)
 		fmt.Printf("Create channel %s ...\n", channel)
-		err := client.CreateChannel(channel, true, nil, nil)
+		err := raftClients[0].CreateChannel(channel, true, nil, nil)
 		require.NoError(t, err)
 	}
+	// compare channel in differnt orderer
 	time.Sleep(2 * time.Second)
-
-	// then we will check if channels are create successful
-	require.NoError(t, compareChannelName(channels))
-	// to avoid block num is not consistent, we should check it
-	require.NoError(t, compareChannelBlocks())
+	require.NoError(t, compareChannels())
 }
 
 func TestRaftCreateTx1(t *testing.T) {
-	client := raftClients[0]
 	for m := 0; m < 8; m++ {
-		if m == 3 {
-			fmt.Println("Stop Orderer 0 ...")
-			stopOrderer(raftOrderers[0])
-			// restart orderer0 by RestartNode
-			require.NoError(t, os.RemoveAll(getRAFTOrdererDataPath(0)))
-			_, err := copyFile("./0.md", "./000.md")
-			require.NoError(t, err)
+		if m == 2 {
+			go func(t *testing.T) {
+				fmt.Println("Stop Orderer 0 ...")
+				stopOrderer(raftOrderers[0])
+				require.NoError(t, os.RemoveAll(getRAFTOrdererDataPath(0)))
+			}(t)
 		}
-		if m == 6 {
-			fmt.Println("Restart Orderer 0 ...")
-			raftOrderers[0] = startOrderer(0)
+		if m == 5 {
+			go func() {
+				fmt.Println("Restart Orderer 0 ...")
+				raftOrderers[0] = startOrderer(0)
+			}()
 		}
 		// client 0 create contract
 		contractCodes, err := readCodes(getRAFTClientPath(0) + "/MyTest.bin")
 		require.NoError(t, err)
 		channel := "test" + strconv.Itoa(m)
 		fmt.Printf("Create contract %d on channel %s ...\n", m, channel)
-		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, client.GetPrivKey())
+		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, raftClients[0].GetPrivKey(), types.NORMAL)
 		require.NoError(t, err)
 
-		_, err = client.AddTx(tx)
+		_, err = raftClients[0].AddTx(tx)
 		require.NoError(t, err)
 	}
-
+	// compare channel in differnt orderer
 	time.Sleep(2 * time.Second)
-	require.NoError(t, compareChannelBlocks())
+	require.NoError(t, compareChannels())
 }
 
 func TestRaftCallTx1(t *testing.T) {
 	for i := 1; i <= 8; i++ {
-		if i == 4 {
-			fmt.Println("Stop Orderer 0 ...")
-			stopOrderer(raftOrderers[0])
-			// restart orderer0 by RestartNode
-			require.NoError(t, os.RemoveAll(getRAFTOrdererDataPath(0)))
-			_, err := copyFile("./0.md", "./0000.md")
-			require.NoError(t, err)
+		if i == 3 {
+			go func(t *testing.T) {
+				fmt.Println("Stop Orderer 0 ...")
+				stopOrderer(raftOrderers[0])
+				require.NoError(t, os.RemoveAll(getRAFTOrdererDataPath(0)))
+			}(t)
 		}
 		if i == 6 {
-			fmt.Println("Restart Orderer 0 ...")
-			raftOrderers[0] = startOrderer(0)
+			go func() {
+				fmt.Println("Restart Orderer 0 ...")
+				raftOrderers[0] = startOrderer(0)
+			}()
 		}
 
 		// odd call setNum, even call GetNum
@@ -144,25 +134,19 @@ func TestRaftCallTx1(t *testing.T) {
 			require.NoError(t, setNumForCallTx(num))
 		}
 	}
+	// compare channel in differnt orderer
 	time.Sleep(2 * time.Second)
-
-	require.NoError(t, compareChannelBlocks())
+	require.NoError(t, compareChannels())
 }
 
-func TestRaftEnd1(t *testing.T) {
+func TestBFTEnd1(t *testing.T) {
 	for _, pid := range raftOrderers {
 		stopOrderer(pid)
 	}
-
-	for i := range raftPeers {
-		raftPeers[i].Stop()
+	for _, pid := range raftPeers {
+		stopPeer(pid)
 	}
-	time.Sleep(2 * time.Second)
 
-	// copy orderers log to other directory
-	require.NoError(t, backupMdFile1("./orderer_tests/"))
-
-	// remove raft data
 	gopath := os.Getenv("GOPATH")
 	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/raft"))
 }

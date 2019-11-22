@@ -19,4 +19,6 @@ type DB interface {
 	// spy channel create operation.
 	WatchChannel(channelID string)
 	Close() error
+	UpdateSystemAdmin(profile *cc.Profile) error
+	IsSystemAdmin(member *types.Member) bool
 }

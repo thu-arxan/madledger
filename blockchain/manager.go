@@ -86,7 +86,7 @@ func (manager *Manager) AddBlock(block *types.Block) error {
 	if block.Header.Number != manager.except {
 		return fmt.Errorf("Channel %s except block %d while receive block %d", manager.id, manager.except, block.Header.Number)
 	}
-	log.Debugf("Channel %s add block %d", manager.id, manager.except)
+	log.Infof("Channel %s add block %d", manager.id, manager.except)
 	var err error
 
 	err = manager.storeBlock(block)

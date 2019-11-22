@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"madledger/common"
 	"madledger/common/abi"
@@ -12,7 +13,6 @@ import (
 	"madledger/core/types"
 	oc "madledger/orderer/config"
 	pc "madledger/peer/config"
-	peer "madledger/peer/server"
 	"os"
 	"os/exec"
 	"strings"
@@ -28,7 +28,7 @@ var (
 	raftOrderers [4]string
 	// just 1 is enough, we set 2
 	raftClients [2]*client.Client
-	raftPeers   [4]*peer.Server
+	raftPeers   [4]string
 )
 
 // initBFTEnvironment will remove old test folders and copy necessary folders
@@ -37,6 +37,11 @@ func initRAFTEnvironment() error {
 	pids := getOrderersPid()
 	for _, pid := range pids {
 		stopOrderer(pid)
+	}
+	// kill all Peers
+	pids = getPeerPid()
+	for _, pid := range pids {
+		stopPeer(pid)
 	}
 
 	gopath := os.Getenv("GOPATH")
@@ -58,36 +63,162 @@ func initRAFTEnvironment() error {
 			return err
 		}
 	}
+	for i := range raftPeers {
+		if err := absRAFTPeerConfig(i); err != nil {
+			return err
+		}
+	}
+	for i := range raftClients {
+		if err := absRAFTClientConfig(i); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
 
-func initPeer(node int) error {
-	cfg := getPeerConfig(node)
-	server, err := peer.NewServer(cfg)
+func absRAFTClientConfig(node int) error {
+	cfgPath := getRAFTClientConfigPath(node)
+	// load config
+	cfg, err := loadClientConfig(cfgPath)
 	if err != nil {
 		return err
 	}
-	raftPeers[node] = server
-	return nil
-}
-
-func absRAFTOrdererConfig(node int) error {
-	cfgPath := getRAFTOrdererConfigPath(node)
-	cfg, err := oc.LoadConfig(cfgPath)
-	if err != nil {
-		return err
-	}
-	// yaml in raft is absolute path
-	cfg.BlockChain.Path = getRAFTOrdererPath(node) + "/" + cfg.BlockChain.Path
-	cfg.DB.LevelDB.Path = getRAFTOrdererPath(node) + "/" + cfg.DB.LevelDB.Path
-	cfg.Consensus.Raft.Path = getRAFTOrdererPath(node) + "/" + cfg.Consensus.Raft.Path
-
+	// change relative path into absolute path
+	cfg.KeyStore.Keys[0] = getRAFTClientPath(node) + "/" + cfg.KeyStore.Keys[0]
+	cfg.TLS.CA = getRAFTClientPath(node) + "/" + cfg.TLS.CA
+	cfg.TLS.RawCert = getRAFTClientPath(node) + "/" + cfg.TLS.RawCert
+	cfg.TLS.Key = getRAFTClientPath(node) + "/" + cfg.TLS.Key
+	// rewrite peer config
 	data, err := yaml.Marshal(cfg)
 	if err != nil {
 		return err
 	}
 	return ioutil.WriteFile(cfgPath, data, os.ModePerm)
+}
+
+func loadClientConfig(cfgPath string) (*cc.Config, error) {
+	cfgBytes, err := ioutil.ReadFile(cfgPath)
+	if err != nil {
+		return nil, err
+	}
+	var cfg cc.Config
+	err = yaml.Unmarshal(cfgBytes, &cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &cfg, nil
+}
+
+func absRAFTPeerConfig(node int) error {
+	cfgPath := getRAFTPeerConfigPath(node)
+	// load config
+	cfg, err := loadPeerConfig(cfgPath)
+	if err != nil {
+		return err
+	}
+	// change relative path into absolute path
+	cfg.BlockChain.Path = getRAFTPeerPath(node) + "/" + cfg.BlockChain.Path
+	cfg.DB.LevelDB.Dir = getRAFTPeerPath(node) + "/" + cfg.DB.LevelDB.Dir
+	cfg.KeyStore.Key = getRAFTPeerPath(node) + "/" + cfg.KeyStore.Key
+	cfg.TLS.CA = getRAFTPeerPath(node) + "/" + cfg.TLS.CA
+	cfg.TLS.RawCert = getRAFTPeerPath(node) + "/" + cfg.TLS.RawCert
+	cfg.TLS.Key = getRAFTPeerPath(node) + "/" + cfg.TLS.Key
+	// rewrite peer config
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(cfgPath, data, os.ModePerm)
+}
+
+func loadPeerConfig(cfgPath string) (*pc.Config, error) {
+	cfgBytes, err := ioutil.ReadFile(cfgPath)
+	if err != nil {
+		return nil, err
+	}
+	var cfg pc.Config
+	err = yaml.Unmarshal(cfgBytes, &cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &cfg, nil
+}
+
+func getPeerPid() []string {
+	cmd := exec.Command("/bin/sh", "-c", "pidof peer")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil
+	}
+
+	pids := strings.Split(string(output), " ")
+	return pids
+}
+
+// stopPeer stop a peer
+func stopPeer(pid string) {
+	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("kill -TERM %s", pid))
+	cmd.Output()
+}
+
+// startPeer run peer and return pid
+func startPeer(node int) string {
+	before := getPeerPid()
+	go func() {
+		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("peer start -c %s", getRAFTPeerConfigPath(node)))
+		_, err := cmd.Output()
+		if err != nil && !strings.Contains(err.Error(), "exit status 143") {
+			panic(fmt.Sprintf("Run peer failed: %s", err))
+		}
+	}()
+
+	for {
+		after := getPeerPid()
+		if len(after) != len(before) {
+			for _, pid := range after {
+				if !util.Contain(before, pid) {
+					return pid
+				}
+			}
+		}
+		time.Sleep(1 * time.Second)
+	}
+}
+
+func absRAFTOrdererConfig(node int) error {
+	cfgPath := getRAFTOrdererConfigPath(node)
+	// load config
+	cfg, err := loadOrdererConfig(cfgPath)
+	if err != nil {
+		return err
+	}
+	// change relative path into absolute path
+	cfg.BlockChain.Path = getRAFTOrdererPath(node) + "/" + cfg.BlockChain.Path
+	cfg.DB.LevelDB.Path = getRAFTOrdererPath(node) + "/" + cfg.DB.LevelDB.Path
+	cfg.Consensus.Raft.Path = getRAFTOrdererPath(node) + "/" + cfg.Consensus.Raft.Path
+	cfg.TLS.CA = getRAFTOrdererPath(node) + "/" + cfg.TLS.CA
+	cfg.TLS.RawCert = getRAFTOrdererPath(node) + "/" + cfg.TLS.RawCert
+	cfg.TLS.Key = getRAFTOrdererPath(node) + "/" + cfg.TLS.Key
+	// rewrite orderer config
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(cfgPath, data, os.ModePerm)
+}
+
+func loadOrdererConfig(cfgPath string) (*oc.Config, error) {
+	cfgBytes, err := ioutil.ReadFile(cfgPath)
+	if err != nil {
+		return nil, err
+	}
+	var cfg oc.Config
+	err = yaml.Unmarshal(cfgBytes, &cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &cfg, nil
 }
 
 func getRAFTOrdererConfigPath(node int) string {
@@ -405,7 +536,7 @@ func setNumForCallTx(node int, num string) error {
 	if node == 1 {
 		channel = "test1"
 	}
-	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey(), types.NORMAL)
 	if err != nil {
 		return err
 	}
@@ -437,7 +568,7 @@ func getNumForCallTx(node int, num string) error {
 	if node == 1 {
 		channel = "test1"
 	}
-	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey(), types.NORMAL)
 	if err != nil {
 		return err
 	}
@@ -466,12 +597,11 @@ func getNumForCallTx(node int, num string) error {
 func startOrderer(node int) string {
 	before := getOrderersPid()
 	go func() {
-		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("orderer start -c %s > %d.md",
-			getRAFTOrdererConfigPath(node), node))
+		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("orderer start -c %s", getRAFTOrdererConfigPath(node)))
 		//cmd:=exec.Command("gnome-terminal -e 'bash -c \"echo 'hello'; exec bash\"'")
 		_, err := cmd.Output()
-		if err != nil {
-			panic(fmt.Sprintf("Run orderer failed:%s", err))
+		if err != nil && !strings.Contains(err.Error(), "exit status 2") {
+			panic(fmt.Sprintf("Run orderer failed, because %s", err))
 		}
 	}()
 
@@ -486,4 +616,79 @@ func startOrderer(node int) string {
 		}
 		time.Sleep(1 * time.Second)
 	}
+}
+
+func compareChannels() error {
+	infos1, err := raftClients[0].ListChannel(true)
+	if err != nil {
+		return err
+	}
+	infos2, err := raftClients[1].ListChannel(true)
+	if err != nil {
+		return err
+	}
+	if len(infos1) != len(infos2) {
+		return fmt.Errorf("the count of channels is not consistent")
+	}
+	for i := range infos1 {
+		if infos1[i].Name != infos2[i].Name {
+			return fmt.Errorf("the name is not consistent")
+		}
+		if infos1[i].BlockSize != infos2[i].BlockSize {
+			return fmt.Errorf("the blockSize is not consistent, %d in client, %d in admin", infos1[i].BlockSize, infos2[i].BlockSize)
+		}
+	}
+
+	fmt.Println("CompareChannels: channels between two orderers are consistent.")
+	return nil
+}
+
+func compareTxs() error {
+	// get tx history from peer0
+	address1, err := raftClients[0].GetPrivKey().PubKey().Address()
+	if err != nil {
+		return err
+	}
+	history1, err := raftClients[0].GetHistory(address1.Bytes())
+	if err != nil {
+		return err
+	}
+	// get tx history from peer1
+	stopPeer(raftPeers[0])
+	address2, err := raftClients[0].GetPrivKey().PubKey().Address()
+	if err != nil {
+		return err
+	}
+
+	history2, err := raftClients[0].GetHistory(address2.Bytes())
+	if err != nil {
+		return err
+	}
+	raftPeers[0] = startPeer(0)
+
+	if len(history1.Txs) != len(history2.Txs) {
+		return fmt.Errorf("the count of txs is not consistent")
+	}
+	var txs1 = make(map[string]string)
+	for channel, txs := range history1.Txs {
+		for _, id := range txs.Value {
+			txs1[id] = channel
+			fmt.Printf("")
+		}
+	}
+	var txs2 = make(map[string]string)
+	for channel, txs := range history2.Txs {
+		for _, id := range txs.Value {
+			txs2[id] = channel
+		}
+	}
+
+	for key, value := range txs1 {
+		if v, ok := txs2[key]; !ok || v != value {
+			return fmt.Errorf("the tx not consistent ")
+		}
+	}
+
+	fmt.Println("CompareTxs: txs between two peers are consistent.")
+	return nil
 }

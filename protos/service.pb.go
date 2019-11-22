@@ -355,6 +355,7 @@ func (m *CreateChannelTxPayload) GetChannelID() string {
 
 type AddTxRequest struct {
 	Tx                   *Tx      `protobuf:"bytes,1,opt,name=Tx,proto3" json:"Tx,omitempty"`
+	PK                   []byte   `protobuf:"bytes,2,opt,name=PK,proto3" json:"PK,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`

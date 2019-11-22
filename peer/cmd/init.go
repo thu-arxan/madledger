@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	putil "madledger/client/util"
+	cutil "madledger/client/util"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -51,7 +51,7 @@ func createConfigFile(cfgFile string) error {
 	if err != nil {
 		return err
 	}
-	keyPath, err := putil.GeneratePrivateKey(keyStorePath)
+	keyPath, err := cutil.GeneratePrivateKey(keyStorePath)
 	if err != nil {
 		return err
 	}

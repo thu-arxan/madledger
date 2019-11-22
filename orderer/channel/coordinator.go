@@ -251,7 +251,20 @@ func (c *Coordinator) loadConfigChannel() error {
 	}
 	if !c.CM.HasGenesisBlock() {
 		log.Info("Creating genesis block of channel _config")
-		gb, err := cc.CreateGenesisBlock()
+		// create admins, we just config one admin
+		admins, err := cc.CreateAdmins()
+		if err != nil {
+			return err
+		}
+		gb, err := cc.CreateGenesisBlock(admins)
+		if err != nil {
+			return err
+		}
+		// put  admin's pubkey into leveldb
+		err = c.CM.db.UpdateSystemAdmin(&cc.Profile{
+			Public: true,
+			Admins: admins,
+		})
 		if err != nil {
 			return err
 		}
@@ -335,10 +348,11 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 		}
 		c.Consensus = consensus
 	case config.RAFT:
-		raftConfig, err := getConfig(cfg.Raft.Path, cfg.Raft.ID, cfg.Raft.Nodes)
+		raftConfig, err := getConfig(cfg.Raft.Path, cfg.Raft.ID, cfg.Raft.Nodes, cfg.Raft.Join, cfg.Raft.TLS)
 		if err != nil {
 			return err
 		}
+
 		consensus, err := raft.NewConseneus(raftConfig)
 		if err != nil {
 			return nil
@@ -365,11 +379,20 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 	return nil
 }
 
-func getConfig(path string, id uint64, peers map[uint64]string) (*raft.Config, error) {
-	return raft.NewConfig(path, "127.0.0.1", id, peers, consensus.Config{
+func getConfig(path string, id uint64, peers map[uint64]string, join bool, tlsConfig config.TLSConfig) (*raft.Config, error) {
+	tlsCfg := consensus.TLSConfig{
+		Enable:  tlsConfig.Enable,
+		CA:      tlsConfig.CA,
+		RawCert: tlsConfig.RawCert,
+		Key:     tlsConfig.Key,
+		Pool:    tlsConfig.Pool,
+		Cert:    tlsConfig.Cert,
+	}
+	return raft.NewConfig(path, "localhost", id, peers, join, consensus.Config{
 		Timeout: 100,
 		MaxSize: 10,
 		Resume:  false,
 		Number:  1,
+		TLS:     tlsCfg,
 	})
 }

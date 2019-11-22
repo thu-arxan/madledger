@@ -3,14 +3,14 @@ package testfor1client_raft
 import (
 	"fmt"
 	"github.com/stretchr/testify/require"
+	cc "madledger/client/config"
+	client "madledger/client/lib"
+	"madledger/common"
+	"madledger/core/types"
 	"os"
 	"regexp"
 	"strconv"
 	"testing"
-	"madledger/common"
-	"madledger/core/types"
-	cc "madledger/client/config"
-	client "madledger/client/lib"
 	"time"
 )
 
@@ -27,17 +27,11 @@ func TestRaftOrdererStart2(t *testing.T) {
 }
 
 func TestRaftPeersStart2(t *testing.T) {
+	// then we can run peers
 	for i := range raftPeers {
-		require.NoError(t, initPeer(i))
+		pid := startPeer(i)
+		raftPeers[i] = pid
 	}
-
-	for i := range raftPeers {
-		go func(t *testing.T, i int) {
-			err := raftPeers[i].Start()
-			require.NoError(t, err)
-		}(t, i)
-	}
-	time.Sleep(2 * time.Second)
 }
 
 func TestLoadClients2(t *testing.T) {
@@ -59,94 +53,78 @@ func TestLoadClients2(t *testing.T) {
 func TestRaftCreateChannels2(t *testing.T) {
 	client := raftClients[0]
 	for m := 0; m < 8; m++ {
-		if m == 3 {
+		if m == 2 {
 			go func(t *testing.T) {
-				fmt.Println("Stop peer 0")
-				raftPeers[0].Stop()
+				fmt.Println("Stop peer 0 ...")
+				stopPeer(raftPeers[0])
 				require.NoError(t, os.RemoveAll(getRAFTPeerDataPath(0)))
 			}(t)
 		}
 		if m == 6 {
-			require.NoError(t, initPeer(0))
-
 			go func(t *testing.T) {
-				fmt.Println("Restart peer 0")
-				err := raftPeers[0].Start()
-				require.NoError(t, err)
+				fmt.Println("Restart peer 0 ..")
+				raftPeers[0] = startPeer(0)
 			}(t)
 		}
-		// client 0 create channel
+		// client0 create channel
 		channel := "test" + strconv.Itoa(m)
 		fmt.Printf("Create channel %s ...\n", channel)
 		err := client.CreateChannel(channel, true, nil, nil)
 		require.NoError(t, err)
 	}
+	// compare tx, one is peer0 starting another is peer0 stopped
 	time.Sleep(2 * time.Second)
-
-	// then we will check if channels are create successful
-	require.NoError(t, compareClientTx(8, "_config"))
-	// to avoid block num is not consistent, we should check it
-	require.NoError(t, compareChannelBlocks())
+	require.NoError(t, compareTxs())
 }
 
 func TestRaftCreateTx2(t *testing.T) {
-	client := raftClients[0]
 	for m := 0; m < 8; m++ {
-		if m == 3 { // stop peer0
+		if m == 2 { // stop peer0
 			go func(t *testing.T) {
-				fmt.Println("Begin to stop peer 0")
-				raftPeers[0].Stop()
+				fmt.Println("Begin to stop peer 0 ...")
+				stopPeer(raftPeers[0])
 				require.NoError(t, os.RemoveAll(getRAFTPeerDataPath(0)))
 			}(t)
 		}
-		if m == 6 { // restart peer0
-			require.NoError(t, initPeer(0))
-
-			go func(t *testing.T) {
-				fmt.Println("Begin to restart peer 0")
-				err := raftPeers[0].Start()
-				require.NoError(t, err)
-			}(t)
+		if m == 5 { // restart peer0
+			go func() {
+				fmt.Println("Begin to restart peer 0 ...")
+				raftPeers[0]=startPeer(0)
+			}()
 		}
 		// client 0 create contract
 		contractCodes, err := readCodes(getRAFTClientPath(0) + "/MyTest.bin")
 		require.NoError(t, err)
 		channel := "test" + strconv.Itoa(m)
 		fmt.Printf("Create contract %d on channel %s ...\n", m, channel)
-		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, client.GetPrivKey())
+		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, raftClients[0].GetPrivKey(), types.NORMAL)
 		require.NoError(t, err)
 
-		_, err = client.AddTx(tx)
+		_, err = raftClients[0].AddTx(tx)
 		require.NoError(t, err)
 	}
+	// compare tx, one is peer0 starting another is peer0 stopped
 	time.Sleep(2 * time.Second)
-
-	for i := 0; i < 8; i++ {
-		channel := "test" + strconv.Itoa(i)
-		require.NoError(t, compareClientTx(1, channel))
-	}
+	require.NoError(t, compareTxs())
 }
 
 func TestBFTCallTx2(t *testing.T) {
 	for m := 1; m <= 8; m++ {
 		if m == 3 {
 			go func(t *testing.T) {
-				fmt.Println("Begin to stop peer 0")
-				raftPeers[0].Stop()
+				fmt.Println("Begin to stop peer 0 ...")
+				stopPeer(raftPeers[0])
 				require.NoError(t, os.RemoveAll(getRAFTPeerDataPath(0)))
 			}(t)
 		}
 		if m == 6 { // restart peer0
-			require.NoError(t, initPeer(0))
-
-			go func(t *testing.T) {
-				fmt.Println("Begin to restart peer 0")
-				err := raftPeers[0].Start()
-				require.NoError(t, err)
-			}(t)
+			go func() {
+				fmt.Println("Begin to restart peer 0 ...")
+				raftPeers[0]=startPeer(0)
+			}()
 		}
 
-		// client0调用合约的setNum
+		// client0 call setNum and getNum function in smart contract
 		fmt.Printf("Call contract %d times on channel test0 ...\n", m)
 		if m%2 == 0 {
 			num := "1" + strconv.Itoa(m-1)
@@ -156,23 +134,18 @@ func TestBFTCallTx2(t *testing.T) {
 			require.NoError(t, setNumForCallTx(num))
 		}
 	}
+	// compare tx, one is peer0 starting another is peer0 stopped
 	time.Sleep(2 * time.Second)
-
-	require.NoError(t, compareClientTx(9, "test0"))
+	require.NoError(t, compareTxs())
 }
 
 func TestRaftEnd2(t *testing.T) {
 	for _, pid := range raftOrderers {
 		stopOrderer(pid)
 	}
-
-	for i := range raftPeers {
-		raftPeers[i].Stop()
+	for _, pid := range raftPeers {
+		stopPeer(pid)
 	}
-	time.Sleep(2 * time.Second)
-
-	// copy orderers log to other directory
-	require.NoError(t, backupMdFile2("./peer_tests/"))
 
 	gopath := os.Getenv("GOPATH")
 	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/raft"))

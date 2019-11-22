@@ -18,4 +18,8 @@ var (
 var (
 	// Create a channel
 	CreateChannelContractAddress = common.HexToAddress("0xffffffffffffffffffffffffffffffffffffffff")
+	// Config the tendermint cluster
+	CfgTendermintAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffe")
+	// Config the raft cluster
+	CfgRaftAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffd")
 )
