@@ -5,10 +5,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/syndtr/goleveldb/leveldb"
 	"testing"
+	"os"
 )
 
 func TestDB_GetDB(t *testing.T) {
-	path := "/home/hadoop/GOPATH/src/madledger/env/bft/orderers/0/data/leveldb"
+	gopath := os.Getenv("GOPATH")
+	path := fmt.Sprintf("%s/src/madledger/env/bft/orderers/0/data/leveldb", gopath)
 	db, err := leveldb.OpenFile(path, nil)
 	fmt.Printf("Get bft.db from %s\n", path)
 	require.NoError(t, err)
