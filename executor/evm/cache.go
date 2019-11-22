@@ -13,12 +13,12 @@ import (
 // thread.
 type Cache struct {
 	db       StateDB
-	accounts map[common.Address]*accountInfo
+	accounts map[string]*accountInfo
 }
 
 type accountInfo struct {
 	account common.Account
-	storage map[common.Word256]common.Word256
+	storage map[string]common.Word256
 	removed bool
 	updated bool
 }
@@ -27,7 +27,7 @@ type accountInfo struct {
 func NewCache(db StateDB) *Cache {
 	return &Cache{
 		db:       db,
-		accounts: make(map[common.Address]*accountInfo),
+		accounts: make(map[string]*accountInfo),
 	}
 }
 
@@ -83,14 +83,14 @@ func (cache *Cache) GetStorage(address common.Address, key common.Word256) (comm
 		return common.ZeroWord256, err
 	}
 
-	if util.Contain(accInfo.storage, key) {
-		return accInfo.storage[key], nil
+	if util.Contain(accInfo.storage, word256ToString(key)) {
+		return accInfo.storage[word256ToString(key)], nil
 	}
 	value, err := cache.db.GetStorage(address, key)
 	if err != nil {
 		return common.ZeroWord256, err
 	}
-	accInfo.storage[key] = value
+	accInfo.storage[word256ToString(key)] = value
 	return value, nil
 }
 
@@ -105,7 +105,7 @@ func (cache *Cache) SetStorage(address common.Address, key common.Word256, value
 	if accInfo.removed {
 		return fmt.Errorf("SetStorage on a removed account: %s", address.String())
 	}
-	accInfo.storage[key] = value
+	accInfo.storage[word256ToString(key)] = value
 	accInfo.updated = true
 	return nil
 }
@@ -120,7 +120,7 @@ func (cache *Cache) Sync(wb db.WriteBatch) error {
 	var err error
 	for address, account := range cache.accounts {
 		if account.removed {
-			if err = wb.RemoveAccount(address); err != nil {
+			if err = wb.RemoveAccount(stringToAddress(address)); err != nil {
 				return err
 			}
 		} else if account.updated {
@@ -129,7 +129,7 @@ func (cache *Cache) Sync(wb db.WriteBatch) error {
 				return err
 			}
 			for key, value := range account.storage {
-				if err = wb.SetStorage(address, key, value); err != nil {
+				if err = wb.SetStorage(stringToAddress(address), stringToWord256(key), value); err != nil {
 					return err
 				}
 			}
@@ -140,8 +140,8 @@ func (cache *Cache) Sync(wb db.WriteBatch) error {
 
 // get the cache accountInfo item creating it if necessary
 func (cache *Cache) get(address common.Address) (*accountInfo, error) {
-	if util.Contain(cache.accounts, address) {
-		return cache.accounts[address], nil
+	if util.Contain(cache.accounts, addressToString(address)) {
+		return cache.accounts[addressToString(address)], nil
 	}
 	// Then try to load from db
 	account, err := cache.db.GetAccount(address)
@@ -151,12 +151,30 @@ func (cache *Cache) get(address common.Address) (*accountInfo, error) {
 		account = common.NewDefaultAccount(address)
 	}
 	// set the account
-	cache.accounts[address] = &accountInfo{
+	cache.accounts[addressToString(address)] = &accountInfo{
 		account: account,
-		storage: make(map[common.Word256]common.Word256),
+		storage: make(map[string]common.Word256),
 		removed: false,
 		updated: false,
 	}
 
-	return cache.accounts[address], nil
+	return cache.accounts[addressToString(address)], nil
+}
+
+func addressToString(address common.Address) string {
+	return string(address.Bytes())
+}
+
+func stringToAddress(s string) common.Address {
+	addr, _ := common.AddressFromBytes([]byte(s))
+	return addr
+}
+
+func word256ToString(word common.Word256) string {
+	return string(word.Bytes())
+}
+
+func stringToWord256(s string) common.Word256 {
+	word, _ := common.BytesToWord256([]byte(s))
+	return word
 }
