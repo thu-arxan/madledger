@@ -14,11 +14,11 @@ import (
 	"time"
 )
 
-func TestInitEnv2(t *testing.T) {
+func TestInitEnv2PR(t *testing.T) {
 	require.NoError(t, initRAFTEnvironment())
 }
 
-func TestRaftOrdererStart2(t *testing.T) {
+func TestRaftOrdererStart2PR(t *testing.T) {
 	// then we can run orderers
 	for i := range raftOrderers {
 		pid := startOrderer(i)
@@ -26,7 +26,7 @@ func TestRaftOrdererStart2(t *testing.T) {
 	}
 }
 
-func TestRaftPeersStart2(t *testing.T) {
+func TestRaftPeersStart2PR(t *testing.T) {
 	// then we can run peers
 	for i := range raftPeers {
 		pid := startPeer(i)
@@ -34,7 +34,7 @@ func TestRaftPeersStart2(t *testing.T) {
 	}
 }
 
-func TestLoadClients2(t *testing.T) {
+func TestLoadClients2PR(t *testing.T) {
 	for i := range raftClients {
 		clientPath := getRAFTClientPath(i)
 		cfgPath := getRAFTClientConfigPath(i)
@@ -50,7 +50,7 @@ func TestLoadClients2(t *testing.T) {
 	}
 }
 
-func TestRaftCreateChannels2(t *testing.T) {
+func TestRaftCreateChannels2PR(t *testing.T) {
 	// client 0 and client 1 create channels concurrently
 	for i := 0; i < 8; i++ {
 		if i == 2 {
@@ -88,7 +88,7 @@ func TestRaftCreateChannels2(t *testing.T) {
 	require.NoError(t, compareTxs())
 }
 
-func TestRaftCreateTx2(t *testing.T) {
+func TestRaftCreateTx2PR(t *testing.T) {
 	for m := 0; m < 8; m++ {
 		if m == 3 { // stop peer0
 			go func(t *testing.T) {
@@ -136,7 +136,7 @@ func TestRaftCreateTx2(t *testing.T) {
 	require.NoError(t, compareTxs())
 }
 
-func TestRaftCallTx2(t *testing.T) {
+func TestRaftCallTx2PR(t *testing.T) {
 	for m := 1; m <= 8; m++ {
 		if m == 4 { // stop peer0
 			go func(t *testing.T) {
@@ -176,7 +176,7 @@ func TestRaftCallTx2(t *testing.T) {
 	require.NoError(t, compareChannelBlocks())
 }
 
-func TestRaftEnd2(t *testing.T) {
+func TestRaftEnd2PR(t *testing.T) {
 	for _, pid := range raftOrderers {
 		stopOrderer(pid)
 	}

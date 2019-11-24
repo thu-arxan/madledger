@@ -2,6 +2,7 @@ package testfor1client_CfgBft
 
 import (
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"strconv"
@@ -40,17 +41,20 @@ func TestBFTLoadClient1BC(t *testing.T) {
 }
 
 func TestBFTLoadAdmin1BC(t *testing.T) {
-	client, err := loadClient("admin")
-	require.NoError(t, err)
-	bftAdmin = client
-
-	/*fmt.Printf("cfgPath: %s\n",cfgPath)
+	cfgPath := getBFTClientConfigPath("admin")
+	fmt.Printf("cfgPath: %s\n",cfgPath)
 	data, err := ioutil.ReadFile(cfgPath)
 	if err != nil {
 		fmt.Println("File reading error", err)
 		return
 	}
-	fmt.Println("Contents of file:\n", string(data))*/
+	fmt.Println("Contents of file:\n", string(data))
+
+	client, err := loadClient("admin")
+	require.NoError(t, err)
+	bftAdmin = client
+
+
 }
 
 // create channel and create contract on channel
