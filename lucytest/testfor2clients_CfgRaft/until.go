@@ -73,19 +73,70 @@ func initRaftEnvironment() error {
 		}
 	}
 
+	if err := absRaftClientConfig("0"); err != nil {
+		return err
+	}
+	if err := absRaftClientConfig("1"); err != nil {
+		return err
+	}
+	if err := absRaftClientConfig("3"); err != nil {
+		return err
+	}
+	if err := absRaftClientConfig("admin"); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func loadClientConfig(cfgPath string) (*cc.Config, error) {
+	cfgBytes, err := ioutil.ReadFile(cfgPath)
+	if err != nil {
+		return nil, err
+	}
+	var cfg cc.Config
+	err = yaml.Unmarshal(cfgBytes, &cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &cfg, nil
+}
+
+func absRaftClientConfig(node string) error {
+	cfgPath := getRaftClientConfigPath(node)
+	// load config
+	cfg, err := loadClientConfig(cfgPath)
+	if err != nil {
+		return err
+	}
+	// change relative path into absolute path
+	cfg.KeyStore.Keys[0] = getRaftClientPath(node) + "/" + cfg.KeyStore.Keys[0]
+	cfg.TLS.CA = getRaftClientPath(node) + "/" + cfg.TLS.CA
+	cfg.TLS.RawCert = getRaftClientPath(node) + "/" + cfg.TLS.RawCert
+	cfg.TLS.Key = getRaftClientPath(node) + "/" + cfg.TLS.Key
+	// rewrite peer config
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(cfgPath, data, os.ModePerm)
 }
 
 func absRaftOrdererConfig(node int) error {
 	cfgPath := getRaftOrdererConfigPath(node)
-	cfg, err := oc.LoadConfig(cfgPath)
+	// load config
+	cfg, err := loadOrdererConfig(cfgPath)
 	if err != nil {
 		return err
 	}
+	// change relative path into absolute path
 	cfg.BlockChain.Path = getRaftOrdererPath(node) + "/" + cfg.BlockChain.Path
 	cfg.DB.LevelDB.Path = getRaftOrdererPath(node) + "/" + cfg.DB.LevelDB.Path
 	cfg.Consensus.Raft.Path = getRaftOrdererPath(node) + "/" + cfg.Consensus.Raft.Path
-
+	cfg.TLS.CA = getRaftOrdererPath(node) + "/" + cfg.TLS.CA
+	cfg.TLS.RawCert = getRaftOrdererPath(node) + "/" + cfg.TLS.RawCert
+	cfg.TLS.Key = getRaftOrdererPath(node) + "/" + cfg.TLS.Key
+	// rewrite orderer config
 	data, err := yaml.Marshal(cfg)
 	if err != nil {
 		return err
@@ -93,21 +144,52 @@ func absRaftOrdererConfig(node int) error {
 	return ioutil.WriteFile(cfgPath, data, os.ModePerm)
 }
 
+func loadOrdererConfig(cfgPath string) (*oc.Config, error) {
+	cfgBytes, err := ioutil.ReadFile(cfgPath)
+	if err != nil {
+		return nil, err
+	}
+	var cfg oc.Config
+	err = yaml.Unmarshal(cfgBytes, &cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &cfg, nil
+}
+
 func absRaftPeerConfig(node int) error {
 	cfgPath := getRaftPeerConfigPath(node)
-	cfg, err := pc.LoadConfig(cfgPath)
+	// load config
+	cfg, err := loadPeerConfig(cfgPath)
 	if err != nil {
 		return err
 	}
+	// change relative path into absolute path
 	cfg.BlockChain.Path = getRaftPeerPath(node) + "/" + cfg.BlockChain.Path
 	cfg.DB.LevelDB.Dir = getRaftPeerPath(node) + "/" + cfg.DB.LevelDB.Dir
 	cfg.KeyStore.Key = getRaftPeerPath(node) + "/" + cfg.KeyStore.Key
-
+	cfg.TLS.CA = getRaftPeerPath(node) + "/" + cfg.TLS.CA
+	cfg.TLS.RawCert = getRaftPeerPath(node) + "/" + cfg.TLS.RawCert
+	cfg.TLS.Key = getRaftPeerPath(node) + "/" + cfg.TLS.Key
+	// rewrite peer config
 	data, err := yaml.Marshal(cfg)
 	if err != nil {
 		return err
 	}
 	return ioutil.WriteFile(cfgPath, data, os.ModePerm)
+}
+
+func loadPeerConfig(cfgPath string) (*pc.Config, error) {
+	cfgBytes, err := ioutil.ReadFile(cfgPath)
+	if err != nil {
+		return nil, err
+	}
+	var cfg pc.Config
+	err = yaml.Unmarshal(cfgBytes, &cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &cfg, nil
 }
 
 func getOrderersPid() []string {
@@ -142,7 +224,10 @@ func startOrderer(node int) string {
 		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("orderer start -c %s", getRaftOrdererConfigPath(node)))
 		_, err := cmd.Output()
 		if err != nil {
-			panic("Run orderer failed")
+			fmt.Printf("Run orderer failed, because %s\n", err.Error())
+			if !strings.Contains(err.Error(),"exit status") {
+				panic(fmt.Sprintf("Run orderer failed, because %s\n", err.Error()))
+			}
 		}
 	}()
 
@@ -183,7 +268,10 @@ func startPeer(node int) string {
 		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("peer start -c %s", getRaftPeerConfigPath(node)))
 		_, err := cmd.Output()
 		if err != nil {
-			panic("Run peer failed")
+			fmt.Printf("Run peer failed, because %s\n", err.Error())
+			if !strings.Contains(err.Error(),"exit status") {
+				panic(fmt.Sprintf("Run peer failed, because %s\n", err.Error()))
+			}
 		}
 	}()
 
@@ -363,7 +451,7 @@ func createContractForCallTx(channel string, node string, client *client.Client)
 	return nil
 }
 
-func compareChannels(client1 *client.Client,client2 *client.Client) error {
+func compareChannels(client1 *client.Client, client2 *client.Client) error {
 	infos1, err := client1.ListChannel(true)
 	if err != nil {
 		return err

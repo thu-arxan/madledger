@@ -33,17 +33,17 @@ func TestBFTPeersStart1(t *testing.T) {
 
 func TestBFTLoadClient1(t *testing.T) {
 	client, err := loadClient("0")
-	require.NoError(t,err)
-	bftClient[0]=client
+	require.NoError(t, err)
+	bftClient[0] = client
 	client, err = loadClient("1")
-	require.NoError(t,err)
-	bftClient[1]=client
+	require.NoError(t, err)
+	bftClient[1] = client
 }
 
 func TestBFTLoadAdmin1(t *testing.T) {
 	client, err := loadClient("admin")
-	require.NoError(t,err)
-	bftAdmin=client
+	require.NoError(t, err)
+	bftAdmin = client
 }
 
 // create channel and create contract on channel
@@ -113,15 +113,16 @@ func TestBFTRemoveNode1(t *testing.T) {
 	}
 	// compare channel in differnt orderer
 	time.Sleep(2 * time.Second)
-	require.NoError(t, compareChannels(bftClient[0],bftClient[1]))
+	require.NoError(t, compareChannels(bftClient[0], bftClient[1]))
 }
 
 func TestBFTEND1(t *testing.T) {
 	for _, pid := range bftOrderers {
 		stopOrderer(pid)
 	}
-
-	time.Sleep(2 * time.Second)
+	for _, pid := range bftPeers {
+		stopPeer(pid)
+	}
 	gopath := os.Getenv("GOPATH")
 	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/bft"))
 }

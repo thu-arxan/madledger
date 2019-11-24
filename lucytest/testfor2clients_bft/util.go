@@ -142,7 +142,6 @@ func loadPeerConfig(cfgPath string) (*pc.Config, error) {
 	return &cfg, nil
 }
 
-
 func getPeerPid() []string {
 	cmd := exec.Command("/bin/sh", "-c", "pidof peer")
 	output, err := cmd.Output()

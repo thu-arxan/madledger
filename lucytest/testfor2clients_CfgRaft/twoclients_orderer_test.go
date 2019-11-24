@@ -119,8 +119,10 @@ func TestRaftEND1(t *testing.T) {
 	for _, pid := range raftOrderers {
 		stopOrderer(pid)
 	}
+	for _, pid := range raftPeers {
+		stopPeer(pid)
+	}
 
-	time.Sleep(2 * time.Second)
 	gopath := os.Getenv("GOPATH")
 	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/raft"))
 }
