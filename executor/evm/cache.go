@@ -33,7 +33,7 @@ func NewCache(db StateDB) *Cache {
 
 // AccountExist return  if an account exist
 func (cache *Cache) AccountExist(addr common.Address) bool {
-	if util.Contain(cache.accounts, addr) {
+	if util.Contain(cache.accounts, addressToString(addr)) {
 		return true
 	}
 	return cache.db.AccountExist(addr)

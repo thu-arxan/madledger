@@ -102,7 +102,7 @@ func TestBFTRemoveNode1(t *testing.T) {
 			if i == 3 {
 				go getNumForCallTx(strconv.Itoa(i), strconv.Itoa(num))
 				select {
-				case <-time.After(10 * time.Second):
+				case <-time.After(5 * time.Second):
 					fmt.Println("run too long, execute another tx ...")
 				}
 			} else {
@@ -115,7 +115,7 @@ func TestBFTRemoveNode1(t *testing.T) {
 			if i == 4 {
 				go setNumForCallTx(strconv.Itoa(i), strconv.Itoa(num))
 				select {
-				case <-time.After(10 * time.Second):
+				case <-time.After(5 * time.Second):
 					fmt.Println("run too long, execute another tx ...")
 				}
 			} else {
@@ -132,8 +132,10 @@ func TestBFTEND1(t *testing.T) {
 	for _, pid := range bftOrderers {
 		stopOrderer(pid)
 	}
+	for _, pid := range bftPeers {
+		stopPeer(pid)
+	}
 
-	time.Sleep(2 * time.Second)
 	gopath := os.Getenv("GOPATH")
 	require.NoError(t, os.RemoveAll(gopath+"/src/madledger/tests/bft"))
 }
