@@ -127,8 +127,11 @@ func startPeer(node int) string {
 	go func() {
 		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("peer start -c %s", getRAFTPeerConfigPath(node)))
 		_, err := cmd.Output()
-		if err != nil && !strings.Contains(err.Error(), "exit status 143") {
-			panic(fmt.Sprintf("Run peer failed: %s", err))
+		if err != nil {
+			fmt.Printf("Run peer failed, because %s\n", err.Error())
+			if !strings.Contains(err.Error(), "exit status") {
+				panic(fmt.Sprintf("Run peer failed, because %s\n", err.Error()))
+			}
 		}
 	}()
 
@@ -602,11 +605,11 @@ func startOrderer(node int) string {
 	go func() {
 		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("orderer start -c %s", getRAFTOrdererConfigPath(node)))
 		_, err := cmd.Output()
-		/*if err != nil {
-			panic(fmt.Sprintf("Run orderer failed, because %s\n%s", err, string(data)))
-		}*/
-		if err != nil && !strings.Contains(err.Error(),"exit status 2") {
-			panic(fmt.Sprintf("Run orderer failed, because %s", err))
+		if err != nil {
+			fmt.Printf("Run peer failed, because %s\n", err.Error())
+			if !strings.Contains(err.Error(), "exit status") {
+				panic(fmt.Sprintf("Run peer failed, because %s\n", err.Error()))
+			}
 		}
 	}()
 

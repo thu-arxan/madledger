@@ -14,11 +14,11 @@ import (
 )
 
 // change the package
-func TestInitEnv1(t *testing.T) {
+func TestInitEnv1RC(t *testing.T) {
 	require.NoError(t, initRaftEnvironment())
 }
 
-func TestRaftOrdererStart1(t *testing.T) {
+func TestRaftOrdererStart1RC(t *testing.T) {
 	// then we can run orderers
 	for i := range raftOrderers {
 		pid := startOrderer(i)
@@ -26,7 +26,7 @@ func TestRaftOrdererStart1(t *testing.T) {
 	}
 }
 
-func TestRaftPeersStart1(t *testing.T) {
+func TestRaftPeersStart1RC(t *testing.T) {
 	// then we can run peers
 	for i := range raftPeers {
 		pid := startPeer(i)
@@ -34,12 +34,13 @@ func TestRaftPeersStart1(t *testing.T) {
 	}
 }
 
-func TestRaftLoadClients1(t *testing.T) {
+func TestRaftLoadClients1RC(t *testing.T) {
+	time.Sleep(1 * time.Second)
 	require.NoError(t, loadClient("0", 0))
 	require.NoError(t, loadClient("3", 1))
 }
 
-func TestRaftLoadAdmin1(t *testing.T) {
+func TestRaftLoadAdmin1RC(t *testing.T) {
 	clientPath := getRaftClientPath("admin")
 	cfgPath := getRaftClientConfigPath("admin")
 	cfg, err := cc.LoadConfig(cfgPath)
@@ -55,7 +56,7 @@ func TestRaftLoadAdmin1(t *testing.T) {
 
 // create channel and create contract on channel
 // add orderer 3 randomly
-func TestRaftAddNode1(t *testing.T) {
+func TestRaftAddNode1RC(t *testing.T) {
 	order := rand.Intn(3)
 	for i := 0; i <= 4; i++ {
 		// create channel
@@ -79,7 +80,7 @@ func TestRaftAddNode1(t *testing.T) {
 }
 
 // remove node 1, then stop node 2 and 4, node 3 left
-func TestRaftRemoveNode1(t *testing.T) {
+func TestRaftRemoveNode1RC(t *testing.T) {
 	num := 12
 	for i := 0; i <= 4; i++ {
 		if i == 1 {
@@ -120,7 +121,7 @@ func TestRaftRemoveNode1(t *testing.T) {
 	}
 }
 
-func TestRaftEND1(t *testing.T) {
+func TestRaftEND1RC(t *testing.T) {
 	for _, pid := range raftOrderers {
 		stopOrderer(pid)
 	}

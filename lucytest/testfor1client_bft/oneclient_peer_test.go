@@ -12,11 +12,11 @@ import (
 	"time"
 )
 
-func TestInitEnv2(t *testing.T) {
+func TestInitEnv1PB(t *testing.T) {
 	require.NoError(t, initBFTEnvironment())
 }
 
-func TestBFTOrdererStart2(t *testing.T) {
+func TestBFTOrdererStart1PB(t *testing.T) {
 	// then we can run orderers
 	for i := range bftOrderers {
 		pid := startOrderer(i)
@@ -24,7 +24,7 @@ func TestBFTOrdererStart2(t *testing.T) {
 	}
 }
 
-func TestBFTPeersStart2(t *testing.T) {
+func TestBFTPeersStart1PB(t *testing.T) {
 	// then we can run peers
 	for i := range bftPeers {
 		pid := startPeer(i)
@@ -32,7 +32,7 @@ func TestBFTPeersStart2(t *testing.T) {
 	}
 }
 
-func TestBFTLoadClients2(t *testing.T) {
+func TestBFTLoadClients1PB(t *testing.T) {
 	for i := range bftClients {
 		clientPath := getBFTClientPath(i)
 		cfgPath := getBFTClientConfigPath(i)
@@ -48,7 +48,7 @@ func TestBFTLoadClients2(t *testing.T) {
 	}
 }
 
-func TestBFTCreateChannels2(t *testing.T) {
+func TestBFTCreateChannels1PB(t *testing.T) {
 	for m := 1; m <= 8; m++ {
 		if m == 3 { // stop peer0
 			go func(t *testing.T) {
@@ -76,7 +76,7 @@ func TestBFTCreateChannels2(t *testing.T) {
 	require.NoError(t, compareTxs())
 }
 
-func TestBFTCallTx(t *testing.T) {
+func TestBFTCallTx1PB(t *testing.T) {
 	// client0 create channel test0
 	require.NoError(t, createChannelForCallTx())
 	// create smart contract on channel test0
@@ -112,7 +112,7 @@ func TestBFTCallTx(t *testing.T) {
 	require.NoError(t, compareTxs())
 }
 
-func TestBFTEnd2(t *testing.T) {
+func TestBFTEnd1PB(t *testing.T) {
 	for _, pid := range bftOrderers {
 		stopOrderer(pid)
 	}

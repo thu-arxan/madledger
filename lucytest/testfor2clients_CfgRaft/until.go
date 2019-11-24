@@ -415,12 +415,12 @@ func removeNode(nodeID uint64, channel string) error {
 	return nil
 }
 
-func loadClient(node string) (*client.Client, error) {
+func loadClient(node string,index int)  error{
 	clientPath := getRaftClientPath(node)
 	cfgPath := getRaftClientConfigPath(node)
 	cfg, err := cc.LoadConfig(cfgPath)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	re, _ := regexp.Compile("^.*[.]keystore")
 	for i := range cfg.KeyStore.Keys {
@@ -428,9 +428,10 @@ func loadClient(node string) (*client.Client, error) {
 	}
 	client, err := client.NewClientFromConfig(cfg)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return client, nil
+	raftClient[index]=client
+	return nil
 }
 
 func createContractForCallTx(channel string, node string, client *client.Client) error {

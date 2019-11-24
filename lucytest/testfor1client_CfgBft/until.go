@@ -19,6 +19,7 @@ import (
 	pc "madledger/peer/config"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"time"
 
@@ -114,6 +115,24 @@ func loadClientConfig(cfgPath string) (*cc.Config, error) {
 		return nil, err
 	}
 	return &cfg, nil
+}
+
+func loadClient(node string) (*client.Client,error) {
+	clientPath := getBFTClientPath(node)
+	cfgPath := getBFTClientConfigPath(node)
+	cfg, err := cc.LoadConfig(cfgPath)
+	if err != nil {
+		return nil,err
+	}
+	re, _ := regexp.Compile("^.*[.]keystore")
+	for i := range cfg.KeyStore.Keys {
+		cfg.KeyStore.Keys[i] = clientPath + "/.keystore" + re.ReplaceAllString(cfg.KeyStore.Keys[i], "")
+	}
+	client, err := client.NewClientFromConfig(cfg)
+	if err != nil {
+		return nil,err
+	}
+	return client,nil
 }
 
 func absBFTOrdererConfig(node int) error {

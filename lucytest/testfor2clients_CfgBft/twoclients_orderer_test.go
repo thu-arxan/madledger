@@ -2,7 +2,10 @@ package testfor2celints_CfgBft
 
 import (
 	"fmt"
+	cc "madledger/client/config"
+	client "madledger/client/lib"
 	"os"
+	"regexp"
 	"strconv"
 	"testing"
 	"time"
@@ -11,11 +14,11 @@ import (
 )
 
 // change the package
-func TestInitEnv1(t *testing.T) {
+func TestInitEnv2BC(t *testing.T) {
 	require.NoError(t, initBFTEnvironment())
 }
 
-func TestBFTOrdererStart1(t *testing.T) {
+func TestBFTOrdererStart2BC(t *testing.T) {
 	// then we can run orderers
 	for i := range bftOrderers {
 		pid := startOrderer(i)
@@ -23,7 +26,7 @@ func TestBFTOrdererStart1(t *testing.T) {
 	}
 }
 
-func TestBFTPeersStart1(t *testing.T) {
+func TestBFTPeersStart2BC(t *testing.T) {
 	// then we can run peers
 	for i := range bftPeers {
 		pid := startPeer(i)
@@ -31,24 +34,29 @@ func TestBFTPeersStart1(t *testing.T) {
 	}
 }
 
-func TestBFTLoadClient1(t *testing.T) {
-	client, err := loadClient("0")
-	require.NoError(t, err)
-	bftClient[0] = client
-	client, err = loadClient("1")
-	require.NoError(t, err)
-	bftClient[1] = client
+func TestBFTLoadClient2BC(t *testing.T) {
+	time.Sleep(1 * time.Second)
+	require.NoError(t,loadClient("0", 0))
+	require.NoError(t,loadClient("1", 1))
 }
 
 func TestBFTLoadAdmin1(t *testing.T) {
-	client, err := loadClient("admin")
+	clientPath := getBFTClientPath("admin")
+	cfgPath := getBFTClientConfigPath("admin")
+	cfg, err := cc.LoadConfig(cfgPath)
+	require.NoError(t, err)
+	re, _ := regexp.Compile("^.*[.]keystore")
+	for i := range cfg.KeyStore.Keys {
+		cfg.KeyStore.Keys[i] = clientPath + "/.keystore" + re.ReplaceAllString(cfg.KeyStore.Keys[i], "")
+	}
+	client, err := client.NewClientFromConfig(cfg)
 	require.NoError(t, err)
 	bftAdmin = client
 }
 
 // create channel and create contract on channel
 // add orderer 3 randomly
-func TestBFTAddNode1(t *testing.T) {
+func TestBFTAddNode2BC(t *testing.T) {
 	for i := 1; i <= 8; i++ {
 		// create channel
 		channel := "test0" + strconv.Itoa(i)
@@ -75,7 +83,7 @@ func TestBFTAddNode1(t *testing.T) {
 }
 
 // remove orderer 0 and then stop orderer 3
-func TestBFTRemoveNode1(t *testing.T) {
+func TestBFTRemoveNode2BC(t *testing.T) {
 	for i := 1; i <= 8; i++ {
 		if i < 7 {
 			channel := "test0" + strconv.Itoa(i)
@@ -116,7 +124,7 @@ func TestBFTRemoveNode1(t *testing.T) {
 	require.NoError(t, compareChannels(bftClient[0], bftClient[1]))
 }
 
-func TestBFTEND1(t *testing.T) {
+func TestBFTEND2BC(t *testing.T) {
 	for _, pid := range bftOrderers {
 		stopOrderer(pid)
 	}

@@ -15,11 +15,11 @@ import (
 )
 
 // change the package
-func TestInitEnv1(t *testing.T) {
+func TestInitEnv2OB(t *testing.T) {
 	require.NoError(t, initBFTEnvironment())
 }
 
-func TestBFTOrdererStart1(t *testing.T) {
+func TestBFTOrdererStart2OB(t *testing.T) {
 	// then we can run orderers
 	for i := range bftOrderers {
 		pid := startOrderer(i)
@@ -27,7 +27,7 @@ func TestBFTOrdererStart1(t *testing.T) {
 	}
 }
 
-func TestBFTPeersStart1(t *testing.T) {
+func TestBFTPeersStart2OB(t *testing.T) {
 	// then we can run peers
 	for i := range bftPeers {
 		pid := startPeer(i)
@@ -35,7 +35,7 @@ func TestBFTPeersStart1(t *testing.T) {
 	}
 }
 
-func TestBFTLoadClients1(t *testing.T) {
+func TestBFTLoadClients2OB(t *testing.T) {
 	for i := range bftClients {
 		clientPath := getBFTClientPath(i)
 		cfgPath := getBFTClientConfigPath(i)
@@ -51,7 +51,7 @@ func TestBFTLoadClients1(t *testing.T) {
 	}
 }
 
-func TestBFTCreateChannels1(t *testing.T) {
+func TestBFTCreateChannels2OB(t *testing.T) {
 	// client 0 and client 1 create channels concurrently
 	for m := 0; m < 8; m++ {
 		if m == 2 { // stop orderer0
@@ -91,7 +91,7 @@ func TestBFTCreateChannels1(t *testing.T) {
 	require.NoError(t, compareChannels())
 }
 
-func TestBFTCreateTx1(t *testing.T) {
+func TestBFTCreateTx2OB(t *testing.T) {
 	for m := 0; m < 8; m++ {
 		if m == 2 { // stop orderer0
 			go func(t *testing.T) {
@@ -139,7 +139,7 @@ func TestBFTCreateTx1(t *testing.T) {
 	require.NoError(t, compareChannels())
 }
 
-func TestBFTCallTx1(t *testing.T) {
+func TestBFTCallTx2OB(t *testing.T) {
 	for m := 1; m <= 8; m++ {
 		if m == 3 { // stop orderer0
 			go func(t *testing.T) {
@@ -180,7 +180,7 @@ func TestBFTCallTx1(t *testing.T) {
 	require.NoError(t, compareChannels())
 }
 
-func TestBFTEnd1(t *testing.T) {
+func TestBFTEnd2OB(t *testing.T) {
 	for _, pid := range bftOrderers {
 		stopOrderer(pid)
 	}

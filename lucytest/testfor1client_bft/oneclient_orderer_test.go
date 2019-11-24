@@ -18,11 +18,11 @@ import (
 )
 
 // change the package
-func TestInitEnv1(t *testing.T) {
+func TestInitEnv1OB(t *testing.T) {
 	require.NoError(t, initBFTEnvironment())
 }
 
-func TestBFTOrdererStart1(t *testing.T) {
+func TestBFTOrdererStart1OB(t *testing.T) {
 	// then we can run orderers
 	for i := range bftOrderers {
 		pid := startOrderer(i)
@@ -30,7 +30,7 @@ func TestBFTOrdererStart1(t *testing.T) {
 	}
 }
 
-func TestBFTPeersStart1(t *testing.T) {
+func TestBFTPeersStart1OB(t *testing.T) {
 	// then we can run peers
 	for i := range bftPeers {
 		pid := startPeer(i)
@@ -38,7 +38,7 @@ func TestBFTPeersStart1(t *testing.T) {
 	}
 }
 
-func TestBFTLoadClients1(t *testing.T) {
+func TestBFTLoadClients1OB(t *testing.T) {
 	for i := range bftClients {
 		clientPath := getBFTClientPath(i)
 		cfgPath := getBFTClientConfigPath(i)
@@ -54,7 +54,7 @@ func TestBFTLoadClients1(t *testing.T) {
 	}
 }
 
-func TestBFTCreateChannels1(t *testing.T) {
+func TestBFTCreateChannels1OB(t *testing.T) {
 	// client0 create 3 channels
 	for i := 0; i < 3; i++ {
 		channel := "test" + strconv.Itoa(i)
@@ -69,7 +69,7 @@ func TestBFTCreateChannels1(t *testing.T) {
 
 // stop orderer1 while client0 create channel test3
 // then restart orderer1 and compare channel infos
-func TestBFTNodeRestart(t *testing.T) {
+func TestBFTNodeRestart1OB(t *testing.T) {
 	stopOrderer(bftOrderers[1])
 	os.RemoveAll(getBFTOrdererDataPath(1))
 
@@ -88,14 +88,14 @@ func TestBFTNodeRestart(t *testing.T) {
 
 }
 
-func TestBFTCreateChannelAfterRestart(t *testing.T) {
+func TestBFTCreateChannelAfterRestart1OB(t *testing.T) {
 	//client1 create channel test4
 	channel := "test4"
 	err := bftClients[1].CreateChannel(channel, true, nil, nil)
 	require.NoError(t, err)
 }
 
-func TestBFTCreateTxAfterRestart(t *testing.T) {
+func TestBFTCreateTxAfterRestart1OB(t *testing.T) {
 	//client1 create smart contract
 	contractCodes, err := readCodes(getBFTClientPath(1) + "/MyTest.bin")
 	require.NoError(t, err)
@@ -117,7 +117,7 @@ func TestBFTCreateTxAfterRestart(t *testing.T) {
 	table.Render()
 }
 
-func TestBFTCallTxAfterRestart(t *testing.T) {
+func TestBFTCallTxAfterRestart1OB(t *testing.T) {
 	//client1 call smart contract
 	abiPath := fmt.Sprintf(getBFTClientPath(1) + "/MyTest.abi")
 	funcName := "getNum"
@@ -137,7 +137,7 @@ func TestBFTCallTxAfterRestart(t *testing.T) {
 	require.NoError(t, compareChannels())
 }
 
-func TestBFTEnd1(t *testing.T) {
+func TestBFTEnd1OB(t *testing.T) {
 	for _, pid := range bftOrderers {
 		stopOrderer(pid)
 	}

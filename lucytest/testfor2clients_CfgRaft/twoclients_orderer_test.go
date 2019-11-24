@@ -3,18 +3,21 @@ package testfor2clients_CfgRaft
 import (
 	"fmt"
 	"github.com/stretchr/testify/require"
+	cc "madledger/client/config"
+	client "madledger/client/lib"
 	"os"
+	"regexp"
 	"strconv"
 	"testing"
 	"time"
 )
 
 // change the package
-func TestInitEnv1(t *testing.T) {
+func TestInitEnv2RC(t *testing.T) {
 	require.NoError(t, initRaftEnvironment())
 }
 
-func TestRaftOrdererStart1(t *testing.T) {
+func TestRaftOrdererStart2RC(t *testing.T) {
 	// then we can run orderers
 	for i := range raftOrderers {
 		pid := startOrderer(i)
@@ -22,7 +25,7 @@ func TestRaftOrdererStart1(t *testing.T) {
 	}
 }
 
-func TestRaftPeersStart1(t *testing.T) {
+func TestRaftPeersStart12RC(t *testing.T) {
 	// then we can run peers
 	for i := range raftPeers {
 		pid := startPeer(i)
@@ -30,27 +33,30 @@ func TestRaftPeersStart1(t *testing.T) {
 	}
 }
 
-func TestRaftLoadClients1(t *testing.T) {
-	client, err := loadClient("0")
-	require.NoError(t, err)
-	raftClient[0] = client
-	client, err = loadClient("1")
-	require.NoError(t, err)
-	raftClient[1] = client
-	client, err = loadClient("3")
-	require.NoError(t, err)
-	raftClient[2] = client
+func TestRaftLoadClients2RC(t *testing.T) {
+	time.Sleep(1*time.Second)
+	require.NoError(t, loadClient("0",0))
+	require.NoError(t,loadClient("1",1))
+	require.NoError(t,loadClient("3",2))
 }
 
-func TestRaftLoadAdmin1(t *testing.T) {
-	client, err := loadClient("admin")
+func TestRaftLoadAdmin2RC(t *testing.T) {
+	clientPath := getRaftClientPath("admin")
+	cfgPath := getRaftClientConfigPath("admin")
+	cfg, err := cc.LoadConfig(cfgPath)
+	require.NoError(t, err)
+	re, _ := regexp.Compile("^.*[.]keystore")
+	for i := range cfg.KeyStore.Keys {
+		cfg.KeyStore.Keys[i] = clientPath + "/.keystore" + re.ReplaceAllString(cfg.KeyStore.Keys[i], "")
+	}
+	client, err := client.NewClientFromConfig(cfg)
 	require.NoError(t, err)
 	raftAdmin = client
 }
 
 // create channel and create contract on channel
 // add orderer 3 randomly
-func TestRaftAddNode1(t *testing.T) {
+func TestRaftAddNode2RC(t *testing.T) {
 	for i := 1; i <= 8; i++ {
 		// create channel
 		channel := "test0" + strconv.Itoa(i)
@@ -78,7 +84,7 @@ func TestRaftAddNode1(t *testing.T) {
 }
 
 // remove node 1, then stop node 2 and 4, node 3 left
-func TestRaftRemoveNode1(t *testing.T) {
+func TestRaftRemoveNode2RC(t *testing.T) {
 	for i := 1; i <= 8; i++ {
 		if i < 7 {
 			channel := "test0" + strconv.Itoa(i)
@@ -113,9 +119,12 @@ func TestRaftRemoveNode1(t *testing.T) {
 			stopOrderer(raftOrderers[3])
 		}
 	}
+	// compare channel in differnt orderer
+	time.Sleep(2 * time.Second)
+	require.NoError(t, compareChannels(raftClient[0], raftClient[2]))
 }
 
-func TestRaftEND1(t *testing.T) {
+func TestRaftEND2RC(t *testing.T) {
 	for _, pid := range raftOrderers {
 		stopOrderer(pid)
 	}

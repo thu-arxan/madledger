@@ -189,12 +189,12 @@ func loadPeerConfig(cfgPath string) (*pc.Config, error) {
 	return &cfg, nil
 }
 
-func loadClient(node string) (*client.Client, error) {
+func loadClient(node string, index int)  error {
 	clientPath := getBFTClientPath(node)
 	cfgPath := getBFTClientConfigPath(node)
 	cfg, err := cc.LoadConfig(cfgPath)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	re, _ := regexp.Compile("^.*[.]keystore")
 	for i := range cfg.KeyStore.Keys {
@@ -202,9 +202,10 @@ func loadClient(node string) (*client.Client, error) {
 	}
 	client, err := client.NewClientFromConfig(cfg)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return client, nil
+	bftClient[index]=client
+	return nil
 }
 
 func getOrderersPid() []string {
