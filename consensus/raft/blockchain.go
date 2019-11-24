@@ -142,7 +142,7 @@ func (chain *BlockChain) start() error {
 }
 
 // AddTx will try to add a tx
-func (chain *BlockChain) AddTx(ctx context.Context, in *pb.Tx) (*pb.None, error) {
+func (chain *BlockChain) AddTx(ctx context.Context, in *pb.RaftTX) (*pb.None, error) {
 	err := chain.addTx(in.Tx, in.Caller)
 	return &pb.None{}, err
 }

@@ -72,7 +72,7 @@ func (c *Client) addTx(channelID string, tx []byte, caller uint64) error {
 		}
 	}
 	client := pb.NewBlockChainClient(c.conn)
-	_, err := client.AddTx(context.Background(), &pb.Tx{
+	_, err := client.AddTx(context.Background(), &pb.RaftTX{
 		Tx:     NewTx(channelID, tx).Bytes(),
 		Caller: caller,
 	})

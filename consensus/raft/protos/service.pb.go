@@ -23,7 +23,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
-type Tx struct {
+type RaftTX struct {
 	Tx                   []byte   `protobuf:"bytes,1,opt,name=Tx,proto3" json:"Tx,omitempty"`
 	Caller               uint64   `protobuf:"varint,2,opt,name=Caller,proto3" json:"Caller,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -31,38 +31,38 @@ type Tx struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Tx) Reset()         { *m = Tx{} }
-func (m *Tx) String() string { return proto.CompactTextString(m) }
-func (*Tx) ProtoMessage()    {}
-func (*Tx) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_7c5a998d9dc2f808, []int{0}
+func (m *RaftTX) Reset()         { *m = RaftTX{} }
+func (m *RaftTX) String() string { return proto.CompactTextString(m) }
+func (*RaftTX) ProtoMessage()    {}
+func (*RaftTX) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_1700c63af8c618e4, []int{0}
 }
-func (m *Tx) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Tx.Unmarshal(m, b)
+func (m *RaftTX) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RaftTX.Unmarshal(m, b)
 }
-func (m *Tx) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Tx.Marshal(b, m, deterministic)
+func (m *RaftTX) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RaftTX.Marshal(b, m, deterministic)
 }
-func (dst *Tx) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Tx.Merge(dst, src)
+func (dst *RaftTX) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RaftTX.Merge(dst, src)
 }
-func (m *Tx) XXX_Size() int {
-	return xxx_messageInfo_Tx.Size(m)
+func (m *RaftTX) XXX_Size() int {
+	return xxx_messageInfo_RaftTX.Size(m)
 }
-func (m *Tx) XXX_DiscardUnknown() {
-	xxx_messageInfo_Tx.DiscardUnknown(m)
+func (m *RaftTX) XXX_DiscardUnknown() {
+	xxx_messageInfo_RaftTX.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Tx proto.InternalMessageInfo
+var xxx_messageInfo_RaftTX proto.InternalMessageInfo
 
-func (m *Tx) GetTx() []byte {
+func (m *RaftTX) GetTx() []byte {
 	if m != nil {
 		return m.Tx
 	}
 	return nil
 }
 
-func (m *Tx) GetCaller() uint64 {
+func (m *RaftTX) GetCaller() uint64 {
 	if m != nil {
 		return m.Caller
 	}
@@ -79,7 +79,7 @@ func (m *None) Reset()         { *m = None{} }
 func (m *None) String() string { return proto.CompactTextString(m) }
 func (*None) ProtoMessage()    {}
 func (*None) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_7c5a998d9dc2f808, []int{1}
+	return fileDescriptor_service_1700c63af8c618e4, []int{1}
 }
 func (m *None) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_None.Unmarshal(m, b)
@@ -100,7 +100,7 @@ func (m *None) XXX_DiscardUnknown() {
 var xxx_messageInfo_None proto.InternalMessageInfo
 
 func init() {
-	proto.RegisterType((*Tx)(nil), "protos.Tx")
+	proto.RegisterType((*RaftTX)(nil), "protos.RaftTX")
 	proto.RegisterType((*None)(nil), "protos.None")
 }
 
@@ -116,7 +116,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type BlockChainClient interface {
-	AddTx(ctx context.Context, in *Tx, opts ...grpc.CallOption) (*None, error)
+	AddTx(ctx context.Context, in *RaftTX, opts ...grpc.CallOption) (*None, error)
 }
 
 type blockChainClient struct {
@@ -127,7 +127,7 @@ func NewBlockChainClient(cc *grpc.ClientConn) BlockChainClient {
 	return &blockChainClient{cc}
 }
 
-func (c *blockChainClient) AddTx(ctx context.Context, in *Tx, opts ...grpc.CallOption) (*None, error) {
+func (c *blockChainClient) AddTx(ctx context.Context, in *RaftTX, opts ...grpc.CallOption) (*None, error) {
 	out := new(None)
 	err := c.cc.Invoke(ctx, "/protos.BlockChain/AddTx", in, out, opts...)
 	if err != nil {
@@ -138,7 +138,7 @@ func (c *blockChainClient) AddTx(ctx context.Context, in *Tx, opts ...grpc.CallO
 
 // BlockChainServer is the server API for BlockChain service.
 type BlockChainServer interface {
-	AddTx(context.Context, *Tx) (*None, error)
+	AddTx(context.Context, *RaftTX) (*None, error)
 }
 
 func RegisterBlockChainServer(s *grpc.Server, srv BlockChainServer) {
@@ -146,7 +146,7 @@ func RegisterBlockChainServer(s *grpc.Server, srv BlockChainServer) {
 }
 
 func _BlockChain_AddTx_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Tx)
+	in := new(RaftTX)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func _BlockChain_AddTx_Handler(srv interface{}, ctx context.Context, dec func(in
 		FullMethod: "/protos.BlockChain/AddTx",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BlockChainServer).AddTx(ctx, req.(*Tx))
+		return srv.(BlockChainServer).AddTx(ctx, req.(*RaftTX))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -176,17 +176,17 @@ var _BlockChain_serviceDesc = grpc.ServiceDesc{
 	Metadata: "service.proto",
 }
 
-func init() { proto.RegisterFile("service.proto", fileDescriptor_service_7c5a998d9dc2f808) }
+func init() { proto.RegisterFile("service.proto", fileDescriptor_service_1700c63af8c618e4) }
 
-var fileDescriptor_service_7c5a998d9dc2f808 = []byte{
-	// 131 bytes of a gzipped FileDescriptorProto
+var fileDescriptor_service_1700c63af8c618e4 = []byte{
+	// 140 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2d, 0x4e, 0x2d, 0x2a,
-	0xcb, 0x4c, 0x4e, 0xd5, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x03, 0x53, 0xc5, 0x4a, 0x3a,
-	0x5c, 0x4c, 0x21, 0x15, 0x42, 0x7c, 0x20, 0x52, 0x82, 0x51, 0x81, 0x51, 0x83, 0x27, 0x08, 0xc4,
-	0x17, 0xe3, 0x62, 0x73, 0x4e, 0xcc, 0xc9, 0x49, 0x2d, 0x92, 0x60, 0x52, 0x60, 0xd4, 0x60, 0x09,
-	0x82, 0xf2, 0x94, 0xd8, 0xb8, 0x58, 0xfc, 0xf2, 0xf3, 0x52, 0x8d, 0x0c, 0xb9, 0xb8, 0x9c, 0x72,
-	0xf2, 0x93, 0xb3, 0x9d, 0x33, 0x12, 0x33, 0xf3, 0x84, 0x94, 0xb9, 0x58, 0x1d, 0x53, 0x52, 0x42,
-	0x2a, 0x84, 0xb8, 0x20, 0x86, 0x17, 0xeb, 0x85, 0x54, 0x48, 0xf1, 0xc0, 0xd8, 0x20, 0x0d, 0x4a,
-	0x0c, 0x49, 0x10, 0x0b, 0x8d, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff, 0x9c, 0xce, 0x04, 0xe0, 0x88,
-	0x00, 0x00, 0x00,
+	0xcb, 0x4c, 0x4e, 0xd5, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x03, 0x53, 0xc5, 0x4a, 0x06,
+	0x5c, 0x6c, 0x41, 0x89, 0x69, 0x25, 0x21, 0x11, 0x42, 0x7c, 0x5c, 0x4c, 0x21, 0x15, 0x12, 0x8c,
+	0x0a, 0x8c, 0x1a, 0x3c, 0x41, 0x4c, 0x21, 0x15, 0x42, 0x62, 0x5c, 0x6c, 0xce, 0x89, 0x39, 0x39,
+	0xa9, 0x45, 0x12, 0x4c, 0x0a, 0x8c, 0x1a, 0x2c, 0x41, 0x50, 0x9e, 0x12, 0x1b, 0x17, 0x8b, 0x5f,
+	0x7e, 0x5e, 0xaa, 0x91, 0x29, 0x17, 0x97, 0x53, 0x4e, 0x7e, 0x72, 0xb6, 0x73, 0x46, 0x62, 0x66,
+	0x9e, 0x90, 0x3a, 0x17, 0xab, 0x63, 0x4a, 0x4a, 0x48, 0x85, 0x10, 0x1f, 0xc4, 0x82, 0x62, 0x3d,
+	0x88, 0xb1, 0x52, 0x3c, 0x30, 0x3e, 0x48, 0x93, 0x12, 0x43, 0x12, 0xc4, 0x62, 0x63, 0x40, 0x00,
+	0x00, 0x00, 0xff, 0xff, 0x15, 0x05, 0x07, 0xb1, 0x90, 0x00, 0x00, 0x00,
 }

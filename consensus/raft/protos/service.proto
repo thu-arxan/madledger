@@ -3,7 +3,7 @@ syntax = "proto3";
 package protos;
 
 
-message Tx {
+message RaftTX {
     bytes Tx = 1;
     uint64 Caller = 2;
 }
@@ -13,5 +13,5 @@ message None {
 }
 
 service BlockChain {
-    rpc AddTx(Tx) returns (None){}
+    rpc AddTx(RaftTX) returns (None){}
 }
