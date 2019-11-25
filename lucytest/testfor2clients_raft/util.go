@@ -382,30 +382,28 @@ func compareClientTx(len int, channelName string) error {
 	return nil
 }
 
-func compareChannelBlocks() error {
-	client0 := raftClients[0]
-	client1 := raftClients[1]
-	infos1, err := client0.ListChannel(true)
+func compareChannels() error {
+	infos1, err := raftClients[0].ListChannel(true)
 	if err != nil {
 		return err
 	}
-	infos2, err := client1.ListChannel(true)
+	infos2, err := raftClients[1].ListChannel(true)
 	if err != nil {
 		return err
 	}
-
 	if len(infos1) != len(infos2) {
-		return fmt.Errorf("the channel number is not consistent between orderer0 and orderer1")
+		return fmt.Errorf("the count of channels is not consistent")
 	}
 	for i := range infos1 {
-		if infos1[i].BlockSize != infos2[i].BlockSize {
-			return fmt.Errorf("the block size is not consistent: %s in orderer0 has %d blocks, %s "+
-				"in orderer1 has %d blocks", infos1[i].Name, infos1[i].BlockSize, infos2[i].Name, infos2[i].BlockSize)
+		if infos1[i].Name != infos2[i].Name {
+			return fmt.Errorf("the name is not consistent")
 		}
-		fmt.Printf("%s in orderer0 has %d blocks, %s in orderer1 has %d blocks\n",
-			infos1[i].Name, infos1[i].BlockSize, infos2[i].Name, infos2[i].BlockSize)
+		if infos1[i].BlockSize != infos2[i].BlockSize {
+			return fmt.Errorf("the blockSize is not consistent, %d in client, %d in admin", infos1[i].BlockSize, infos2[i].BlockSize)
+		}
 	}
 
+	fmt.Println("CompareChannels: channels between two orderers are consistent.")
 	return nil
 }
 
@@ -616,31 +614,6 @@ func startOrderer(node int) string {
 		}
 		time.Sleep(1 * time.Second)
 	}
-}
-
-func compareChannels() error {
-	infos1, err := raftClients[0].ListChannel(true)
-	if err != nil {
-		return err
-	}
-	infos2, err := raftClients[1].ListChannel(true)
-	if err != nil {
-		return err
-	}
-	if len(infos1) != len(infos2) {
-		return fmt.Errorf("the count of channels is not consistent")
-	}
-	for i := range infos1 {
-		if infos1[i].Name != infos2[i].Name {
-			return fmt.Errorf("the name is not consistent")
-		}
-		if infos1[i].BlockSize != infos2[i].BlockSize {
-			return fmt.Errorf("the blockSize is not consistent, %d in client, %d in admin", infos1[i].BlockSize, infos2[i].BlockSize)
-		}
-	}
-
-	fmt.Println("CompareChannels: channels between two orderers are consistent.")
-	return nil
 }
 
 func compareTxs() error {

@@ -173,7 +173,7 @@ func TestRaftCallTx2PR(t *testing.T) {
 		}
 	}
 	time.Sleep(2 * time.Second)
-	require.NoError(t, compareChannelBlocks())
+	require.NoError(t, compareTxs())
 }
 
 func TestRaftEnd2PR(t *testing.T) {
