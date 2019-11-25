@@ -40,3 +40,8 @@ go test madledger/peer/config -count=1 -cover
 # run all test
 echo "Next test may cost 2 minutes ..."
 go test madledger/tests -count=1 -cover
+
+# run lucytest
+echo "Run lucytest ..."
+go test -cover -count=1 -p 1 madledger/lucytest/...
+
