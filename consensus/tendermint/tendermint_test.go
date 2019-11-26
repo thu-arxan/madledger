@@ -2,6 +2,8 @@ package tendermint
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"madledger/common/util"
 	"madledger/consensus"
 	"madledger/core/types"
@@ -41,12 +43,11 @@ func TestStart(t *testing.T) {
 	channels[types.GLOBALCHANNELID] = consensus.DefaultConfig()
 	channels[types.CONFIGCHANNELID] = consensus.DefaultConfig()
 	for i := 0; i < len(tns); i++ {
+		// update absolute path into orderer.yaml
+		err := absBFTOrdererConfig(i)
+		require.NoError(t, err)
 		cfg, err := config.LoadConfig(getConfigPath(i))
 		require.NoError(t, err)
-		nodePath := getNodePath(i)
-		cfg.BlockChain.Path = nodePath + "/" + cfg.BlockChain.Path
-		cfg.Consensus.Tendermint.Path = nodePath + "/" + cfg.Consensus.Tendermint.Path
-		cfg.DB.LevelDB.Path = nodePath + "/" + cfg.DB.LevelDB.Path
 
 		consensus, err := NewConsensus(channels, &Config{
 			Port: Port{
@@ -62,6 +63,41 @@ func TestStart(t *testing.T) {
 		require.NoError(t, consensus.Start())
 	}
 	time.Sleep(5 * time.Second)
+}
+
+func absBFTOrdererConfig(node int) error {
+	cfgPath := getConfigPath(node)
+	// load config
+	cfg, err := loadOrdererConfig(cfgPath)
+	if err != nil {
+		return err
+	}
+	// change relative path into absolute path
+	cfg.BlockChain.Path = getNodePath(node) + "/" + cfg.BlockChain.Path
+	cfg.DB.LevelDB.Path = getNodePath(node) + "/" + cfg.DB.LevelDB.Path
+	cfg.Consensus.Tendermint.Path = getNodePath(node) + "/" + cfg.Consensus.Tendermint.Path
+	cfg.TLS.CA = getNodePath(node) + "/" + cfg.TLS.CA
+	cfg.TLS.RawCert = getNodePath(node) + "/" + cfg.TLS.RawCert
+	cfg.TLS.Key = getNodePath(node) + "/" + cfg.TLS.Key
+	// rewrite orderer config
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(cfgPath, data, os.ModePerm)
+}
+
+func loadOrdererConfig(cfgPath string) (*config.Config, error) {
+	cfgBytes, err := ioutil.ReadFile(cfgPath)
+	if err != nil {
+		return nil, err
+	}
+	var cfg config.Config
+	err = yaml.Unmarshal(cfgBytes, &cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &cfg, nil
 }
 
 func TestSendDuplicateTxs(t *testing.T) {

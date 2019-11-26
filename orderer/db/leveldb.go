@@ -151,7 +151,7 @@ func (db *LevelDB) IsMember(channelID string, member *types.Member) bool {
 // IsAdmin is the implementation of DB
 func (db *LevelDB) IsAdmin(channelID string, member *types.Member) bool {
 	var p cc.Profile
-	var key = getSystemAdminKey()
+	var key = getChannelProfileKey(channelID)
 	if db.HasChannel(channelID) {
 		data, err := db.connect.Get(key, nil)
 		if err != nil {
