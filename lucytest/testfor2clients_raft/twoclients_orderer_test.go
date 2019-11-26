@@ -111,7 +111,7 @@ func TestRaftCreateTx2BR(t *testing.T) {
 			channel = "test0" + strconv.Itoa(m)
 		}
 		fmt.Printf("Create contract %d on channel %s by client0...\n", m, channel)
-		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, raftClients[0].GetPrivKey(),types.NORMAL)
+		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, raftClients[0].GetPrivKey())
 		require.NoError(t, err)
 
 		_, err = raftClients[0].AddTx(tx)
@@ -125,7 +125,7 @@ func TestRaftCreateTx2BR(t *testing.T) {
 			channel = "test1" + strconv.Itoa(m)
 		}
 		fmt.Printf("Create contract %d on channel %s by client1 ...\n", m, channel)
-		tx, err = types.NewTx(channel, common.ZeroAddress, contractCodes, raftClients[1].GetPrivKey(),types.NORMAL)
+		tx, err = types.NewTx(channel, common.ZeroAddress, contractCodes, raftClients[1].GetPrivKey())
 		require.NoError(t, err)
 
 		_, err = raftClients[1].AddTx(tx)

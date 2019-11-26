@@ -24,7 +24,7 @@ type TxType int64
 const (
 	_ TxType = iota
 	// NORMAL is the normal tx
-	NORMAL
+	CREATECHANNEL
 	// VALIDATOR is the tendermint cfgChange tx
 	VALIDATOR
 	// NODE is the raft cfgChange tx

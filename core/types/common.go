@@ -30,7 +30,7 @@ var (
 
 func GetTxType(recipient string) (TxType, error) {
 	if strings.Compare(recipient, CreateChannelContractAddress.String()) == 0{
-		return NORMAL, nil
+		return CREATECHANNEL, nil
 	} else if strings.Compare(recipient, CfgTendermintAddress.String()) == 0 {
 		return VALIDATOR, nil
 	} else if strings.Compare(recipient, CfgRaftAddress.String()) == 0 {

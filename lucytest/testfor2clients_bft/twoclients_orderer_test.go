@@ -114,7 +114,7 @@ func TestBFTCreateTx2OB(t *testing.T) {
 		contractCodes, err := readCodes(getBFTClientPath(0) + "/MyTest.bin")
 		require.NoError(t, err)
 		fmt.Printf("Create contract %d on channel %s by client0 ...\n", m, channel)
-		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, bftClients[0].GetPrivKey(), types.NORMAL)
+		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, bftClients[0].GetPrivKey())
 		require.NoError(t, err)
 
 		_, err = bftClients[0].AddTx(tx)
@@ -128,7 +128,7 @@ func TestBFTCreateTx2OB(t *testing.T) {
 		contractCodes, err = readCodes(getBFTClientPath(1) + "/MyTest.bin")
 		require.NoError(t, err)
 		fmt.Printf("Create contract %d on channel %s by client1 ...\n", m, channel)
-		tx, err = types.NewTx(channel, common.ZeroAddress, contractCodes, bftClients[1].GetPrivKey(), types.NORMAL)
+		tx, err = types.NewTx(channel, common.ZeroAddress, contractCodes, bftClients[1].GetPrivKey())
 		require.NoError(t, err)
 
 		_, err = bftClients[1].AddTx(tx)
