@@ -5,7 +5,11 @@ import (
 )
 
 func TestCreateGenesisBlock(t *testing.T) {
-	_, err := CreateGenesisBlock()
+	admins, err := CreateAdmins()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = CreateGenesisBlock(admins)
 	if err != nil {
 		t.Fatal(err)
 	}

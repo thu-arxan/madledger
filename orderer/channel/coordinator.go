@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	cc "madledger/blockchain/config"
+	bc "madledger/blockchain/config"
 	gc "madledger/blockchain/global"
 	ct "madledger/consensus/tendermint"
 	pb "madledger/protos"
@@ -181,7 +181,7 @@ func (c *Coordinator) createChannel(tx *types.Tx) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	var payload cc.Payload
+	var payload bc.Payload
 	err := json.Unmarshal(tx.Data.Payload, &payload)
 	if err != nil {
 		return err
@@ -252,16 +252,16 @@ func (c *Coordinator) loadConfigChannel() error {
 	if !c.CM.HasGenesisBlock() {
 		log.Info("Creating genesis block of channel _config")
 		// create admins, we just config one admin
-		admins, err := cc.CreateAdmins()
+		admins, err := bc.CreateAdmins()
 		if err != nil {
 			return err
 		}
-		gb, err := cc.CreateGenesisBlock(admins)
+		gb, err := bc.CreateGenesisBlock(admins)
 		if err != nil {
 			return err
 		}
 		// put  admin's pubkey into leveldb
-		err = c.CM.db.UpdateSystemAdmin(&cc.Profile{
+		err = c.CM.db.UpdateSystemAdmin(&bc.Profile{
 			Public: true,
 			Admins: admins,
 		})
