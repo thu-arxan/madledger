@@ -9,6 +9,7 @@ import (
 	"go.etcd.io/etcd/pkg/types"
 	"go.etcd.io/etcd/raft/raftpb"
 	"google.golang.org/grpc/credentials"
+	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/common/event"
 	"madledger/common/util"
@@ -264,7 +265,10 @@ func (chain *BlockChain) getConfChange(tx *Tx) (raftpb.ConfChange, error) {
 	if err != nil {
 		return cfgChange, err
 	}
-	if typesTx.Data.Type == ctypes.NODE {
+	// get tx type according to recipient
+	//log.Infof("Recipient: %s", common.BytesToAddress(typesTx.Data.Recipient).String())
+	txType, err := ctypes.GetTxType(common.BytesToAddress(typesTx.Data.Recipient).String())
+	if err == nil && txType == ctypes.NODE {
 		err = json.Unmarshal(typesTx.Data.Payload, &cfgChange)
 		if err != nil {
 			return cfgChange, err

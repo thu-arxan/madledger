@@ -33,13 +33,12 @@ const (
 
 // TxData is the data of Tx
 type TxData struct {
-	ChannelID         string
-	AccountNonce      uint64
-	Recipient         []byte
-	Payload           []byte
-	Version           int32
-	Sig               *TxSig
-	Type TxType
+	ChannelID    string
+	AccountNonce uint64
+	Recipient    []byte
+	Payload      []byte
+	Version      int32
+	Sig          *TxSig
 }
 
 // TxSig is the sig of tx
@@ -49,19 +48,18 @@ type TxSig struct {
 }
 
 // NewTx is the constructor of Tx
-func NewTx(channelID string, recipient common.Address, payload []byte, privKey crypto.PrivateKey, Tx_type TxType) (*Tx, error) {
+func NewTx(channelID string, recipient common.Address, payload []byte, privKey crypto.PrivateKey) (*Tx, error) {
 	if payload == nil || len(payload) == 0 {
 		return nil, errors.New("The payload can not be empty")
 	}
 	var tx = &Tx{
 		Data: TxData{
-			ChannelID:         channelID,
-			AccountNonce:      util.RandUint64(),
-			Recipient:         recipient.Bytes(),
-			Payload:           payload,
-			Version:           1,
-			Sig:               nil,
-			Type: Tx_type,
+			ChannelID:    channelID,
+			AccountNonce: util.RandUint64(),
+			Recipient:    recipient.Bytes(),
+			Payload:      payload,
+			Version:      1,
+			Sig:          nil,
 		},
 		Time: util.Now(),
 	}

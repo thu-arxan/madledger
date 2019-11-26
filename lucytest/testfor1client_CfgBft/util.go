@@ -53,7 +53,7 @@ func initBFTEnvironment() error {
 	if err := os.RemoveAll(gopath + "/src/madledger/tests/bft"); err != nil {
 		return err
 	}
-	if err := copy.Copy(gopath+"/src/madledger/env/bft/.orderers", gopath+"/src/madledger/tests/bft/orderers"); err != nil {
+	if err := copy.Copy(gopath+"/src/madledger/env/bft/.orderers1", gopath+"/src/madledger/tests/bft/orderers"); err != nil {
 		return err
 	}
 	if err := copy.Copy(gopath+"/src/madledger/env/bft/.clients", gopath+"/src/madledger/tests/bft/clients"); err != nil {
@@ -382,7 +382,7 @@ func addOrRemoveNode(pubKey string, power int64, channel string) error {
 		PubKey: pubkey,
 		Power:  power,
 	})
-	tx, err := coreTypes.NewTx(channel, coreTypes.CfgTendermintAddress, validatorUpdate, bftAdmin.GetPrivKey(), coreTypes.VALIDATOR)
+	tx, err := coreTypes.NewTx(channel, coreTypes.CfgTendermintAddress, validatorUpdate, bftAdmin.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -433,7 +433,7 @@ func createContractForCallTx(node string) error {
 	if err != nil {
 		return err
 	}
-	tx, err := coreTypes.NewTx("test"+node, common.ZeroAddress, contractCodes, bftClient.GetPrivKey(), coreTypes.NORMAL)
+	tx, err := coreTypes.NewTx("test"+node, common.ZeroAddress, contractCodes, bftClient.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -480,7 +480,7 @@ func getNumForCallTx(node string, num string) error {
 
 	channel := "test" + node
 	tx, err := coreTypes.NewTx(channel, common.HexToAddress("0x8de6ce45b289502e16aef93313fd3082993acb1f"), payloadBytes,
-		bftClient.GetPrivKey(), coreTypes.NORMAL)
+		bftClient.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -515,7 +515,7 @@ func setNumForCallTx(node string, num string) error {
 
 	channel := "test" + node
 	tx, err := coreTypes.NewTx(channel, common.HexToAddress("0x8de6ce45b289502e16aef93313fd3082993acb1f"), payloadBytes,
-		bftClient.GetPrivKey(), coreTypes.NORMAL)
+		bftClient.GetPrivKey())
 	if err != nil {
 		return err
 	}

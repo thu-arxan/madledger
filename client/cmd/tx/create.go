@@ -57,7 +57,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	tx, err := types.NewTx(channelID, common.ZeroAddress, contractCodes, client.GetPrivKey(), types.NORMAL)
+	tx, err := types.NewTx(channelID, common.ZeroAddress, contractCodes, client.GetPrivKey())
 	if err != nil {
 		return err
 	}

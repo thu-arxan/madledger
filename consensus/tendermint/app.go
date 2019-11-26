@@ -7,6 +7,7 @@ import (
 	"github.com/tendermint/tendermint/abci/example/code"
 	"github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
+	"madledger/common"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
@@ -305,7 +306,9 @@ func (g *Glue) updateValidator(tx []byte) types.ResponseDeliverTx {
 			Code: code.CodeTypeEncodingError,
 			Log:  fmt.Sprintf("Unmarshal error %s", err)}
 	}
-	if typesTx.Data.Type == ctypes.VALIDATOR {
+	// get tx type according to recipient
+	txType, err := ctypes.GetTxType(common.BytesToAddress(typesTx.Data.Recipient).String())
+	if err == nil && txType == ctypes.VALIDATOR {
 		var validatorUpdate types.ValidatorUpdate
 		err = json.Unmarshal(typesTx.Data.Payload, &validatorUpdate)
 		if err != nil {

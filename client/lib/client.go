@@ -204,8 +204,11 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 		},
 		Version: 1,
 	})
-	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload, c.GetPrivKey(), types.NORMAL)
+	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload, c.GetPrivKey())
 	pbTx, _ := pb.NewTx(typesTx)
+	/*fmt.Printf("CreateChannelContractAddress: %s\n",types.CreateChannelContractAddress.String())
+	fmt.Printf("CfgTendermintAddress: %s\n",types.CfgTendermintAddress.String())
+	fmt.Printf("CfgRaftAddress: %s\n",types.CfgRaftAddress.String())*/
 
 	var times int
 	for i, ordererClient := range c.ordererClients {

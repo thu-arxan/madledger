@@ -73,8 +73,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	tx, err := coreTypes.NewTx(channelID, coreTypes.CfgTendermintAddress, validatorUpdate,
-		client.GetPrivKey(), coreTypes.VALIDATOR)
+	tx, err := coreTypes.NewTx(channelID, coreTypes.CfgTendermintAddress, validatorUpdate, client.GetPrivKey())
 	if err != nil {
 		return err
 	}

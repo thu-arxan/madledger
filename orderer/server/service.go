@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"fmt"
+	"madledger/common"
 	"madledger/core/types"
 	pb "madledger/protos"
 	"madledger/common/crypto"
@@ -51,7 +52,9 @@ func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus,
 		return &status, err
 	}
 	// if tx is for confChange, we should check if the client is system admin
-	if tx.Data.Type == types.VALIDATOR || tx.Data.Type == types.NODE {
+	// get tx type according to recipient
+	txType, err := types.GetTxType(common.BytesToAddress(tx.Data.Recipient).String())
+	if err == nil && (txType == types.VALIDATOR || txType == types.NODE) {
 		pk, err := crypto.NewPublicKey(req.PK)
 		if err != nil {
 			return &status, err

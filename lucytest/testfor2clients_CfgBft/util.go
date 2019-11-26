@@ -52,7 +52,7 @@ func initBFTEnvironment() error {
 	if err := os.RemoveAll(gopath + "/src/madledger/tests/bft"); err != nil {
 		return err
 	}
-	if err := copy.Copy(gopath+"/src/madledger/env/bft/.orderers", gopath+"/src/madledger/tests/bft/orderers"); err != nil {
+	if err := copy.Copy(gopath+"/src/madledger/env/bft/.orderers1", gopath+"/src/madledger/tests/bft/orderers"); err != nil {
 		return err
 	}
 	if err := copy.Copy(gopath+"/src/madledger/env/bft/.clients", gopath+"/src/madledger/tests/bft/clients"); err != nil {
@@ -385,7 +385,7 @@ func addOrRemoveNode(pubKey string, power int64, channel string) error {
 		PubKey: pubkey,
 		Power:  power,
 	})
-	tx, err := coreTypes.NewTx(channel, coreTypes.CfgTendermintAddress, validatorUpdate, bftAdmin.GetPrivKey(), coreTypes.VALIDATOR)
+	tx, err := coreTypes.NewTx(channel, coreTypes.CfgTendermintAddress, validatorUpdate, bftAdmin.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -452,7 +452,7 @@ func createContractForCallTx(channel string, node string, bftClient *client.Clie
 	if err != nil {
 		return err
 	}
-	tx, err := coreTypes.NewTx(channel, common.ZeroAddress, contractCodes, bftClient.GetPrivKey(), coreTypes.NORMAL)
+	tx, err := coreTypes.NewTx(channel, common.ZeroAddress, contractCodes, bftClient.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -463,90 +463,3 @@ func createContractForCallTx(channel string, node string, bftClient *client.Clie
 
 	return nil
 }
-
-/*func createChannelForCallTx() error {
-	// client 0 create channel
-	err := bftClient.CreateChannel("test0", true, nil, nil)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func createContractForCallTx(node string) error {
-	// client 0 create contract
-	contractCodes, err := readCodes(getBFTClientPath(node) + "/MyTest.bin")
-	if err != nil {
-		return err
-	}
-	tx, err := coreTypes.NewTx("test"+node, common.ZeroAddress, contractCodes, bftClient.GetPrivKey(), coreTypes.NORMAL)
-	if err != nil {
-		return err
-	}
-	_, err = bftClient.AddTx(tx)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-
-
-func getNumForCallTx(node string, num string) error {
-	abiPath := fmt.Sprintf(getBFTClientPath("0") + "/MyTest.abi")
-	var inputs = make([]string, 0)
-	payloadBytes, err := abi.GetPayloadBytes(abiPath, "getNum", inputs)
-	if err != nil {
-		return err
-	}
-
-	channel := "test" + node
-	tx, err := coreTypes.NewTx(channel, common.HexToAddress("0x8de6ce45b289502e16aef93313fd3082993acb1f"), payloadBytes,
-		bftClient.GetPrivKey(), coreTypes.NORMAL)
-	if err != nil {
-		return err
-	}
-
-	status, err := bftClient.AddTx(tx)
-	if err != nil {
-		return err
-	}
-
-	values, err := abi.Unpacker(abiPath, "getNum", status.Output)
-	if err != nil {
-		return err
-	}
-
-	var output []string
-	for _, value := range values {
-		output = append(output, value.Value)
-	}
-	if output[0] != num {
-		return fmt.Errorf("call tx on channel %s: setNum expect %s but receive %s", channel, num, output[0])
-	}
-	return nil
-}
-
-func setNumForCallTx(node string, num string) error {
-	abiPath := fmt.Sprintf(getBFTClientPath("0") + "/MyTest.abi")
-	inputs := []string{num}
-	payloadBytes, err := abi.GetPayloadBytes(abiPath, "setNum", inputs)
-	if err != nil {
-		return err
-	}
-
-	channel := "test" + node
-	tx, err := coreTypes.NewTx(channel, common.HexToAddress("0x8de6ce45b289502e16aef93313fd3082993acb1f"), payloadBytes,
-		bftClient.GetPrivKey(), coreTypes.NORMAL)
-	if err != nil {
-		return err
-	}
-
-	_, err = bftClient.AddTx(tx)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-*/
