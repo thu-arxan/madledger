@@ -58,9 +58,10 @@ var (
 	step int
 )
 
-func init() {
+func TestMain(m *testing.M) {
 	flag.IntVar(&step, "s", 1, "step")
 	flag.Parse()
+	os.Exit(m.Run())
 }
 
 func TestRun(t *testing.T) {
@@ -76,7 +77,6 @@ func TestRun(t *testing.T) {
 		}
 	}()
 	time.Sleep(1000 * time.Millisecond)
-
 	go globalManager.Start()
 	go configManager.Start()
 	go testManager.Start()
