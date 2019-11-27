@@ -3,12 +3,13 @@ package raft
 import (
 	"context"
 	"crypto/tls"
-	"google.golang.org/grpc/credentials"
 	"madledger/consensus"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"google.golang.org/grpc/credentials"
 
 	"madledger/common/util"
 	pb "madledger/consensus/raft/protos"

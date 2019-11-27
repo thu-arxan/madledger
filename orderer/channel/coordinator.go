@@ -348,7 +348,7 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 		}
 		c.Consensus = consensus
 	case config.RAFT:
-		raftConfig, err := getConfig(cfg.Raft.Path, cfg.Raft.ID, cfg.Raft.Nodes, cfg.Raft.Join, cfg.Raft.TLS)
+		raftConfig, err := getConfig(cfg.Raft.Path, cfg.Raft.ID, cfg.Raft.Nodes, cfg.Raft.Join, cfg.Raft.TLS, c.chainCfg.BatchTimeout, c.chainCfg.BatchSize)
 		if err != nil {
 			return err
 		}
@@ -379,7 +379,7 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 	return nil
 }
 
-func getConfig(path string, id uint64, peers map[uint64]string, join bool, tlsConfig config.TLSConfig) (*raft.Config, error) {
+func getConfig(path string, id uint64, peers map[uint64]string, join bool, tlsConfig config.TLSConfig, timeout, maxSize int) (*raft.Config, error) {
 	tlsCfg := consensus.TLSConfig{
 		Enable:  tlsConfig.Enable,
 		CA:      tlsConfig.CA,
@@ -389,8 +389,8 @@ func getConfig(path string, id uint64, peers map[uint64]string, join bool, tlsCo
 		Cert:    tlsConfig.Cert,
 	}
 	return raft.NewConfig(path, "localhost", id, peers, join, consensus.Config{
-		Timeout: 100,
-		MaxSize: 10,
+		Timeout: timeout,
+		MaxSize: maxSize,
 		Resume:  false,
 		Number:  1,
 		TLS:     tlsCfg,

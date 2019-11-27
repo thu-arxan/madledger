@@ -6,9 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.etcd.io/etcd/pkg/types"
-	"go.etcd.io/etcd/raft/raftpb"
-	"google.golang.org/grpc/credentials"
 	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/common/event"
@@ -21,6 +18,10 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"go.etcd.io/etcd/pkg/types"
+	"go.etcd.io/etcd/raft/raftpb"
+	"google.golang.org/grpc/credentials"
 
 	"google.golang.org/grpc"
 )
