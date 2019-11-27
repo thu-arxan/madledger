@@ -7,11 +7,13 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"io"
-	"madledger/blockchain/config"
+	"io/ioutil"
 	"madledger/common"
 	"madledger/common/util"
 	"madledger/core/types"
+	pc "madledger/peer/config"
 	"madledger/peer/db"
 	"madledger/peer/orderer"
 	"net"
@@ -24,7 +26,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	cc "madledger/blockchain/config"
+	"github.com/otiai10/copy"
+	bc "madledger/blockchain/config"
 	gc "madledger/blockchain/global"
 	pb "madledger/protos"
 
@@ -37,7 +40,8 @@ import (
 var (
 	coordinator      = NewCoordinator()
 	leveldb, _       = db.NewLevelDB(".data/leveldb")
-	client, _        = orderer.NewClient("localhost:9999")
+	cfg, _           = getConfig()
+	client, _        = orderer.NewClient("localhost:9999", cfg)
 	globalManager, _ = NewManager(types.GLOBALCHANNELID, ".data/blocks/"+types.GLOBALCHANNELID, nil, leveldb, []*orderer.Client{client}, coordinator)
 	configManager, _ = NewManager(types.CONFIGCHANNELID, ".data/blocks/"+types.CONFIGCHANNELID, nil, leveldb, []*orderer.Client{client}, coordinator)
 	testManager, _   = NewManager("test", ".data/blocks/test", nil, leveldb, []*orderer.Client{client}, coordinator)
@@ -192,16 +196,23 @@ func generateBlocks() {
 	}
 	// then generate 2 config blocks
 	// first is genesis config block
-	var payloads = []config.Payload{config.Payload{
+	admins, _ := bc.CreateAdmins()
+	var payloads = []bc.Payload{bc.Payload{
 		ChannelID: types.CONFIGCHANNELID,
-		Profile: &config.Profile{
+		Profile: &bc.Profile{
 			Public: true,
 		},
 		Version: 1,
-	}, config.Payload{
+	}, bc.Payload{
 		ChannelID: types.GLOBALCHANNELID,
-		Profile: &config.Profile{
+		Profile: &bc.Profile{
 			Public: true,
+		},
+		Version: 1,
+	}, bc.Payload{ // this payload is used to record the info of  system admin
+		Profile: &bc.Profile{
+			Public: true,
+			Admins: admins,
 		},
 		Version: 1,
 	}}
@@ -215,9 +226,9 @@ func generateBlocks() {
 	genesisConfigBlock := types.NewBlock(types.CONFIGCHANNELID, 0, types.GenesisBlockPrevHash, txs)
 	configBlocks[0] = genesisConfigBlock
 	// then second config block
-	payloadBytes, _ := json.Marshal(cc.Payload{
+	payloadBytes, _ := json.Marshal(bc.Payload{
 		ChannelID: "test",
-		Profile: &cc.Profile{
+		Profile: &bc.Profile{
 			Public: true,
 		},
 		Version: 1,
@@ -326,4 +337,66 @@ func findBlock(line string) *block {
 
 func randomSleep() {
 	time.Sleep(time.Duration(util.RandNum(50)) * time.Millisecond)
+}
+
+func absPeerConfig(cfgPath string) error {
+	// load config
+	cfg, err := loadPeerConfig(cfgPath)
+	if err != nil {
+		return err
+	}
+	// change relative path into absolute path
+	cfg.BlockChain.Path = getPeerPath() + "/" + cfg.BlockChain.Path
+	cfg.DB.LevelDB.Dir = getPeerPath() + "/" + cfg.DB.LevelDB.Dir
+	cfg.KeyStore.Key = getPeerPath() + "/" + cfg.KeyStore.Key
+	cfg.TLS.CA = getPeerPath() + "/" + cfg.TLS.CA
+	cfg.TLS.RawCert = getPeerPath() + "/" + cfg.TLS.RawCert
+	cfg.TLS.Key = getPeerPath() + "/" + cfg.TLS.Key
+	// rewrite peer config
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(cfgPath, data, os.ModePerm)
+}
+
+func getPeerPath() string {
+	gopath := os.Getenv("GOPATH")
+	return fmt.Sprintf("%s/src/madledger/env/raft/peers/0", gopath)
+}
+
+func getPeerConfigPath() string {
+	gopath := os.Getenv("GOPATH")
+	return fmt.Sprintf("%s/src/madledger/env/raft/peers/0/peer.yaml", gopath)
+}
+
+func loadPeerConfig(cfgPath string) (*pc.Config, error) {
+	cfgBytes, err := ioutil.ReadFile(cfgPath)
+	if err != nil {
+		return nil, err
+	}
+	var cfg pc.Config
+	err = yaml.Unmarshal(cfgBytes, &cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &cfg, nil
+}
+
+func getConfig() (*pc.Config, error) {
+	// add absolute path
+	gopath := os.Getenv("GOPATH")
+	if err := copy.Copy(gopath+"/src/madledger/env/raft/.peers/0", gopath+"/src/madledger/env/raft/peers/0"); err != nil {
+		return nil, err
+	}
+	err := absPeerConfig(getPeerConfigPath())
+	if err != nil {
+		fmt.Printf(err.Error())
+		return nil, err
+	}
+	cfg, err := pc.LoadConfig(getPeerConfigPath())
+	if err != nil {
+		return nil, err
+	}
+	return cfg, nil
 }

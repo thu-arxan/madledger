@@ -78,7 +78,7 @@ func getOrdererClients(cfg *config.Config) ([]*orderer.Client, error) {
 	}
 	var clients = make([]*orderer.Client, len(ordererCfg.Address))
 	for i := range ordererCfg.Address {
-		clients[i], err = orderer.NewClient(ordererCfg.Address[i],cfg)
+		clients[i], err = orderer.NewClient(ordererCfg.Address[i], cfg)
 		if err != nil {
 			return nil, err
 		}
