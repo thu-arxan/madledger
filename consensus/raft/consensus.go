@@ -47,7 +47,7 @@ func (c *Client) newConn() error {
 	var err error
 	if c.TLS.Enable {
 		creds := credentials.NewTLS(&tls.Config{
-			ServerName:   "orderer.madledger.com",
+			//ServerName:   "orderer.madledger.com",
 			Certificates: []tls.Certificate{*(c.TLS.Cert)},
 			RootCAs:      c.TLS.Pool,
 		})

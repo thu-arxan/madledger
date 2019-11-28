@@ -25,7 +25,7 @@ func NewClient(addr string, cfg *config.Config) (*Client, error) {
 	var err error
 	if cfg.TLS.Enable {
 		creds := credentials.NewTLS(&tls.Config{
-			ServerName:   "orderer.madledger.com",
+			//ServerName:   "orderer.madledger.com",
 			Certificates: []tls.Certificate{*(cfg.TLS.Cert)},
 			RootCAs:      cfg.TLS.Pool,
 		})

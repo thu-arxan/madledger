@@ -50,7 +50,9 @@ func TestBFTRun(t *testing.T) {
 
 func TestBFTPeersStart(t *testing.T) {
 	for i := 0; i < 4; i++ {
-		cfg := getBFTPeerConfig(i)
+		cfgPath := getBFTPeerConfigPath(i)
+		cfg, err := pc.LoadConfig(cfgPath)
+		require.NoError(t, err)
 		server, err := peer.NewServer(cfg)
 		require.NoError(t, err)
 		bftPeers[i] = server
@@ -226,24 +228,87 @@ func initBFTEnvironment() error {
 			return err
 		}
 	}
+	for i := range bftPeers {
+		if err := absBFTPeerConfig(i); err != nil {
+			return err
+		}
+	}
+	for i := range bftClients {
+		if err := absBFTClientConfig(i); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
+func absBFTClientConfig(node int) error {
+	cfgPath := getBFTClientConfigPath(node)
+	// load config
+	cfg, err := loadClientConfig(cfgPath)
+	if err != nil {
+		return err
+	}
+	// change relative path into absolute path
+	cfg.KeyStore.Keys[0] = getBFTClientPath(node) + "/" + cfg.KeyStore.Keys[0]
+	cfg.TLS.CA = getBFTClientPath(node) + "/" + cfg.TLS.CA
+	cfg.TLS.RawCert = getBFTClientPath(node) + "/" + cfg.TLS.RawCert
+	cfg.TLS.Key = getBFTClientPath(node) + "/" + cfg.TLS.Key
+	// rewrite peer config
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(cfgPath, data, os.ModePerm)
+}
+
+
+func loadClientConfig(cfgPath string) (*cc.Config, error) {
+	cfgBytes, err := ioutil.ReadFile(cfgPath)
+	if err != nil {
+		return nil, err
+	}
+	var cfg cc.Config
+	err = yaml.Unmarshal(cfgBytes, &cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &cfg, nil
+}
+
+
 func absBFTOrdererConfig(node int) error {
 	cfgPath := getBFTOrdererConfigPath(node)
-	cfg, err := oc.LoadConfig(cfgPath)
+	// load config
+	cfg, err := loadOrdererConfig(cfgPath)
 	if err != nil {
 		return err
 	}
 	cfg.BlockChain.Path = getBFTOrdererPath(node) + "/" + cfg.BlockChain.Path
 	cfg.DB.LevelDB.Path = getBFTOrdererPath(node) + "/" + cfg.DB.LevelDB.Path
 	cfg.Consensus.Tendermint.Path = getBFTOrdererPath(node) + "/" + cfg.Consensus.Tendermint.Path
+	cfg.TLS.CA = getBFTOrdererPath(node) + "/" + cfg.TLS.CA
+	cfg.TLS.RawCert = getBFTOrdererPath(node) + "/" + cfg.TLS.RawCert
+	cfg.TLS.Key = getBFTOrdererPath(node) + "/" + cfg.TLS.Key
 
 	data, err := yaml.Marshal(cfg)
 	if err != nil {
 		return err
 	}
 	return ioutil.WriteFile(cfgPath, data, os.ModePerm)
+}
+
+func loadOrdererConfig(cfgPath string) (*oc.Config, error) {
+	cfgBytes, err := ioutil.ReadFile(cfgPath)
+	if err != nil {
+		return nil, err
+	}
+	var cfg oc.Config
+	err = yaml.Unmarshal(cfgBytes, &cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &cfg, nil
 }
 
 // startOrderer run orderer and return pid
@@ -323,14 +388,37 @@ func getBFTPeerConfigPath(node int) string {
 	return fmt.Sprintf("%s/src/madledger/tests/.bft/peers/%d/peer.yaml", gopath, node)
 }
 
-func getBFTPeerConfig(node int) *pc.Config {
-	cfgFilePath := getBFTPeerConfigPath(node)
-	cfg, _ := pc.LoadConfig(cfgFilePath)
-
+func absBFTPeerConfig(node int) error {
+	cfgPath := getBFTPeerConfigPath(node)
+	// load config
+	cfg, err := loadPeerConfig(cfgPath)
+	if err != nil {
+		return err
+	}
+	// change relative path into absolute path
 	cfg.BlockChain.Path = getBFTPeerPath(node) + "/" + cfg.BlockChain.Path
 	cfg.DB.LevelDB.Dir = getBFTPeerPath(node) + "/" + cfg.DB.LevelDB.Dir
-
-	// then set key
 	cfg.KeyStore.Key = getBFTPeerPath(node) + "/" + cfg.KeyStore.Key
-	return cfg
+	cfg.TLS.CA = getBFTPeerPath(node) + "/" + cfg.TLS.CA
+	cfg.TLS.RawCert = getBFTPeerPath(node) + "/" + cfg.TLS.RawCert
+	cfg.TLS.Key = getBFTPeerPath(node) + "/" + cfg.TLS.Key
+	// rewrite peer config
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(cfgPath, data, os.ModePerm)
+}
+
+func loadPeerConfig(cfgPath string) (*pc.Config, error) {
+	cfgBytes, err := ioutil.ReadFile(cfgPath)
+	if err != nil {
+		return nil, err
+	}
+	var cfg pc.Config
+	err = yaml.Unmarshal(cfgBytes, &cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &cfg, nil
 }
