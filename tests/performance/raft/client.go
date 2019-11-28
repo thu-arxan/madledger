@@ -1,4 +1,4 @@
-package solo
+package raft
 
 import (
 	"fmt"
@@ -22,11 +22,13 @@ Debug: true
 Orderer:
   Address:
     - localhost:12345
+    - localhost:23456
+    - localhost:34567
   
 # Address of peers
 Peer:
   Address:
-    - localhost:23456
+    - localhost:23333
 
 # KeyStore manage some private keys
 KeyStore:
@@ -85,6 +87,6 @@ func newClient(path string) error {
 }
 
 func getClientsPath() string {
-	path, _ := util.MakeFileAbs("src/madledger/tests/performance/solo/.clients", gopath)
+	path, _ := util.MakeFileAbs("src/madledger/tests/performance/raft/.clients", gopath)
 	return path
 }
