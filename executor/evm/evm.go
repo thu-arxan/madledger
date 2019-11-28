@@ -23,10 +23,11 @@ type EVM struct {
 	returnData     []byte
 	cache          *Cache
 	memoryProvider func() Memory
+	wb             db.WriteBatch
 }
 
 // NewEVM is the constructor of EVM
-func NewEVM(context Context, origin common.Address, db StateDB) *EVM {
+func NewEVM(context Context, origin common.Address, db StateDB, wb db.WriteBatch) *EVM {
 	return &EVM{
 		context:        context,
 		db:             db,
@@ -34,36 +35,37 @@ func NewEVM(context Context, origin common.Address, db StateDB) *EVM {
 		stackDepth:     0,
 		cache:          NewCache(db),
 		memoryProvider: DefaultDynamicMemoryProvider,
+		wb:             wb,
 	}
 }
 
 // Create create a contract.
 // If there exist a contract on the address then a error occurs.
-func (evm *EVM) Create(caller common.Account, code, input []byte, value uint64,wb db.WriteBatch) ([]byte, common.Address, error) {
+func (evm *EVM) Create(caller common.Account, code, input []byte, value uint64) ([]byte, common.Address, error) {
 	contract, err := evm.createAccount(caller, code)
 	if err != nil {
 		return nil, common.ZeroAddress, err
 	}
 
 	// Run the contract bytes and return the runtime bytes
-	output, err := evm.Call(caller, contract, code, input, value,wb)
+	output, err := evm.Call(caller, contract, code, input, value)
 	if err != nil {
 		return nil, common.ZeroAddress, err
 	}
 	contract.SetCode(output)
 	//err = evm.cache.SetAccount(contract)
-	err=wb.SetAccount(contract)
+	err = evm.wb.SetAccount(contract)
 	if err != nil {
 		return nil, common.ZeroAddress, err
 	}
-	evm.cache.Sync(wb)
+	evm.cache.Sync(evm.wb)
 
 	return output, contract.GetAddress(), nil
 }
 
 // Call run code on a evm.
 // Remember, the function will not add the nonce of caller.
-func (evm *EVM) Call(caller, callee common.Account, code, input []byte, value uint64, wb db.WriteBatch) ([]byte, error) {
+func (evm *EVM) Call(caller, callee common.Account, code, input []byte, value uint64) ([]byte, error) {
 	if err := transfer(caller, callee, value); err != nil {
 		return nil, err
 	}
@@ -71,12 +73,12 @@ func (evm *EVM) Call(caller, callee common.Account, code, input []byte, value ui
 	// Here also run some codes
 	if len(code) > 0 {
 		evm.stackDepth++
-		output, err := evm.call(caller, callee, code, input, value,wb)
+		output, err := evm.call(caller, callee, code, input, value)
 		evm.stackDepth--
 		if err != nil {
 			return nil, err
 		}
-		evm.cache.Sync(wb)
+		evm.cache.Sync(evm.wb)
 		return output, nil
 	}
 	return nil, nil
@@ -86,10 +88,10 @@ func (evm *EVM) Call(caller, callee common.Account, code, input []byte, value ui
 // The intent of delegate call is to run the code of the callee in the storage context of the caller;
 // while preserving the original caller to the previous callee.
 // Different to the normal CALL or CALLCODE, the value does not need to be transferred to the callee.
-func (evm *EVM) DelegateCall(caller, callee common.Account, code, input []byte, value uint64,wb db.WriteBatch) ([]byte, error) {
+func (evm *EVM) DelegateCall(caller, callee common.Account, code, input []byte, value uint64) ([]byte, error) {
 	if len(code) > 0 {
 		evm.stackDepth++
-		output, err := evm.call(caller, callee, code, input, value,wb)
+		output, err := evm.call(caller, callee, code, input, value)
 		evm.stackDepth--
 		if err != nil {
 			return nil, err
@@ -106,7 +108,7 @@ func (evm *EVM) log(op OpCode, pc int64) {
 }
 
 // Just like Call() but does not transfer 'value' or modify the callDepth.
-func (evm *EVM) call(caller, callee common.Account, code, input []byte, value uint64, wb db.WriteBatch) ([]byte, error) {
+func (evm *EVM) call(caller, callee common.Account, code, input []byte, value uint64) ([]byte, error) {
 	var (
 		pc     int64
 		stack  = NewStack(DefaultStackCapacity)
@@ -971,7 +973,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 
 			// // Run the input to get the contract code.
 			// // NOTE: no need to copy 'input' as per Call contract.
-			ret, err := evm.Call(callee, newAccount, input, input, contractValue, wb)
+			ret, err := evm.Call(callee, newAccount, input, input, contractValue)
 			if err != nil {
 				stack.Push(common.ZeroWord256)
 				// Note we both set the return buffer and return the result normally
@@ -1056,12 +1058,12 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 				if acc == nil {
 					return nil, NewError(UnknownAddress)
 				}
-				ret, callErr = evm.Call(callee, callee, acc.GetCode(), args, value, wb)
+				ret, callErr = evm.Call(callee, callee, acc.GetCode(), args, value)
 			} else if op == DELEGATECALL {
 				if acc == nil {
 					return nil, NewError(UnknownAddress)
 				}
-				ret, callErr = evm.DelegateCall(caller, callee, acc.GetCode(), args, value,wb)
+				ret, callErr = evm.DelegateCall(caller, callee, acc.GetCode(), args, value)
 			} else {
 				// nil account means we're sending funds to a new account
 				// if acc == nil {
@@ -1075,7 +1077,7 @@ func (evm *EVM) call(caller, callee common.Account, code, input []byte, value ui
 				// }
 				// add account to the tx cache
 				cache.SetAccount(acc)
-				ret, callErr = evm.Call(callee, acc, acc.GetCode(), args, value, wb)
+				ret, callErr = evm.Call(callee, acc, acc.GetCode(), args, value)
 			}
 			// }
 			evm.returnData = ret

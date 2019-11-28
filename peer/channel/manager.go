@@ -155,7 +155,7 @@ func (m *Manager) RunBlock(num uint64) (db.WriteBatch, error) {
 			continue
 		}
 
-		evm := evm.NewEVM(*context, senderAddress, m.db)
+		evm := evm.NewEVM(*context, senderAddress, m.db,wb)
 		if receiverAddress.String() != common.ZeroAddress.String() {
 			// log.Info("This is a normal call")
 			// if the length of payload is not zero, this is a contract call
@@ -173,7 +173,7 @@ func (m *Manager) RunBlock(num uint64) (db.WriteBatch, error) {
 				wb.SetTxStatus(tx, status)
 				continue
 			}
-			output, err := evm.Call(sender, receiver, receiver.GetCode(), tx.Data.Payload, 0, wb)
+			output, err := evm.Call(sender, receiver, receiver.GetCode(), tx.Data.Payload, 0)
 			status.Output = output
 			if err != nil {
 				status.Err = err.Error()
@@ -182,7 +182,7 @@ func (m *Manager) RunBlock(num uint64) (db.WriteBatch, error) {
 			wb.SetTxStatus(tx, status)
 		} else {
 			log.Info("This is a create call")
-			output, addr, err := evm.Create(sender, tx.Data.Payload, []byte{}, 0, wb)
+			output, addr, err := evm.Create(sender, tx.Data.Payload, []byte{}, 0)
 			status.Output = output
 			status.ContractAddress = addr.String()
 			if err != nil {
