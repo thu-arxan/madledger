@@ -18,6 +18,7 @@ import (
 
 var (
 	simulateDB = simulate.NewStateDB()
+	wb         = simulateDB.NewWriteBatch()
 	user       = newAccount(1)
 )
 
@@ -26,7 +27,7 @@ func TestBalance(t *testing.T) {
 	require.NoError(t, err)
 
 	simulateDB.SetAccount(user)
-	vm := NewEVM(newContext(), user.GetAddress(), simulateDB)
+	vm := NewEVM(newContext(), user.GetAddress(), simulateDB, wb)
 	code, contractAddr, err := vm.Create(user, contractCodes, []byte{}, 0)
 	require.NoError(t, err)
 
@@ -84,7 +85,7 @@ func TestBalance(t *testing.T) {
 
 func TestDuplicateAddress(t *testing.T) {
 	contractCodes, _ := readCodes(getFilePath("Balance.bin"))
-	vm := NewEVM(newContext(), user.GetAddress(), simulateDB)
+	vm := NewEVM(newContext(), user.GetAddress(), simulateDB, wb)
 	_, _, err := vm.Create(user, contractCodes, []byte{}, 0)
 	require.EqualError(t, err, "Duplicate address")
 }

@@ -80,29 +80,41 @@ func (s *StateDB) RemoveAccount(address common.Address) error {
 	return nil
 }
 
-func (s *StateDB) NewWriteBatch() db.WriteBatch{
+func (s *StateDB) NewWriteBatch() db.WriteBatch {
 	return &WriteBatchWrapper{
-		unknown:"madledger",
+		unknown: "madledger",
+		stateDB: s,
 	}
 }
 
 type WriteBatchWrapper struct {
 	unknown string
+	stateDB *StateDB
 }
 
 // SetAccount is the implementation of interface
 func (wb *WriteBatchWrapper) SetAccount(account common.Account) error {
+	wb.stateDB.accounts[account.GetAddress()] = account
 	return nil
 
 }
 
 // RemoveAccount is the implementation of interface
 func (wb *WriteBatchWrapper) RemoveAccount(address common.Address) error {
+	if !util.Contain(wb.stateDB.accounts, address) {
+		return fmt.Errorf("The address %s is not exist", address.String())
+	}
+	delete(wb.stateDB.accounts, address)
+	delete(wb.stateDB.storages, address)
 	return nil
 }
 
 // SetStorage is the implementation of interface
 func (wb *WriteBatchWrapper) SetStorage(address common.Address, key common.Word256, value common.Word256) error {
+	if !util.Contain(wb.stateDB.storages, address) {
+		wb.stateDB.storages[address] = make(map[common.Word256]common.Word256)
+	}
+	wb.stateDB.storages[address][key] = value
 	return nil
 }
 
