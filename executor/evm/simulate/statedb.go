@@ -2,8 +2,11 @@ package simulate
 
 import (
 	"fmt"
+	"github.com/syndtr/goleveldb/leveldb"
 	"madledger/common"
 	"madledger/common/util"
+	"madledger/core/types"
+	"madledger/peer/db"
 )
 
 // StateDB is a memory db to simulate the actions of
@@ -34,7 +37,7 @@ func (s *StateDB) GetAccount(address common.Address) (common.Account, error) {
 	if util.Contain(s.accounts, address) {
 		return s.accounts[address], nil
 	}
-	return nil, fmt.Errorf("The address %s is not exist", address)
+	return nil, fmt.Errorf("The address %s is not exist", address.String())
 }
 
 // GetStorage is the implementation of StateDB
@@ -70,9 +73,44 @@ func (s *StateDB) SetStorage(address common.Address, key common.Word256, value c
 // RemoveAccount removes an account if exist
 func (s *StateDB) RemoveAccount(address common.Address) error {
 	if !util.Contain(s.accounts, address) {
-		return fmt.Errorf("The address %s is not exist", address)
+		return fmt.Errorf("The address %s is not exist", address.String())
 	}
 	delete(s.accounts, address)
 	delete(s.storages, address)
+	return nil
+}
+
+func (s *StateDB) NewWriteBatch() db.WriteBatch{
+	return &WriteBatchWrapper{
+		unknown:"madledger",
+	}
+}
+
+type WriteBatchWrapper struct {
+	unknown string
+}
+
+// SetAccount is the implementation of interface
+func (wb *WriteBatchWrapper) SetAccount(account common.Account) error {
+	return nil
+
+}
+
+// RemoveAccount is the implementation of interface
+func (wb *WriteBatchWrapper) RemoveAccount(address common.Address) error {
+	return nil
+}
+
+// SetStorage is the implementation of interface
+func (wb *WriteBatchWrapper) SetStorage(address common.Address, key common.Word256, value common.Word256) error {
+	return nil
+}
+
+// SetTxStatus is the implementation of interface
+func (wb *WriteBatchWrapper) SetTxStatus(tx *types.Tx, status *db.TxStatus) error {
+	return nil
+}
+
+func (wb *WriteBatchWrapper) GetBatch() *leveldb.Batch {
 	return nil
 }

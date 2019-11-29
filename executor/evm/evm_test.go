@@ -37,7 +37,8 @@ func newAccount(seed ...byte) common.Account {
 // Runs a basic loop
 func TestVM(t *testing.T) {
 	db := simulate.NewStateDB()
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 
 	// Create accounts
 	account1 := newAccount(1)
@@ -60,7 +61,8 @@ func TestVM(t *testing.T) {
 
 func TestSHL(t *testing.T) {
 	db := simulate.NewStateDB()
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 	account1 := newAccount(1)
 	account2 := newAccount(1, 0, 1)
 
@@ -207,7 +209,8 @@ func TestSHL(t *testing.T) {
 
 func TestSHR(t *testing.T) {
 	db := simulate.NewStateDB()
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 	account1 := newAccount(1)
 	account2 := newAccount(1, 0, 1)
 
@@ -358,7 +361,8 @@ func TestSHR(t *testing.T) {
 
 func TestSAR(t *testing.T) {
 	db := simulate.NewStateDB()
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 	account1 := newAccount(1)
 	account2 := newAccount(1, 0, 1)
 
@@ -528,7 +532,8 @@ func TestSAR(t *testing.T) {
 //Test attempt to jump to bad destination (position 16)
 func TestJumpErr(t *testing.T) {
 	db := simulate.NewStateDB()
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 
 	// Create accounts
 	account1 := newAccount(1)
@@ -564,7 +569,8 @@ func TestSubcurrency(t *testing.T) {
 	fmt.Printf("%s\n", account1.GetAddress().String())
 	fmt.Printf("%s\n", account2.GetAddress().String())
 
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 
 	bytecode := MustSplice(PUSH3, 0x0F, 0x42, 0x40, CALLER, SSTORE, PUSH29, 0x01, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -598,7 +604,8 @@ func TestRevert(t *testing.T) {
 	key, value := []byte{0x00}, []byte{0x00}
 	db.SetAccount(account1)
 	db.SetStorage(account1.GetAddress(), common.LeftPadWord256(key), common.LeftPadWord256(value))
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 
 	bytecode := MustSplice(PUSH13, 0x72, 0x65, 0x76, 0x65, 0x72, 0x74, 0x65, 0x64, 0x20, 0x64, 0x61, 0x74, 0x61,
 		PUSH1, 0x00, SSTORE, PUSH32, 0x72, 0x65, 0x76, 0x65, 0x72, 0x74, 0x20, 0x6D, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
@@ -718,7 +725,8 @@ func TestRevert(t *testing.T) {
 
 func TestMemoryBounds(t *testing.T) {
 	db := simulate.NewStateDB()
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 	vm.memoryProvider = func() Memory {
 		return NewDynamicMemory(1024, 2048)
 	}
@@ -776,7 +784,8 @@ func TestMsgSender(t *testing.T) {
 	db.SetAccount(account1)
 	db.SetAccount(account2)
 
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 
 	// var gas uint64 = 100000
 
@@ -823,7 +832,8 @@ func TestMsgSender(t *testing.T) {
 
 func TestInvalid(t *testing.T) {
 	db := simulate.NewStateDB()
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 
 	// Create accounts
 	account1 := newAccount(1)
@@ -853,7 +863,8 @@ func TestReturnDataSize(t *testing.T) {
 		0x00, 0x00, 0x00, PUSH1, 0x00, MSTORE, PUSH1, 0x0E, PUSH1, 0x00, RETURN)
 	account2, _ := makeAccountWithCode(db, accountName, callcode)
 	db.SetAccount(account2)
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 
 	gas1, gas2 := byte(0x1), byte(0x1)
 	value := byte(0x69)
@@ -889,7 +900,8 @@ func TestReturnDataCopy(t *testing.T) {
 	account1 := newAccount(1)
 	account2, _ := makeAccountWithCode(db, accountName, callcode)
 	db.SetAccount(account2)
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 
 	gas1, gas2 := byte(0x1), byte(0x1)
 	value := byte(0x69)
