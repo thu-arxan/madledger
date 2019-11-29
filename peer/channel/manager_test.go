@@ -3,16 +3,19 @@ package channel
 import (
 	"bufio"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
+	"google.golang.org/grpc/credentials"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"madledger/common"
 	"madledger/common/util"
 	"madledger/core/types"
+	oc "madledger/orderer/config"
 	pc "madledger/peer/config"
 	"madledger/peer/db"
 	"madledger/peer/orderer"
@@ -40,7 +43,7 @@ import (
 var (
 	coordinator      = NewCoordinator()
 	leveldb, _       = db.NewLevelDB(".data/leveldb")
-	cfg, _           = getConfig()
+	cfg, _           = getPeerConfig()
 	client, _        = orderer.NewClient("localhost:9999", cfg)
 	globalManager, _ = NewManager(types.GLOBALCHANNELID, ".data/blocks/"+types.GLOBALCHANNELID, nil, leveldb, []*orderer.Client{client}, coordinator)
 	configManager, _ = NewManager(types.CONFIGCHANNELID, ".data/blocks/"+types.CONFIGCHANNELID, nil, leveldb, []*orderer.Client{client}, coordinator)
@@ -147,9 +150,19 @@ func startFakeOrderer() error {
 	addr := fmt.Sprintf("localhost:9999")
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		return errors.New("Failed to start the orderer")
+		return errors.New(fmt.Sprintf("Failed to start the orderer, because %s", err.Error()))
 	}
+	fmt.Printf("Start the orderer at %s", addr)
 	var opts []grpc.ServerOption
+	cfg, err := getOrdererConfig()
+	if cfg.TLS.Enable{
+		creds := credentials.NewTLS(&tls.Config{
+			ClientAuth:   tls.RequireAndVerifyClientCert,
+			Certificates: []tls.Certificate{*(cfg.TLS.Cert)},
+			ClientCAs:   cfg.TLS.Pool,
+		})
+		opts = append(opts, grpc.Creds(creds))
+	}
 	orderer.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterOrdererServer(orderer.rpcServer, orderer)
 	err = orderer.rpcServer.Serve(lis)
@@ -370,6 +383,16 @@ func getPeerConfigPath() string {
 	return fmt.Sprintf("%s/src/madledger/env/raft/peers/0/peer.yaml", gopath)
 }
 
+func getOrdererPath() string {
+	gopath := os.Getenv("GOPATH")
+	return fmt.Sprintf("%s/src/madledger/env/raft/orderers/0", gopath)
+}
+
+func getOrdererConfigPath() string {
+	gopath := os.Getenv("GOPATH")
+	return fmt.Sprintf("%s/src/madledger/env/raft/orderers/0/orderer.yaml", gopath)
+}
+
 func loadPeerConfig(cfgPath string) (*pc.Config, error) {
 	cfgBytes, err := ioutil.ReadFile(cfgPath)
 	if err != nil {
@@ -383,7 +406,7 @@ func loadPeerConfig(cfgPath string) (*pc.Config, error) {
 	return &cfg, nil
 }
 
-func getConfig() (*pc.Config, error) {
+func getPeerConfig() (*pc.Config, error) {
 	// add absolute path
 	gopath := os.Getenv("GOPATH")
 	if err := copy.Copy(gopath+"/src/madledger/env/raft/.peers/0", gopath+"/src/madledger/env/raft/peers/0"); err != nil {
@@ -399,4 +422,56 @@ func getConfig() (*pc.Config, error) {
 		return nil, err
 	}
 	return cfg, nil
+}
+
+func getOrdererConfig() (*pc.Config, error) {
+	// add absolute path
+	gopath := os.Getenv("GOPATH")
+	if err := copy.Copy(gopath+"/src/madledger/env/raft/.orderers/0", gopath+"/src/madledger/env/raft/orderers/0"); err != nil {
+		return nil, err
+	}
+	err := absOrdererConfig(getOrdererConfigPath())
+	if err != nil {
+		fmt.Printf(err.Error())
+		return nil, err
+	}
+	cfg, err := pc.LoadConfig(getOrdererConfigPath())
+	if err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}
+
+func absOrdererConfig(cfgPath string) error {
+	// load config
+	cfg, err := loadOrdererConfig(cfgPath)
+	if err != nil {
+		return err
+	}
+	// change relative path into absolute path
+	cfg.BlockChain.Path = getOrdererPath() + "/" + cfg.BlockChain.Path
+	cfg.DB.LevelDB.Path = getOrdererPath() + "/" + cfg.DB.LevelDB.Path
+	cfg.Consensus.Tendermint.Path = getOrdererPath() + "/" + cfg.Consensus.Tendermint.Path
+	cfg.TLS.CA = getOrdererPath() + "/" + cfg.TLS.CA
+	cfg.TLS.RawCert = getOrdererPath() + "/" + cfg.TLS.RawCert
+	cfg.TLS.Key = getOrdererPath() + "/" + cfg.TLS.Key
+	// rewrite orderer config
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(cfgPath, data, os.ModePerm)
+}
+
+func loadOrdererConfig(cfgPath string) (*oc.Config, error) {
+	cfgBytes, err := ioutil.ReadFile(cfgPath)
+	if err != nil {
+		return nil, err
+	}
+	var cfg oc.Config
+	err = yaml.Unmarshal(cfgBytes, &cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &cfg, nil
 }
