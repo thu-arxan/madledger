@@ -14,6 +14,17 @@ Address: localhost
 # Should be false or true (default: true)
 Debug: true
 
+# Configure for the TLS
+TLS:
+  # Should be true of false (default: true)
+  Enable: true
+  # The path of CA cert, it should not be empty if Enable is true
+  CA: 
+  # Cert of the Blockchain, it should not be empty if Enable is true
+  Cert: 
+  # Key of the Blockchain, it should not be empty if Enable is true
+  Key: 
+
 # Configure for the BlockChain
 BlockChain:
   # Max time to create a block which unit is milliseconds (default: 1000)
@@ -51,7 +62,9 @@ Consensus:
     ID:
     # Node should be like 1@localhost:12345
     Nodes:
-      - 
+      -
+    # Should be true of false (default: false)
+    Join: false
 
 # DB only support leveldb now
 DB:
