@@ -4,10 +4,10 @@
 #############################################################################
 
 # Port should be an integer (default: 23456)
-Port: 20501
+Port: 30125
 
 # Bind address for the server (default: localhost)
-Address: localhost
+Address: 192.168.1.125
 
 # Should be false or true (default: true)
 Debug: true
@@ -32,10 +32,10 @@ BlockChain:
 # Address of orderers
 Orderer:
   Address:
-    - localhost:12345
-    - localhost:23456
-    - localhost:34567
-    - localhost:45678
+    - localhost:10120
+    - localhost:10121
+    - localhost:10122
+    - localhost:10123
 
 # DB only support leveldb now
 DB:
