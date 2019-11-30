@@ -19,17 +19,17 @@ TLS:
 # Address of orderers
 Orderer:
   Address:
-    - localhost:45678
-    - localhost:23456
-    - localhost:34567
+    - localhost:10123
+    - localhost:10121
+    - localhost:10122
   
 # Address of peers
 Peer:
   Address:
-    - localhost:20500
-    - localhost:20501
-    - localhost:20502
-    - localhost:20503
+    - localhost:30124
+    - localhost:30125
+    - localhost:30126
+    - localhost:30127
 
 # KeyStore manage some private keys
 KeyStore:
