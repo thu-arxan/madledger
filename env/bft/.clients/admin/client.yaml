@@ -19,17 +19,17 @@ TLS:
 # Address of orderers
 Orderer:
   Address:
-    - 192.168.1.123:10120
-    - 192.168.1.121:10121
-    - 192.168.1.122:10122
+    - master:10120
+    - slave1:10121
+    - slave2:10122
   
 # Address of peers
 Peer:
   Address:
-    - 192.168.1.124:30124
-    - 192.168.1.125:30125
-    - 192.168.1.126:30126
-    - 192.168.1.127:30127
+    - slave4:30124
+    - slave5:30125
+    - slave6:30126
+    - slave7:30127
 
 # KeyStore manage some private keys
 KeyStore:
