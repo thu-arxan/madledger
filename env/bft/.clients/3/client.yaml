@@ -19,17 +19,17 @@ TLS:
 # Address of orderers
 Orderer:
   Address:
-    - localhost:10123
-    - localhost:10120
-    - localhost:10121
+    - 192.168.1.123:10123
+    - 192.168.1.120:10120
+    - 192.168.1.121:10121
   
 # Address of peers
 Peer:
   Address:
-    - localhost:30124
-    - localhost:30125
-    - localhost:30126
-    - localhost:30127
+    - 192.168.1.124:30124
+    - 192.168.1.125:30125
+    - 192.168.1.126:30126
+    - 192.168.1.127:30127
 
 # KeyStore manage some private keys
 KeyStore:
