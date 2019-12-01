@@ -32,10 +32,10 @@ BlockChain:
 # Address of orderers
 Orderer:
   Address:
-    - localhost:10120
-    - localhost:10121
-    - localhost:10122
-    - localhost:10123
+    - master:10120
+    - slave1:10121
+    - slave2:10122
+    - slave2:10123
 
 # DB only support leveldb now
 DB:
