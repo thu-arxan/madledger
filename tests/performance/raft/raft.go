@@ -15,16 +15,16 @@ import (
 
 var (
 	ordererServers []*orderer.Server
-	peerServer     *peer.Server
+	peerServers    []*peer.Server
 )
 
 // Init will init environment
-func Init() error {
+func Init(num int) error {
 	Clean()
 	os.MkdirAll(getOrdererPath(), os.ModePerm)
 	os.MkdirAll(getPeerPath(), os.ModePerm)
 	os.MkdirAll(getClientsPath(), os.ModePerm)
-	return newClients()
+	return newClients(num)
 }
 
 // Clean clean environment
@@ -63,23 +63,27 @@ func StopOrderers() {
 }
 
 // StartPeers start peers
-func StartPeers() error {
-	var err error
-	peerServer, err = peer.NewServer(getPeerConfig())
-	if err != nil {
-		return err
+func StartPeers(num int) error {
+	for i := 1; i <= num; i++ {
+		peerServer, err := peer.NewServer(getPeerConfig(i))
+		if err != nil {
+			return err
+		}
+		peerServers = append(peerServers, peerServer)
+		go func() {
+			peerServer.Start()
+		}()
+		time.Sleep(300 * time.Millisecond)
 	}
-	go func() {
-		peerServer.Start()
-	}()
-	time.Sleep(300 * time.Millisecond)
 	return nil
 }
 
 // StopPeers stop peers
 func StopPeers() {
-	peerServer.Stop()
-	time.Sleep(300 * time.Millisecond)
+	for i := range peerServers {
+		peerServers[i].Stop()
+		time.Sleep(300 * time.Millisecond)
+	}
 }
 
 func getOrdererPath() string {
@@ -108,14 +112,15 @@ func getOrdererConfig(id int) (*oc.Config, error) {
 	return cfg, nil
 }
 
-func getPeerConfig() *pc.Config {
+func getPeerConfig(id int) *pc.Config {
 	cfgFilePath, _ := util.MakeFileAbs("src/madledger/tests/config/peer/raft_peer.yaml", gopath)
 	cfg, _ := pc.LoadConfig(cfgFilePath)
-	chainPath, _ := util.MakeFileAbs("data/blocks", getPeerPath())
-	dbPath, _ := util.MakeFileAbs("data/leveldb", getPeerPath())
+	chainPath, _ := util.MakeFileAbs("data/blocks", fmt.Sprintf("%s/%d", getPeerPath(), id))
+	dbPath, _ := util.MakeFileAbs("data/leveldb", fmt.Sprintf("%s/%d", getPeerPath(), id))
 	cfg.BlockChain.Path = chainPath
 	cfg.DB.LevelDB.Dir = dbPath
-	key, _ := util.MakeFileAbs("src/madledger/tests/config/peer/.raft_peer.pem", gopath)
+	key, _ := util.MakeFileAbs(fmt.Sprintf("src/madledger/tests/config/peer/.raft_peer%d.pem", id), gopath)
 	cfg.KeyStore.Key = key
+	cfg.Port = 23333 + (id - 1)
 	return cfg
 }

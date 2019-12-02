@@ -5,14 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	client "madledger/client/lib"
 	"madledger/common/abi"
 	pb "madledger/protos"
+	"madledger/tests/performance/raft"
+	"madledger/tests/performance/solo"
 	"os"
 )
 
 var (
-	gopath  = os.Getenv("GOPATH")
-	logPath = "performance.out"
+	gopath    = os.Getenv("GOPATH")
+	logPath   = "performance.out"
 )
 
 // Help fulfillment the test.
@@ -70,4 +73,18 @@ func writeLog(log string) error {
 	}
 	_, err = file.WriteString(log)
 	return err
+}
+
+func getClients() []*client.Client {
+	var clients []*client.Client
+	switch consensus {
+	case "solo":
+		clients = solo.GetClients()
+	case "raft":
+		clients = raft.GetClients()
+	case "bft":
+	default:
+		panic("Unsupport consensus")
+	}
+	return clients
 }

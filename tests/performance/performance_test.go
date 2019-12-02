@@ -2,6 +2,7 @@ package performance
 
 import (
 	"fmt"
+	"madledger/tests/performance/bft"
 	"os"
 	"sync"
 	"testing"
@@ -10,13 +11,15 @@ import (
 	"madledger/tests/performance/raft"
 	"madledger/tests/performance/solo"
 
-	client "madledger/client/lib"
 	cutil "madledger/client/util"
 
 	"github.com/stretchr/testify/require"
 )
 
-var consensus = "raft"
+var (
+	consensus = "raft"
+	peerNum   = 3
+)
 
 func TestInit(t *testing.T) {
 	os.Remove(logPath)
@@ -26,10 +29,13 @@ func TestInit(t *testing.T) {
 		require.NoError(t, solo.StartOrderers())
 		require.NoError(t, solo.StartPeers())
 	case "raft":
-		require.NoError(t, raft.Init())
+		require.NoError(t, raft.Init(peerNum))
 		require.NoError(t, raft.StartOrderers())
-		require.NoError(t, raft.StartPeers())
+		require.NoError(t, raft.StartPeers(peerNum))
 	case "bft":
+		require.NoError(t, bft.Init(peerNum))
+		require.NoError(t, bft.StartOrderers())
+		require.NoError(t, bft.StartPeers(peerNum))
 		panic("Unsupport now")
 	default:
 		panic("Unsupport consensus")
@@ -69,7 +75,7 @@ func TestPerformance(t *testing.T) {
 	require.NoError(t, writeLog(table.ToString()))
 }
 
-func TestSoloEnd(t *testing.T) {
+func TestEnd(t *testing.T) {
 	switch consensus {
 	case "solo":
 		solo.Clean()
@@ -79,18 +85,4 @@ func TestSoloEnd(t *testing.T) {
 	default:
 		panic("Unsupport consensus")
 	}
-}
-
-func getClients() []*client.Client {
-	var clients []*client.Client
-	switch consensus {
-	case "solo":
-		clients = solo.GetClients()
-	case "raft":
-		clients = raft.GetClients()
-	case "bft":
-	default:
-		panic("Unsupport consensus")
-	}
-	return clients
 }
