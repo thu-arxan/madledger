@@ -2,12 +2,7 @@ package bft
 
 import (
 	"fmt"
-	tc "github.com/tendermint/tendermint/config"
-	tlc "github.com/tendermint/tendermint/libs/common"
-	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/types"
-	tt "github.com/tendermint/tendermint/types/time"
+	"github.com/otiai10/copy"
 	"io/ioutil"
 	cutil "madledger/client/util"
 	"madledger/common/util"
@@ -25,21 +20,16 @@ var (
 	peerServers    []*peer.Server
 )
 
-
 // Init will init environment
 func Init(num int) error {
 	Clean()
-	os.MkdirAll(getOrdererPath(), os.ModePerm)
+	// copy orderder config
+	if err := copy.Copy(gopath+"/src/madledger/tests/performance/.orderer", getOrdererPath()); err != nil {
+		return err
+	}
 	os.MkdirAll(getPeerPath(), os.ModePerm)
 	os.MkdirAll(getClientsPath(), os.ModePerm)
 	return newClients(num)
-}
-
-// Clean clean environment
-func Clean() {
-	os.RemoveAll(getOrdererPath())
-	os.RemoveAll(getPeerPath())
-	os.RemoveAll(getClientsPath())
 }
 
 func getOrdererPath() string {
@@ -113,7 +103,7 @@ func StartOrderers() error {
 }
 
 func getOrdererConfig(id int) (*oc.Config, error) {
-	cfgFilePath, _ := util.MakeFileAbs("src/madledger/tests/config/orderer/bft_orderer.yaml", gopath)
+	cfgFilePath := fmt.Sprintf("%s/%d/orderer.yaml", getOrdererPath(), id)
 	cfg, err := oc.LoadConfig(cfgFilePath)
 	if err != nil {
 		return nil, err
@@ -122,68 +112,11 @@ func getOrdererConfig(id int) (*oc.Config, error) {
 	dbPath, _ := util.MakeFileAbs("data/leveldb", getOrdererPath()+fmt.Sprintf("/%d", id))
 	cfg.BlockChain.Path = chainPath
 	cfg.DB.LevelDB.Path = dbPath
-	cfg.Port = 12345 + (id-1)*11111
-	// get tendermintP2PID
-	var tendermintP2PID string
-	if tendermintP2PID, err = initTendermintEnv(getOrdererPath()+fmt.Sprintf("/%d", id)); err != nil {
-		return nil,err
-	}
 	cfg.Consensus.Tendermint.Path = fmt.Sprintf("%s/%d/%s", getOrdererPath(), id, cfg.Consensus.Tendermint.Path)
-	cfg.Consensus.Tendermint.ID = tendermintP2PID
+	cfg.Port = 12345 + (id-1)*11111
 
 	return cfg, nil
 }
-
-// initTendermintEnv will create all necessary things that tendermint needs
-func initTendermintEnv(path string) (string, error) {
-	tendermintPath, _ := util.MakeFileAbs(".tendermint", path)
-	os.MkdirAll(tendermintPath+"/config", 0777)
-	os.MkdirAll(tendermintPath+"/data", 0777)
-	var conf = tc.DefaultConfig()
-	privValKeyFile := tendermintPath + "/" + conf.PrivValidatorKeyFile()
-	privValStateFile := tendermintPath + "/" + conf.PrivValidatorStateFile()
-	var pv *privval.FilePV
-	if tlc.FileExists(privValKeyFile) {
-		pv = privval.LoadFilePV(privValKeyFile, privValStateFile)
-	} else {
-		pv = privval.GenFilePV(privValKeyFile, privValStateFile)
-		pv.Save()
-	}
-	nodeKeyFile := tendermintPath + "/" + conf.NodeKeyFile()
-	if !tlc.FileExists(nodeKeyFile) {
-		if _, err := p2p.LoadOrGenNodeKey(nodeKeyFile); err != nil {
-			return "", err
-		}
-	}
-
-	// genesis file
-	genFile := tendermintPath + "/" + conf.GenesisFile()
-	if !tlc.FileExists(genFile) {
-		genDoc := types.GenesisDoc{
-			ChainID:         "madledger",
-			GenesisTime:     tt.Now(),
-			ConsensusParams: types.DefaultConsensusParams(),
-		}
-		genDoc.Validators = []types.GenesisValidator{{
-			Address: pv.GetPubKey().Address(),
-			PubKey:  pv.GetPubKey(),
-			Power:   10,
-		}}
-
-		if err := genDoc.SaveAs(genFile); err != nil {
-			return "", err
-		}
-	}
-
-	// load node key
-	nodeKey, err := p2p.LoadNodeKey(nodeKeyFile)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%s", nodeKey.ID()), nil
-}
-
-
 
 // StartPeers start peers
 func StartPeers(num int) error {
@@ -212,4 +145,11 @@ func getPeerConfig(id int) *pc.Config {
 	cfg.KeyStore.Key = key
 	cfg.Port = 23333 + (id - 1)
 	return cfg
+}
+
+// Clean clean environment
+func Clean() {
+	os.RemoveAll(getOrdererPath())
+	os.RemoveAll(getPeerPath())
+	os.RemoveAll(getClientsPath())
 }

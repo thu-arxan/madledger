@@ -1,7 +1,9 @@
 package bft
 
 import (
+	"fmt"
 	client "madledger/client/lib"
+	"madledger/common/util"
 )
 
 const (
@@ -37,3 +39,19 @@ var (
 	clients    = make([]*client.Client, 400)
 	clientInit = false
 )
+
+// GetClients will return clients
+func GetClients() []*client.Client {
+	if !clientInit {
+		for i := range clients {
+			cfgPath, _ := util.MakeFileAbs(fmt.Sprintf("%d/client.yaml", i), getClientsPath())
+			client, err := client.NewClient(cfgPath)
+			if err != nil {
+				panic(err)
+			}
+			clients[i] = client
+		}
+		clientInit = true
+	}
+	return clients
+}

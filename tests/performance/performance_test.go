@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	consensus = "raft"
+	consensus = "bft"
 	peerNum   = 3
 )
 
@@ -36,7 +36,6 @@ func TestInit(t *testing.T) {
 		require.NoError(t, bft.Init(peerNum))
 		require.NoError(t, bft.StartOrderers())
 		require.NoError(t, bft.StartPeers(peerNum))
-		panic("Unsupport now")
 	default:
 		panic("Unsupport consensus")
 	}
@@ -82,6 +81,7 @@ func TestEnd(t *testing.T) {
 	case "raft":
 		raft.Clean()
 	case "bft":
+		bft.Clean()
 	default:
 		panic("Unsupport consensus")
 	}

@@ -8,6 +8,7 @@ import (
 	client "madledger/client/lib"
 	"madledger/common/abi"
 	pb "madledger/protos"
+	"madledger/tests/performance/bft"
 	"madledger/tests/performance/raft"
 	"madledger/tests/performance/solo"
 	"os"
@@ -83,6 +84,7 @@ func getClients() []*client.Client {
 	case "raft":
 		clients = raft.GetClients()
 	case "bft":
+		clients = bft.GetClients()
 	default:
 		panic("Unsupport consensus")
 	}
