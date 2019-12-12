@@ -3,11 +3,12 @@ package db
 import (
 	"encoding/json"
 	"errors"
-	"github.com/sirupsen/logrus"
 	"madledger/common"
 	"madledger/common/util"
 	"madledger/core/types"
-	"time"
+	"sync"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -23,6 +24,8 @@ type LevelDB struct {
 	// the dir of data
 	dir     string
 	connect *leveldb.DB
+	lock    sync.Mutex
+	hub     *Hub
 }
 
 var (
@@ -38,6 +41,7 @@ func NewLevelDB(dir string) (DB, error) {
 		return nil, err
 	}
 	db.connect = connect
+	db.hub = NewHub()
 	return db, nil
 }
 
@@ -107,6 +111,7 @@ func (db *LevelDB) SetStorage(address common.Address, key common.Word256, value 
 
 // GetTxStatus is the implementation of interface
 func (db *LevelDB) GetTxStatus(channelID, txID string) (*TxStatus, error) {
+	panic("Forbidded")
 	var key = util.BytesCombine([]byte(channelID), []byte(txID))
 	if ok, _ := db.connect.Has(key, nil); !ok {
 		return nil, errors.New("Not exist")
@@ -125,22 +130,24 @@ func (db *LevelDB) GetTxStatus(channelID, txID string) (*TxStatus, error) {
 
 // GetTxStatusAsync is the implementation of interface
 func (db *LevelDB) GetTxStatusAsync(channelID, txID string) (*TxStatus, error) {
+	db.lock.Lock()
 	var key = util.BytesCombine([]byte(channelID), []byte(txID))
-	for {
-		if ok, _ := db.connect.Has(key, nil); ok {
-			value, err := db.connect.Get(key, nil)
-			if err != nil {
-				return nil, err
-			}
-			var status TxStatus
-			err = json.Unmarshal(value, &status)
-			if err != nil {
-				return nil, err
-			}
-			return &status, nil
+	// for {
+	if ok, _ := db.connect.Has(key, nil); ok {
+		db.lock.Unlock()
+		value, err := db.connect.Get(key, nil)
+		if err != nil {
+			return nil, err
 		}
-		time.Sleep(10 * time.Millisecond)
+		var status TxStatus
+		err = json.Unmarshal(value, &status)
+		if err != nil {
+			return nil, err
+		}
+		return &status, nil
 	}
+	status := db.hub.Watch(txID, func() { db.lock.Unlock() })
+	return status, nil
 }
 
 // SetTxStatus is the implementation of interface
@@ -159,6 +166,7 @@ func (db *LevelDB) SetTxStatus(tx *types.Tx, status *TxStatus) error {
 		return err
 	}
 	db.addHistory(sender.Bytes(), tx.Data.ChannelID, tx.ID)
+	db.hub.Done(tx.ID, status)
 	return nil
 }
 
@@ -314,6 +322,7 @@ func (wb *WriteBatchWrapper) SetTxStatus(tx *types.Tx, status *TxStatus) error {
 	}
 	//db.addHistory(sender.Bytes(), tx.Data.ChannelID, tx.ID)
 	wb.addHistory(sender.Bytes(), tx.Data.ChannelID, tx.ID)
+	wb.db.hub.Done(tx.ID, status)
 	return nil
 }
 

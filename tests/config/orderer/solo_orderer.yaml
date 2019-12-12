@@ -16,7 +16,7 @@ BlockChain:
   # Max time to create a block which unit is milliseconds (default: 1000)
   BatchTimeout: 100
   # Max txs can be included in a block (defalut: 100)
-  BatchSize: 100
+  BatchSize: 1000
   # Path to store the blocks (default: $GOPATH/src/madledger/orderer/data/blocks)
   # But in the production environment, you must provide a path
   Path: 
