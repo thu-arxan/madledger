@@ -36,8 +36,8 @@ KeyStore:
 )
 
 var (
-	clients    = make([]*client.Client, 400)
 	clientInit = false
+	clients    []*client.Client
 )
 
 // GetClients will return clients

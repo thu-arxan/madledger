@@ -2,6 +2,7 @@ package solo
 
 import (
 	"fmt"
+	client "madledger/client/lib"
 	"madledger/common/util"
 	"os"
 	"time"
@@ -19,11 +20,12 @@ var (
 )
 
 // Init will init environment
-func Init() error {
+func Init(clientSize int) error {
 	Clean()
 	os.MkdirAll(getOrdererPath(), os.ModePerm)
 	os.MkdirAll(getPeerPath(), os.ModePerm)
 	os.MkdirAll(getClientsPath(), os.ModePerm)
+	clients = make([]*client.Client, clientSize)
 	return newClients()
 }
 

@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	gopath    = os.Getenv("GOPATH")
-	logPath   = "performance.out"
+	gopath  = os.Getenv("GOPATH")
+	logPath = "performance.out"
 )
 
 // Help fulfillment the test.

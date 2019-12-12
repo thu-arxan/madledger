@@ -2,6 +2,7 @@ package performance
 
 import (
 	"fmt"
+	"madledger/core/types"
 	"madledger/tests/performance/bft"
 	"os"
 	"sync"
@@ -17,15 +18,17 @@ import (
 )
 
 var (
-	consensus = "bft"
-	peerNum   = 3
+	consensus   = "solo"
+	peerNum     = 3
+	channelSize = 10
+	clientSize  = 200
 )
 
 func TestInit(t *testing.T) {
 	os.Remove(logPath)
 	switch consensus {
 	case "solo":
-		require.NoError(t, solo.Init())
+		require.NoError(t, solo.Init(clientSize))
 		require.NoError(t, solo.StartOrderers())
 		require.NoError(t, solo.StartPeers())
 	case "raft":
@@ -44,25 +47,34 @@ func TestInit(t *testing.T) {
 
 func TestCreateChannel(t *testing.T) {
 	var clients = getClients()
-	require.NoError(t, clients[0].CreateChannel("test", true, nil, nil))
+	for i := 0; i < channelSize; i++ {
+		require.NoError(t, clients[0].CreateChannel(fmt.Sprintf("test%d", i), true, nil, nil))
+	}
 }
 
 func TestCreateContract(t *testing.T) {
 	var clients = getClients()
-	CreateContract(t, "test", clients[0])
+	for i := 0; i < channelSize; i++ {
+		CreateContract(t, fmt.Sprintf("test%d", i), clients[0])
+	}
 }
 
 func TestPerformance(t *testing.T) {
 	var wg sync.WaitGroup
 	var callSize = 40
 	clients := getClients()
+	var txs = make([][]*types.Tx, clientSize)
+	// create txs
+	for i := range txs {
+		txs[i] = CreateCallContractTx(fmt.Sprintf("test%d", i%channelSize), clients[i], callSize)
+	}
 	begin := time.Now()
 	for i := range clients {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
 			client := clients[i]
-			CallContract(t, "test", client, callSize)
+			AddTxs(t, client, txs[i])
 		}(i)
 	}
 	wg.Wait()
