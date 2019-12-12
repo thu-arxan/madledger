@@ -37,6 +37,8 @@ func NewNode(cfg *Config, app abci.Application) (*Node, error) {
 	conf.P2P.AddrBookStrict = false
 	conf.P2P.AllowDuplicateIP = true
 	conf.P2P.PersistentPeers = strings.Join(cfg.P2PAddress, ",")
+	conf.Mempool.Size=10000
+	conf.Mempool.CacheSize=20000
 	// conf.Mempool.Size = 0
 	// conf.Mempool.CacheSize = 0
 	// conf.Mempool.Broadcast = false
