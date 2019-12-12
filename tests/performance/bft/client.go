@@ -36,7 +36,7 @@ KeyStore:
 )
 
 var (
-	clients    = make([]*client.Client, 400)
+	clients    []*client.Client
 	clientInit = false
 )
 

@@ -18,9 +18,9 @@ import (
 )
 
 var (
-	consensus   = "solo"
+	consensus   = "raft"
 	peerNum     = 3
-	channelSize = 10
+	channelSize = 1
 	clientSize  = 200
 )
 
@@ -32,11 +32,11 @@ func TestInit(t *testing.T) {
 		require.NoError(t, solo.StartOrderers())
 		require.NoError(t, solo.StartPeers())
 	case "raft":
-		require.NoError(t, raft.Init(peerNum))
+		require.NoError(t, raft.Init(clientSize, peerNum))
 		require.NoError(t, raft.StartOrderers())
 		require.NoError(t, raft.StartPeers(peerNum))
 	case "bft":
-		require.NoError(t, bft.Init(peerNum))
+		require.NoError(t, bft.Init(clientSize, peerNum))
 		require.NoError(t, bft.StartOrderers())
 		require.NoError(t, bft.StartPeers(peerNum))
 	default:

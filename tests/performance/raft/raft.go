@@ -2,6 +2,7 @@ package raft
 
 import (
 	"fmt"
+	client "madledger/client/lib"
 	"madledger/common/util"
 	"os"
 	"time"
@@ -19,12 +20,13 @@ var (
 )
 
 // Init will init environment
-func Init(num int) error {
+func Init(clientSize, peerNum int) error {
 	Clean()
 	os.MkdirAll(getOrdererPath(), os.ModePerm)
 	os.MkdirAll(getPeerPath(), os.ModePerm)
 	os.MkdirAll(getClientsPath(), os.ModePerm)
-	return newClients(num)
+	clients = make([]*client.Client, clientSize)
+	return newClients(peerNum)
 }
 
 // Clean clean environment

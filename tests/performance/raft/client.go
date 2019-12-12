@@ -40,7 +40,7 @@ KeyStore:
 )
 
 var (
-	clients    = make([]*client.Client, 400)
+	clients    []*client.Client
 	clientInit = false
 )
 
@@ -60,11 +60,11 @@ func GetClients() []*client.Client {
 	return clients
 }
 
-func newClients(num int) error {
+func newClients(peerNum int) error {
 	for i := range clients {
 		cp, _ := util.MakeFileAbs(fmt.Sprintf("%d", i), getClientsPath())
 		os.MkdirAll(cp, os.ModePerm)
-		if err := newClient(cp, num); err != nil {
+		if err := newClient(cp, peerNum); err != nil {
 			return err
 		}
 	}
@@ -72,7 +72,7 @@ func newClients(num int) error {
 	return nil
 }
 
-func newClient(path string, num int) error {
+func newClient(path string, peerNum int) error {
 	cfgPath, _ := util.MakeFileAbs("client.yaml", path)
 	keyStorePath, _ := util.MakeFileAbs(".keystore", path)
 	os.MkdirAll(keyStorePath, os.ModePerm)
@@ -83,11 +83,11 @@ func newClient(path string, num int) error {
 	}
 
 	var cfg = clientConfigTemplate
-	for i := 1; i <= num; i++ {
+	for i := 1; i <= peerNum; i++ {
 		port := 23333 + (i - 1)
 		cfg = strings.Replace(cfg, fmt.Sprintf("<<<ADDRESS%d>>>", i), fmt.Sprintf("- localhost:%d", port), 1)
 	}
-	for i := num + 1; i <= 3; i++ {
+	for i := peerNum + 1; i <= 3; i++ {
 		cfg = strings.Replace(cfg, fmt.Sprintf("<<<ADDRESS%d>>>", i), "", 1)
 	}
 	cfg = strings.Replace(cfg, "<<<KEYFILE>>>", keyPath, 1)

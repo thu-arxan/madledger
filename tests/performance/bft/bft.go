@@ -2,8 +2,8 @@ package bft
 
 import (
 	"fmt"
-	"github.com/otiai10/copy"
 	"io/ioutil"
+	client "madledger/client/lib"
 	cutil "madledger/client/util"
 	"madledger/common/util"
 	oc "madledger/orderer/config"
@@ -13,6 +13,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/otiai10/copy"
 )
 
 var (
@@ -21,7 +23,7 @@ var (
 )
 
 // Init will init environment
-func Init(num int) error {
+func Init(clientSize, peerNum int) error {
 	Clean()
 	// copy orderder config
 	if err := copy.Copy(gopath+"/src/madledger/tests/performance/.orderer", getOrdererPath()); err != nil {
@@ -29,7 +31,8 @@ func Init(num int) error {
 	}
 	os.MkdirAll(getPeerPath(), os.ModePerm)
 	os.MkdirAll(getClientsPath(), os.ModePerm)
-	return newClients(num)
+	clients = make([]*client.Client, clientSize)
+	return newClients(peerNum)
 }
 
 func getOrdererPath() string {
@@ -47,11 +50,11 @@ func getClientsPath() string {
 	return path
 }
 
-func newClients(num int) error {
+func newClients(peerNum int) error {
 	for i := range clients {
 		cp, _ := util.MakeFileAbs(fmt.Sprintf("%d", i), getClientsPath())
 		os.MkdirAll(cp, os.ModePerm)
-		if err := newClient(cp, num); err != nil {
+		if err := newClient(cp, peerNum); err != nil {
 			return err
 		}
 	}
@@ -59,7 +62,7 @@ func newClients(num int) error {
 	return nil
 }
 
-func newClient(path string, num int) error {
+func newClient(path string, peerNum int) error {
 	cfgPath, _ := util.MakeFileAbs("client.yaml", path)
 	keyStorePath, _ := util.MakeFileAbs(".keystore", path)
 	os.MkdirAll(keyStorePath, os.ModePerm)
@@ -70,11 +73,11 @@ func newClient(path string, num int) error {
 	}
 
 	var cfg = clientConfigTemplate
-	for i := 1; i <= num; i++ {
+	for i := 1; i <= peerNum; i++ {
 		port := 23333 + (i - 1)
 		cfg = strings.Replace(cfg, fmt.Sprintf("<<<ADDRESS%d>>>", i), fmt.Sprintf("- localhost:%d", port), 1)
 	}
-	for i := num + 1; i <= 3; i++ {
+	for i := peerNum + 1; i <= 3; i++ {
 		cfg = strings.Replace(cfg, fmt.Sprintf("<<<ADDRESS%d>>>", i), "", 1)
 	}
 	cfg = strings.Replace(cfg, "<<<KEYFILE>>>", keyPath, 1)
