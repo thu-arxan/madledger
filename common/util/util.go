@@ -214,3 +214,15 @@ func IsDirSame(a, b string) bool {
 	}
 	return true
 }
+
+// CopyBytes copy bytes
+func CopyBytes(origin []byte) []byte {
+	if origin == nil {
+		return nil
+	}
+	var res = make([]byte, len(origin))
+	for i := range origin {
+		res[i] = origin[i]
+	}
+	return res
+}

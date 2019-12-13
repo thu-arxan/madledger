@@ -18,9 +18,9 @@ import (
 )
 
 var (
-	consensus   = "raft"
+	consensus   = "solo"
 	peerNum     = 3
-	channelSize = 1
+	channelSize = 10
 	clientSize  = 200
 )
 
@@ -61,7 +61,7 @@ func TestCreateContract(t *testing.T) {
 
 func TestPerformance(t *testing.T) {
 	var wg sync.WaitGroup
-	var callSize = 40
+	var callSize = 50
 	clients := getClients()
 	var txs = make([][]*types.Tx, clientSize)
 	// create txs
