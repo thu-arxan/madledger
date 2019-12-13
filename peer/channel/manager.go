@@ -9,7 +9,6 @@ import (
 	"madledger/peer/db"
 	"madledger/peer/orderer"
 	"sync"
-	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -88,23 +87,22 @@ func (m *Manager) AddBlock(block *types.Block) error {
 		m.AddConfigBlock(block)
 		log.Infof("Add config block %d", block.Header.Number)
 	default:
-		for {
-			if m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
-				log.Infof("Run block %s: %d", m.id, block.Header.Number)
-				wb, err := m.RunBlock(block.Header.Number)
-				if err != nil {
-					return err
-				}
-				batch := wb.GetBatch()
-				err = m.db.SyncWriteBatch(batch)
-				if err != nil {
-					return err
-				}
-				return nil
-			}
-			time.Sleep(10 * time.Millisecond)
+		if !m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
+			m.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
 		}
+		log.Infof("Run block %s: %d", m.id, block.Header.Number)
+		wb, err := m.RunBlock(block)
+		if err != nil {
+			return err
+		}
+		batch := wb.GetBatch()
+		err = m.db.SyncWriteBatch(batch)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
+
 	return nil
 }
 
@@ -112,18 +110,14 @@ func (m *Manager) AddBlock(block *types.Block) error {
 // It will return after the block is runned.
 // In the future, this will contains chains which rely on something or nothing
 // TODO: transfer is not implementation yet
-func (m *Manager) RunBlock(num uint64) (db.WriteBatch, error) {
-	block, err := m.cm.GetBlock(num)
-	if err != nil {
-		return nil, err
-	}
+func (m *Manager) RunBlock(block *types.Block) (db.WriteBatch, error) {
 	context := evm.NewContext(block)
 	wb := m.db.NewWriteBatch()
 	for i, tx := range block.Transactions {
 		senderAddress, err := tx.GetSender()
 		status := &db.TxStatus{
 			Err:         "",
-			BlockNumber: num,
+			BlockNumber: block.Header.Number,
 			BlockIndex:  i,
 			Output:      nil,
 		}
@@ -155,7 +149,7 @@ func (m *Manager) RunBlock(num uint64) (db.WriteBatch, error) {
 			continue
 		}
 
-		evm := evm.NewEVM(*context, senderAddress, m.db,wb)
+		evm := evm.NewEVM(*context, senderAddress, m.db, wb)
 		if receiverAddress.String() != common.ZeroAddress.String() {
 			// log.Info("This is a normal call")
 			// if the length of payload is not zero, this is a contract call

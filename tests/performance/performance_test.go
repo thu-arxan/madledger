@@ -61,7 +61,7 @@ func TestCreateContract(t *testing.T) {
 
 func TestPerformance(t *testing.T) {
 	var wg sync.WaitGroup
-	var callSize = 50
+	var callSize = 40
 	clients := getClients()
 	var txs = make([][]*types.Tx, clientSize)
 	// create txs
