@@ -241,12 +241,10 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-	// give client.pubkey to orderer
-	pk, err := c.GetPrivKey().PubKey().Bytes()
+
 	for i, ordererClient := range c.ordererClients {
 		_, err = ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
 			Tx: pbTx,
-			PK: pk,
 		})
 
 		times := i + 1
