@@ -5,11 +5,8 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
-	"google.golang.org/grpc/credentials"
-	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"madledger/common"
@@ -27,12 +24,16 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/credentials"
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/stretchr/testify/require"
 
-	"github.com/otiai10/copy"
 	bc "madledger/blockchain/config"
 	gc "madledger/blockchain/global"
 	pb "madledger/protos"
+
+	"github.com/otiai10/copy"
 
 	"google.golang.org/grpc"
 )
@@ -150,16 +151,16 @@ func startFakeOrderer() error {
 	addr := fmt.Sprintf("localhost:9999")
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Failed to start the orderer, because %s", err.Error()))
+		return fmt.Errorf("Failed to start the orderer, because %s", err.Error())
 	}
 	fmt.Printf("Start the orderer at %s", addr)
 	var opts []grpc.ServerOption
 	cfg, err := getOrdererConfig()
-	if cfg.TLS.Enable{
+	if cfg.TLS.Enable {
 		creds := credentials.NewTLS(&tls.Config{
 			ClientAuth:   tls.RequireAndVerifyClientCert,
 			Certificates: []tls.Certificate{*(cfg.TLS.Cert)},
-			ClientCAs:   cfg.TLS.Pool,
+			ClientCAs:    cfg.TLS.Pool,
 		})
 		opts = append(opts, grpc.Creds(creds))
 	}
