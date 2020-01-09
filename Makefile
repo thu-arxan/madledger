@@ -46,3 +46,8 @@ test:
 
 	@echo "Next test may cost 1 minutes ..."
 	@$(GOCMD) test madledger/tests -count=1 -cover
+
+performance:
+	@$(GOCMD) test madledger/tests/performance -count=1
+	@cat tests/performance/performance.out
+	@rm -rf tests/performance/performance.out
