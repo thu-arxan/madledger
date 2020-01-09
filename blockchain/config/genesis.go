@@ -3,8 +3,8 @@ package config
 import (
 	"encoding/base64"
 	"encoding/json"
-	"madledger/core/types"
 	"madledger/common/crypto"
+	"madledger/core/types"
 )
 
 // CreateGenesisBlock return the genesis block
@@ -44,12 +44,14 @@ func CreateGenesisBlock(admins []*types.Member) (*types.Block, error) {
 	return types.NewBlock(types.CONFIGCHANNELID, 0, types.GenesisBlockPrevHash, txs), nil
 }
 
+// CreateAdmins create admins
+// TODO: Hard code here
 func CreateAdmins() ([]*types.Member, error) {
 	// get pubkey from string by base64 encoding
 	data, err := base64.StdEncoding.DecodeString("BGXcjZ3bhemsoLP4HgBwnQ5gsc8VM91b3y8bW0b6knkWu8x" +
 		"CSKO2qiJXARMHcbtZtvU7Jos2A5kFCD1haJ/hLdg=")
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	// create PublicKey
 	pk, err := crypto.NewPublicKey(data)
@@ -60,5 +62,5 @@ func CreateAdmins() ([]*types.Member, error) {
 	member, err := types.NewMember(pk, "SystemAdmin")
 	admins := make([]*types.Member, 0)
 	admins = append(admins, member)
-	return admins,nil
+	return admins, nil
 }

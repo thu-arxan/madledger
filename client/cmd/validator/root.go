@@ -1,12 +1,13 @@
 package validator
 
 import (
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 var (
-	homeDir, _ = os.Getwd()
+	homeDir, _   = os.Getwd()
 	validatorCmd = &cobra.Command{
 		Use: "validator",
 	}
@@ -17,4 +18,3 @@ func Cmd() *cobra.Command {
 	validatorCmd.AddCommand(addCmd)
 	return validatorCmd
 }
-

@@ -4,12 +4,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"github.com/tendermint/tendermint/abci/types"
 	"madledger/client/lib"
 	"madledger/client/util"
 	coreTypes "madledger/core/types"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/tendermint/tendermint/abci/types"
 )
 
 var (

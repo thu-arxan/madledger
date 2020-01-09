@@ -18,12 +18,12 @@ type Tx struct {
 	Time int64
 }
 
-// ConsensusType is the type of consensus
+// TxType is the type of consensus
 type TxType int64
 
+// Here define some kind of tx type
 const (
 	_ TxType = iota
-	// NORMAL is the normal tx
 	CREATECHANNEL
 	// VALIDATOR is the tendermint cfgChange tx
 	VALIDATOR

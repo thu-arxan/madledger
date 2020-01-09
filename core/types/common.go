@@ -28,8 +28,9 @@ var (
 	CfgRaftAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffd")
 )
 
+// GetTxType return tx type
 func GetTxType(recipient string) (TxType, error) {
-	if strings.Compare(recipient, CreateChannelContractAddress.String()) == 0{
+	if strings.Compare(recipient, CreateChannelContractAddress.String()) == 0 {
 		return CREATECHANNEL, nil
 	} else if strings.Compare(recipient, CfgTendermintAddress.String()) == 0 {
 		return VALIDATOR, nil

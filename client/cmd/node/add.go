@@ -3,14 +3,15 @@ package node
 import (
 	"encoding/json"
 	"errors"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"go.etcd.io/etcd/raft/raftpb"
 	"madledger/client/lib"
 	"madledger/client/util"
 	coreTypes "madledger/core/types"
 	"strconv"
 	"strings"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"go.etcd.io/etcd/raft/raftpb"
 )
 
 var (

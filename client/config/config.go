@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"madledger/common/crypto"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // Config is the combination of all config
@@ -22,6 +22,7 @@ type Config struct {
 	} `yaml:"KeyStore"`
 }
 
+// TLSConfig is the config of tls
 type TLSConfig struct {
 	Enable  bool   `yaml:"Enable"`
 	CA      string `yaml:"CA"`
@@ -51,6 +52,8 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	return &cfg, nil
 }
 
+// GetTLSConfig set tls config
+// TODO: maybe a better name
 func (cfg *Config) GetTLSConfig() error {
 	if cfg.TLS.Enable {
 		// load pool
