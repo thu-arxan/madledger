@@ -44,5 +44,5 @@ test:
 	@$(GOCMD) test madledger/peer/db -count=1 -cover
 	@$(GOCMD) test madledger/peer/config -count=1 -cover
 
-	# @echo "Next test may cost 2 minutes ..."
-	# @$(GOCMD) test madledger/tests -count=1 -cover
+	@echo "Next test may cost 1 minutes ..."
+	@$(GOCMD) test madledger/tests -count=1 -cover

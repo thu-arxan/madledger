@@ -21,7 +21,7 @@ import (
 
 	"github.com/otiai10/copy"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 /*
@@ -213,13 +213,13 @@ func initBFTEnvironment() error {
 	if err := os.RemoveAll(gopath + "/src/madledger/tests/.bft"); err != nil {
 		return err
 	}
-	if err := copy.Copy(gopath+"/src/madledger/env/bft/.orderers", gopath+"/src/madledger/tests/.bft/orderers"); err != nil {
+	if err := copy.Copy(gopath+"/src/madledger/tests/env/bft/orderers", gopath+"/src/madledger/tests/.bft/orderers"); err != nil {
 		return err
 	}
-	if err := copy.Copy(gopath+"/src/madledger/env/bft/.clients", gopath+"/src/madledger/tests/.bft/clients"); err != nil {
+	if err := copy.Copy(gopath+"/src/madledger/tests/env/bft/clients", gopath+"/src/madledger/tests/.bft/clients"); err != nil {
 		return err
 	}
-	if err := copy.Copy(gopath+"/src/madledger/env/bft/.peers", gopath+"/src/madledger/tests/.bft/peers"); err != nil {
+	if err := copy.Copy(gopath+"/src/madledger/tests/env/bft/peers", gopath+"/src/madledger/tests/.bft/peers"); err != nil {
 		return err
 	}
 
@@ -262,7 +262,6 @@ func absBFTClientConfig(node int) error {
 	return ioutil.WriteFile(cfgPath, data, os.ModePerm)
 }
 
-
 func loadClientConfig(cfgPath string) (*cc.Config, error) {
 	cfgBytes, err := ioutil.ReadFile(cfgPath)
 	if err != nil {
@@ -275,7 +274,6 @@ func loadClientConfig(cfgPath string) (*cc.Config, error) {
 	}
 	return &cfg, nil
 }
-
 
 func absBFTOrdererConfig(node int) error {
 	cfgPath := getBFTOrdererConfigPath(node)
