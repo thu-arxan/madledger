@@ -2,7 +2,6 @@ package tendermint
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"madledger/common/util"
 	"madledger/consensus"
@@ -12,6 +11,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/otiai10/copy"
 	"github.com/stretchr/testify/require"
@@ -35,7 +36,7 @@ func TestInitEnv(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	require.NoError(t, os.RemoveAll(getTestPath()))
 
-	require.NoError(t, copy.Copy(gopath+"/src/madledger/env/bft/.orderers", fmt.Sprintf("%s/orderers", getTestPath())))
+	require.NoError(t, copy.Copy(gopath+"/src/madledger/consensus/tendermint/.orderers", fmt.Sprintf("%s/orderers", getTestPath())))
 }
 
 func TestStart(t *testing.T) {
