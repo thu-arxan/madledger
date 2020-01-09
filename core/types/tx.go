@@ -128,9 +128,8 @@ func (tx *Tx) Verify() bool {
 
 // GetSender return the sender of the tx
 func (tx *Tx) GetSender() (common.Address, error) {
-	// return tx.Data.Sig.PK.Address()
 	if tx.Data.Sig == nil {
-		return common.ZeroAddress, nil
+		return common.ZeroAddress, errors.New("sig is empty")
 	}
 	pk, err := crypto.NewPublicKey(tx.Data.Sig.PK)
 	if err != nil {
