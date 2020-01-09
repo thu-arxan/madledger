@@ -1,9 +1,10 @@
 package db
 
 import (
-	"github.com/syndtr/goleveldb/leveldb"
 	"madledger/common"
 	"madledger/core/types"
+
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 // TxStatus return the status of tx
@@ -15,6 +16,7 @@ type TxStatus struct {
 	ContractAddress string
 }
 
+// WriteBatch define a write batch interface
 type WriteBatch interface {
 	RemoveAccount(address common.Address) error
 	SetAccount(account common.Account) error

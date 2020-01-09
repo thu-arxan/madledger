@@ -58,7 +58,7 @@ func (c *Collector) Add(result interface{}, err error) {
 		}
 	}
 
-	var total int = 0
+	var total int
 	for _, num := range c.results {
 		total += num
 	}

@@ -125,7 +125,7 @@ func randomTx() []byte {
 }
 
 func getConfig(node int) (*Config, error) {
-	return NewConfig(getNodePath(node), "127.0.0.1", uint64(node+1), peers, consensus.Config{
+	return NewConfig(getNodePath(node), "127.0.0.1", uint64(node+1), peers, false, consensus.Config{
 		Timeout: 100,
 		MaxSize: 10,
 		Resume:  false,

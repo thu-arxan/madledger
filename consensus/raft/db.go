@@ -105,6 +105,7 @@ func (db *DB) SetPrevBlockNum(channelID string, num uint64) {
 	db.connect.Put(key, data, nil)
 }
 
+// SetChainNum set chain number
 func (db *DB) SetChainNum(num uint64) {
 	var key = []byte("chainNum")
 	data, _ := json.Marshal(num)
@@ -112,6 +113,7 @@ func (db *DB) SetChainNum(num uint64) {
 	db.connect.Put(key, data, nil)
 }
 
+// GetChainNum return chain number
 func (db *DB) GetChainNum() uint64 {
 	var key = []byte("chainNum")
 	var num uint64

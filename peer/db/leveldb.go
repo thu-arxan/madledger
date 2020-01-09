@@ -111,7 +111,6 @@ func (db *LevelDB) SetStorage(address common.Address, key common.Word256, value 
 
 // GetTxStatus is the implementation of interface
 func (db *LevelDB) GetTxStatus(channelID, txID string) (*TxStatus, error) {
-	panic("Forbidded")
 	var key = util.BytesCombine([]byte(channelID), []byte(txID))
 	if ok, _ := db.connect.Has(key, nil); !ok {
 		return nil, errors.New("Not exist")
@@ -261,6 +260,7 @@ func (db *LevelDB) setChannels(channels []string) {
 	db.connect.Put(key, value, nil)
 }
 
+// NewWriteBatch implement the interface, WriteBatch is a wrapper of leveldb.Batch
 func (db *LevelDB) NewWriteBatch() WriteBatch {
 	batch := new(leveldb.Batch)
 	return &WriteBatchWrapper{
@@ -269,6 +269,7 @@ func (db *LevelDB) NewWriteBatch() WriteBatch {
 	}
 }
 
+// SyncWriteBatch sync write batch into db
 func (db *LevelDB) SyncWriteBatch(batch *leveldb.Batch) error {
 	err := db.connect.Write(batch, nil)
 	if err != nil {
@@ -277,6 +278,7 @@ func (db *LevelDB) SyncWriteBatch(batch *leveldb.Batch) error {
 	return nil
 }
 
+// WriteBatchWrapper is a wrapper of level.Batch
 type WriteBatchWrapper struct {
 	batch *leveldb.Batch
 	db    *LevelDB
@@ -351,6 +353,7 @@ func (wb *WriteBatchWrapper) addHistory(address []byte, channelID, txID string) 
 	}
 }
 
+// GetBatch return the level.Batch
 func (wb *WriteBatchWrapper) GetBatch() *leveldb.Batch {
 	if wb == nil {
 		return nil
