@@ -18,3 +18,4 @@ peer/data
 env/raft/orderers
 env/raft/peers
 env/raft/clients
+*.log

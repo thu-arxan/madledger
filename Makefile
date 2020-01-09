@@ -39,7 +39,7 @@ test:
 
 	@$(GOCMD) test madledger/orderer/config -count=1 -cover
 	@$(GOCMD) test madledger/orderer/db -count=1 -cover
-	# @$(GOCMD) test madledger/orderer/server -count=1 -cover
+	@$(GOCMD) test madledger/orderer/server -count=1 -cover
 
 	@$(GOCMD) test madledger/peer/db -count=1 -cover
 	@$(GOCMD) test madledger/peer/config -count=1 -cover
