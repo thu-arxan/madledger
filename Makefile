@@ -17,6 +17,9 @@ build:
 	@echo "building client..."
 	@$(GOCMD) install madledger/client
 
+proto:
+	@ cd protos && protoc --go_out=plugins=grpc:. *.proto
+
 # test:
 test:
 	@$(GOCMD) test madledger/common/util -count=1 -cover

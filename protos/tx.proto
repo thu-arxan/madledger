@@ -12,7 +12,7 @@ message Tx {
 // txData is the data of Tx
 message txData {
 	string ChannelID = 1;
-	uint64 AccountNonce = 2;
+	uint64 Nonce = 2;
 	bytes Recipient = 3;
 	bytes Payload = 4;
 	int32 Version = 5;  

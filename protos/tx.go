@@ -35,11 +35,11 @@ func NewTxData(txData *types.TxData) *TxData {
 		return nil
 	}
 	var td = &TxData{
-		ChannelID:    txData.ChannelID,
-		AccountNonce: txData.Nonce,
-		Recipient:    util.CopyBytes(txData.Recipient),
-		Payload:      util.CopyBytes(txData.Payload),
-		Version:      txData.Version,
+		ChannelID: txData.ChannelID,
+		Nonce:     txData.Nonce,
+		Recipient: util.CopyBytes(txData.Recipient),
+		Payload:   util.CopyBytes(txData.Payload),
+		Version:   txData.Version,
 	}
 	if txData.Sig != nil {
 		td.Sig = &TxSig{
@@ -54,7 +54,7 @@ func NewTxData(txData *types.TxData) *TxData {
 func (data *TxData) ToTypes() *types.TxData {
 	var td = &types.TxData{
 		ChannelID: data.ChannelID,
-		Nonce:     data.AccountNonce,
+		Nonce:     data.Nonce,
 		Recipient: util.CopyBytes(data.Recipient),
 		Payload:   util.CopyBytes(data.Payload),
 		Version:   data.Version,
