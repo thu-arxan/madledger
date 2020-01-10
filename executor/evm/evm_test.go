@@ -1,10 +1,10 @@
 package evm
 
 import (
-	"dca/util"
 	"encoding/hex"
 	"fmt"
 	"madledger/common"
+	"madledger/common/util"
 	"madledger/executor/evm/simulate"
 	"testing"
 	"time"
@@ -49,7 +49,6 @@ func TestVmCall(t *testing.T) {
 		panic(err)
 	}
 	fmt.Printf("%x\n", output)
-	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 	contract, _ := db.GetAccount(address)
 	input, _ := util.HexToBytes("6d4ce63c")
 	output, err = vm.Call(account1, contract, output, input, 0)
