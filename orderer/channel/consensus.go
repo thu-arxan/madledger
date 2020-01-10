@@ -13,7 +13,7 @@ func GetTxsFromConsensusBlock(block consensus.Block) []*core.Tx {
 		if err == nil {
 			txs = append(txs, tx)
 		} else {
-			log.Info(err)
+			log.Infof("get tx from consensus block failed because %v", err)
 		}
 	}
 	return txs

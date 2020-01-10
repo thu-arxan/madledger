@@ -221,7 +221,7 @@ func (chain *BlockChain) addBlock(block *HybridBlock) error {
 		cfgChange, err := chain.getConfChange(t)
 		if err != nil {
 			if !strings.Contains(err.Error(), "It's not raft config change tx.") {
-				log.Infoln(err.Error())
+				log.Infof("addBlock meets error:%v", err.Error())
 				return err
 			}
 		} else {
@@ -264,8 +264,11 @@ func (chain *BlockChain) getConfChange(tx *Tx) (raftpb.ConfChange, error) {
 	var coreTx core.Tx
 	var cfgChange raftpb.ConfChange
 	err := json.Unmarshal(tx.Data, &coreTx)
+	// Note: The reason return nil because Tx may be just random bytes,
+	// and this is a bad implementation so we should change the way to do this
+	// TODO: Reimplement it
 	if err != nil {
-		return cfgChange, err
+		return cfgChange, nil
 	}
 	// get tx type according to recipient
 	//log.Infof("Recipient: %s", common.BytesToAddress(coreTx.Data.Recipient).String())

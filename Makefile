@@ -38,6 +38,7 @@ test:
 	@$(GOCMD) test madledger/executor/evm -count=1 -cover
 
 	@$(GOCMD) test madledger/consensus/solo -count=1 -cover
+	@$(GOCMD) test madledger/consensus/raft -count=1 -cover
 	@$(GOCMD) test madledger/consensus/tendermint -count=1 -cover
 
 	@$(GOCMD) test madledger/orderer/config -count=1 -cover
