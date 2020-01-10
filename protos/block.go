@@ -12,12 +12,11 @@ func NewBlock(block *core.Block) (*Block, error) {
 		txs = nil
 	} else {
 		for i := range txs {
-			tx := block.Transactions[i]
-			txs[i] = &Tx{
-				ID:   tx.ID,
-				Data: NewTxData(&(tx.Data)),
-				Time: tx.Time,
+			tx, err := NewTx(block.Transactions[i])
+			if err != nil {
+				return nil, err
 			}
+			txs[i] = tx
 		}
 	}
 
@@ -28,7 +27,7 @@ func NewBlock(block *core.Block) (*Block, error) {
 			Number:     block.Header.Number,
 			PrevBlock:  util.CopyBytes(block.Header.PrevBlock),
 			MerkleRoot: util.CopyBytes(block.Header.MerkleRoot),
-			Time:       uint64(block.Header.Time),
+			Time:       block.Header.Time,
 		},
 		Transactions: txs,
 	}, nil
@@ -41,14 +40,11 @@ func (block *Block) ToCore() (*core.Block, error) {
 		txs = nil
 	} else {
 		for i := range txs {
-			tx := block.Transactions[i]
-			txs[i] = &core.Tx{
-				ID:   tx.ID,
-				Time: tx.Time,
+			tx, err := block.Transactions[i].ToCore()
+			if err != nil {
+				return nil, err
 			}
-			if tx.Data != nil {
-				txs[i].Data = *(tx.Data.ToCore())
-			}
+			txs[i] = tx
 		}
 	}
 
@@ -57,9 +53,9 @@ func (block *Block) ToCore() (*core.Block, error) {
 			Version:    block.Header.Version,
 			ChannelID:  block.Header.ChannelID,
 			Number:     block.Header.Number,
-			PrevBlock:  block.Header.PrevBlock,
-			MerkleRoot: block.Header.MerkleRoot,
-			Time:       int64(block.Header.Time),
+			PrevBlock:  util.CopyBytes(block.Header.PrevBlock),
+			MerkleRoot: util.CopyBytes(block.Header.MerkleRoot),
+			Time:       block.Header.Time,
 		},
 		Transactions: txs,
 	}, nil
