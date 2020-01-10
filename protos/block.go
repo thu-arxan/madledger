@@ -6,7 +6,6 @@ import (
 )
 
 // NewBlock is the constructor of Block
-// todo: fix sig nil and data nil
 func NewBlock(block *core.Block) (*Block, error) {
 	var txs = make([]*Tx, len(block.Transactions))
 	if block.Transactions == nil {
