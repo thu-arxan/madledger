@@ -204,8 +204,8 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 		},
 		Version: 1,
 	})
-	typesTx, _ := core.NewTx(core.CONFIGCHANNELID, core.CreateChannelContractAddress, payload, 0, "", c.GetPrivKey())
-	pbTx, _ := pb.NewTx(typesTx)
+	coreTx, _ := core.NewTx(core.CONFIGCHANNELID, core.CreateChannelContractAddress, payload, 0, "", c.GetPrivKey())
+	pbTx, _ := pb.NewTx(coreTx)
 	/*fmt.Printf("CreateChannelContractAddress: %s\n",core.CreateChannelContractAddress.String())
 	fmt.Printf("CfgTendermintAddress: %s\n",core.CfgTendermintAddress.String())
 	fmt.Printf("CfgRaftAddress: %s\n",core.CfgRaftAddress.String())*/

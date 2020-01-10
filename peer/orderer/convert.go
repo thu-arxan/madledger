@@ -42,17 +42,17 @@ func ConvertTxFromPbToTypes(pbTx *pb.Tx) (*core.Tx, error) {
 	if err != nil {
 		return nil, err
 	}
-	var typesTx core.Tx
-	err = json.Unmarshal(data, &typesTx)
+	var coreTx core.Tx
+	err = json.Unmarshal(data, &coreTx)
 	if err != nil {
 		return nil, err
 	}
-	return &typesTx, nil
+	return &coreTx, nil
 }
 
 // ConvertTxFromTypesToPb convert Tx from core.Tx to pb.Tx
-func ConvertTxFromTypesToPb(typesTx *core.Tx) (*pb.Tx, error) {
-	data, err := json.Marshal(typesTx)
+func ConvertTxFromTypesToPb(coreTx *core.Tx) (*pb.Tx, error) {
+	data, err := json.Marshal(coreTx)
 	if err != nil {
 		return nil, err
 	}

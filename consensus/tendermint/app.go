@@ -300,18 +300,18 @@ func (g *Glue) updateValidator(tx []byte) types.ResponseDeliverTx {
 			Code: code.CodeTypeEncodingError,
 			Log:  fmt.Sprintf("BytesToTx error %s", err)}
 	}
-	var typesTx core.Tx
-	err = json.Unmarshal(tempTx.Data, &typesTx)
+	var coreTx core.Tx
+	err = json.Unmarshal(tempTx.Data, &coreTx)
 	if err != nil {
 		return types.ResponseDeliverTx{
 			Code: code.CodeTypeEncodingError,
 			Log:  fmt.Sprintf("Unmarshal error %s", err)}
 	}
 	// get tx type according to recipient
-	txType, err := core.GetTxType(common.BytesToAddress(typesTx.Data.Recipient).String())
+	txType, err := core.GetTxType(common.BytesToAddress(coreTx.Data.Recipient).String())
 	if err == nil && txType == core.VALIDATOR {
 		var validatorUpdate types.ValidatorUpdate
-		err = json.Unmarshal(typesTx.Data.Payload, &validatorUpdate)
+		err = json.Unmarshal(coreTx.Data.Payload, &validatorUpdate)
 		if err != nil {
 			return types.ResponseDeliverTx{
 				Code: code.CodeTypeEncodingError,

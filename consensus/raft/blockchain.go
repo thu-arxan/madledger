@@ -261,17 +261,17 @@ func (chain *BlockChain) addBlock(block *HybridBlock) error {
 }
 
 func (chain *BlockChain) getConfChange(tx *Tx) (raftpb.ConfChange, error) {
-	var typesTx core.Tx
+	var coreTx core.Tx
 	var cfgChange raftpb.ConfChange
-	err := json.Unmarshal(tx.Data, &typesTx)
+	err := json.Unmarshal(tx.Data, &coreTx)
 	if err != nil {
 		return cfgChange, err
 	}
 	// get tx type according to recipient
-	//log.Infof("Recipient: %s", common.BytesToAddress(typesTx.Data.Recipient).String())
-	txType, err := core.GetTxType(common.BytesToAddress(typesTx.Data.Recipient).String())
+	//log.Infof("Recipient: %s", common.BytesToAddress(coreTx.Data.Recipient).String())
+	txType, err := core.GetTxType(common.BytesToAddress(coreTx.Data.Recipient).String())
 	if err == nil && txType == core.NODE {
-		err = json.Unmarshal(typesTx.Data.Payload, &cfgChange)
+		err = json.Unmarshal(coreTx.Data.Payload, &cfgChange)
 		if err != nil {
 			return cfgChange, err
 		}
