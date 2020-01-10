@@ -24,12 +24,12 @@ func NewGlobalTx(channelID string, num uint64, hash common.Hash) *Tx {
 	payloadBytes, _ := json.Marshal(payload)
 	var tx = &Tx{
 		Data: TxData{
-			ChannelID:    GLOBALCHANNELID,
-			AccountNonce: 0,
-			Recipient:    common.ZeroAddress.Bytes(),
-			Payload:      payloadBytes,
-			Version:      1,
-			Sig:          nil,
+			ChannelID: GLOBALCHANNELID,
+			Nonce:     0,
+			Recipient: common.ZeroAddress.Bytes(),
+			Payload:   payloadBytes,
+			Version:   1,
+			Sig:       nil,
 		},
 		Time: util.Now(),
 	}

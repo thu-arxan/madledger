@@ -2,11 +2,14 @@ package protos
 
 import (
 	"encoding/hex"
+	fmt "fmt"
 	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/core/types"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestConvertBlock(t *testing.T) {
@@ -16,9 +19,7 @@ func TestConvertBlock(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(typesBlock, block) {
-		t.Fatal()
-	}
+	require.EqualValues(t, block, typesBlock)
 	// test block with tx but without sig
 	var txs []*types.Tx
 	txs = append(txs, types.NewTxWithoutSig(types.GLOBALCHANNELID, nil, 0))
@@ -45,6 +46,9 @@ func TestConvertBlock(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(typesBlock, block) {
+		fmt.Printf("%s\n", string(typesBlock.Bytes()))
+		fmt.Println("")
+		fmt.Printf("%s\n", string(block.Bytes()))
 		t.Fatal()
 	}
 }

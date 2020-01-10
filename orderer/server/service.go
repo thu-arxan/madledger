@@ -2,11 +2,10 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"madledger/common"
+	"madledger/common/crypto"
 	"madledger/core/types"
 	pb "madledger/protos"
-	"madledger/common/crypto"
 
 	"golang.org/x/net/context"
 )
@@ -65,7 +64,7 @@ func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus,
 			return &status, err
 		}
 		if !s.cc.CM.IsSystemAdmin(member) { // not system admin, return error
-			return &status, fmt.Errorf("The client is not system admin and can't config the cluster.")
+			return &status, errors.New("The client is not system admin and can't config the cluster")
 		}
 	}
 	err = s.cc.AddTx(tx)

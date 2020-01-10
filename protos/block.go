@@ -1,34 +1,68 @@
 package protos
 
 import (
-	"encoding/json"
+	"madledger/common/util"
 	"madledger/core/types"
 )
 
 // NewBlock is the constructor of Block
-func NewBlock(typesBlock *types.Block) (*Block, error) {
-	data, err := json.Marshal(typesBlock)
-	if err != nil {
-		return nil, err
+// todo: fix sig nil and data nil
+func NewBlock(block *types.Block) (*Block, error) {
+	var txs = make([]*Tx, len(block.Transactions))
+	if block.Transactions == nil {
+		txs = nil
+	} else {
+		for i := range txs {
+			tx := block.Transactions[i]
+			txs[i] = &Tx{
+				ID:   tx.ID,
+				Data: NewTxData(&(tx.Data)),
+				Time: tx.Time,
+			}
+		}
 	}
-	var block Block
-	err = json.Unmarshal(data, &block)
-	if err != nil {
-		return nil, err
-	}
-	return &block, nil
+
+	return &Block{
+		Header: &BlockHeader{
+			Version:    block.Header.Version,
+			ChannelID:  block.Header.ChannelID,
+			Number:     block.Header.Number,
+			PrevBlock:  util.CopyBytes(block.Header.PrevBlock),
+			MerkleRoot: util.CopyBytes(block.Header.MerkleRoot),
+			Time:       uint64(block.Header.Time),
+		},
+		Transactions: txs,
+	}, nil
 }
 
 // ConvertToTypes convert pb.Block to types.Block
+// todo: fix nil
 func (block *Block) ConvertToTypes() (*types.Block, error) {
-	data, err := json.Marshal(block)
-	if err != nil {
-		return nil, err
+	var txs = make([]*types.Tx, len(block.Transactions))
+	if len(txs) == 0 {
+		txs = nil
+	} else {
+		for i := range txs {
+			tx := block.Transactions[i]
+			txs[i] = &types.Tx{
+				ID:   tx.ID,
+				Time: tx.Time,
+			}
+			if tx.Data != nil {
+				txs[i].Data = *(tx.Data.ToTypes())
+			}
+		}
 	}
-	var typesBlock types.Block
-	err = json.Unmarshal(data, &typesBlock)
-	if err != nil {
-		return nil, err
-	}
-	return &typesBlock, nil
+
+	return &types.Block{
+		Header: &types.BlockHeader{
+			Version:    block.Header.Version,
+			ChannelID:  block.Header.ChannelID,
+			Number:     block.Header.Number,
+			PrevBlock:  block.Header.PrevBlock,
+			MerkleRoot: block.Header.MerkleRoot,
+			Time:       int64(block.Header.Time),
+		},
+		Transactions: txs,
+	}, nil
 }

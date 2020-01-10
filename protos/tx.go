@@ -7,38 +7,63 @@ import (
 
 // ConvertToTypes convert pb.Tx to types.Tx
 func (tx *Tx) ConvertToTypes() (*types.Tx, error) {
-	return &types.Tx{
-		ID: tx.ID,
-		Data: types.TxData{
-			ChannelID:    tx.Data.ChannelID,
-			AccountNonce: tx.Data.AccountNonce,
-			Recipient:    util.CopyBytes(tx.Data.Recipient),
-			Payload:      util.CopyBytes(tx.Data.Payload),
-			Version:      tx.Data.Version,
-			Sig: &types.TxSig{
-				PK:  util.CopyBytes(tx.Data.Sig.PK),
-				Sig: util.CopyBytes(tx.Data.Sig.Sig),
-			},
-		},
+	t := &types.Tx{
+		ID:   tx.ID,
 		Time: tx.Time,
-	}, nil
+	}
+	if tx.Data != nil {
+		t.Data = *(tx.Data.ToTypes())
+	}
+	return t, nil
 }
 
 // NewTx is the constructor of Tx
 func NewTx(tx *types.Tx) (*Tx, error) {
+	if tx == nil {
+		return nil, nil
+	}
 	return &Tx{
-		ID: tx.ID,
-		Data: &TxData{
-			ChannelID:    tx.Data.ChannelID,
-			AccountNonce: tx.Data.AccountNonce,
-			Recipient:    util.CopyBytes(tx.Data.Recipient),
-			Payload:      util.CopyBytes(tx.Data.Payload),
-			Version:      tx.Data.Version,
-			Sig: &TxSig{
-				PK:  util.CopyBytes(tx.Data.Sig.PK),
-				Sig: util.CopyBytes(tx.Data.Sig.Sig),
-			},
-		},
+		ID:   tx.ID,
+		Data: NewTxData(&(tx.Data)),
 		Time: tx.Time,
 	}, nil
+}
+
+// NewTxData convert types.TxData to TxData
+func NewTxData(txData *types.TxData) *TxData {
+	if txData == nil {
+		return nil
+	}
+	var td = &TxData{
+		ChannelID:    txData.ChannelID,
+		AccountNonce: txData.Nonce,
+		Recipient:    util.CopyBytes(txData.Recipient),
+		Payload:      util.CopyBytes(txData.Payload),
+		Version:      txData.Version,
+	}
+	if txData.Sig != nil {
+		td.Sig = &TxSig{
+			PK:  util.CopyBytes(txData.Sig.PK),
+			Sig: util.CopyBytes(txData.Sig.Sig),
+		}
+	}
+	return td
+}
+
+// ToTypes convert TxData to types.TxData
+func (data *TxData) ToTypes() *types.TxData {
+	var td = &types.TxData{
+		ChannelID: data.ChannelID,
+		Nonce:     data.AccountNonce,
+		Recipient: util.CopyBytes(data.Recipient),
+		Payload:   util.CopyBytes(data.Payload),
+		Version:   data.Version,
+	}
+	if data.Sig != nil {
+		td.Sig = &types.TxSig{
+			PK:  util.CopyBytes(data.Sig.PK),
+			Sig: util.CopyBytes(data.Sig.Sig),
+		}
+	}
+	return td
 }

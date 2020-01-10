@@ -13,9 +13,9 @@ import (
 // be included while cacluating the hash
 type Tx struct {
 	// ID is the hash of the tx while presented in hex
-	ID   string
-	Data TxData
-	Time int64
+	ID   string `json:"id,omitempty"`
+	Data TxData `json:"data,omitempty"`
+	Time int64  `json:"time,omitempty"`
 }
 
 // TxType is the type of consensus
@@ -33,12 +33,12 @@ const (
 
 // TxData is the data of Tx
 type TxData struct {
-	ChannelID    string
-	AccountNonce uint64
-	Recipient    []byte
-	Payload      []byte
-	Version      int32
-	Sig          *TxSig
+	ChannelID string `json:"channelID,omitempty"`
+	Nonce     uint64 `json:"nonce,omitempty"`
+	Recipient []byte `json:"recipient,omitempty"`
+	Payload   []byte `json:"payload,omitempty"`
+	Version   int32  `json:"version,omitempty"`
+	Sig       *TxSig `json:"sig,omitempty"`
 }
 
 // TxSig is the sig of tx
@@ -54,12 +54,12 @@ func NewTx(channelID string, recipient common.Address, payload []byte, privKey c
 	}
 	var tx = &Tx{
 		Data: TxData{
-			ChannelID:    channelID,
-			AccountNonce: util.RandUint64(),
-			Recipient:    recipient.Bytes(),
-			Payload:      payload,
-			Version:      1,
-			Sig:          nil,
+			ChannelID: channelID,
+			Nonce:     util.RandUint64(),
+			Recipient: recipient.Bytes(),
+			Payload:   payload,
+			Version:   1,
+			Sig:       nil,
 		},
 		Time: util.Now(),
 	}
@@ -86,15 +86,15 @@ func NewTx(channelID string, recipient common.Address, payload []byte, privKey c
 
 // NewTxWithoutSig is a special kind of tx without sig, it
 // is prepared for the genesis and global hash
-func NewTxWithoutSig(channelID string, payload []byte, accountNonce uint64) *Tx {
+func NewTxWithoutSig(channelID string, payload []byte, nonce uint64) *Tx {
 	var tx = &Tx{
 		Data: TxData{
-			ChannelID:    channelID,
-			AccountNonce: accountNonce,
-			Recipient:    common.ZeroAddress.Bytes(),
-			Payload:      payload,
-			Version:      1,
-			Sig:          nil,
+			ChannelID: channelID,
+			Nonce:     nonce,
+			Recipient: common.ZeroAddress.Bytes(),
+			Payload:   payload,
+			Version:   1,
+			Sig:       nil,
 		},
 		Time: util.Now(),
 	}
@@ -160,7 +160,7 @@ func (tx *Tx) hash(withSig bool) []byte {
 		data = tx.Data
 	} else { // clone
 		data.ChannelID = tx.Data.ChannelID
-		data.AccountNonce = tx.Data.AccountNonce
+		data.Nonce = tx.Data.Nonce
 		data.Recipient = tx.Data.Recipient
 		data.Payload = tx.Data.Payload
 		data.Version = tx.Data.Version

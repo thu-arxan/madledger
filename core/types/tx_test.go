@@ -36,12 +36,12 @@ func TestVerify(t *testing.T) {
 		t.Fatal()
 	}
 	// change the nonce of tx
-	nonce := tx.Data.AccountNonce
-	tx.Data.AccountNonce = nonce + 1
+	nonce := tx.Data.Nonce
+	tx.Data.Nonce = nonce + 1
 	if tx.Verify() {
 		t.Fatal()
 	}
-	tx.Data.AccountNonce = nonce
+	tx.Data.Nonce = nonce
 	if !tx.Verify() {
 		t.Fatal()
 	}
@@ -117,12 +117,12 @@ func TestMarshaAndUnmarshalWithSig(t *testing.T) {
 func TestMarshaAndUnmarshalWithoutSig(t *testing.T) {
 	var tx = &Tx{
 		Data: TxData{
-			ChannelID:    "test",
-			AccountNonce: 1,
-			Recipient:    common.ZeroAddress.Bytes(),
-			Payload:      []byte("Hello World"),
-			Version:      1,
-			Sig:          nil,
+			ChannelID: "test",
+			Nonce:     1,
+			Recipient: common.ZeroAddress.Bytes(),
+			Payload:   []byte("Hello World"),
+			Version:   1,
+			Sig:       nil,
 		},
 		Time: util.Now(),
 	}

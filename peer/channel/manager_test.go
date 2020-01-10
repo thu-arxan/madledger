@@ -250,12 +250,12 @@ func generateBlocks() {
 	// create tx
 	var tx = &types.Tx{
 		Data: types.TxData{
-			ChannelID:    types.CONFIGCHANNELID,
-			AccountNonce: 0,
-			Recipient:    common.ZeroAddress.Bytes(),
-			Payload:      payloadBytes,
-			Version:      1,
-			Sig:          nil,
+			ChannelID: types.CONFIGCHANNELID,
+			Nonce:     0,
+			Recipient: common.ZeroAddress.Bytes(),
+			Payload:   payloadBytes,
+			Version:   1,
+			Sig:       nil,
 		},
 		Time: util.Now(),
 	}
