@@ -54,6 +54,3 @@ performance:
 	@$(GOCMD) test madledger/tests/performance -count=1
 	@cat tests/performance/performance.out
 	@rm -rf tests/performance/performance.out
-
-types:
-	@$(GOCMD) test madledger/core/types -count=1 -cover
