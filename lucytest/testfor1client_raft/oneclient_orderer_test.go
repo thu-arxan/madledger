@@ -2,7 +2,6 @@ package testfor1client_raft
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"madledger/common"
@@ -12,6 +11,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestInitEnv1OR(t *testing.T) {
@@ -97,7 +98,7 @@ func TestRaftCreateTx1OR(t *testing.T) {
 		require.NoError(t, err)
 		channel := "test" + strconv.Itoa(m)
 		fmt.Printf("Create contract %d on channel %s ...\n", m, channel)
-		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, raftClients[0].GetPrivKey())
+		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, 0, "", raftClients[0].GetPrivKey())
 		require.NoError(t, err)
 
 		_, err = raftClients[0].AddTx(tx)

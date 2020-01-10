@@ -2,10 +2,11 @@ package lucytest
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
-	"github.com/syndtr/goleveldb/leveldb"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 func TestLevelDB(t *testing.T) {

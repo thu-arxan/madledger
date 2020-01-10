@@ -213,7 +213,7 @@ func TestServerRestartWithUserChannel(t *testing.T) {
 	// Then try to send a tx to test channel
 	// then add a tx into test channel
 	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
-	typesTx, err := types.NewTx("test", common.ZeroAddress, []byte("Just for test"), privKey)
+	typesTx, err := types.NewTx("test", common.ZeroAddress, []byte("Just for test"), 0, "", privKey)
 	require.NoError(t, err)
 
 	pbTx, err := pb.NewTx(typesTx)
@@ -320,7 +320,7 @@ func TestAddDuplicateTxs(t *testing.T) {
 	// Then try to send a tx to test channel
 	// then add a tx into test channel
 	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
-	typesTx, err := types.NewTx("test", common.ZeroAddress, []byte("Duplicate"), privKey)
+	typesTx, err := types.NewTx("test", common.ZeroAddress, []byte("Duplicate"), 0, "", privKey)
 	require.NoError(t, err)
 
 	pbTx, err := pb.NewTx(typesTx)
@@ -367,7 +367,7 @@ func getCreateChannelTx(channelID string) *pb.Tx {
 		Version: 1,
 	})
 	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
-	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload, privKey)
+	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload, 0, "", privKey)
 
 	pbTx, _ := pb.NewTx(typesTx)
 	return pbTx

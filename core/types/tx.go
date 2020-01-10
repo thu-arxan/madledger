@@ -50,8 +50,7 @@ type TxSig struct {
 }
 
 // NewTx is the constructor of Tx
-// TODO: It need update to suit new structure
-func NewTx(channelID string, recipient common.Address, payload []byte, privKey crypto.PrivateKey) (*Tx, error) {
+func NewTx(channelID string, recipient common.Address, payload []byte, value uint64, msg string, privKey crypto.PrivateKey) (*Tx, error) {
 	if payload == nil || len(payload) == 0 {
 		return nil, errors.New("The payload can not be empty")
 	}
@@ -61,6 +60,8 @@ func NewTx(channelID string, recipient common.Address, payload []byte, privKey c
 			Nonce:     util.RandUint64(),
 			Recipient: recipient.Bytes(),
 			Payload:   payload,
+			Value:     value,
+			Msg:       msg,
 			Version:   1,
 		},
 		Time: util.Now(),

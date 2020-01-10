@@ -36,8 +36,8 @@ func TestBFTPeersStart2BC(t *testing.T) {
 
 func TestBFTLoadClient2BC(t *testing.T) {
 	time.Sleep(1 * time.Second)
-	require.NoError(t,loadClient("0", 0))
-	require.NoError(t,loadClient("1", 1))
+	require.NoError(t, loadClient("0", 0))
+	require.NoError(t, loadClient("1", 1))
 }
 
 func TestBFTLoadAdmin1(t *testing.T) {

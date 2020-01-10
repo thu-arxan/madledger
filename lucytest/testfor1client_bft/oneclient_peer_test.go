@@ -2,7 +2,6 @@ package testfor1client_bft
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"os"
@@ -10,6 +9,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestInitEnv1PB(t *testing.T) {

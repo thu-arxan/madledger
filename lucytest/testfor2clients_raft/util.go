@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/otiai10/copy"
 )
@@ -534,7 +534,7 @@ func setNumForCallTx(node int, num string) error {
 	if node == 1 {
 		channel = "test1"
 	}
-	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, 0, "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -548,7 +548,7 @@ func setNumForCallTx(node int, num string) error {
 
 func getNumForCallTx(node int, num string) error {
 	abiPath := fmt.Sprintf(getRAFTClientPath(node) + "/MyTest.abi")
-	var inputs []string = make([]string, 0)
+	var inputs = make([]string, 0)
 	payloadBytes, err := abi.GetPayloadBytes(abiPath, "getNum", inputs)
 	if err != nil {
 		return err
@@ -566,7 +566,7 @@ func getNumForCallTx(node int, num string) error {
 	if node == 1 {
 		channel = "test1"
 	}
-	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, 0, "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}

@@ -80,8 +80,8 @@ func TestUpdateChannel(t *testing.T) {
 }
 
 func TestAddBlock(t *testing.T) {
-	tx1, _ := types.NewTx("test", common.ZeroAddress, []byte("1"), privKey)
-	tx2, _ := types.NewTx("test", common.ZeroAddress, []byte("2"), privKey)
+	tx1, _ := types.NewTx("test", common.ZeroAddress, []byte("1"), 0, "", privKey)
+	tx2, _ := types.NewTx("test", common.ZeroAddress, []byte("2"), 0, "", privKey)
 	block1 := types.NewBlock("test", 0, types.GenesisBlockPrevHash, []*types.Tx{tx1, tx2})
 	err := db.AddBlock(block1)
 	require.NoError(t, err)

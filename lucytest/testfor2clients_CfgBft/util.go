@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/tendermint/tendermint/abci/types"
 	"io/ioutil"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
@@ -22,8 +21,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tendermint/tendermint/abci/types"
+
 	"github.com/otiai10/copy"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var (
@@ -189,7 +190,7 @@ func loadPeerConfig(cfgPath string) (*pc.Config, error) {
 	return &cfg, nil
 }
 
-func loadClient(node string, index int)  error {
+func loadClient(node string, index int) error {
 	clientPath := getBFTClientPath(node)
 	cfgPath := getBFTClientConfigPath(node)
 	cfg, err := cc.LoadConfig(cfgPath)
@@ -204,7 +205,7 @@ func loadClient(node string, index int)  error {
 	if err != nil {
 		return err
 	}
-	bftClient[index]=client
+	bftClient[index] = client
 	return nil
 }
 
@@ -385,7 +386,7 @@ func addOrRemoveNode(pubKey string, power int64, channel string) error {
 		PubKey: pubkey,
 		Power:  power,
 	})
-	tx, err := coreTypes.NewTx(channel, coreTypes.CfgTendermintAddress, validatorUpdate, bftAdmin.GetPrivKey())
+	tx, err := coreTypes.NewTx(channel, coreTypes.CfgTendermintAddress, validatorUpdate, 0, "", bftAdmin.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -452,7 +453,7 @@ func createContractForCallTx(channel string, node string, bftClient *client.Clie
 	if err != nil {
 		return err
 	}
-	tx, err := coreTypes.NewTx(channel, common.ZeroAddress, contractCodes, bftClient.GetPrivKey())
+	tx, err := coreTypes.NewTx(channel, common.ZeroAddress, contractCodes, 0, "", bftClient.GetPrivKey())
 	if err != nil {
 		return err
 	}

@@ -26,7 +26,7 @@ func CreateContract(t *testing.T, channelID string, client *client.Client) {
 	contractCodes, err := readCodes(BalanceBin)
 	require.NoError(t, err)
 
-	tx, err := types.NewTx(channelID, common.ZeroAddress, contractCodes, client.GetPrivKey())
+	tx, err := types.NewTx(channelID, common.ZeroAddress, contractCodes, 0, "", client.GetPrivKey())
 	require.NoError(t, err)
 
 	status, err := client.AddTx(tx)
@@ -41,7 +41,7 @@ func CreateCallContractTx(channelID string, client *client.Client, size int) []*
 	payload, _ = abi.GetPayloadBytes(BalanceAbi, "get", nil)
 	var txs []*types.Tx
 	for i := 0; i < size; i++ {
-		tx, _ := types.NewTx(channelID, getContractAddress(channelID), payload, client.GetPrivKey())
+		tx, _ := types.NewTx(channelID, getContractAddress(channelID), payload, 0, "", client.GetPrivKey())
 		txs = append(txs, tx)
 	}
 
@@ -57,7 +57,7 @@ func CallContract(t *testing.T, channelID string, client *client.Client, times i
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			tx, _ := types.NewTx(channelID, getContractAddress(channelID), payload, client.GetPrivKey())
+			tx, _ := types.NewTx(channelID, getContractAddress(channelID), payload, 0, "", client.GetPrivKey())
 			_, err := client.AddTx(tx)
 			require.NoError(t, err)
 		}()

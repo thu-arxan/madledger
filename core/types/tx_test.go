@@ -27,7 +27,7 @@ var (
 
 func TestNewTx(t *testing.T) {
 	var err error
-	tx, err = NewTx("test", common.ZeroAddress, []byte("Hello World"), getPrivKey())
+	tx, err = NewTx("test", common.ZeroAddress, []byte("Hello World"), 0, "", getPrivKey())
 	require.NoError(t, err)
 }
 
@@ -94,7 +94,7 @@ func TestGetReceiver(t *testing.T) {
 	addr, err := privKey.PubKey().Address()
 	require.NoError(t, err)
 
-	selfTx, err := NewTx("test", addr, []byte("Hello World"), getPrivKey())
+	selfTx, err := NewTx("test", addr, []byte("Hello World"), 0, "", getPrivKey())
 	require.NoError(t, err)
 
 	if !reflect.DeepEqual(selfTx.GetReceiver().Bytes(), addr.Bytes()) {

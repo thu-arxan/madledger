@@ -52,7 +52,6 @@ func TestBFTLoadAdmin1BC(t *testing.T) {
 	require.NoError(t, err)
 	bftAdmin = client
 
-
 }
 
 // create channel and create contract on channel

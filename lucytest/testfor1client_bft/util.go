@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/otiai10/copy"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var (
@@ -440,7 +440,7 @@ func createContractForCallTx() error {
 	if err != nil {
 		return err
 	}
-	tx, err := types.NewTx("test0", common.ZeroAddress, contractCodes, bftClients[0].GetPrivKey())
+	tx, err := types.NewTx("test0", common.ZeroAddress, contractCodes, 0, "", bftClients[0].GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -454,7 +454,7 @@ func createContractForCallTx() error {
 
 func getNumForCallTx(node int, num string) error {
 	abiPath := fmt.Sprintf(getBFTClientPath(node) + "/MyTest.abi")
-	var inputs []string = make([]string, 0)
+	var inputs = make([]string, 0)
 	payloadBytes, err := abi.GetPayloadBytes(abiPath, "getNum", inputs)
 	if err != nil {
 		return err
@@ -463,7 +463,7 @@ func getNumForCallTx(node int, num string) error {
 	client := bftClients[node]
 	channel := "test" + strconv.Itoa(node)
 	tx, err := types.NewTx(channel, common.HexToAddress("0x8de6ce45b289502e16aef93313fd3082993acb1f"), payloadBytes,
-		client.GetPrivKey())
+		0, "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -499,7 +499,7 @@ func setNumForCallTx(node int, num string) error {
 	client := bftClients[node]
 	channel := "test" + strconv.Itoa(node)
 	tx, err := types.NewTx(channel, common.HexToAddress("0x8de6ce45b289502e16aef93313fd3082993acb1f"), payloadBytes,
-		client.GetPrivKey())
+		0, "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}

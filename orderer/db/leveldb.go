@@ -3,11 +3,12 @@ package db
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/syndtr/goleveldb/leveldb"
 	cc "madledger/blockchain/config"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/core/types"
+
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 /*
@@ -97,6 +98,7 @@ func (db *LevelDB) AddBlock(block *types.Block) error {
 	return nil
 }
 
+// UpdateSystemAdmin update system admin
 func (db *LevelDB) UpdateSystemAdmin(profile *cc.Profile) error {
 	var key = getSystemAdminKey()
 	data, err := json.Marshal(profile)
@@ -170,6 +172,7 @@ func (db *LevelDB) IsAdmin(channelID string, member *types.Member) bool {
 	return false
 }
 
+// IsSystemAdmin return if the member is the system admin
 func (db *LevelDB) IsSystemAdmin(member *types.Member) bool {
 	var p cc.Profile
 	var key = getSystemAdminKey()
