@@ -255,7 +255,6 @@ func generateBlocks() {
 			Recipient: common.ZeroAddress.Bytes(),
 			Payload:   payloadBytes,
 			Version:   1,
-			Sig:       nil,
 		},
 		Time: util.Now(),
 	}

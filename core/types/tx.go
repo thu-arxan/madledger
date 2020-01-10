@@ -37,17 +37,20 @@ type TxData struct {
 	Nonce     uint64 `json:"nonce,omitempty"`
 	Recipient []byte `json:"recipient,omitempty"`
 	Payload   []byte `json:"payload,omitempty"`
+	Value     uint64 `json:"value,omitempty"`
+	Msg       string `json:"msg,omitempty"`
 	Version   int32  `json:"version,omitempty"`
-	Sig       *TxSig `json:"sig,omitempty"`
+	Sig       TxSig  `json:"sig,omitempty"`
 }
 
 // TxSig is the sig of tx
 type TxSig struct {
-	PK  []byte
-	Sig []byte
+	PK  []byte `json:"pk,omitemtpy"`
+	Sig []byte `json:"sig,omitempty"`
 }
 
 // NewTx is the constructor of Tx
+// TODO: It need update to suit new structure
 func NewTx(channelID string, recipient common.Address, payload []byte, privKey crypto.PrivateKey) (*Tx, error) {
 	if payload == nil || len(payload) == 0 {
 		return nil, errors.New("The payload can not be empty")
@@ -59,7 +62,6 @@ func NewTx(channelID string, recipient common.Address, payload []byte, privKey c
 			Recipient: recipient.Bytes(),
 			Payload:   payload,
 			Version:   1,
-			Sig:       nil,
 		},
 		Time: util.Now(),
 	}
@@ -76,7 +78,7 @@ func NewTx(channelID string, recipient common.Address, payload []byte, privKey c
 	if err != nil {
 		return nil, err
 	}
-	tx.Data.Sig = &TxSig{
+	tx.Data.Sig = TxSig{
 		PK:  pkBytes,
 		Sig: sigBytes,
 	}
@@ -84,8 +86,8 @@ func NewTx(channelID string, recipient common.Address, payload []byte, privKey c
 	return tx, nil
 }
 
-// NewTxWithoutSig is a special kind of tx without sig, it
-// is prepared for the genesis and global hash
+// NewTxWithoutSig is a special kind of tx without sig,
+// it is prepared for the genesis and global hash
 func NewTxWithoutSig(channelID string, payload []byte, nonce uint64) *Tx {
 	var tx = &Tx{
 		Data: TxData{
@@ -94,7 +96,6 @@ func NewTxWithoutSig(channelID string, payload []byte, nonce uint64) *Tx {
 			Recipient: common.ZeroAddress.Bytes(),
 			Payload:   payload,
 			Version:   1,
-			Sig:       nil,
 		},
 		Time: util.Now(),
 	}
@@ -105,9 +106,6 @@ func NewTxWithoutSig(channelID string, payload []byte, nonce uint64) *Tx {
 // Verify return true if a tx is packed well, else return false
 func (tx *Tx) Verify() bool {
 	if util.Hex(tx.Hash()) != tx.ID {
-		return false
-	}
-	if tx.Data.Sig == nil {
 		return false
 	}
 	hash := tx.HashWithoutSig()
@@ -128,9 +126,6 @@ func (tx *Tx) Verify() bool {
 
 // GetSender return the sender of the tx
 func (tx *Tx) GetSender() (common.Address, error) {
-	if tx.Data.Sig == nil {
-		return common.ZeroAddress, errors.New("sig is empty")
-	}
 	pk, err := crypto.NewPublicKey(tx.Data.Sig.PK)
 	if err != nil {
 		return common.ZeroAddress, err
@@ -164,7 +159,6 @@ func (tx *Tx) hash(withSig bool) []byte {
 		data.Recipient = tx.Data.Recipient
 		data.Payload = tx.Data.Payload
 		data.Version = tx.Data.Version
-		data.Sig = nil
 	}
 
 	bytes, _ := json.Marshal(data)

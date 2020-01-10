@@ -29,7 +29,6 @@ func NewGlobalTx(channelID string, num uint64, hash common.Hash) *Tx {
 			Recipient: common.ZeroAddress.Bytes(),
 			Payload:   payloadBytes,
 			Version:   1,
-			Sig:       nil,
 		},
 		Time: util.Now(),
 	}

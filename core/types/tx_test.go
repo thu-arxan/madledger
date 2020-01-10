@@ -73,7 +73,7 @@ func TestVerify(t *testing.T) {
 	}
 
 	// then make everything to be right
-	tx.Data.Sig = &sig
+	tx.Data.Sig = sig
 	if !tx.Verify() {
 		t.Fatal()
 	}
@@ -122,7 +122,6 @@ func TestMarshaAndUnmarshalWithoutSig(t *testing.T) {
 			Recipient: common.ZeroAddress.Bytes(),
 			Payload:   []byte("Hello World"),
 			Version:   1,
-			Sig:       nil,
 		},
 		Time: util.Now(),
 	}

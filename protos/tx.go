@@ -39,14 +39,15 @@ func NewTxData(txData *types.TxData) *TxData {
 		Nonce:     txData.Nonce,
 		Recipient: util.CopyBytes(txData.Recipient),
 		Payload:   util.CopyBytes(txData.Payload),
+		Value:     txData.Value,
+		Msg:       txData.Msg,
 		Version:   txData.Version,
-	}
-	if txData.Sig != nil {
-		td.Sig = &TxSig{
+		Sig: &TxSig{
 			PK:  util.CopyBytes(txData.Sig.PK),
 			Sig: util.CopyBytes(txData.Sig.Sig),
-		}
+		},
 	}
+
 	return td
 }
 
@@ -57,10 +58,12 @@ func (data *TxData) ToTypes() *types.TxData {
 		Nonce:     data.Nonce,
 		Recipient: util.CopyBytes(data.Recipient),
 		Payload:   util.CopyBytes(data.Payload),
+		Value:     data.Value,
+		Msg:       data.Msg,
 		Version:   data.Version,
 	}
 	if data.Sig != nil {
-		td.Sig = &types.TxSig{
+		td.Sig = types.TxSig{
 			PK:  util.CopyBytes(data.Sig.PK),
 			Sig: util.CopyBytes(data.Sig.Sig),
 		}
