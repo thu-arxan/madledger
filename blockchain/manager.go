@@ -3,7 +3,7 @@ package blockchain
 import (
 	"errors"
 	"fmt"
-	"madledger/core/types"
+	"madledger/core"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -45,7 +45,7 @@ func (manager *Manager) HasGenesisBlock() bool {
 }
 
 // GetBlock return the block of num
-func (manager *Manager) GetBlock(num uint64) (*types.Block, error) {
+func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 
@@ -64,7 +64,7 @@ func (manager *Manager) GetExcept() uint64 {
 }
 
 // GetPrevBlock return the prev block
-func (manager *Manager) GetPrevBlock() *types.Block {
+func (manager *Manager) GetPrevBlock() *core.Block {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 
@@ -79,7 +79,7 @@ func (manager *Manager) GetPrevBlock() *types.Block {
 }
 
 // AddBlock add a block into the chain
-func (manager *Manager) AddBlock(block *types.Block) error {
+func (manager *Manager) AddBlock(block *core.Block) error {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 

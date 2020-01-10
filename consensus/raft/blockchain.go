@@ -12,7 +12,8 @@ import (
 	"madledger/common/util"
 	"madledger/consensus"
 	pb "madledger/consensus/raft/protos"
-	ctypes "madledger/core/types"
+	"madledger/core"
+
 	"net"
 	"strings"
 	"sync"
@@ -260,7 +261,7 @@ func (chain *BlockChain) addBlock(block *HybridBlock) error {
 }
 
 func (chain *BlockChain) getConfChange(tx *Tx) (raftpb.ConfChange, error) {
-	var typesTx ctypes.Tx
+	var typesTx core.Tx
 	var cfgChange raftpb.ConfChange
 	err := json.Unmarshal(tx.Data, &typesTx)
 	if err != nil {
@@ -268,8 +269,8 @@ func (chain *BlockChain) getConfChange(tx *Tx) (raftpb.ConfChange, error) {
 	}
 	// get tx type according to recipient
 	//log.Infof("Recipient: %s", common.BytesToAddress(typesTx.Data.Recipient).String())
-	txType, err := ctypes.GetTxType(common.BytesToAddress(typesTx.Data.Recipient).String())
-	if err == nil && txType == ctypes.NODE {
+	txType, err := core.GetTxType(common.BytesToAddress(typesTx.Data.Recipient).String())
+	if err == nil && txType == core.NODE {
 		err = json.Unmarshal(typesTx.Data.Payload, &cfgChange)
 		if err != nil {
 			return cfgChange, err

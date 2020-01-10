@@ -10,7 +10,7 @@ import (
 	"madledger/common"
 	"madledger/common/abi"
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
 	oc "madledger/orderer/config"
 	pc "madledger/peer/config"
 	"os"
@@ -553,7 +553,7 @@ func setNumForCallTx(num string) error {
 	}
 
 	addr := "0x8de6ce45b289502e16aef93313fd3082993acb1f"
-	tx, err := types.NewTx("test0", common.HexToAddress(addr), payloadBytes, 0, "", raftClients[0].GetPrivKey())
+	tx, err := core.NewTx("test0", common.HexToAddress(addr), payloadBytes, 0, "", raftClients[0].GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -574,7 +574,7 @@ func getNumForCallTx(num string) error {
 	}
 
 	addr := "0x8de6ce45b289502e16aef93313fd3082993acb1f"
-	tx, err := types.NewTx("test0", common.HexToAddress(addr), payloadBytes, 0, "", raftClients[0].GetPrivKey())
+	tx, err := core.NewTx("test0", common.HexToAddress(addr), payloadBytes, 0, "", raftClients[0].GetPrivKey())
 	if err != nil {
 		return err
 	}

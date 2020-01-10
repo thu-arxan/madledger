@@ -4,7 +4,7 @@ import (
 	"errors"
 	"madledger/common"
 	"madledger/common/crypto"
-	"madledger/core/types"
+	"madledger/core"
 	pb "madledger/protos"
 
 	"golang.org/x/net/context"
@@ -33,7 +33,7 @@ func (s *Server) CreateChannel(ctx context.Context, req *pb.CreateChannelRequest
 	if !tx.Verify() {
 		return nil, errors.New("The tx is not a valid tx")
 	}
-	if tx.GetReceiver().String() != types.CreateChannelContractAddress.String() {
+	if tx.GetReceiver().String() != core.CreateChannelContractAddress.String() {
 		return nil, errors.New("The receiver of the tx is not the valid contract address")
 	}
 	_, err = s.cc.CreateChannel(tx)
@@ -52,14 +52,14 @@ func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus,
 	}
 	// if tx is for confChange, we should check if the client is system admin
 	// get tx type according to recipient
-	txType, err := types.GetTxType(common.BytesToAddress(tx.Data.Recipient).String())
-	if err == nil && (txType == types.VALIDATOR || txType == types.NODE) {
+	txType, err := core.GetTxType(common.BytesToAddress(tx.Data.Recipient).String())
+	if err == nil && (txType == core.VALIDATOR || txType == core.NODE) {
 		pk, err := crypto.NewPublicKey(req.Tx.Data.Sig.PK)
 		if err != nil {
 			return &status, err
 		}
 		// create member to check if the client is system admin
-		member, err := types.NewMember(pk, "")
+		member, err := core.NewMember(pk, "")
 		if err != nil {
 			return &status, err
 		}

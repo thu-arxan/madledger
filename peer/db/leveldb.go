@@ -5,7 +5,7 @@ import (
 	"errors"
 	"madledger/common"
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -150,7 +150,7 @@ func (db *LevelDB) GetTxStatusAsync(channelID, txID string) (*TxStatus, error) {
 }
 
 // SetTxStatus is the implementation of interface
-func (db *LevelDB) SetTxStatus(tx *types.Tx, status *TxStatus) error {
+func (db *LevelDB) SetTxStatus(tx *core.Tx, status *TxStatus) error {
 	value, err := json.Marshal(status)
 	if err != nil {
 		return err
@@ -311,7 +311,7 @@ func (wb *WriteBatchWrapper) SetStorage(address common.Address, key common.Word2
 }
 
 // SetTxStatus is the implementation of interface
-func (wb *WriteBatchWrapper) SetTxStatus(tx *types.Tx, status *TxStatus) error {
+func (wb *WriteBatchWrapper) SetTxStatus(tx *core.Tx, status *TxStatus) error {
 	value, err := json.Marshal(status)
 	if err != nil {
 		return err

@@ -5,7 +5,7 @@ import (
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"madledger/common"
-	"madledger/core/types"
+	"madledger/core"
 	"os"
 	"regexp"
 	"strconv"
@@ -112,7 +112,7 @@ func TestRaftCreateTx2BR(t *testing.T) {
 			channel = "test0" + strconv.Itoa(m)
 		}
 		fmt.Printf("Create contract %d on channel %s by client0...\n", m, channel)
-		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, 0, "", raftClients[0].GetPrivKey())
+		tx, err := core.NewTx(channel, common.ZeroAddress, contractCodes, 0, "", raftClients[0].GetPrivKey())
 		require.NoError(t, err)
 
 		_, err = raftClients[0].AddTx(tx)
@@ -126,7 +126,7 @@ func TestRaftCreateTx2BR(t *testing.T) {
 			channel = "test1" + strconv.Itoa(m)
 		}
 		fmt.Printf("Create contract %d on channel %s by client1 ...\n", m, channel)
-		tx, err = types.NewTx(channel, common.ZeroAddress, contractCodes, 0, "", raftClients[1].GetPrivKey())
+		tx, err = core.NewTx(channel, common.ZeroAddress, contractCodes, 0, "", raftClients[1].GetPrivKey())
 		require.NoError(t, err)
 
 		_, err = raftClients[1].AddTx(tx)

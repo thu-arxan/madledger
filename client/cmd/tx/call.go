@@ -6,7 +6,7 @@ import (
 	"madledger/client/util"
 	"madledger/common"
 	"madledger/common/abi"
-	"madledger/core/types"
+	"madledger/core"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -67,7 +67,7 @@ func runCall(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	tx, err := types.NewTx(channelID, common.HexToAddress(receiver), payloadBytes, 0, "", client.GetPrivKey())
+	tx, err := core.NewTx(channelID, common.HexToAddress(receiver), payloadBytes, 0, "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}

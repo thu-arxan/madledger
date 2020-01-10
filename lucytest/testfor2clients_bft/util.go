@@ -9,7 +9,7 @@ import (
 	"madledger/common"
 	"madledger/common/abi"
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
 	oc "madledger/orderer/config"
 	pc "madledger/peer/config"
 	"os"
@@ -207,7 +207,7 @@ func createContractForCallTx() error {
 	if err != nil {
 		return err
 	}
-	tx, err := types.NewTx("test0", common.ZeroAddress, contractCodes, 0, "", bftClients[0].GetPrivKey())
+	tx, err := core.NewTx("test0", common.ZeroAddress, contractCodes, 0, "", bftClients[0].GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -221,7 +221,7 @@ func createContractForCallTx() error {
 	if err != nil {
 		return err
 	}
-	tx, err = types.NewTx("test1", common.ZeroAddress, contractCodes, 0, "", bftClients[1].GetPrivKey())
+	tx, err = core.NewTx("test1", common.ZeroAddress, contractCodes, 0, "", bftClients[1].GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -249,7 +249,7 @@ func setNumForCallTx(node int, num string) error {
 	} else {
 		addr = "0x1b66001e01d3c8d3893187fee59e3bea1d9bdd9b"
 	}
-	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, 0, "", client.GetPrivKey())
+	tx, err := core.NewTx(channel, common.HexToAddress(addr), payloadBytes, 0, "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -277,7 +277,7 @@ func getNumForCallTx(node int, num string) error {
 	} else {
 		addr = "0x1b66001e01d3c8d3893187fee59e3bea1d9bdd9b"
 	}
-	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, 0, "", client.GetPrivKey())
+	tx, err := core.NewTx(channel, common.HexToAddress(addr), payloadBytes, 0, "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}

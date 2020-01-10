@@ -2,12 +2,12 @@ package protos
 
 import (
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
 )
 
 // NewBlock is the constructor of Block
 // todo: fix sig nil and data nil
-func NewBlock(block *types.Block) (*Block, error) {
+func NewBlock(block *core.Block) (*Block, error) {
 	var txs = make([]*Tx, len(block.Transactions))
 	if block.Transactions == nil {
 		txs = nil
@@ -35,16 +35,16 @@ func NewBlock(block *types.Block) (*Block, error) {
 	}, nil
 }
 
-// ConvertToTypes convert pb.Block to types.Block
+// ConvertToTypes convert pb.Block to core.Block
 // todo: fix nil
-func (block *Block) ConvertToTypes() (*types.Block, error) {
-	var txs = make([]*types.Tx, len(block.Transactions))
+func (block *Block) ConvertToTypes() (*core.Block, error) {
+	var txs = make([]*core.Tx, len(block.Transactions))
 	if len(txs) == 0 {
 		txs = nil
 	} else {
 		for i := range txs {
 			tx := block.Transactions[i]
-			txs[i] = &types.Tx{
+			txs[i] = &core.Tx{
 				ID:   tx.ID,
 				Time: tx.Time,
 			}
@@ -54,8 +54,8 @@ func (block *Block) ConvertToTypes() (*types.Block, error) {
 		}
 	}
 
-	return &types.Block{
-		Header: &types.BlockHeader{
+	return &core.Block{
+		Header: &core.BlockHeader{
 			Version:    block.Header.Version,
 			ChannelID:  block.Header.ChannelID,
 			Number:     block.Header.Number,

@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"madledger/common/crypto"
-	"madledger/core/types"
+	"madledger/core"
 	"sort"
 	"strings"
 	"time"
@@ -182,16 +182,16 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 }
 
 // CreateChannel create a channel
-func (c *Client) CreateChannel(channelID string, public bool, admins, members []*types.Member) error {
+func (c *Client) CreateChannel(channelID string, public bool, admins, members []*core.Member) error {
 	// log.Infof("Create channel %s", channelID)
-	self, err := types.NewMember(c.GetPrivKey().PubKey(), "admin")
+	self, err := core.NewMember(c.GetPrivKey().PubKey(), "admin")
 	if err != nil {
 		return err
 	}
-	admins = unionMembers(admins, []*types.Member{self})
+	admins = unionMembers(admins, []*core.Member{self})
 	// if this is a public channel, there is no need to contain members
 	if public {
-		members = make([]*types.Member, 0)
+		members = make([]*core.Member, 0)
 	} else {
 		members = unionMembers(admins, members)
 	}
@@ -204,11 +204,11 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 		},
 		Version: 1,
 	})
-	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload, 0, "", c.GetPrivKey())
+	typesTx, _ := core.NewTx(core.CONFIGCHANNELID, core.CreateChannelContractAddress, payload, 0, "", c.GetPrivKey())
 	pbTx, _ := pb.NewTx(typesTx)
-	/*fmt.Printf("CreateChannelContractAddress: %s\n",types.CreateChannelContractAddress.String())
-	fmt.Printf("CfgTendermintAddress: %s\n",types.CfgTendermintAddress.String())
-	fmt.Printf("CfgRaftAddress: %s\n",types.CfgRaftAddress.String())*/
+	/*fmt.Printf("CreateChannelContractAddress: %s\n",core.CreateChannelContractAddress.String())
+	fmt.Printf("CfgTendermintAddress: %s\n",core.CfgTendermintAddress.String())
+	fmt.Printf("CfgRaftAddress: %s\n",core.CfgRaftAddress.String())*/
 
 	var times int
 	for i, ordererClient := range c.ordererClients {
@@ -235,7 +235,7 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 }
 
 // AddTx try to add a tx
-func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
+func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 	pbTx, err := pb.NewTx(tx)
 	if err != nil {
 		return nil, err
@@ -323,8 +323,8 @@ func (c *Client) GetHistory(address []byte) (*pb.TxHistory, error) {
 	return result.(*pb.TxHistory), err
 }
 
-func unionMembers(first, second []*types.Member) []*types.Member {
-	union := make([]*types.Member, 0)
+func unionMembers(first, second []*core.Member) []*core.Member {
+	union := make([]*core.Member, 0)
 	members := append(first, second...)
 	for _, member := range members {
 		if !membersContain(union, member) {
@@ -334,7 +334,7 @@ func unionMembers(first, second []*types.Member) []*types.Member {
 	return union
 }
 
-func membersContain(members []*types.Member, member *types.Member) bool {
+func membersContain(members []*core.Member, member *core.Member) bool {
 	for i := range members {
 		if member.Equal(members[i]) {
 			return true

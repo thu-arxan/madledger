@@ -29,7 +29,7 @@ test:
 	@$(GOCMD) test madledger/common/crypto -count=1 -cover
 	@$(GOCMD) test madledger/common/abi -count=1 -cover
 
-	@$(GOCMD) test madledger/core/types -count=1 -cover
+	@$(GOCMD) test madledger/core -count=1 -cover
 
 	@$(GOCMD) test madledger/protos -count=1 -cover
 

@@ -2,7 +2,7 @@ package evm
 
 import (
 	"madledger/common"
-	"madledger/core/types"
+	"madledger/core"
 )
 
 // Context provide a context to run a contract on the evm
@@ -23,7 +23,7 @@ type Context struct {
 }
 
 // NewContext is the constructor of Context
-func NewContext(block *types.Block) *Context {
+func NewContext(block *core.Block) *Context {
 	return &Context{
 		ChannelID: block.Header.ChannelID,
 		Number:    block.Header.Number,

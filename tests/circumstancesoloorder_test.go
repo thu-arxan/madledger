@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"madledger/core/types"
+	"madledger/core"
 	"os"
 	"testing"
 
@@ -38,7 +38,7 @@ func TestInitCircumstanceSoloOrderer(t *testing.T) {
 func TestSoloOrdererCreateChannel(t *testing.T) {
 	client, err := getSoloClient()
 	require.NoError(t, err)
-	var identities []*types.Member
+	var identities []*core.Member
 	for i := 0; i < 3; i++ {
 		cfg := getPeerConfig(i)
 		identity, err := cfg.GetIdentity()

@@ -2,7 +2,7 @@ package config
 
 import (
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
 )
 
 // Payload config a channel
@@ -20,19 +20,19 @@ type Profile struct {
 	// Dependencies includes all channels that the channel relies on.
 	Dependencies []string
 	// Members
-	Members []*types.Member
+	Members []*core.Member
 	// Admins
 	// Note: If the public is true, Admins is still works and may not be contained in the
 	// Members. But if the public is false, Admins should be contained in the Members.
-	Admins []*types.Member
+	Admins []*core.Member
 }
 
 // Verify returns if a payload is packed well
 func (payload *Payload) Verify() bool {
 	// verify ChannelID
 	switch payload.ChannelID {
-	case types.GLOBALCHANNELID:
-	case types.CONFIGCHANNELID:
+	case core.GLOBALCHANNELID:
+	case core.CONFIGCHANNELID:
 	default:
 		if !util.IsLegalChannelName(payload.ChannelID) {
 			return false
@@ -53,7 +53,7 @@ func (payload *Payload) Verify() bool {
 }
 
 // IsMember return if the member is contained in the channel
-func (payload *Payload) IsMember(member *types.Member) bool {
+func (payload *Payload) IsMember(member *core.Member) bool {
 	// If the channel is public, then returns true
 	if payload.Profile.Public {
 		return true
@@ -67,7 +67,7 @@ func (payload *Payload) IsMember(member *types.Member) bool {
 }
 
 // IsAdmin return if the member is the member of the channel
-func (payload *Payload) IsAdmin(member *types.Member) bool {
+func (payload *Payload) IsAdmin(member *core.Member) bool {
 	for _, m := range payload.Profile.Admins {
 		if member.Equal(m) {
 			return true

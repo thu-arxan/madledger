@@ -5,7 +5,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 	"madledger/common"
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
 	"madledger/peer/db"
 )
 
@@ -119,7 +119,7 @@ func (wb *WriteBatchWrapper) SetStorage(address common.Address, key common.Word2
 }
 
 // SetTxStatus is the implementation of interface
-func (wb *WriteBatchWrapper) SetTxStatus(tx *types.Tx, status *db.TxStatus) error {
+func (wb *WriteBatchWrapper) SetTxStatus(tx *core.Tx, status *db.TxStatus) error {
 	return nil
 }
 

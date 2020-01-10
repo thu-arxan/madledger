@@ -7,7 +7,7 @@ import (
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
-	"madledger/core/types"
+	"madledger/core"
 	"madledger/orderer/db"
 	"time"
 
@@ -65,17 +65,17 @@ func (manager *Manager) Start() {
 			txs, _ := manager.getTxsFromConsensusBlock(cb)
 			if len(txs) != 0 {
 				prevBlock := manager.cm.GetPrevBlock()
-				var block *types.Block
+				var block *core.Block
 				if prevBlock == nil {
-					block = types.NewBlock(manager.ID, 0, types.GenesisBlockPrevHash, txs)
+					block = core.NewBlock(manager.ID, 0, core.GenesisBlockPrevHash, txs)
 					log.Infof("Channel %s create new block %d, hash is %s", manager.ID, 0, util.Hex(block.Hash().Bytes()))
 				} else {
-					block = types.NewBlock(manager.ID, prevBlock.Header.Number+1, prevBlock.Hash().Bytes(), txs)
+					block = core.NewBlock(manager.ID, prevBlock.Header.Number+1, prevBlock.Hash().Bytes(), txs)
 					log.Infof("Channel %s create new block %d, hash is %s", manager.ID, prevBlock.Header.Number+1, util.Hex(block.Hash().Bytes()))
 				}
 				// If the channel is not the global channel, it should send a tx to the global channel
-				if manager.ID != types.GLOBALCHANNELID {
-					tx := types.NewGlobalTx(manager.ID, block.Header.Number, block.Hash())
+				if manager.ID != core.GLOBALCHANNELID {
+					tx := core.NewGlobalTx(manager.ID, block.Header.Number, block.Hash())
 					// 打印非config通道向global通道中添加的tx信息
 					log.Infof("Channel %s add tx %s to global channel.", manager.ID, tx.ID)
 
@@ -120,12 +120,12 @@ func (manager *Manager) HasGenesisBlock() bool {
 }
 
 // GetBlock return the block of num
-func (manager *Manager) GetBlock(num uint64) (*types.Block, error) {
+func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
 	return manager.cm.GetBlock(num)
 }
 
 // AddBlock add a block
-func (manager *Manager) AddBlock(block *types.Block) error {
+func (manager *Manager) AddBlock(block *core.Block) error {
 	// first update db
 	if err := manager.db.AddBlock(block); err != nil {
 		log.Infof("manager.db.AddBlock error: %s add block %d, %s",
@@ -139,9 +139,9 @@ func (manager *Manager) AddBlock(block *types.Block) error {
 	}
 	// check is there is any need to update local state of orderer
 	switch manager.ID {
-	case types.CONFIGCHANNELID:
+	case core.CONFIGCHANNELID:
 		return manager.AddConfigBlock(block)
-	case types.GLOBALCHANNELID:
+	case core.GLOBALCHANNELID:
 		return manager.AddGlobalBlock(block)
 	default:
 		return nil
@@ -154,7 +154,7 @@ func (manager *Manager) GetBlockSize() uint64 {
 }
 
 // AddTx try to add a tx
-func (manager *Manager) AddTx(tx *types.Tx) error {
+func (manager *Manager) AddTx(tx *core.Tx) error {
 	if manager.db.HasTx(tx) {
 		return errors.New("The tx exist in the blockchain aleardy")
 	}
@@ -177,28 +177,28 @@ func (manager *Manager) AddTx(tx *types.Tx) error {
 }
 
 // FetchBlock return the block if exist
-func (manager *Manager) FetchBlock(num uint64) (*types.Block, error) {
+func (manager *Manager) FetchBlock(num uint64) (*core.Block, error) {
 	return manager.cm.GetBlock(num)
 }
 
 // IsMember return if the member belongs to the channel
-func (manager *Manager) IsMember(member *types.Member) bool {
+func (manager *Manager) IsMember(member *core.Member) bool {
 	return manager.db.IsMember(manager.ID, member)
 }
 
 // IsAdmin return if the member is the admin of the channel
-func (manager *Manager) IsAdmin(member *types.Member) bool {
+func (manager *Manager) IsAdmin(member *core.Member) bool {
 	return manager.db.IsAdmin(manager.ID, member)
 }
 
 // IsSystemAdmin return if the member is the system admin
-func (manager *Manager) IsSystemAdmin(member *types.Member) bool {
+func (manager *Manager) IsSystemAdmin(member *core.Member) bool {
 	return manager.db.IsSystemAdmin(member)
 }
 
 // FetchBlockAsync will fetch book async.
 // TODO: fix the thread unsafety
-func (manager *Manager) FetchBlockAsync(num uint64) (*types.Block, error) {
+func (manager *Manager) FetchBlockAsync(num uint64) (*core.Block, error) {
 	if manager.cm.GetExcept() <= num {
 		manager.hub.Watch(string(num), nil)
 	}
@@ -230,7 +230,7 @@ func (manager *Manager) syncBlock() {
 }
 
 // getTxsFromConsensusBlock return txs which are legal and duplicate
-func (manager *Manager) getTxsFromConsensusBlock(block consensus.Block) (legal, duplicate []*types.Tx) {
+func (manager *Manager) getTxsFromConsensusBlock(block consensus.Block) (legal, duplicate []*core.Tx) {
 	txs := GetTxsFromConsensusBlock(block)
 	var count = make(map[string]bool)
 	for _, tx := range txs {

@@ -7,7 +7,7 @@ import (
 	"madledger/peer/config"
 	"time"
 
-	"madledger/core/types"
+	"madledger/core"
 	pb "madledger/protos"
 
 	"google.golang.org/grpc"
@@ -47,7 +47,7 @@ func NewClient(addr string, cfg *config.Config) (*Client, error) {
 }
 
 // FetchBlock return block if exist, else return error
-func (c *Client) FetchBlock(channelID string, num uint64, async bool) (*types.Block, error) {
+func (c *Client) FetchBlock(channelID string, num uint64, async bool) (*core.Block, error) {
 	var behavior = pb.Behavior_FAIL_IF_NOT_READY
 	if async {
 		behavior = pb.Behavior_RETURN_UNTIL_READY

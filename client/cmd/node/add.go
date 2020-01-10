@@ -5,7 +5,7 @@ import (
 	"errors"
 	"madledger/client/lib"
 	"madledger/client/util"
-	coreTypes "madledger/core/types"
+	coreTypes "madledger/core"
 	"strconv"
 	"strings"
 

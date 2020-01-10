@@ -9,7 +9,7 @@ import (
 	raft "madledger/consensus/raft"
 	"madledger/consensus/solo"
 	"madledger/consensus/tendermint"
-	"madledger/core/types"
+	"madledger/core"
 	"madledger/orderer/config"
 	"madledger/orderer/db"
 	"strings"
@@ -99,7 +99,7 @@ func (c *Coordinator) Stop() error {
 }
 
 // FetchBlock return the block if both channel and block exists
-func (c *Coordinator) FetchBlock(channelID string, num uint64, async bool) (*types.Block, error) {
+func (c *Coordinator) FetchBlock(channelID string, num uint64, async bool) (*core.Block, error) {
 	cm, err := c.getChannelManager(channelID)
 	if err != nil {
 		return nil, err
@@ -116,7 +116,7 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 	if err != nil {
 		return &pb.ChannelInfos{}, err
 	}
-	member, err := types.NewMember(pk, "")
+	member, err := core.NewMember(pk, "")
 	if err != nil {
 		return &pb.ChannelInfos{}, err
 	}
@@ -124,14 +124,14 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 	if req.System {
 		if c.GM != nil {
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
-				ChannelID: types.GLOBALCHANNELID,
+				ChannelID: core.GLOBALCHANNELID,
 				BlockSize: c.GM.GetBlockSize(),
 				Identity:  pb.Identity_MEMBER,
 			})
 		}
 		if c.CM != nil {
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
-				ChannelID: types.CONFIGCHANNELID,
+				ChannelID: core.CONFIGCHANNELID,
 				BlockSize: c.CM.GetBlockSize(),
 				Identity:  pb.Identity_MEMBER,
 			})
@@ -158,7 +158,7 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 }
 
 // CreateChannel try to create a channel
-func (c *Coordinator) CreateChannel(tx *types.Tx) (*pb.ChannelInfo, error) {
+func (c *Coordinator) CreateChannel(tx *core.Tx) (*pb.ChannelInfo, error) {
 	err := c.createChannel(tx)
 	if err != nil {
 		return nil, err
@@ -167,7 +167,7 @@ func (c *Coordinator) CreateChannel(tx *types.Tx) (*pb.ChannelInfo, error) {
 }
 
 // AddTx add a tx
-func (c *Coordinator) AddTx(tx *types.Tx) error {
+func (c *Coordinator) AddTx(tx *core.Tx) error {
 	channel, err := c.getChannelManager(tx.Data.ChannelID)
 	if err != nil {
 		return err
@@ -177,7 +177,7 @@ func (c *Coordinator) AddTx(tx *types.Tx) error {
 
 // createChannel try to create a channel
 // However, this should check if the channel exist and should be thread safety.
-func (c *Coordinator) createChannel(tx *types.Tx) error {
+func (c *Coordinator) createChannel(tx *core.Tx) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -190,9 +190,9 @@ func (c *Coordinator) createChannel(tx *types.Tx) error {
 	var channelID = payload.ChannelID
 	log.Infof("Create channel %s", channelID)
 	switch channelID {
-	case types.GLOBALCHANNELID:
+	case core.GLOBALCHANNELID:
 		return fmt.Errorf("Channel %s is aleardy exist", channelID)
-	case types.CONFIGCHANNELID:
+	case core.CONFIGCHANNELID:
 		return fmt.Errorf("Channel %s is aleardy exist", channelID)
 	default:
 		if !util.IsLegalChannelName(channelID) {
@@ -216,9 +216,9 @@ func (c *Coordinator) createChannel(tx *types.Tx) error {
 // getChannelManager return the manager of the channel
 func (c *Coordinator) getChannelManager(channelID string) (*Manager, error) {
 	switch channelID {
-	case types.GLOBALCHANNELID:
+	case core.GLOBALCHANNELID:
 		return c.GM, nil
-	case types.CONFIGCHANNELID:
+	case core.CONFIGCHANNELID:
 		return c.CM, nil
 	default:
 		c.lock.RLock()
@@ -245,7 +245,7 @@ func (c *Coordinator) loadSystemChannel() error {
 // loadConfigChannel load the config channel("_config")
 func (c *Coordinator) loadConfigChannel() error {
 	var err error
-	c.CM, err = NewManager(types.CONFIGCHANNELID, c)
+	c.CM, err = NewManager(core.CONFIGCHANNELID, c)
 	if err != nil {
 		return err
 	}
@@ -280,7 +280,7 @@ func (c *Coordinator) loadConfigChannel() error {
 // Note: loadGlobalChannel must call after loadConfigChannel
 func (c *Coordinator) loadGlobalChannel() error {
 	var err error
-	c.GM, err = NewManager(types.GLOBALCHANNELID, c)
+	c.GM, err = NewManager(core.GLOBALCHANNELID, c)
 	if err != nil {
 		return err
 	}
@@ -293,7 +293,7 @@ func (c *Coordinator) loadGlobalChannel() error {
 		}
 		// ggb: global channel genesis block
 		ggb, err := gc.CreateGenesisBlock([]*gc.Payload{&gc.Payload{
-			ChannelID: types.CONFIGCHANNELID,
+			ChannelID: core.CONFIGCHANNELID,
 			Number:    0,
 			Hash:      cgb.Hash(),
 		}})
@@ -334,8 +334,8 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 		Number:  1,
 		Resume:  false,
 	}
-	channels[types.GLOBALCHANNELID] = defaultCfg
-	channels[types.CONFIGCHANNELID] = defaultCfg
+	channels[core.GLOBALCHANNELID] = defaultCfg
+	channels[core.CONFIGCHANNELID] = defaultCfg
 	// set consensus of user channels
 	for channelID := range c.Managers {
 		channels[channelID] = defaultCfg

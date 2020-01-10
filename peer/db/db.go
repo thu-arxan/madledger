@@ -2,7 +2,7 @@ package db
 
 import (
 	"madledger/common"
-	"madledger/core/types"
+	"madledger/core"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -21,7 +21,7 @@ type WriteBatch interface {
 	RemoveAccount(address common.Address) error
 	SetAccount(account common.Account) error
 	SetStorage(address common.Address, key common.Word256, value common.Word256) error
-	SetTxStatus(tx *types.Tx, status *TxStatus) error
+	SetTxStatus(tx *core.Tx, status *TxStatus) error
 	GetBatch() *leveldb.Batch
 }
 
@@ -44,7 +44,7 @@ type DB interface {
 	// GetStatus return the status of the tx
 	GetTxStatus(channelID, txID string) (*TxStatus, error)
 	GetTxStatusAsync(channelID, txID string) (*TxStatus, error)
-	SetTxStatus(tx *types.Tx, status *TxStatus) error
+	SetTxStatus(tx *core.Tx, status *TxStatus) error
 	BelongChannel(channelID string) bool
 	AddChannel(channelID string)
 	DeleteChannel(channelID string)

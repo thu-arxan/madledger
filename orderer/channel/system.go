@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	cc "madledger/blockchain/config"
 	"madledger/consensus"
-	"madledger/core/types"
+	"madledger/core"
 )
 
 // AddConfigBlock add a config block
 // The block is formated, so there is no need to verify
-func (manager *Manager) AddConfigBlock(block *types.Block) error {
+func (manager *Manager) AddConfigBlock(block *core.Block) error {
 	if block.Header.Number == 0 {
 		return nil
 	}
@@ -33,7 +33,7 @@ func (manager *Manager) AddConfigBlock(block *types.Block) error {
 			}
 			// create genesis block here
 			// Note: the genesis block will contain no tx
-			genesisBlock := types.NewBlock(channelID, 0, types.GenesisBlockPrevHash, []*types.Tx{})
+			genesisBlock := core.NewBlock(channelID, 0, core.GenesisBlockPrevHash, []*core.Tx{})
 			err = channel.AddBlock(genesisBlock)
 			if err != nil {
 				return err
@@ -58,6 +58,6 @@ func (manager *Manager) AddConfigBlock(block *types.Block) error {
 // AddGlobalBlock add a global block
 // Note: It should not add block file again.
 // TODO: update something in the db
-func (manager *Manager) AddGlobalBlock(block *types.Block) error {
+func (manager *Manager) AddGlobalBlock(block *core.Block) error {
 	return nil
 }

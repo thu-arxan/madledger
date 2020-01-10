@@ -11,7 +11,7 @@ import (
 	"madledger/common"
 	"madledger/common/abi"
 	"madledger/common/util"
-	coreTypes "madledger/core/types"
+	coreTypes "madledger/core"
 	oc "madledger/orderer/config"
 	orderer "madledger/orderer/server"
 	pc "madledger/peer/config"

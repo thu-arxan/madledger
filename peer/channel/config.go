@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	cc "madledger/blockchain/config"
-	"madledger/core/types"
+	"madledger/core"
 	"madledger/peer/db"
 )
 
 // AddConfigBlock add a config block
-func (m *Manager) AddConfigBlock(block *types.Block) error {
+func (m *Manager) AddConfigBlock(block *core.Block) error {
 	nums := make(map[string]uint64)
 	for i, tx := range block.Transactions {
 		status := &db.TxStatus{
@@ -46,8 +46,8 @@ func (m *Manager) AddConfigBlock(block *types.Block) error {
 	return nil
 }
 
-func getConfigPayload(tx *types.Tx) (*cc.Payload, error) {
-	if tx.Data.ChannelID != types.CONFIGCHANNELID {
+func getConfigPayload(tx *core.Tx) (*cc.Payload, error) {
+	if tx.Data.ChannelID != core.CONFIGCHANNELID {
 		return nil, errors.New("The tx does not belog to global channel")
 	}
 	var payload cc.Payload

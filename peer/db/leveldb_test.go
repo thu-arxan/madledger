@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"madledger/common"
 	"madledger/common/crypto"
-	"madledger/core/types"
+	"madledger/core"
 	"os"
 	"reflect"
 	"testing"
@@ -26,7 +26,7 @@ var (
 )
 
 var (
-	tx1, _    = types.NewTx("test", common.ZeroAddress, []byte("1"), 0, "", privKey)
+	tx1, _    = core.NewTx("test", common.ZeroAddress, []byte("1"), 0, "", privKey)
 	tx1Status = &TxStatus{
 		Err:             "",
 		BlockNumber:     3,
@@ -34,7 +34,7 @@ var (
 		Output:          []byte("tx1"),
 		ContractAddress: "",
 	}
-	tx2, _    = types.NewTx("test", common.ZeroAddress, []byte("2"), 0, "", privKey)
+	tx2, _    = core.NewTx("test", common.ZeroAddress, []byte("2"), 0, "", privKey)
 	tx2Status = &TxStatus{
 		Err:             "",
 		BlockNumber:     3,

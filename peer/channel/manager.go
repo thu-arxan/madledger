@@ -4,7 +4,7 @@ import (
 	"errors"
 	"madledger/blockchain"
 	"madledger/common"
-	"madledger/core/types"
+	"madledger/core"
 	"madledger/executor/evm"
 	"madledger/peer/db"
 	"madledger/peer/orderer"
@@ -21,7 +21,7 @@ var (
 type Manager struct {
 	signalCh chan bool
 	stopCh   chan bool
-	identity *types.Member
+	identity *core.Member
 	// id is the id of channel
 	id string
 	// db is the database
@@ -33,7 +33,7 @@ type Manager struct {
 }
 
 // NewManager is the constructor of Manager
-func NewManager(id, dir string, identity *types.Member, db db.DB, clients []*orderer.Client, coordinator *Coordinator) (*Manager, error) {
+func NewManager(id, dir string, identity *core.Member, db db.DB, clients []*orderer.Client, coordinator *Coordinator) (*Manager, error) {
 	cm, err := blockchain.NewManager(id, dir)
 	if err != nil {
 		return nil, err
@@ -73,17 +73,17 @@ func (m *Manager) Stop() {
 }
 
 // AddBlock add a block
-func (m *Manager) AddBlock(block *types.Block) error {
+func (m *Manager) AddBlock(block *core.Block) error {
 	// add into the blockchain
 	err := m.cm.AddBlock(block)
 	if err != nil {
 		return err
 	}
 	switch block.Header.ChannelID {
-	case types.GLOBALCHANNELID:
+	case core.GLOBALCHANNELID:
 		m.AddGlobalBlock(block)
 		log.Infof("Add global block %d", block.Header.Number)
-	case types.CONFIGCHANNELID:
+	case core.CONFIGCHANNELID:
 		m.AddConfigBlock(block)
 		log.Infof("Add config block %d", block.Header.Number)
 	default:
@@ -110,7 +110,7 @@ func (m *Manager) AddBlock(block *types.Block) error {
 // It will return after the block is runned.
 // In the future, this will contains chains which rely on something or nothing
 // TODO: transfer is not implementation yet
-func (m *Manager) RunBlock(block *types.Block) (db.WriteBatch, error) {
+func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 	context := evm.NewContext(block)
 	wb := m.db.NewWriteBatch()
 	for i, tx := range block.Transactions {
@@ -137,13 +137,13 @@ func (m *Manager) RunBlock(block *types.Block) (db.WriteBatch, error) {
 			continue
 		}
 
-		if receiverAddress.String() == types.CfgTendermintAddress.String() {
+		if receiverAddress.String() == core.CfgTendermintAddress.String() {
 			//m.db.SetTxStatus(tx, status)
 			wb.SetTxStatus(tx, status)
 			continue
 		}
 
-		if receiverAddress.String() == types.CfgRaftAddress.String() {
+		if receiverAddress.String() == core.CfgRaftAddress.String() {
 			//m.db.SetTxStatus(tx, status)
 			wb.SetTxStatus(tx, status)
 			continue
@@ -190,11 +190,11 @@ func (m *Manager) RunBlock(block *types.Block) (db.WriteBatch, error) {
 }
 
 // todo: here we should support evil orderer
-func (m *Manager) fetchBlock() (*types.Block, error) {
+func (m *Manager) fetchBlock() (*core.Block, error) {
 	var lock sync.Mutex
 	var ch = make(chan bool, 1)
 	var errs = make([]error, len(m.clients))
-	var blocks = make([]*types.Block, len(m.clients))
+	var blocks = make([]*core.Block, len(m.clients))
 	id := m.id
 	except := m.cm.GetExcept()
 	for i := range m.clients {

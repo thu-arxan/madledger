@@ -11,7 +11,7 @@ import (
 	cliu "madledger/client/util"
 	"madledger/common"
 	"madledger/common/util"
-	coreTypes "madledger/core/types"
+	"madledger/core"
 	oc "madledger/orderer/config"
 	orderer "madledger/orderer/server"
 	pc "madledger/peer/config"
@@ -386,7 +386,7 @@ func addOrRemoveNode(pubKey string, power int64, channel string) error {
 		PubKey: pubkey,
 		Power:  power,
 	})
-	tx, err := coreTypes.NewTx(channel, coreTypes.CfgTendermintAddress, validatorUpdate, 0, "", bftAdmin.GetPrivKey())
+	tx, err := core.NewTx(channel, core.CfgTendermintAddress, validatorUpdate, 0, "", bftAdmin.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -453,7 +453,7 @@ func createContractForCallTx(channel string, node string, bftClient *client.Clie
 	if err != nil {
 		return err
 	}
-	tx, err := coreTypes.NewTx(channel, common.ZeroAddress, contractCodes, 0, "", bftClient.GetPrivKey())
+	tx, err := core.NewTx(channel, common.ZeroAddress, contractCodes, 0, "", bftClient.GetPrivKey())
 	if err != nil {
 		return err
 	}

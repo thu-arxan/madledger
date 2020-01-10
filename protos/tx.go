@@ -2,12 +2,12 @@ package protos
 
 import (
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
 )
 
-// ConvertToTypes convert pb.Tx to types.Tx
-func (tx *Tx) ConvertToTypes() (*types.Tx, error) {
-	t := &types.Tx{
+// ConvertToTypes convert pb.Tx to core.Tx
+func (tx *Tx) ConvertToTypes() (*core.Tx, error) {
+	t := &core.Tx{
 		ID:   tx.ID,
 		Time: tx.Time,
 	}
@@ -18,7 +18,7 @@ func (tx *Tx) ConvertToTypes() (*types.Tx, error) {
 }
 
 // NewTx is the constructor of Tx
-func NewTx(tx *types.Tx) (*Tx, error) {
+func NewTx(tx *core.Tx) (*Tx, error) {
 	if tx == nil {
 		return nil, nil
 	}
@@ -29,8 +29,8 @@ func NewTx(tx *types.Tx) (*Tx, error) {
 	}, nil
 }
 
-// NewTxData convert types.TxData to TxData
-func NewTxData(txData *types.TxData) *TxData {
+// NewTxData convert core.TxData to TxData
+func NewTxData(txData *core.TxData) *TxData {
 	if txData == nil {
 		return nil
 	}
@@ -51,9 +51,9 @@ func NewTxData(txData *types.TxData) *TxData {
 	return td
 }
 
-// ToTypes convert TxData to types.TxData
-func (data *TxData) ToTypes() *types.TxData {
-	var td = &types.TxData{
+// ToTypes convert TxData to core.TxData
+func (data *TxData) ToTypes() *core.TxData {
+	var td = &core.TxData{
 		ChannelID: data.ChannelID,
 		Nonce:     data.Nonce,
 		Recipient: util.CopyBytes(data.Recipient),
@@ -63,7 +63,7 @@ func (data *TxData) ToTypes() *types.TxData {
 		Version:   data.Version,
 	}
 	if data.Sig != nil {
-		td.Sig = types.TxSig{
+		td.Sig = core.TxSig{
 			PK:  util.CopyBytes(data.Sig.PK),
 			Sig: util.CopyBytes(data.Sig.Sig),
 		}

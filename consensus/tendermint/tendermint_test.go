@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"madledger/common/util"
 	"madledger/consensus"
-	"madledger/core/types"
+	"madledger/core"
 	"madledger/orderer/config"
 	"os"
 	"sync"
@@ -41,8 +41,8 @@ func TestInitEnv(t *testing.T) {
 
 func TestStart(t *testing.T) {
 	var channels = make(map[string]consensus.Config)
-	channels[types.GLOBALCHANNELID] = consensus.DefaultConfig()
-	channels[types.CONFIGCHANNELID] = consensus.DefaultConfig()
+	channels[core.GLOBALCHANNELID] = consensus.DefaultConfig()
+	channels[core.CONFIGCHANNELID] = consensus.DefaultConfig()
 	for i := 0; i < len(tns); i++ {
 		// update absolute path into orderer.yaml
 		err := absBFTOrdererConfig(i)

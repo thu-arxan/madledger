@@ -11,7 +11,7 @@ import (
 	"io/ioutil"
 	"madledger/common"
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
 	oc "madledger/orderer/config"
 	pc "madledger/peer/config"
 	"madledger/peer/db"
@@ -46,12 +46,12 @@ var (
 	leveldb, _       = db.NewLevelDB(".data/leveldb")
 	cfg, _           = getPeerConfig()
 	client, _        = orderer.NewClient("localhost:9999", cfg)
-	globalManager, _ = NewManager(types.GLOBALCHANNELID, ".data/blocks/"+types.GLOBALCHANNELID, nil, leveldb, []*orderer.Client{client}, coordinator)
-	configManager, _ = NewManager(types.CONFIGCHANNELID, ".data/blocks/"+types.CONFIGCHANNELID, nil, leveldb, []*orderer.Client{client}, coordinator)
+	globalManager, _ = NewManager(core.GLOBALCHANNELID, ".data/blocks/"+core.GLOBALCHANNELID, nil, leveldb, []*orderer.Client{client}, coordinator)
+	configManager, _ = NewManager(core.CONFIGCHANNELID, ".data/blocks/"+core.CONFIGCHANNELID, nil, leveldb, []*orderer.Client{client}, coordinator)
 	testManager, _   = NewManager("test", ".data/blocks/test", nil, leveldb, []*orderer.Client{client}, coordinator)
-	globalBlocks     = make(map[int]*types.Block)
-	configBlocks     = make(map[int]*types.Block)
-	testBlocks       = make(map[int]*types.Block)
+	globalBlocks     = make(map[int]*core.Block)
+	configBlocks     = make(map[int]*core.Block)
+	testBlocks       = make(map[int]*core.Block)
 	globalBlocksEnd  = make(chan bool, 1)
 	configBlocksEnd  = make(chan bool, 1)
 	testBlocksEnd    = make(chan bool, 1)
@@ -176,9 +176,9 @@ func startFakeOrderer() error {
 // FetchBlock is the implementation of protos
 func (o *fakeOrderer) FetchBlock(ctx context.Context, req *pb.FetchBlockRequest) (*pb.Block, error) {
 	switch req.ChannelID {
-	case types.GLOBALCHANNELID:
+	case core.GLOBALCHANNELID:
 		return getGlobalBlock(req.Number), nil
-	case types.CONFIGCHANNELID:
+	case core.CONFIGCHANNELID:
 		return getConfigBlock(req.Number), nil
 	default:
 		return getTestBlock(req.Number), nil
@@ -202,23 +202,23 @@ func (o *fakeOrderer) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxSt
 
 func generateBlocks() {
 	// first generate test blocks
-	testGenesisBlock := types.NewBlock("test", 0, types.GenesisBlockPrevHash, nil)
+	testGenesisBlock := core.NewBlock("test", 0, core.GenesisBlockPrevHash, nil)
 	testBlocks[0] = testGenesisBlock
 	for i := 1; i < blockSize; i++ {
-		testBlock := types.NewBlock("test", uint64(i), testBlocks[i-1].Hash().Bytes(), nil)
+		testBlock := core.NewBlock("test", uint64(i), testBlocks[i-1].Hash().Bytes(), nil)
 		testBlocks[i] = testBlock
 	}
 	// then generate 2 config blocks
 	// first is genesis config block
 	admins, _ := bc.CreateAdmins()
 	var payloads = []bc.Payload{bc.Payload{
-		ChannelID: types.CONFIGCHANNELID,
+		ChannelID: core.CONFIGCHANNELID,
 		Profile: &bc.Profile{
 			Public: true,
 		},
 		Version: 1,
 	}, bc.Payload{
-		ChannelID: types.GLOBALCHANNELID,
+		ChannelID: core.GLOBALCHANNELID,
 		Profile: &bc.Profile{
 			Public: true,
 		},
@@ -230,14 +230,14 @@ func generateBlocks() {
 		},
 		Version: 1,
 	}}
-	var txs []*types.Tx
+	var txs []*core.Tx
 	for i, payload := range payloads {
 		payloadBytes, _ := json.Marshal(&payload)
 		accountNonce := uint64(i)
-		tx := types.NewTxWithoutSig(types.CONFIGCHANNELID, payloadBytes, accountNonce)
+		tx := core.NewTxWithoutSig(core.CONFIGCHANNELID, payloadBytes, accountNonce)
 		txs = append(txs, tx)
 	}
-	genesisConfigBlock := types.NewBlock(types.CONFIGCHANNELID, 0, types.GenesisBlockPrevHash, txs)
+	genesisConfigBlock := core.NewBlock(core.CONFIGCHANNELID, 0, core.GenesisBlockPrevHash, txs)
 	configBlocks[0] = genesisConfigBlock
 	// then second config block
 	payloadBytes, _ := json.Marshal(bc.Payload{
@@ -248,9 +248,9 @@ func generateBlocks() {
 		Version: 1,
 	})
 	// create tx
-	var tx = &types.Tx{
-		Data: types.TxData{
-			ChannelID: types.CONFIGCHANNELID,
+	var tx = &core.Tx{
+		Data: core.TxData{
+			ChannelID: core.CONFIGCHANNELID,
 			Nonce:     0,
 			Recipient: common.ZeroAddress.Bytes(),
 			Payload:   payloadBytes,
@@ -259,27 +259,27 @@ func generateBlocks() {
 		Time: util.Now(),
 	}
 	tx.ID = util.Hex(tx.Hash())
-	configBlock := types.NewBlock(types.CONFIGCHANNELID, 1, genesisConfigBlock.Hash().Bytes(), []*types.Tx{tx})
+	configBlock := core.NewBlock(core.CONFIGCHANNELID, 1, genesisConfigBlock.Hash().Bytes(), []*core.Tx{tx})
 	configBlocks[1] = configBlock
 	// then genesis global blocks
 	ggb, _ := gc.CreateGenesisBlock([]*gc.Payload{&gc.Payload{
-		ChannelID: types.CONFIGCHANNELID,
+		ChannelID: core.CONFIGCHANNELID,
 		Number:    0,
 		Hash:      genesisConfigBlock.Hash(),
 	}})
 	globalBlocks[0] = ggb
 	payloadBytes, _ = json.Marshal(&gc.Payload{
-		ChannelID: types.CONFIGCHANNELID,
+		ChannelID: core.CONFIGCHANNELID,
 		Number:    1,
 		Hash:      configBlocks[1].Hash(),
 	})
-	tx = types.NewTxWithoutSig(types.GLOBALCHANNELID, payloadBytes, 0)
-	globalBlocks[1] = types.NewBlock(types.GLOBALCHANNELID, 1, globalBlocks[0].Hash().Bytes(), []*types.Tx{tx})
+	tx = core.NewTxWithoutSig(core.GLOBALCHANNELID, payloadBytes, 0)
+	globalBlocks[1] = core.NewBlock(core.GLOBALCHANNELID, 1, globalBlocks[0].Hash().Bytes(), []*core.Tx{tx})
 
 	// then many blocks, global block begin from num 2
 	for i := 0; i < blockSize; i++ {
-		tx := types.NewGlobalTx("test", uint64(i), testBlocks[i].Hash())
-		globalBlock := types.NewBlock(types.GLOBALCHANNELID, uint64(i+2), globalBlocks[i+1].Hash().Bytes(), []*types.Tx{tx})
+		tx := core.NewGlobalTx("test", uint64(i), testBlocks[i].Hash())
+		globalBlock := core.NewBlock(core.GLOBALCHANNELID, uint64(i+2), globalBlocks[i+1].Hash().Bytes(), []*core.Tx{tx})
 		globalBlocks[i+2] = globalBlock
 	}
 }
