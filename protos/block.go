@@ -35,9 +35,8 @@ func NewBlock(block *core.Block) (*Block, error) {
 	}, nil
 }
 
-// ConvertToTypes convert pb.Block to core.Block
-// todo: fix nil
-func (block *Block) ConvertToTypes() (*core.Block, error) {
+// ToCore convert pb.Block to core.Block
+func (block *Block) ToCore() (*core.Block, error) {
 	var txs = make([]*core.Tx, len(block.Transactions))
 	if len(txs) == 0 {
 		txs = nil
@@ -49,7 +48,7 @@ func (block *Block) ConvertToTypes() (*core.Block, error) {
 				Time: tx.Time,
 			}
 			if tx.Data != nil {
-				txs[i].Data = *(tx.Data.ToTypes())
+				txs[i].Data = *(tx.Data.ToCore())
 			}
 		}
 	}

@@ -26,7 +26,7 @@ func (s *Server) ListChannels(ctx context.Context, req *pb.ListChannelsRequest) 
 
 // CreateChannel is the implementation of protos
 func (s *Server) CreateChannel(ctx context.Context, req *pb.CreateChannelRequest) (*pb.ChannelInfo, error) {
-	tx, err := req.GetTx().ConvertToTypes()
+	tx, err := req.GetTx().ToCore()
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (s *Server) CreateChannel(ctx context.Context, req *pb.CreateChannelRequest
 // AddTx is the implementation of protos
 func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus, error) {
 	var status pb.TxStatus
-	tx, err := req.Tx.ConvertToTypes()
+	tx, err := req.Tx.ToCore()
 	if err != nil {
 		return &status, err
 	}

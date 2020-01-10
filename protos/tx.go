@@ -5,14 +5,14 @@ import (
 	"madledger/core"
 )
 
-// ConvertToTypes convert pb.Tx to core.Tx
-func (tx *Tx) ConvertToTypes() (*core.Tx, error) {
+// ToCore convert pb.Tx to core.Tx
+func (tx *Tx) ToCore() (*core.Tx, error) {
 	t := &core.Tx{
 		ID:   tx.ID,
 		Time: tx.Time,
 	}
 	if tx.Data != nil {
-		t.Data = *(tx.Data.ToTypes())
+		t.Data = *(tx.Data.ToCore())
 	}
 	return t, nil
 }
@@ -51,8 +51,8 @@ func NewTxData(txData *core.TxData) *TxData {
 	return td
 }
 
-// ToTypes convert TxData to core.TxData
-func (data *TxData) ToTypes() *core.TxData {
+// ToCore convert TxData to core.TxData
+func (data *TxData) ToCore() *core.TxData {
 	var td = &core.TxData{
 		ChannelID: data.ChannelID,
 		Nonce:     data.Nonce,

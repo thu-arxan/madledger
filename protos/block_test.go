@@ -58,7 +58,7 @@ func convertTypesBlock(block *core.Block) (*core.Block, error) {
 	if err != nil {
 		return nil, err
 	}
-	typesBlock, err := pbBlock.ConvertToTypes()
+	typesBlock, err := pbBlock.ToCore()
 	if err != nil {
 		return nil, err
 	}

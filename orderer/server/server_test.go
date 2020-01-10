@@ -91,7 +91,7 @@ func TestFetchBlockAtNil(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, globalGenesisBlock.Header.Number, uint64(0))
 	// set global genesis block hash
-	typesGlobalGenesisBlock, err := globalGenesisBlock.ConvertToTypes()
+	typesGlobalGenesisBlock, err := globalGenesisBlock.ToCore()
 	require.NoError(t, err)
 
 	genesisBlocksHash[core.GLOBALCHANNELID] = typesGlobalGenesisBlock.Hash()
@@ -121,7 +121,7 @@ func TestFetchBlockAtNil(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, configGenesisBlock.Header.Number, uint64(0))
 	// set config genesis block hash
-	typesConfigGenesisBlock, err := configGenesisBlock.ConvertToTypes()
+	typesConfigGenesisBlock, err := configGenesisBlock.ToCore()
 	require.NoError(t, err)
 
 	genesisBlocksHash[core.CONFIGCHANNELID] = typesConfigGenesisBlock.Hash()
@@ -162,7 +162,7 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 		ChannelID: core.GLOBALCHANNELID,
 		Number:    0,
 	})
-	typesGlobalGenesisBlock, _ := globalGenesisBlock.ConvertToTypes()
+	typesGlobalGenesisBlock, _ := globalGenesisBlock.ToCore()
 	if !reflect.DeepEqual(typesGlobalGenesisBlock.Hash().Bytes(), genesisBlocksHash[core.GLOBALCHANNELID].Bytes()) {
 		t.Fatal()
 	}
@@ -171,7 +171,7 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 		ChannelID: core.CONFIGCHANNELID,
 		Number:    0,
 	})
-	typesConfigGenesisBlock, _ := configGenesisBlock.ConvertToTypes()
+	typesConfigGenesisBlock, _ := configGenesisBlock.ToCore()
 	if !reflect.DeepEqual(typesConfigGenesisBlock.Hash().Bytes(), genesisBlocksHash[core.CONFIGCHANNELID].Bytes()) {
 		t.Fatal()
 	}
