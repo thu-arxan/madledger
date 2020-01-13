@@ -3,9 +3,10 @@ package orderer
 import (
 	"context"
 	"crypto/tls"
-	"google.golang.org/grpc/credentials"
 	"madledger/peer/config"
 	"time"
+
+	"google.golang.org/grpc/credentials"
 
 	"madledger/core"
 	pb "madledger/protos"
@@ -60,8 +61,7 @@ func (c *Client) FetchBlock(channelID string, num uint64, async bool) (*core.Blo
 	if err != nil {
 		return nil, err
 	}
-	typesBlock, err := ConvertBlockFromPbToTypes(pbBlock)
-	return typesBlock, err
+	return pbBlock.ToCore()
 }
 
 // ListChannels return all channels
