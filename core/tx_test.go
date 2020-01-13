@@ -141,11 +141,26 @@ func TestMarshaAndUnmarshalWithoutSig(t *testing.T) {
 	}
 }
 
+func BenchmarkNewTx(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		NewTx("test", common.ZeroAddress, []byte("Hello World"), 10, "To be or not to be, this is a question", getPrivKey())
+	}
+}
+
 func BenchmarkMarshal(b *testing.B) {
 	tx, _ := NewTx("test", common.ZeroAddress, []byte("Hello World"), 10, "To be or not to be, this is a question", getPrivKey())
 	for i := 0; i < b.N; i++ {
 		tx.Bytes()
 	}
+}
+
+func BenchmarkVerify(b *testing.B) {
+	tx, _ := NewTx("test", common.ZeroAddress, []byte("Hello World"), 10, "To be or not to be, this is a question", getPrivKey())
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			tx.Verify()
+		}
+	})
 }
 
 func getPrivKey() crypto.PrivateKey {
