@@ -62,13 +62,16 @@ var (
 	step int
 )
 
-func TestMain(m *testing.M) {
-	flag.IntVar(&step, "s", 1, "step")
+func TestManageRun(t *testing.T) {
+	// Note: we set step to 1 or 2 to control things we want, default we will do nothing
+	flag.IntVar(&step, "s", 0, "step")
 	flag.Parse()
-	os.Exit(m.Run())
+	testRun(t)
+	testAnalyse(t)
+	os.RemoveAll(".data")
 }
 
-func TestRun(t *testing.T) {
+func testRun(t *testing.T) {
 	if step != 1 {
 		return
 	}
@@ -95,7 +98,7 @@ type block struct {
 	number  int
 }
 
-func TestAnalyse(t *testing.T) {
+func testAnalyse(t *testing.T) {
 	if step != 2 {
 		return
 	}

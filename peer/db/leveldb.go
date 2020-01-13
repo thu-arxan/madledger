@@ -237,7 +237,6 @@ func (db *LevelDB) addHistory(address []byte, channelID, txID string) {
 		txs[channelID] = []string{txID}
 		value, _ := json.Marshal(txs)
 		db.connect.Put(address, value, nil)
-		log.Infoln("account ", address, " Channel ", channelID, "add ", txID, "to db")
 	} else {
 		value, err := db.connect.Get(address, nil)
 		if err == nil {
@@ -249,7 +248,6 @@ func (db *LevelDB) addHistory(address []byte, channelID, txID string) {
 			}
 			value, _ := json.Marshal(txs)
 			db.connect.Put(address, value, nil)
-			log.Infoln("account ", address, " Channel ", channelID, "add ", txID, "to db")
 		}
 	}
 }
@@ -335,7 +333,6 @@ func (wb *WriteBatchWrapper) addHistory(address []byte, channelID, txID string) 
 		value, _ := json.Marshal(txs)
 		//db.connect.Put(address, value, nil)
 		wb.batch.Put(address, value)
-		log.Infoln("account ", address, " Channel ", channelID, "add ", txID, "to db")
 	} else {
 		value, err := wb.db.connect.Get(address, nil)
 		if err == nil {
@@ -348,7 +345,6 @@ func (wb *WriteBatchWrapper) addHistory(address []byte, channelID, txID string) 
 			value, _ := json.Marshal(txs)
 			//db.connect.Put(address, value, nil)
 			wb.batch.Put(address, value)
-			log.Infoln("account ", address, " Channel ", channelID, "add ", txID, "to db")
 		}
 	}
 }

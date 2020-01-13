@@ -8,6 +8,7 @@ import (
 	"madledger/executor/evm"
 	"madledger/peer/db"
 	"madledger/peer/orderer"
+	"runtime"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -113,6 +114,28 @@ func (m *Manager) AddBlock(block *core.Block) error {
 func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 	context := evm.NewContext(block)
 	wb := m.db.NewWriteBatch()
+
+	// first parallel get sender to speed up
+	threadSize := runtime.NumCPU()
+	if threadSize < 2 {
+		threadSize = 2
+	}
+	var ch = make(chan bool, threadSize)
+	var wg sync.WaitGroup
+	for i := range block.Transactions {
+		wg.Add(1)
+		tx := block.Transactions[i]
+		ch <- true
+		go func() {
+			defer func() {
+				<-ch
+				wg.Done()
+			}()
+			tx.GetSender()
+		}()
+	}
+	wg.Wait()
+
 	for i, tx := range block.Transactions {
 		senderAddress, err := tx.GetSender()
 		status := &db.TxStatus{
@@ -123,12 +146,11 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		}
 		if err != nil {
 			status.Err = err.Error()
-			//m.db.SetTxStatus(tx, status)
 			wb.SetTxStatus(tx, status)
 			continue
 		}
 		receiverAddress := tx.GetReceiver()
-		log.Infof("The address of receiver is %s", receiverAddress.String())
+
 		sender, err := m.db.GetAccount(senderAddress)
 		if err != nil {
 			status.Err = err.Error()
@@ -138,20 +160,19 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		}
 
 		if receiverAddress.String() == core.CfgTendermintAddress.String() {
-			//m.db.SetTxStatus(tx, status)
 			wb.SetTxStatus(tx, status)
 			continue
 		}
 
 		if receiverAddress.String() == core.CfgRaftAddress.String() {
-			//m.db.SetTxStatus(tx, status)
 			wb.SetTxStatus(tx, status)
 			continue
 		}
 
+		log.Debugf(" %v, %v, %v", sender, context, tx)
+
 		evm := evm.NewEVM(*context, senderAddress, m.db, wb)
 		if receiverAddress.String() != common.ZeroAddress.String() {
-			// log.Info("This is a normal call")
 			// if the length of payload is not zero, this is a contract call
 			if len(tx.Data.Payload) != 0 && !m.db.AccountExist(receiverAddress) {
 				status.Err = "Invalid Address"
@@ -175,7 +196,6 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			//m.db.SetTxStatus(tx, status)
 			wb.SetTxStatus(tx, status)
 		} else {
-			log.Info("This is a create call")
 			output, addr, err := evm.Create(sender, tx.Data.Payload, []byte{}, 0)
 			status.Output = output
 			status.ContractAddress = addr.String()
