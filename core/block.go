@@ -11,28 +11,27 @@ import (
 // Block is the elements of BlockChain
 type Block struct {
 	// Header of Block
-	Header *BlockHeader `json:"Header,omitempty"`
+	Header *BlockHeader `json:"header,omitempty"`
 	// Transactions of Block
-	Transactions []*Tx `json:"Transactions,omitempty"`
+	Transactions []*Tx `json:"transactions,omitempty"`
 }
 
 // BlockHeader is the header of Block
 // Some details still need to be decided
 type BlockHeader struct {
-	Version   int32  `json:"Version,omitempty"`
-	ChannelID string `json:"ChannelID,omitempty"`
+	Version   int32  `json:"version,omitempty"`
+	ChannelID string `json:"channelID,omitempty"`
 	// Bitcoin doesn't contains Number, Ethereum contains it and
 	// HyperLedger Fabric calls it as Sequence
-	Number uint64 `json:"Number,omitempty"`
+	Number uint64 `json:"number,omitempty"`
 	// Hash of the previous block header in the block chain.
-	PrevBlock []byte `json:"PrevBlock,omitempty"`
+	PrevBlock []byte `json:"prevBlock,omitempty"`
 	// Merkle tree reference to hash of all transactions for the block.
-	MerkleRoot []byte `json:"MerkleRoot,omitempty"`
-	Time       int64  `json:"Time,omitempty"`
+	MerkleRoot []byte `json:"merkleRoot,omitempty"`
+	Time       int64  `json:"time,omitempty"`
 }
 
 // NewBlock is the constructor of Block
-// TODO: copy the transactions
 func NewBlock(channelID string, num uint64, prevHash []byte, txs []*Tx) *Block {
 	merkleRootHash := CalcMerkleRoot(txs)
 	blockHeader := NewBlockHeader(channelID, num, prevHash, merkleRootHash)
@@ -52,6 +51,10 @@ func (b *Block) Hash() common.Hash {
 	buffer.Write(b.Header.PrevBlock)
 	buffer.Write(b.Header.MerkleRoot)
 	// Time should not be included
+	// Note: Some consensus has same block time while block has same number,
+	// while some consensus may have different block time even block has same number.
+	// So we should set block time to same thing if we want support evm timestamp instruction in consensus which
+	// block time is not consensused.
 	// buffer.Write(util.Int64ToBytes(b.Header.Time))
 	return common.BytesToHash(crypto.Hash(buffer.Bytes()))
 }
