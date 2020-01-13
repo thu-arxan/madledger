@@ -151,18 +151,14 @@ func (tx *Tx) HashWithoutSig() []byte {
 
 // hash implementation different hash
 func (tx *Tx) hash(withSig bool) []byte {
-	var data TxData
-	if withSig {
-		data = tx.Data
-	} else { // clone
-		data.ChannelID = tx.Data.ChannelID
-		data.Nonce = tx.Data.Nonce
-		data.Recipient = tx.Data.Recipient
-		data.Payload = tx.Data.Payload
-		data.Version = tx.Data.Version
+	var sig = tx.Data.Sig
+	if !withSig {
+		tx.Data.Sig = TxSig{}
 	}
 
-	bytes, _ := json.Marshal(data)
+	bytes, _ := json.Marshal(tx.Data)
+	tx.Data.Sig = sig
+
 	return crypto.Hash(bytes)
 }
 
