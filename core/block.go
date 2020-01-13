@@ -33,6 +33,9 @@ type BlockHeader struct {
 
 // NewBlock is the constructor of Block
 func NewBlock(channelID string, num uint64, prevHash []byte, txs []*Tx) *Block {
+	if len(prevHash) == 0 {
+		prevHash = GenesisBlockPrevHash
+	}
 	merkleRootHash := CalcMerkleRoot(txs)
 	blockHeader := NewBlockHeader(channelID, num, prevHash, merkleRootHash)
 
@@ -81,4 +84,9 @@ func (b *Block) Bytes() []byte {
 // GetNumber return the number of Block
 func (b *Block) GetNumber() uint64 {
 	return b.Header.Number
+}
+
+// GetMerkleRoot return merkle root
+func (b *Block) GetMerkleRoot() []byte {
+	return b.Header.MerkleRoot
 }
