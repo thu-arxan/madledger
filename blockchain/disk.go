@@ -90,6 +90,7 @@ func (manager *Manager) loadBlock(num uint64) (*core.Block, error) {
 	return &block, nil
 }
 
+// todo: we are not using fsync here
 func (manager *Manager) storeBlock(block *core.Block) error {
 	path := manager.getJSONStorePath(block.Header.Number)
 	if util.FileExists(path) {
