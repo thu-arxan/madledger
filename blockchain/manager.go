@@ -73,7 +73,7 @@ func (manager *Manager) GetPrevBlock() *core.Block {
 	}
 	block, err := manager.loadBlock(manager.except - 1)
 	if err != nil {
-		fmt.Println(err)
+		log.Warnf("channel %s manager failed to load block %d because of %v", manager.id, manager.except-1, err)
 	}
 	return block
 }
