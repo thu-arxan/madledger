@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"madledger/common/crypto"
 	"madledger/core"
 	"sort"
@@ -65,7 +64,6 @@ func NewClientFromConfig(cfg *config.Config) (*Client, error) {
 	}, nil
 }
 
-// 获取ordererClient数组
 func getOrdererClients(cfg *config.Config) ([]pb.OrdererClient, error) {
 	var clients []pb.OrdererClient
 	for _, address := range cfg.Orderer.Address {
@@ -74,7 +72,6 @@ func getOrdererClients(cfg *config.Config) ([]pb.OrdererClient, error) {
 		var err error
 		if cfg.TLS.Enable {
 			creds := credentials.NewTLS(&tls.Config{
-				//ServerName:   "orderer.madledger.com",
 				Certificates: []tls.Certificate{*(cfg.TLS.Cert)},
 				RootCAs:      cfg.TLS.Pool,
 			})
@@ -102,7 +99,6 @@ func getPeerClients(cfg *config.Config) ([]pb.PeerClient, error) {
 		var err error
 		if cfg.TLS.Enable {
 			creds := credentials.NewTLS(&tls.Config{
-				//ServerName:   "peer.madledger.com",
 				Certificates: []tls.Certificate{*(cfg.TLS.Cert)},
 				RootCAs:      cfg.TLS.Pool,
 			})
@@ -133,7 +129,6 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 	}
 	var infos *pb.ChannelInfos
 
-	// 有多个ordererClient，遍历ordererClient直到成功获取the info of channels
 	for i, ordererClient := range c.ordererClients {
 		infos, err = ordererClient.ListChannels(context.Background(), &pb.ListChannelsRequest{
 			System: system,
@@ -141,16 +136,10 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 		})
 		times := i + 1
 		if err != nil {
-			// 打印出每一个出错信息
-			// 如果最后一个ordererClient仍然失败，需要return
 			if times == len(c.ordererClients) {
-				fmt.Printf("lib/client/ListChannel: try %d times (the last time) but failed to get the info of channels because %s\n", times, err)
 				return channelInfos, err
 			}
-			fmt.Printf("lib/client/ListChannel: try %d times but failed to get the info of channels because %s\n", times, err)
 		} else {
-			fmt.Printf("lib/client/ListChannel: try %d times and success to get %d channels' info\n", times, len(infos.Channels))
-			// 获取信息成功，break
 			break
 		}
 	}
@@ -206,13 +195,9 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 	})
 	coreTx, _ := core.NewTx(core.CONFIGCHANNELID, core.CreateChannelContractAddress, payload, 0, "", c.GetPrivKey())
 	pbTx, _ := pb.NewTx(coreTx)
-	/*fmt.Printf("CreateChannelContractAddress: %s\n",core.CreateChannelContractAddress.String())
-	fmt.Printf("CfgTendermintAddress: %s\n",core.CfgTendermintAddress.String())
-	fmt.Printf("CfgRaftAddress: %s\n",core.CfgRaftAddress.String())*/
 
 	var times int
 	for i, ordererClient := range c.ordererClients {
-		//fmt.Printf("Going to create channel %s by ordererClient[%d]\n", channelID, i)
 		_, err = ordererClient.CreateChannel(context.Background(), &pb.CreateChannelRequest{
 			Tx: pbTx,
 		})
@@ -220,13 +205,9 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 		if err != nil {
 			// try to use other ordererClients until the last one still returns an error
 			if times == len(c.ordererClients) {
-				fmt.Printf("lib/client/CreateChannel: try %d times (the last time) but failed to create channel %s because %s\n", times, channelID, err)
 				return err
 			}
-			fmt.Printf("lib/client/CreateChannel: try %d times but failed to create channel %s because %s\n", times, channelID, err)
 		} else {
-			// create channel successfully and exit the loop
-			fmt.Printf("lib/client/CreateChannel: try %d times and success to create channel %s\n", times, channelID)
 			break
 		}
 	}
@@ -235,6 +216,7 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 }
 
 // AddTx try to add a tx
+// TODO: Support bft
 func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 	pbTx, err := pb.NewTx(tx)
 	if err != nil {
@@ -254,32 +236,26 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 			}
 			// try to use other ordererClients until the last one still returns an error
 			if times == len(c.ordererClients) {
-				fmt.Printf("lib/client/AddTx: try %d times(the last time) but fail to add tx %s because %s\n", times, tx.ID, err)
 				return nil, err
 			}
-			fmt.Printf("lib/client/AddTx: try %d times but fail to add tx %s because %s\n", times, tx.ID, err)
 		} else {
 			// add tx successfully and exit the loop
-			fmt.Printf("lib/client/AddTx: try %d times and success to add tx %s\n", times, tx.ID)
 			break
 		}
 	}
 
-	collector := NewCollector(len(c.peerClients))
+	collector := NewCollector(len(c.peerClients), 1)
 	for i := range c.peerClients {
 		go func(i int) {
-			// fmt.Printf("lib/client/AddTx: going to get tx status from peerClient[%d]\n", i)
 			status, err := c.peerClients[i].GetTxStatus(context.Background(), &pb.GetTxStatusRequest{
 				ChannelID: tx.Data.ChannelID,
 				TxID:      tx.ID,
 				Behavior:  pb.Behavior_RETURN_UNTIL_READY,
 			})
 			if err != nil {
-				collector.Add(nil, err)
-				fmt.Printf("lib/client/AddTx: peerClient[%d] failed to get tx status because %s\n", i, err)
+				collector.AddError(err)
 			} else {
-				collector.Add(status, nil)
-				// fmt.Printf("lib/client/AddTx: peerClient[%d] success to get tx status\n", i)
+				collector.Add(status)
 			}
 		}(i)
 	}
@@ -292,17 +268,18 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 }
 
 // GetHistory return the history of address
+// TODO: Support bft
 func (c *Client) GetHistory(address []byte) (*pb.TxHistory, error) {
-	collector := NewCollector(len(c.peerClients))
+	collector := NewCollector(len(c.peerClients), 1)
 	for i := range c.peerClients {
 		go func(i int) {
 			history, err := c.peerClients[i].ListTxHistory(context.Background(), &pb.ListTxHistoryRequest{
 				Address: address,
 			})
 			if err != nil {
-				collector.Add(nil, err)
+				collector.AddError(err)
 			} else {
-				collector.Add(history, nil)
+				collector.Add(history)
 			}
 		}(i)
 	}
@@ -310,16 +287,8 @@ func (c *Client) GetHistory(address []byte) (*pb.TxHistory, error) {
 	result, err := collector.Wait()
 	if err != nil {
 		return nil, err
-	} /*else {
-		txHistorys := result.(*pb.TxHistory)
-		for channel, txs := range txHistorys.Txs {
-			for i, id := range txs.Value {
-				fmt.Printf("No.%d: Channel %s, tx.ID %s\n", i, channel, id)
-			}
-		}
-	}*/
+	}
 
-	fmt.Println("lib/client/GetHistory: get tx history successfully")
 	return result.(*pb.TxHistory), err
 }
 

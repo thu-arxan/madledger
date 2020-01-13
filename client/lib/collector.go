@@ -14,58 +14,82 @@ type Collector struct {
 	result  interface{}
 	results map[string]int
 	errors  []error
-	max     int
-	finish  bool
+
+	total int
+	min   int
+
+	finish bool
 	// finish channel
 	fc chan bool
 }
 
 // NewCollector is the constructor of Collector
-func NewCollector(max int) *Collector {
+// total means total result we may collect, min means if we has min same result then we finish the collector
+// Note: we will set min as total/2 + 1 if min <= 0
+func NewCollector(total, min int) *Collector {
 	collector := new(Collector)
-	collector.max = max
-	collector.finish = false
+
 	collector.results = make(map[string]int)
+
+	collector.total = total
+	if min <= 0 {
+		min = total/2 + 1
+	}
+	collector.min = min
+
+	collector.finish = false
 	collector.fc = make(chan bool, 1)
 
 	return collector
 }
 
 // Add add result
-func (c *Collector) Add(result interface{}, err error) {
+func (c *Collector) Add(result interface{}) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	if c.finish {
 		return
 	}
-	if err != nil {
-		c.errors = append(c.errors, err)
-		//fmt.Printf("lib/collector/Add: collector add %d error: %s\n", len(c.errors), err)
+
+	data, _ := json.Marshal(result)
+	s := util.Hex(data)
+	if util.Contain(c.results, s) {
+		c.results[s]++
 	} else {
-		data, _ := json.Marshal(result)
-		s := util.Hex(data)
-		if util.Contain(c.results, s) {
-			c.results[s]++
-			//fmt.Printf("lib/collector/Add: collector add %s, now it has %d same results\n", data, c.results[s])
-		} else {
-			c.results[s] = 1
-			//fmt.Printf("lib/collector/Add: collector add %s, now it has 1 same results\n", data)
-		}
-		if c.results[s] >= (c.max/2 + 1) {
-			c.result = result
-			c.finish = true
-			c.fc <- true
-		}
+		c.results[s] = 1
+	}
+	if c.results[s] >= c.min {
+		c.result = result
+		c.done()
 	}
 
 	var total int
 	for _, num := range c.results {
 		total += num
 	}
-	if len(c.errors) >= (c.max/2+1) || (len(c.errors)+total) >= c.max {
-		c.finish = true
-		c.fc <- true
+	if len(c.errors)+total >= c.total {
+		c.done()
 	}
+}
+
+// AddError add an error
+func (c *Collector) AddError(err error) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	if c.finish {
+		return
+	}
+
+	c.errors = append(c.errors, err)
+	if len(c.errors) >= c.min {
+		c.done()
+	}
+}
+
+// done set finish as true and add signal in fc
+func (c *Collector) done() {
+	c.finish = true
+	c.fc <- true
 }
 
 // Wait wait the final result is decided
@@ -74,7 +98,7 @@ func (c *Collector) Wait() (interface{}, error) {
 	if c.result != nil {
 		return c.result, nil
 	}
-	if len(c.errors) >= (c.max/2 + 1) {
+	if len(c.errors) >= c.min {
 		return nil, c.errors[0]
 	}
 	return nil, errors.New("Failed to get enough same results")
