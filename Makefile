@@ -54,3 +54,6 @@ performance:
 	@$(GOCMD) test madledger/tests/performance -count=1
 	@cat tests/performance/performance.out
 	@rm -rf tests/performance/performance.out
+
+docker:
+	@docker build -t madledger:alpha .
