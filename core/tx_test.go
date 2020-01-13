@@ -21,17 +21,16 @@ var (
 	rawSecp256k1Bytes, _ = hex.DecodeString(secp256k1String)
 	rawPrivKey           = rawSecp256k1Bytes
 )
-var (
-	tx *Tx
-)
 
 func TestNewTx(t *testing.T) {
-	var err error
-	tx, err = NewTx("test", common.ZeroAddress, []byte("Hello World"), 0, "", getPrivKey())
+	tx, err := NewTx("test", common.ZeroAddress, []byte("Hello World"), 0, "", getPrivKey())
 	require.NoError(t, err)
+	require.EqualValues(t, 0, tx.Data.Value)
 }
 
 func TestVerify(t *testing.T) {
+	tx, err := NewTx("test", common.ZeroAddress, []byte("Hello World"), 0, "", getPrivKey())
+	require.NoError(t, err)
 	if !tx.Verify() {
 		t.Fatal()
 	}
@@ -80,12 +79,16 @@ func TestVerify(t *testing.T) {
 }
 
 func TestGetSender(t *testing.T) {
+	tx, err := NewTx("test", common.ZeroAddress, []byte("Hello World"), 0, "", getPrivKey())
+	require.NoError(t, err)
 	sender, err := tx.GetSender()
 	require.NoError(t, err)
 	require.Equal(t, sender.String(), "0x970e8128ab834e8eac17ab8e3812f010678cf791")
 }
 
 func TestGetReceiver(t *testing.T) {
+	tx, err := NewTx("test", common.ZeroAddress, []byte("Hello World"), 0, "", getPrivKey())
+	require.NoError(t, err)
 	receiver := tx.GetReceiver()
 	if !reflect.DeepEqual(common.ZeroAddress.Bytes(), receiver.Bytes()) {
 		t.Fatal()
@@ -103,6 +106,8 @@ func TestGetReceiver(t *testing.T) {
 }
 
 func TestMarshaAndUnmarshalWithSig(t *testing.T) {
+	tx, err := NewTx("test", common.ZeroAddress, []byte("Hello World"), 0, "", getPrivKey())
+	require.NoError(t, err)
 	txBytes, err := tx.Bytes()
 	require.NoError(t, err)
 
@@ -133,6 +138,13 @@ func TestMarshaAndUnmarshalWithoutSig(t *testing.T) {
 
 	if !reflect.DeepEqual(tx, newTx) {
 		t.Fatal()
+	}
+}
+
+func BenchmarkMarshal(b *testing.B) {
+	tx, _ := NewTx("test", common.ZeroAddress, []byte("Hello World"), 10, "To be or not to be, this is a question", getPrivKey())
+	for i := 0; i < b.N; i++ {
+		tx.Bytes()
 	}
 }
 
