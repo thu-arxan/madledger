@@ -25,7 +25,6 @@ test:
 	@$(GOCMD) test madledger/common/util -count=1 -cover
 	@$(GOCMD) test madledger/common/event -count=1 -cover
 	@$(GOCMD) test madledger/common/math -count=1 -cover
-	@$(GOCMD) test madledger/common/hexutil -count=1 -cover
 	@$(GOCMD) test madledger/common/crypto -count=1 -cover
 	@$(GOCMD) test madledger/common/abi -count=1 -cover
 
