@@ -1,4 +1,4 @@
-package evm
+package wildevm
 
 /*
 * This file defines the cost of each kind of subsets of instructions.

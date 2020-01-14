@@ -3,6 +3,7 @@ package common
 import (
 	"encoding/json"
 	"errors"
+	"madledger/common/crypto"
 	"madledger/common/math"
 )
 
@@ -18,14 +19,23 @@ type Account interface {
 	// GetNonce() uint64
 	// SetNonce(nonce uint64)
 	Bytes() ([]byte, error)
+	// GetCodeHash return the hash of account code, please return [32]byte,
+	// and return [32]byte{0, ..., 0} if code is empty
+	GetCodeHash() []byte
+	GetNonce() uint64
+	SetNonce(nonce uint64)
+	// Suicide will suicide an account
+	Suicide()
+	HasSuicide() bool
 }
 
 // DefaultAccount is the default implementation of Account
 type DefaultAccount struct {
-	Address Address
-	Balance uint64
-	Code    []byte
-	Nonce   uint64
+	Address     Address
+	Balance     uint64
+	Code        []byte
+	Nonce       uint64
+	SuicideMark bool
 }
 
 // NewDefaultAccount is the constructor of DefaultAccount
@@ -79,4 +89,34 @@ func (a *DefaultAccount) SetCode(code []byte) {
 // Bytes is the implementation of Account
 func (a *DefaultAccount) Bytes() ([]byte, error) {
 	return json.Marshal(a)
+}
+
+// GetCodeHash return the hash of account code, please return [32]byte,
+// and return [32]byte{0, ..., 0} if code is empty
+func (a *DefaultAccount) GetCodeHash() []byte {
+	bytes := make([]byte, 32)
+	if len(a.Code) == 0 {
+		return bytes
+	}
+	return crypto.Hash(a.Code)
+}
+
+// GetNonce ...
+func (a *DefaultAccount) GetNonce() uint64 {
+	return a.Nonce
+}
+
+// SetNonce ...
+func (a *DefaultAccount) SetNonce(nonce uint64) {
+	a.Nonce = nonce
+}
+
+// Suicide will suicide an account
+func (a *DefaultAccount) Suicide() {
+	a.SuicideMark = true
+}
+
+// HasSuicide returns if account has suicided
+func (a *DefaultAccount) HasSuicide() bool {
+	return a.SuicideMark
 }

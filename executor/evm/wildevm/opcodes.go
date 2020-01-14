@@ -1,4 +1,4 @@
-package evm
+package wildevm
 
 // OpCode is the type of operation code
 type OpCode byte

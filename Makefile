@@ -1,11 +1,29 @@
-# Go parameters
-GOCMD=go
+# Tool commands
+GOCMD		= go
+DOCKER_CMD	= docker
+
+# MadLedger versions used in Makefile
+MADLEDGER_VERSION		:= 0.0.1
+
+# Build flags (overridable)
+GO_LDFLAGS				?=
+GO_TEST_FLAGS			?= $(GO_LDFLAGS)
+GO_TEST_COUNT			?= 1
+GO_TEST_TIMEOUT			?= 20m
+GO_SYMBOL				?= 					# eg:GO_SYMBOL="-v"
+
+# Go tools
+GO_TEST 		= $(GOCMD) test -count=$(GO_TESTCOUNT) -timeout=$(GO_TEST_TIMEOUT) $(GO_SYMBOL)
+GO_BUILD		= $(GOCMD) build
 
 all: vet build
 
 # go vet:format check, bug check
 vet:
 	@$(GOCMD) vet `go list ./...`
+
+# The below include contains tests(quick start, setup, client tx, etc)
+# include tests.mk
 
 build:
 	@echo "building orderer..."
@@ -55,3 +73,7 @@ performance:
 	@$(GOCMD) test madledger/tests/performance -count=1
 	@cat tests/performance/performance.out
 	@rm -rf tests/performance/performance.out
+
+syncevm:
+	@rm -rf vendor/evm
+	@cd ../evm && zip evm.zip $$(git ls-files) && unzip -d ../madledger/vendor/evm evm.zip && rm evm.zip

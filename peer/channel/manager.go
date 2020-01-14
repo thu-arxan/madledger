@@ -2,10 +2,11 @@ package channel
 
 import (
 	"errors"
+	"fmt"
 	"madledger/blockchain"
 	"madledger/common"
 	"madledger/core"
-	"madledger/executor/evm"
+	evm "madledger/executor/evm/wildevm"
 	"madledger/peer/db"
 	"madledger/peer/orderer"
 	"sync"
@@ -79,6 +80,9 @@ func (m *Manager) AddBlock(block *core.Block) error {
 	if err != nil {
 		return err
 	}
+	if err := m.db.PutBlock(block); err != nil {
+		return err
+	}
 	switch block.Header.ChannelID {
 	case core.GLOBALCHANNELID:
 		m.AddGlobalBlock(block)
@@ -95,6 +99,7 @@ func (m *Manager) AddBlock(block *core.Block) error {
 		if err != nil {
 			return err
 		}
+
 		batch := wb.GetBatch()
 		err = m.db.SyncWriteBatch(batch)
 		if err != nil {
@@ -149,7 +154,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			continue
 		}
 
-		evm := evm.NewEVM(*context, senderAddress, m.db, wb)
+		evm := evm.NewEVM(context, senderAddress, m.db, wb)
 		if receiverAddress.String() != common.ZeroAddress.String() {
 			// log.Info("This is a normal call")
 			// if the length of payload is not zero, this is a contract call
@@ -186,6 +191,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			wb.SetTxStatus(tx, status)
 		}
 	}
+	wb.PersistLog([]byte(fmt.Sprintf("block_log_%d", block.GetNumber())))
 	return wb, nil
 }
 

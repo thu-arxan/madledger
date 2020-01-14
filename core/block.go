@@ -79,3 +79,13 @@ func (b *Block) Bytes() []byte {
 func (b *Block) GetNumber() uint64 {
 	return b.Header.Number
 }
+
+// UnmarshalBlock unmarshal json-encoded block
+func UnmarshalBlock(data []byte) (*Block, error) {
+	var block Block
+
+	if err := json.Unmarshal(data, &block); err != nil {
+		return nil, err
+	}
+	return &block, nil
+}
