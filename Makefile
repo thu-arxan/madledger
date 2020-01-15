@@ -53,7 +53,7 @@ test:
 
 	@$(GOCMD) test madledger/blockchain/config -count=1 -cover
 
-	@$(GOCMD) test madledger/executor/evm -count=1 -cover
+	@$(GOCMD) test madledger/executor/evm/wildevm -count=1 -cover
 
 	@$(GOCMD) test madledger/consensus/solo -count=1 -cover
 	@$(GOCMD) test madledger/consensus/raft -count=1 -cover
@@ -73,6 +73,9 @@ performance:
 	@$(GOCMD) test madledger/tests/performance -count=1
 	@cat tests/performance/performance.out
 	@rm -rf tests/performance/performance.out
+
+clean:
+	@rm -rf tests/.bft	
 
 syncevm:
 	@rm -rf vendor/evm

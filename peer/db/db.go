@@ -52,4 +52,9 @@ type DB interface {
 	ListTxHistory(address []byte) map[string][]string
 	NewWriteBatch() WriteBatch
 	SyncWriteBatch(batch *leveldb.Batch) error
+
+	// PutBlock stores block into db
+	PutBlock(block *core.Block) error
+	// GetBlock gets block by block.num from db
+	GetBlock(num uint64) (*core.Block, error)
 }

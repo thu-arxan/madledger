@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"madledger/common/abi"
 	"madledger/common/util"
-	"madledger/executor/evm/simulate"
+	"madledger/executor/evm/wildevm/simulate"
 	"os"
 	"testing"
 
@@ -91,7 +91,7 @@ func TestDuplicateAddress(t *testing.T) {
 }
 
 func getFilePath(name string) string {
-	path, _ := util.MakeFileAbs("src/madledger/executor/evm/sols/output/"+name, os.Getenv("GOPATH"))
+	path, _ := util.MakeFileAbs("src/madledger/executor/evm/wildevm/sols/output/"+name, os.Getenv("GOPATH"))
 	return path
 }
 

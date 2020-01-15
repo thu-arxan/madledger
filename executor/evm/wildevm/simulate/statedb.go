@@ -2,11 +2,12 @@ package simulate
 
 import (
 	"fmt"
-	"github.com/syndtr/goleveldb/leveldb"
 	"madledger/common"
 	"madledger/common/util"
 	"madledger/core"
 	"madledger/peer/db"
+
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 // StateDB is a memory db to simulate the actions of
@@ -80,6 +81,7 @@ func (s *StateDB) RemoveAccount(address common.Address) error {
 	return nil
 }
 
+// NewWriteBatch ...
 func (s *StateDB) NewWriteBatch() db.WriteBatch {
 	return &WriteBatchWrapper{
 		unknown: "madledger",
@@ -87,6 +89,7 @@ func (s *StateDB) NewWriteBatch() db.WriteBatch {
 	}
 }
 
+// WriteBatchWrapper ...
 type WriteBatchWrapper struct {
 	unknown string
 	stateDB *StateDB
@@ -123,6 +126,7 @@ func (wb *WriteBatchWrapper) SetTxStatus(tx *core.Tx, status *db.TxStatus) error
 	return nil
 }
 
+// GetBatch ...
 func (wb *WriteBatchWrapper) GetBatch() *leveldb.Batch {
 	return nil
 }

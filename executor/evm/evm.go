@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"madledger/common"
 	"madledger/core"
+	"madledger/executor/evm/madevm"
 	"madledger/executor/evm/wildevm"
 	"madledger/peer/db"
 )
@@ -69,7 +70,7 @@ func NewContext(block *core.Block, types Types) Context {
 	case Wild:
 		return wildevm.NewContext(block)
 	case Mad:
-		return newMadContext(block)
+		return madevm.NewMadContext(block)
 	default:
 		panic(fmt.Errorf("NewContext: invalid types %d", types))
 	}

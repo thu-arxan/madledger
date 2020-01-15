@@ -2,7 +2,6 @@ package channel
 
 import (
 	"errors"
-	"fmt"
 	"madledger/blockchain"
 	"madledger/common"
 	"madledger/core"
@@ -191,7 +190,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			wb.SetTxStatus(tx, status)
 		}
 	}
-	wb.PersistLog([]byte(fmt.Sprintf("block_log_%d", block.GetNumber())))
+	// wb.PersistLog([]byte(fmt.Sprintf("block_log_%d", block.GetNumber())))
 	return wb, nil
 }
 

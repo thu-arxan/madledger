@@ -3,7 +3,7 @@ package common
 import (
 	"encoding/json"
 	"errors"
-	"madledger/common/crypto"
+	"madledger/common/crypto/hash"
 	"madledger/common/math"
 )
 
@@ -98,7 +98,7 @@ func (a *DefaultAccount) GetCodeHash() []byte {
 	if len(a.Code) == 0 {
 		return bytes
 	}
-	return crypto.Hash(a.Code)
+	return hash.Hash(a.Code)
 }
 
 // GetNonce ...

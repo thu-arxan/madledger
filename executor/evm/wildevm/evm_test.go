@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"madledger/common"
 	"madledger/common/util"
-	"madledger/executor/evm/simulate"
+	"madledger/executor/evm/wildevm/simulate"
 	"testing"
 	"time"
 
@@ -14,8 +14,8 @@ import (
 	"golang.org/x/crypto/ripemd160"
 )
 
-func newContext() Context {
-	return Context{
+func newContext() *Context {
+	return &Context{
 		ChannelID: "test",
 		Number:    0,
 		BlockHash: common.ZeroHash,
