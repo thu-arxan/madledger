@@ -1,15 +1,19 @@
 package server
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
-	"google.golang.org/grpc/credentials"
 	"madledger/orderer/channel"
 	"madledger/orderer/config"
 	pb "madledger/protos"
 	"net"
+	"net/http"
 	"time"
 
+	"google.golang.org/grpc/credentials"
+
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
@@ -18,10 +22,24 @@ var (
 	log = logrus.WithFields(logrus.Fields{"app": "orderer", "package": "server"})
 )
 
+// Here defines some consts
+const (
+	Version = "v1"
+)
+
+// These define api for gin
+const (
+	ActionFetchBlock    = "fetchblock"
+	ActionListChannels  = "listchannels"
+	ActionCreateChannel = "createchannel"
+	ActionAddTx         = "addtx"
+)
+
 // Server provide the serve of orderer
 type Server struct {
 	config    *config.ServerConfig
 	rpcServer *grpc.Server
+	srv       *http.Server
 	cc        *channel.Coordinator
 }
 
@@ -55,7 +73,18 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 	server.cc = cc
+
 	return server, nil
+}
+func (s *Server) initServer(engine *gin.Engine) error {
+	v1 := engine.Group(Version)
+	{
+		v1.POST(ActionFetchBlock, s.FetchBlockByHTTP)
+		v1.POST(ActionListChannels, s.ListChannelsByHTTP)
+		v1.POST(ActionCreateChannel, s.CreateChannelByHTTP)
+		v1.POST(ActionAddTx, s.AddTxByHTTP)
+	}
+	return nil
 }
 
 // Start starts the server
@@ -82,10 +111,33 @@ func (s *Server) Start() error {
 	}
 	s.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterOrdererServer(s.rpcServer, s)
-	err = s.rpcServer.Serve(lis)
+
+	go func() {
+		err = s.rpcServer.Serve(lis)
+		if err != nil {
+			log.Error("gRPC Serve error: ", err)
+			return
+		}
+	}()
+
+	// TODO: TLS support not implemented
+	haddr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-1)
+	router := gin.Default()
+	err = s.initServer(router)
 	if err != nil {
+		log.Error("Init router failed: ", err)
 		return err
 	}
+	s.srv = &http.Server{
+		Addr:    haddr,
+		Handler: router,
+	}
+	go func() {
+		// service connections
+		if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -98,4 +150,16 @@ func (s *Server) Stop() {
 	s.cc.Stop()
 	time.Sleep(500 * time.Millisecond)
 	log.Info("Succeed to stop the orderer service")
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := s.srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server Shutdown:", err)
+	}
+	// catching ctx.Done(). timeout of 5 seconds.
+	select {
+	case <-ctx.Done():
+		log.Println("timeout of 5 seconds.")
+	}
+	log.Println("Server exiting")
 }

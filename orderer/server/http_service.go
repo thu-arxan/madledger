@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"madledger/common"
 	"madledger/common/crypto"
@@ -12,8 +13,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// FetchBlock gets block by http
-func (hs *HTTPServer) FetchBlock(c *gin.Context) {
+// FetchBlockByHTTP gets block by http
+func (hs *Server) FetchBlockByHTTP(c *gin.Context) {
 	channelID := c.Query("channelID")
 	number, _ := strconv.ParseUint(c.Query("number"), 0, 64)
 	//TODO: behavior is not a bool, defined in pb
@@ -27,24 +28,49 @@ func (hs *HTTPServer) FetchBlock(c *gin.Context) {
 	return
 }
 
-// ListChannels list channels by http
-func (hs *HTTPServer) ListChannels(c *gin.Context) {
-	system, _ := strconv.ParseBool(c.Query("system"))
-	pk := []byte(c.Query("pk"))
+// ListChannelReq Binding from JSON
+type ListChannelReq struct {
+	System string `form:"system" json:"system" xml:"system"  binding:"required"`
+	PK     string `form:"pk" json:"pk" xml:"pk" binding:"required"`
+}
+
+// ListChannelsByHTTP list channels by http
+func (hs *Server) ListChannelsByHTTP(c *gin.Context) {
+	var json ListChannelReq
+	if err := c.ShouldBindJSON(&json); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	system, _ := strconv.ParseBool(json.System)
+	pk, _ := hex.DecodeString(json.PK)
+	log.Info(json.PK)
 	req := &pb.ListChannelsRequest{
 		System: system,
 		PK:     pk,
 	}
 	info, err := hs.cc.ListChannels(req)
-	c.JSON(http.StatusOK, gin.H{"channelinfo": info.String, "error": err.Error})
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"channelinfo": info})
 	return
 }
 
-// CreateChannel create channel by http
-func (hs *HTTPServer) CreateChannel(c *gin.Context) {
-	tx := []byte(c.Query("tx"))
+type CreateChannelReq struct {
+	Tx string `json:"tx"`
+}
+
+// CreateChannelByHTTP create channel by http
+func (hs *Server) CreateChannelByHTTP(c *gin.Context) {
+	var j CreateChannelReq
+	if err := c.ShouldBindJSON(&j); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	var coreTx core.Tx
-	json.Unmarshal(tx, &coreTx)
+	json.Unmarshal([]byte(j.Tx), &coreTx)
 	if !coreTx.Verify() {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "The tx is not a valid tx"})
 		return
@@ -53,32 +79,42 @@ func (hs *HTTPServer) CreateChannel(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "The receiver of the tx is not the valid contract address"})
 		return
 	}
-	info, err := hs.cc.CreateChannel(&coreTx)
+	_, err := hs.cc.CreateChannel(&coreTx)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
-	c.JSON(http.StatusOK, gin.H{"channelinfo": info.String, "error": err.Error})
+	c.JSON(http.StatusOK, gin.H{})
 	return
 }
 
-// AddTx add tx by http
-func (hs *HTTPServer) AddTx(c *gin.Context) {
+type AddTxReq struct {
+	Tx string `json:"tx"`
+}
+
+// AddTxByHTTP add tx by http
+func (hs *Server) AddTxByHTTP(c *gin.Context) {
+	var j CreateChannelReq
+	if err := c.ShouldBindJSON(&j); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	var status pb.TxStatus
-	tx := []byte(c.Query("tx"))
+
 	var coreTx core.Tx
-	json.Unmarshal(tx, &coreTx)
+	json.Unmarshal([]byte(j.Tx), &coreTx)
 
 	txType, err := core.GetTxType(common.BytesToAddress(coreTx.Data.Recipient).String())
 	if err == nil && (txType == core.VALIDATOR || txType == core.NODE) {
 		pk, err := crypto.NewPublicKey(coreTx.Data.Sig.PK)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error})
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		// create member to check if the client is system admin
 		member, err := core.NewMember(pk, "")
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error})
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		if !hs.cc.CM.IsSystemAdmin(member) { // not system admin, return error
@@ -87,6 +123,10 @@ func (hs *HTTPServer) AddTx(c *gin.Context) {
 		}
 	}
 	err = hs.cc.AddTx(&coreTx)
-	c.JSON(http.StatusOK, gin.H{"txstatus": status.String, "error": err.Error})
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"txstatus": status})
 	return
 }

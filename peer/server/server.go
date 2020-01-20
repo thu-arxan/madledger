@@ -1,14 +1,19 @@
 package server
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"google.golang.org/grpc/credentials"
 	"madledger/peer/config"
 	"madledger/peer/orderer"
 	"net"
+	"net/http"
+	"time"
 
+	"google.golang.org/grpc/credentials"
+
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
@@ -19,10 +24,22 @@ var (
 	log = logrus.WithFields(logrus.Fields{"app": "peer", "package": "server"})
 )
 
+// Here defines some consts
+const (
+	Version = "v1"
+)
+
+// These define api for gin
+const (
+	ActionGetTxStatus   = "gettxstatus"
+	ActionListTxHistory = "listtxhistory"
+)
+
 // Server provide the serve of peer
 type Server struct {
 	config         *config.ServerConfig
 	rpcServer      *grpc.Server
+	srv            *http.Server
 	ChannelManager *ChannelManager
 	ordererClients []*orderer.Client
 }
@@ -86,6 +103,14 @@ func getOrdererClients(cfg *config.Config) ([]*orderer.Client, error) {
 
 	return clients, nil
 }
+func (s *Server) initServer(engine *gin.Engine) error {
+	v1 := engine.Group(Version)
+	{
+		v1.POST(ActionGetTxStatus, s.GetTxStatusByHTTP)
+		v1.POST(ActionListTxHistory, s.ListTxHistoryByHTTP)
+	}
+	return nil
+}
 
 // Start starts the server
 func (s *Server) Start() error {
@@ -110,19 +135,51 @@ func (s *Server) Start() error {
 	}
 	s.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterPeerServer(s.rpcServer, s)
-	err = s.rpcServer.Serve(lis)
+
+	go func() {
+		err = s.rpcServer.Serve(lis)
+		if err != nil {
+			log.Error("gRPC Serve error: ", err)
+			return
+		}
+	}()
+
+	haddr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-1)
+	router := gin.Default()
+	err = s.initServer(router)
 	if err != nil {
+		log.Error("Init router failed: ", err)
 		return err
 	}
-
+	s.srv = &http.Server{
+		Addr:    haddr,
+		Handler: router,
+	}
+	go func() {
+		// service connections
+		if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
 	return nil
 }
 
 // Stop stops the server
 // TODO: The channel manager failed to stop
-func (s *Server) Stop() error {
+func (s *Server) Stop() {
 	s.rpcServer.Stop()
 	s.ChannelManager.stop()
 	log.Info("Succeed to stop the peer service")
-	return nil
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := s.srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server Shutdown:", err)
+	}
+	// catching ctx.Done(). timeout of 5 seconds.
+	select {
+	case <-ctx.Done():
+		log.Println("timeout of 5 seconds.")
+	}
+	log.Println("Server exiting")
 }

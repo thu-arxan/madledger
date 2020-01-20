@@ -49,7 +49,7 @@ func setLog(debug bool) error {
 	return nil
 }
 
-func registerStop(s *server.Server) {
+func registerStop(s *server.Server, finish chan bool) {
 	if s == nil {
 		return
 	}
@@ -57,5 +57,6 @@ func registerStop(s *server.Server) {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	<-sigs
 	s.Stop()
+	finish <- true
 	return
 }

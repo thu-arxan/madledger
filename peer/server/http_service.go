@@ -6,13 +6,25 @@ import (
 	"net/http"
 )
 
-// GetTxStatus gets tx status by http
-func (hs *HTTPServer) GetTxStatus(c *gin.Context) {
-	chID := c.Query("channelID")
-	txID := c.Query("txID")
+// GetTxStatusReq ...
+type GetTxStatusReq struct {
+	ChannelID string `json:"channelID"`
+	TxID      string `json:"txID"`
+}
+
+// GetTxStatusByHTTP gets tx status by http
+func (hs *Server) GetTxStatusByHTTP(c *gin.Context) {
+	var j GetTxStatusReq
+	if err := c.ShouldBindJSON(&j); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	chID := j.ChannelID
+	txID := j.TxID
+
 	status, err := hs.ChannelManager.GetTxStatus(chID, txID, true)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	result := &pb.TxStatus{
@@ -22,13 +34,24 @@ func (hs *HTTPServer) GetTxStatus(c *gin.Context) {
 		Output:          status.Output,
 		ContractAddress: status.ContractAddress,
 	}
-	c.JSON(http.StatusOK, gin.H{"status": result.String})
+	c.JSON(http.StatusOK, gin.H{"status": result})
 	return
 }
 
-// ListTxHistory lists Tx history by http
-func (hs *HTTPServer) ListTxHistory(c *gin.Context) {
-	addr := []byte(c.Query("address"))
+// ListTxHistoryReq ...
+type ListTxHistoryReq struct {
+	Addr string `json:"address"`
+}
+
+// ListTxHistoryByHTTP lists Tx history by http
+func (hs *Server) ListTxHistoryByHTTP(c *gin.Context) {
+	var j ListTxHistoryReq
+	if err := c.ShouldBindJSON(&j); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	addr := []byte(j.Addr)
+
 	history := hs.ChannelManager.ListTxHistory(addr)
 	var pbHistory = make(map[string]*pb.StringList)
 	for channelID, ids := range history {
@@ -41,6 +64,6 @@ func (hs *HTTPServer) ListTxHistory(c *gin.Context) {
 	res := &pb.TxHistory{
 		Txs: pbHistory,
 	}
-	c.JSON(http.StatusOK, gin.H{"txhistory": res.String})
+	c.JSON(http.StatusOK, gin.H{"txhistory": res})
 	return
 }
