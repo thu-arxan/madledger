@@ -53,8 +53,6 @@ test:
 
 	@$(GOCMD) test madledger/blockchain/config -count=1 -cover
 
-	@$(GOCMD) test madledger/executor/evm/wildevm -count=1 -cover
-
 	@$(GOCMD) test madledger/consensus/solo -count=1 -cover
 	@$(GOCMD) test madledger/consensus/raft -count=1 -cover
 	@$(GOCMD) test madledger/consensus/tendermint -count=1 -cover

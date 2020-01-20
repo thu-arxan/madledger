@@ -1,22 +1,9 @@
 package evm
 
 import (
-	"fmt"
+	"evm"
 	"madledger/common"
-	"madledger/core"
-	"madledger/executor/evm/madevm"
-	"madledger/executor/evm/wildevm"
 	"madledger/peer/db"
-)
-
-// Types defines which implemention to be used used
-type Types uint32
-
-const (
-	// Wild marks using the original evm
-	Wild = iota
-	// Mad marks using the newest evm(in vendor)
-	Mad
 )
 
 // EVM defines the common functions for evm
@@ -33,46 +20,47 @@ type EVM interface {
 			Bytes() []byte
 		}
 	*/
-	Call(caller, callee common.Account, code, input []byte, value uint64) ([]byte, error)
+	Call(caller, callee common.Account, code []byte) ([]byte, error)
 	// Create create a contract.
 	// MadEVM.Create(caller Address) ([]byte, Address, error)
-	Create(caller common.Account, code, input []byte, value uint64) ([]byte, common.Address, error)
+	Create(caller common.Account) ([]byte, common.Address, error)
 }
 
-// Context defines the common functions for evm context
-type Context interface {
+// DefaultEVM ...
+type DefaultEVM struct {
+	runner *evm.EVM
+	ctx    Context
 }
 
-// NewEVM is the constructor of evm, types marks which implemention to use
-// func NewEVM(context Context, origin common.Address, db wildevm.StateDB, wb db.WriteBatch, types Types) EVM {
-// 	switch types {
-// 	case Wild:
-// 		return wildevm.NewEVM(context, origin, db, wb)
-// 	case Mad:
-// 	default:
-// 		panic(fmt.Errorf("NewEvm: invalid types %d", types))
-// 	}
-// 	return nil
-// }
+// NewEVM ...
+func NewEVM(ctx Context, caller common.Address, payload []byte, value uint64, gas uint64, engine db.DB, wb db.WriteBatch) EVM {
+	// todo
+	// bc := NewBlockchain(engine)
+	// database := NewMemory(bc.NewAccount, engine, ctx)
 
-// NewWildEVM is the constructor of wild evm
-func NewWildEVM(context Context, origin common.Address, db wildevm.StateDB, wb db.WriteBatch) EVM {
-	ctx, ok := context.(*wildevm.Context)
-	if !ok {
-		panic("invalid context type, wildevm.Context expected")
+	// ctx.setDB(engine)
+
+	evmCtx := ctx.BlockContext()
+	evmCtx.Input = payload
+	evmCtx.Value = value
+	evmCtx.Gas = &gas
+
+	return &DefaultEVM{
+		ctx:    ctx,
+		runner: evm.New(ctx.NewBlockchain(), ctx.NewDatabase(), evmCtx),
 	}
-	return wildevm.NewEVM(ctx, origin, db, wb)
 }
 
-// NewContext is the constructor of context
-func NewContext(block *core.Block, types Types) Context {
-	switch types {
-	case Wild:
-		return wildevm.NewContext(block)
-	case Mad:
-		return madevm.NewMadContext(block)
-	default:
-		panic(fmt.Errorf("NewContext: invalid types %d", types))
+// Call ...
+func (evm *DefaultEVM) Call(caller, callee common.Account, code []byte) ([]byte, error) {
+	return evm.runner.Call(caller.GetAddress(), callee.GetAddress(), code)
+}
+
+// Create ...
+func (evm *DefaultEVM) Create(caller common.Account) ([]byte, common.Address, error) {
+	v, addr, err := evm.runner.Create(caller.GetAddress())
+	if addr == nil {
+		return v, common.ZeroAddress, err
 	}
-	// return nil
+	return v, common.BytesToAddress(addr.Bytes()), err
 }
