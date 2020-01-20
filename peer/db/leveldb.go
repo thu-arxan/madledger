@@ -321,6 +321,19 @@ func (wb *WriteBatchWrapper) RemoveAccount(address common.Address) error {
 	return nil
 }
 
+// RemoveAccountStorage delete all data associated with address
+func (wb *WriteBatchWrapper) RemoveAccountStorage(address common.Address) {
+	// delete all associated data
+	iter := wb.db.connect.NewIterator(nil, nil)
+	defer iter.Release()
+	addr := address.Bytes()
+	iter.Seek(addr)
+	for ; iter.Valid(); iter.Next() {
+		key := iter.Key()
+		wb.batch.Delete(key)
+	}
+}
+
 // SetStorage is the implementation of interface
 func (wb *WriteBatchWrapper) SetStorage(address common.Address, key common.Word256, value common.Word256) error {
 	storageKey := util.BytesCombine(address.Bytes(), key.Bytes())
@@ -369,6 +382,11 @@ func (wb *WriteBatchWrapper) addHistory(address []byte, channelID, txID string) 
 			log.Infoln("account ", address, " Channel ", channelID, "add ", txID, "to db")
 		}
 	}
+}
+
+// Put stores (key, value) into batch, the caller is responsible to avoid duplicate key
+func (wb *WriteBatchWrapper) Put(key, value []byte) {
+	wb.batch.Put(key, value)
 }
 
 // GetBatch return the level.Batch

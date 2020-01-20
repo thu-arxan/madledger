@@ -5,7 +5,8 @@ import (
 	"madledger/blockchain"
 	"madledger/common"
 	"madledger/core"
-	evm "madledger/executor/evm/wildevm"
+
+	"madledger/executor/evm"
 	"madledger/peer/db"
 	"madledger/peer/orderer"
 	"sync"
@@ -115,8 +116,9 @@ func (m *Manager) AddBlock(block *core.Block) error {
 // In the future, this will contains chains which rely on something or nothing
 // TODO: transfer is not implementation yet
 func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
-	context := evm.NewContext(block)
 	wb := m.db.NewWriteBatch()
+	context := evm.NewContext(block, m.db, wb)
+	defer context.BlockFinalize()
 	for i, tx := range block.Transactions {
 		senderAddress, err := tx.GetSender()
 		status := &db.TxStatus{
@@ -153,7 +155,8 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			continue
 		}
 
-		evm := evm.NewEVM(context, senderAddress, m.db, wb)
+		gas := uint64(10000000)
+		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, gas, m.db, wb)
 		if receiverAddress.String() != common.ZeroAddress.String() {
 			// log.Info("This is a normal call")
 			// if the length of payload is not zero, this is a contract call
@@ -171,7 +174,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 				wb.SetTxStatus(tx, status)
 				continue
 			}
-			output, err := evm.Call(sender, receiver, receiver.GetCode(), tx.Data.Payload, 0)
+			output, err := evm.Call(sender, receiver, receiver.GetCode())
 			status.Output = output
 			if err != nil {
 				status.Err = err.Error()
@@ -180,7 +183,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			wb.SetTxStatus(tx, status)
 		} else {
 			log.Info("This is a create call")
-			output, addr, err := evm.Create(sender, tx.Data.Payload, []byte{}, 0)
+			output, addr, err := evm.Create(sender)
 			status.Output = output
 			status.ContractAddress = addr.String()
 			if err != nil {
