@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"evm/util/math"
 	"math/big"
+	"strings"
 
 	"evm/core"
 	"evm/errors"
@@ -13,7 +14,11 @@ import (
 
 	"evm/crypto"
 
-	"github.com/labstack/gommon/log"
+	"github.com/sirupsen/logrus"
+)
+
+var (
+	log = logrus.WithFields(logrus.Fields{"package": "evm"})
 )
 
 // Here defines some default stack capacity variables
@@ -23,8 +28,19 @@ const (
 	MaxCodeSize             int    = 24576
 )
 
-func init() {
-	log.SetLevel(log.DEBUG)
+// SetLogLevel set log level
+func SetLogLevel(level string) {
+	level = strings.ToLower(level)
+	switch level {
+	case "debug":
+		logrus.SetLevel(logrus.DebugLevel)
+	case "warn":
+		logrus.SetLevel(logrus.WarnLevel)
+	case "error":
+		logrus.SetLevel(logrus.ErrorLevel)
+	default:
+		logrus.SetLevel(logrus.InfoLevel)
+	}
 }
 
 // EVM is the evm
@@ -940,8 +956,8 @@ func (evm *EVM) call(caller, callee Address, code []byte) ([]byte, error) {
 					newAccount.SetCode(ret)
 					stack.PushAddress(newAccountAddress)
 				}
-				*ctx.Gas += gasPrev
 			}
+			*ctx.Gas += gasPrev
 
 		case CALL, CALLCODE:
 			returnData = nil
@@ -1002,14 +1018,26 @@ func (evm *EVM) call(caller, callee Address, code []byte) ([]byte, error) {
 			maybe.PushError(useGasNegative(ctx.Gas, gas.Call))
 
 			var gas = stack.PopUint64()
-			gas = callGas(*ctx.Gas, gas)
 
 			target := stack.PopAddress()
 			inOffset, inSize := stack.PopBigInt(), stack.PopBigInt()
 			retOffset, retSize := stack.PopBigInt(), stack.PopUint64()
-			input, memoryGas := memory.Read(inOffset, inSize)
-			maybe.PushError(useGasNegative(ctx.Gas, memoryGas))
-			maybe.PushError(useGasNegative(ctx.Gas, gas))
+			var memoryGas uint64
+			var input []byte
+			if op == STATICCALL {
+				x, _ := memory.CalMemGas(inOffset.Uint64(), inSize.Uint64())
+				y, _ := memory.CalMemGas(retOffset.Uint64(), retSize)
+				if x > y {
+					memoryGas = x
+				} else {
+					memoryGas = y
+				}
+				input, _ = memory.Read(inOffset, inSize)
+			} else {
+				input, memoryGas = memory.Read(inOffset, inSize)
+			}
+			gas = staticCallGas(*ctx.Gas, memoryGas, gas)
+			maybe.PushError(useGasNegative(ctx.Gas, gas+memoryGas))
 			// store prev ctx
 			prevInput := evm.ctx.Input
 			prevValue := evm.ctx.Value
@@ -1064,17 +1092,22 @@ func (evm *EVM) call(caller, callee Address, code []byte) ([]byte, error) {
 		case SELFDESTRUCT: // 0xFF
 			maybe.PushError(useGasNegative(ctx.Gas, gas.SelfdestructEIP150))
 			receiver := stack.PopAddress()
+			//todo: different db implementation
+			if !evm.cache.Exist(receiver) {
+				maybe.PushError(useGasNegative(ctx.Gas, gas.CreateBySelfdestruct))
+			}
 			account := evm.getAccount(receiver)
 			balance := evm.getAccount(callee).GetBalance()
 			if isEmptyAccount(account) && balance != 0 {
 				maybe.PushError(useGasNegative(ctx.Gas, gas.CreateBySelfdestruct))
 			}
-			if evm.cache.HasSuicide(callee) {
+			if !evm.cache.HasSuicide(callee) {
 				evm.addRefund(gas.SelfdestructRefund)
 			}
 			maybe.PushError(account.AddBalance(balance))
 			maybe.PushError(evm.cache.UpdateAccount(account))
 			maybe.PushError(evm.cache.Suicide(callee))
+
 			log.Debugf("=> (%v) %v\n", receiver, balance)
 			return nil, maybe.Error()
 
@@ -1164,6 +1197,14 @@ func callGas(availableGas, callCostGas uint64) uint64 {
 	return callCostGas
 }
 
+func staticCallGas(availableGas, base, callCost uint64) uint64 {
+	availableGas -= base
+	availableGas -= availableGas / 64
+	if availableGas < callCost {
+		return availableGas
+	}
+	return callCost
+}
 func isEmptyAccount(account Account) bool {
 	if account == nil {
 		return true

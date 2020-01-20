@@ -4,6 +4,12 @@ contract D {
     uint public x;
     constructor(uint a) public payable {
         x = a;
+        assembly {
+            calldatacopy(0, 0, 32)
+        }
+    }
+    function getter() public view returns (uint) {
+        return x;
     }
 }
 
