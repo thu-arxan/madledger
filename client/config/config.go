@@ -79,7 +79,8 @@ func (cfg *Config) GetTLSConfig() error {
 
 // OrdererConfig is the config of orderer
 type OrdererConfig struct {
-	Address []string `yaml:"Address"`
+	Address     []string `yaml:"Address"`
+	HTTPAddress []string `yaml:"HTTPAddress"`
 }
 
 // GetOrdererConfig return the orderer config
@@ -94,7 +95,8 @@ func (cfg *Config) GetOrdererConfig() (*OrdererConfig, error) {
 
 // PeerConfig is the config of peer
 type PeerConfig struct {
-	Address []string `yaml:"Address"`
+	Address     []string `yaml:"Address"`
+	HTTPAddress []string `yaml:"HTTPAddress"`
 }
 
 // GetPeerConfig return the peer config
