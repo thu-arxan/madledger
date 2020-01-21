@@ -2,8 +2,6 @@
 // Use of this source code is governed by a MIT style
 // license that can be found in the LICENSE file.
 
-// +build !nomsgpack
-
 package binding
 
 import "net/http"
@@ -80,13 +78,12 @@ var (
 	MsgPack       = msgpackBinding{}
 	YAML          = yamlBinding{}
 	Uri           = uriBinding{}
-	Header        = headerBinding{}
 )
 
 // Default returns the appropriate Binding instance based on the HTTP method
 // and the content type.
 func Default(method, contentType string) Binding {
-	if method == http.MethodGet {
+	if method == "GET" {
 		return Form
 	}
 
@@ -101,9 +98,7 @@ func Default(method, contentType string) Binding {
 		return MsgPack
 	case MIMEYAML:
 		return YAML
-	case MIMEMultipartPOSTForm:
-		return FormMultipart
-	default: // case MIMEPOSTForm:
+	default: //case MIMEPOSTForm, MIMEMultipartPOSTForm:
 		return Form
 	}
 }

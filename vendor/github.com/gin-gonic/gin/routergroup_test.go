@@ -33,13 +33,13 @@ func TestRouterGroupBasic(t *testing.T) {
 }
 
 func TestRouterGroupBasicHandle(t *testing.T) {
-	performRequestInGroup(t, http.MethodGet)
-	performRequestInGroup(t, http.MethodPost)
-	performRequestInGroup(t, http.MethodPut)
-	performRequestInGroup(t, http.MethodPatch)
-	performRequestInGroup(t, http.MethodDelete)
-	performRequestInGroup(t, http.MethodHead)
-	performRequestInGroup(t, http.MethodOptions)
+	performRequestInGroup(t, "GET")
+	performRequestInGroup(t, "POST")
+	performRequestInGroup(t, "PUT")
+	performRequestInGroup(t, "PATCH")
+	performRequestInGroup(t, "DELETE")
+	performRequestInGroup(t, "HEAD")
+	performRequestInGroup(t, "OPTIONS")
 }
 
 func performRequestInGroup(t *testing.T, method string) {
@@ -55,25 +55,25 @@ func performRequestInGroup(t *testing.T, method string) {
 	}
 
 	switch method {
-	case http.MethodGet:
+	case "GET":
 		v1.GET("/test", handler)
 		login.GET("/test", handler)
-	case http.MethodPost:
+	case "POST":
 		v1.POST("/test", handler)
 		login.POST("/test", handler)
-	case http.MethodPut:
+	case "PUT":
 		v1.PUT("/test", handler)
 		login.PUT("/test", handler)
-	case http.MethodPatch:
+	case "PATCH":
 		v1.PATCH("/test", handler)
 		login.PATCH("/test", handler)
-	case http.MethodDelete:
+	case "DELETE":
 		v1.DELETE("/test", handler)
 		login.DELETE("/test", handler)
-	case http.MethodHead:
+	case "HEAD":
 		v1.HEAD("/test", handler)
 		login.HEAD("/test", handler)
-	case http.MethodOptions:
+	case "OPTIONS":
 		v1.OPTIONS("/test", handler)
 		login.OPTIONS("/test", handler)
 	default:
@@ -128,7 +128,7 @@ func TestRouterGroupTooManyHandlers(t *testing.T) {
 func TestRouterGroupBadMethod(t *testing.T) {
 	router := New()
 	assert.Panics(t, func() {
-		router.Handle(http.MethodGet, "/")
+		router.Handle("get", "/")
 	})
 	assert.Panics(t, func() {
 		router.Handle(" GET", "/")
@@ -162,7 +162,7 @@ func testRoutesInterface(t *testing.T, r IRoutes) {
 	handler := func(c *Context) {}
 	assert.Equal(t, r, r.Use(handler))
 
-	assert.Equal(t, r, r.Handle(http.MethodGet, "/handler", handler))
+	assert.Equal(t, r, r.Handle("GET", "/handler", handler))
 	assert.Equal(t, r, r.Any("/any", handler))
 	assert.Equal(t, r, r.GET("/", handler))
 	assert.Equal(t, r, r.POST("/", handler))

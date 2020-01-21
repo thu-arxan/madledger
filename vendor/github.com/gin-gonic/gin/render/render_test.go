@@ -5,6 +5,7 @@
 package render
 
 import (
+	"bytes"
 	"encoding/xml"
 	"errors"
 	"html/template"
@@ -16,12 +17,37 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
+	"github.com/ugorji/go/codec"
 
 	testdata "github.com/gin-gonic/gin/testdata/protoexample"
 )
 
 // TODO unit tests
 // test errors
+
+func TestRenderMsgPack(t *testing.T) {
+	w := httptest.NewRecorder()
+	data := map[string]interface{}{
+		"foo": "bar",
+	}
+
+	(MsgPack{data}).WriteContentType(w)
+	assert.Equal(t, "application/msgpack; charset=utf-8", w.Header().Get("Content-Type"))
+
+	err := (MsgPack{data}).Render(w)
+
+	assert.NoError(t, err)
+
+	h := new(codec.MsgpackHandle)
+	assert.NotNil(t, h)
+	buf := bytes.NewBuffer([]byte{})
+	assert.NotNil(t, buf)
+	err = codec.NewEncoder(buf, h).Encode(data)
+
+	assert.NoError(t, err)
+	assert.Equal(t, w.Body.String(), string(buf.Bytes()))
+	assert.Equal(t, "application/msgpack; charset=utf-8", w.Header().Get("Content-Type"))
+}
 
 func TestRenderJSON(t *testing.T) {
 	w := httptest.NewRecorder()
@@ -36,7 +62,7 @@ func TestRenderJSON(t *testing.T) {
 	err := (JSON{data}).Render(w)
 
 	assert.NoError(t, err)
-	assert.Equal(t, "{\"foo\":\"bar\",\"html\":\"\\u003cb\\u003e\"}\n", w.Body.String())
+	assert.Equal(t, "{\"foo\":\"bar\",\"html\":\"\\u003cb\\u003e\"}", w.Body.String())
 	assert.Equal(t, "application/json; charset=utf-8", w.Header().Get("Content-Type"))
 }
 
@@ -120,7 +146,7 @@ func TestRenderJsonpJSON(t *testing.T) {
 	err1 := (JsonpJSON{"x", data}).Render(w1)
 
 	assert.NoError(t, err1)
-	assert.Equal(t, "x({\"foo\":\"bar\"});", w1.Body.String())
+	assert.Equal(t, "x({\"foo\":\"bar\"})", w1.Body.String())
 	assert.Equal(t, "application/javascript; charset=utf-8", w1.Header().Get("Content-Type"))
 
 	w2 := httptest.NewRecorder()
@@ -132,7 +158,7 @@ func TestRenderJsonpJSON(t *testing.T) {
 
 	err2 := (JsonpJSON{"x", datas}).Render(w2)
 	assert.NoError(t, err2)
-	assert.Equal(t, "x([{\"foo\":\"bar\"},{\"bar\":\"foo\"}]);", w2.Body.String())
+	assert.Equal(t, "x([{\"foo\":\"bar\"},{\"bar\":\"foo\"}])", w2.Body.String())
 	assert.Equal(t, "application/javascript; charset=utf-8", w2.Header().Get("Content-Type"))
 }
 
@@ -187,18 +213,6 @@ func TestRenderAsciiJSONFail(t *testing.T) {
 
 	// json: unsupported type: chan int
 	assert.Error(t, (AsciiJSON{data}).Render(w))
-}
-
-func TestRenderPureJSON(t *testing.T) {
-	w := httptest.NewRecorder()
-	data := map[string]interface{}{
-		"foo":  "bar",
-		"html": "<b>",
-	}
-	err := (PureJSON{data}).Render(w)
-	assert.NoError(t, err)
-	assert.Equal(t, "{\"foo\":\"bar\",\"html\":\"<b>\"}\n", w.Body.String())
-	assert.Equal(t, "application/json; charset=utf-8", w.Header().Get("Content-Type"))
 }
 
 type xmlmap map[string]interface{}
@@ -321,20 +335,7 @@ func TestRenderRedirect(t *testing.T) {
 	}
 
 	w = httptest.NewRecorder()
-	assert.PanicsWithValue(t, "Cannot redirect with status code 200", func() {
-		err := data2.Render(w)
-		assert.NoError(t, err)
-	})
-
-	data3 := Redirect{
-		Code:     http.StatusCreated,
-		Request:  req,
-		Location: "/new/location",
-	}
-
-	w = httptest.NewRecorder()
-	err = data3.Render(w)
-	assert.NoError(t, err)
+	assert.Panics(t, func() { assert.NoError(t, data2.Render(w)) })
 
 	// only improve coverage
 	data2.WriteContentType(w)
@@ -482,29 +483,6 @@ func TestRenderReader(t *testing.T) {
 	assert.Equal(t, body, w.Body.String())
 	assert.Equal(t, "image/png", w.Header().Get("Content-Type"))
 	assert.Equal(t, strconv.Itoa(len(body)), w.Header().Get("Content-Length"))
-	assert.Equal(t, headers["Content-Disposition"], w.Header().Get("Content-Disposition"))
-	assert.Equal(t, headers["x-request-id"], w.Header().Get("x-request-id"))
-}
-
-func TestRenderReaderNoContentLength(t *testing.T) {
-	w := httptest.NewRecorder()
-
-	body := "#!PNG some raw data"
-	headers := make(map[string]string)
-	headers["Content-Disposition"] = `attachment; filename="filename.png"`
-	headers["x-request-id"] = "requestId"
-
-	err := (Reader{
-		ContentLength: -1,
-		ContentType:   "image/png",
-		Reader:        strings.NewReader(body),
-		Headers:       headers,
-	}).Render(w)
-
-	assert.NoError(t, err)
-	assert.Equal(t, body, w.Body.String())
-	assert.Equal(t, "image/png", w.Header().Get("Content-Type"))
-	assert.NotContains(t, "Content-Length", w.Header())
 	assert.Equal(t, headers["Content-Disposition"], w.Header().Get("Content-Disposition"))
 	assert.Equal(t, headers["x-request-id"], w.Header().Get("x-request-id"))
 }

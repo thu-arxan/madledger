@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"path"
 	"sync"
 
 	"github.com/gin-gonic/gin/render"
@@ -30,7 +29,7 @@ type HandlerFunc func(*Context)
 // HandlersChain defines a HandlerFunc array.
 type HandlersChain []HandlerFunc
 
-// Last returns the last handler in the chain. ie. the last handler is the main one.
+// Last returns the last handler in the chain. ie. the last handler is the main own.
 func (c HandlersChain) Last() HandlerFunc {
 	if length := len(c); length > 0 {
 		return c[length-1]
@@ -97,10 +96,6 @@ type Engine struct {
 	// method call.
 	MaxMultipartMemory int64
 
-	// RemoveExtraSlash a parameter can be parsed from the URL even with extra slashes.
-	// See the PR #1817 and issue #1644
-	RemoveExtraSlash bool
-
 	delims           render.Delims
 	secureJsonPrefix string
 	HTMLRender       render.HTMLRender
@@ -138,7 +133,6 @@ func New() *Engine {
 		ForwardedByClientIP:    true,
 		AppEngine:              defaultAppEngine,
 		UseRawPath:             false,
-		RemoveExtraSlash:       false,
 		UnescapePathValues:     true,
 		MaxMultipartMemory:     defaultMultipartMemory,
 		trees:                  make(methodTrees, 0, 9),
@@ -230,7 +224,7 @@ func (engine *Engine) NoMethod(handlers ...HandlerFunc) {
 	engine.rebuild405Handlers()
 }
 
-// Use attaches a global middleware to the router. ie. the middleware attached though Use() will be
+// Use attachs a global middleware to the router. ie. the middleware attached though Use() will be
 // included in the handlers chain for every single request. Even 404, 405, static files...
 // For example, this is the right place for a logger or error management middleware.
 func (engine *Engine) Use(middleware ...HandlerFunc) IRoutes {
@@ -257,7 +251,6 @@ func (engine *Engine) addRoute(method, path string, handlers HandlersChain) {
 	root := engine.trees.get(method)
 	if root == nil {
 		root = new(node)
-		root.fullPath = "/"
 		engine.trees = append(engine.trees, methodTree{method: method, root: root})
 	}
 	root.addRoute(path, handlers)
@@ -325,10 +318,7 @@ func (engine *Engine) RunUnix(file string) (err error) {
 		return
 	}
 	defer listener.Close()
-	err = os.Chmod(file, 0777)
-	if err != nil {
-		return
-	}
+	os.Chmod(file, 0777)
 	err = http.Serve(listener, engine)
 	return
 }
@@ -346,15 +336,6 @@ func (engine *Engine) RunFd(fd int) (err error) {
 		return
 	}
 	defer listener.Close()
-	err = engine.RunListener(listener)
-	return
-}
-
-// RunListener attaches the router to a http.Server and starts listening and serving HTTP requests
-// through the specified net.Listener
-func (engine *Engine) RunListener(listener net.Listener) (err error) {
-	debugPrint("Listening and serving HTTP on listener what's bind with address@%s", listener.Addr())
-	defer func() { debugPrintError(err) }()
 	err = http.Serve(listener, engine)
 	return
 }
@@ -384,15 +365,11 @@ func (engine *Engine) HandleContext(c *Context) {
 
 func (engine *Engine) handleHTTPRequest(c *Context) {
 	httpMethod := c.Request.Method
-	rPath := c.Request.URL.Path
+	path := c.Request.URL.Path
 	unescape := false
 	if engine.UseRawPath && len(c.Request.URL.RawPath) > 0 {
-		rPath = c.Request.URL.RawPath
+		path = c.Request.URL.RawPath
 		unescape = engine.UnescapePathValues
-	}
-
-	if engine.RemoveExtraSlash {
-		rPath = cleanPath(rPath)
 	}
 
 	// Find root of the tree for the given HTTP method
@@ -403,17 +380,16 @@ func (engine *Engine) handleHTTPRequest(c *Context) {
 		}
 		root := t[i].root
 		// Find route in tree
-		value := root.getValue(rPath, c.Params, unescape)
-		if value.handlers != nil {
-			c.handlers = value.handlers
-			c.Params = value.params
-			c.fullPath = value.fullPath
+		handlers, params, tsr := root.getValue(path, c.Params, unescape)
+		if handlers != nil {
+			c.handlers = handlers
+			c.Params = params
 			c.Next()
 			c.writermem.WriteHeaderNow()
 			return
 		}
-		if httpMethod != "CONNECT" && rPath != "/" {
-			if value.tsr && engine.RedirectTrailingSlash {
+		if httpMethod != "CONNECT" && path != "/" {
+			if tsr && engine.RedirectTrailingSlash {
 				redirectTrailingSlash(c)
 				return
 			}
@@ -429,7 +405,7 @@ func (engine *Engine) handleHTTPRequest(c *Context) {
 			if tree.method == httpMethod {
 				continue
 			}
-			if value := tree.root.getValue(rPath, nil, unescape); value.handlers != nil {
+			if handlers, _, _ := tree.root.getValue(path, nil, unescape); handlers != nil {
 				c.handlers = engine.allNoMethod
 				serveError(c, http.StatusMethodNotAllowed, default405Body)
 				return
@@ -457,43 +433,40 @@ func serveError(c *Context, code int, defaultMessage []byte) {
 		return
 	}
 	c.writermem.WriteHeaderNow()
+	return
 }
 
 func redirectTrailingSlash(c *Context) {
 	req := c.Request
-	p := req.URL.Path
-	if prefix := path.Clean(c.Request.Header.Get("X-Forwarded-Prefix")); prefix != "." {
-		p = prefix + "/" + req.URL.Path
+	path := req.URL.Path
+	code := http.StatusMovedPermanently // Permanent redirect, request with GET method
+	if req.Method != "GET" {
+		code = http.StatusTemporaryRedirect
 	}
-	req.URL.Path = p + "/"
-	if length := len(p); length > 1 && p[length-1] == '/' {
-		req.URL.Path = p[:length-1]
+
+	req.URL.Path = path + "/"
+	if length := len(path); length > 1 && path[length-1] == '/' {
+		req.URL.Path = path[:length-1]
 	}
-	redirectRequest(c)
+	debugPrint("redirecting request %d: %s --> %s", code, path, req.URL.String())
+	http.Redirect(c.Writer, req, req.URL.String(), code)
+	c.writermem.WriteHeaderNow()
 }
 
 func redirectFixedPath(c *Context, root *node, trailingSlash bool) bool {
 	req := c.Request
-	rPath := req.URL.Path
+	path := req.URL.Path
 
-	if fixedPath, ok := root.findCaseInsensitivePath(cleanPath(rPath), trailingSlash); ok {
+	if fixedPath, ok := root.findCaseInsensitivePath(cleanPath(path), trailingSlash); ok {
+		code := http.StatusMovedPermanently // Permanent redirect, request with GET method
+		if req.Method != "GET" {
+			code = http.StatusTemporaryRedirect
+		}
 		req.URL.Path = string(fixedPath)
-		redirectRequest(c)
+		debugPrint("redirecting request %d: %s --> %s", code, path, req.URL.String())
+		http.Redirect(c.Writer, req, req.URL.String(), code)
+		c.writermem.WriteHeaderNow()
 		return true
 	}
 	return false
-}
-
-func redirectRequest(c *Context) {
-	req := c.Request
-	rPath := req.URL.Path
-	rURL := req.URL.String()
-
-	code := http.StatusMovedPermanently // Permanent redirect, request with GET method
-	if req.Method != http.MethodGet {
-		code = http.StatusTemporaryRedirect
-	}
-	debugPrint("redirecting request %d: %s --> %s", code, rPath, rURL)
-	http.Redirect(c.Writer, req, rURL, code)
-	c.writermem.WriteHeaderNow()
 }

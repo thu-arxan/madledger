@@ -14,26 +14,18 @@ import (
 	"github.com/mattn/go-isatty"
 )
 
-type consoleColorModeValue int
-
-const (
-	autoColor consoleColorModeValue = iota
-	disableColor
-	forceColor
+var (
+	green        = string([]byte{27, 91, 57, 55, 59, 52, 50, 109})
+	white        = string([]byte{27, 91, 57, 48, 59, 52, 55, 109})
+	yellow       = string([]byte{27, 91, 57, 48, 59, 52, 51, 109})
+	red          = string([]byte{27, 91, 57, 55, 59, 52, 49, 109})
+	blue         = string([]byte{27, 91, 57, 55, 59, 52, 52, 109})
+	magenta      = string([]byte{27, 91, 57, 55, 59, 52, 53, 109})
+	cyan         = string([]byte{27, 91, 57, 55, 59, 52, 54, 109})
+	reset        = string([]byte{27, 91, 48, 109})
+	disableColor = false
+	forceColor   = false
 )
-
-const (
-	green   = "\033[97;42m"
-	white   = "\033[90;47m"
-	yellow  = "\033[90;43m"
-	red     = "\033[97;41m"
-	blue    = "\033[97;44m"
-	magenta = "\033[97;45m"
-	cyan    = "\033[97;46m"
-	reset   = "\033[0m"
-)
-
-var consoleColorMode = autoColor
 
 // LoggerConfig defines the config for Logger middleware.
 type LoggerConfig struct {
@@ -70,12 +62,10 @@ type LogFormatterParams struct {
 	Path string
 	// ErrorMessage is set if error has occurred in processing the request.
 	ErrorMessage string
-	// isTerm shows whether does gin's output descriptor refers to a terminal.
-	isTerm bool
+	// IsTerm shows whether does gin's output descriptor refers to a terminal.
+	IsTerm bool
 	// BodySize is the size of the Response Body
 	BodySize int
-	// Keys are the keys set on the request's context.
-	Keys map[string]interface{}
 }
 
 // StatusCodeColor is the ANSI color for appropriately logging http status code to a terminal.
@@ -99,19 +89,19 @@ func (p *LogFormatterParams) MethodColor() string {
 	method := p.Method
 
 	switch method {
-	case http.MethodGet:
+	case "GET":
 		return blue
-	case http.MethodPost:
+	case "POST":
 		return cyan
-	case http.MethodPut:
+	case "PUT":
 		return yellow
-	case http.MethodDelete:
+	case "DELETE":
 		return red
-	case http.MethodPatch:
+	case "PATCH":
 		return green
-	case http.MethodHead:
+	case "HEAD":
 		return magenta
-	case http.MethodOptions:
+	case "OPTIONS":
 		return white
 	default:
 		return reset
@@ -123,24 +113,15 @@ func (p *LogFormatterParams) ResetColor() string {
 	return reset
 }
 
-// IsOutputColor indicates whether can colors be outputted to the log.
-func (p *LogFormatterParams) IsOutputColor() bool {
-	return consoleColorMode == forceColor || (consoleColorMode == autoColor && p.isTerm)
-}
-
 // defaultLogFormatter is the default log format function Logger middleware uses.
 var defaultLogFormatter = func(param LogFormatterParams) string {
 	var statusColor, methodColor, resetColor string
-	if param.IsOutputColor() {
+	if param.IsTerm {
 		statusColor = param.StatusCodeColor()
 		methodColor = param.MethodColor()
 		resetColor = param.ResetColor()
 	}
 
-	if param.Latency > time.Minute {
-		// Truncate in a golang < 1.8 safe way
-		param.Latency = param.Latency - param.Latency%time.Second
-	}
 	return fmt.Sprintf("[GIN] %v |%s %3d %s| %13v | %15s |%s %-7s %s %s\n%s",
 		param.TimeStamp.Format("2006/01/02 - 15:04:05"),
 		statusColor, param.StatusCode, resetColor,
@@ -154,12 +135,12 @@ var defaultLogFormatter = func(param LogFormatterParams) string {
 
 // DisableConsoleColor disables color output in the console.
 func DisableConsoleColor() {
-	consoleColorMode = disableColor
+	disableColor = true
 }
 
 // ForceConsoleColor force color output in the console.
 func ForceConsoleColor() {
-	consoleColorMode = forceColor
+	forceColor = true
 }
 
 // ErrorLogger returns a handlerfunc for any error type.
@@ -216,8 +197,9 @@ func LoggerWithConfig(conf LoggerConfig) HandlerFunc {
 
 	isTerm := true
 
-	if w, ok := out.(*os.File); !ok || os.Getenv("TERM") == "dumb" ||
-		(!isatty.IsTerminal(w.Fd()) && !isatty.IsCygwinTerminal(w.Fd())) {
+	if w, ok := out.(*os.File); (!ok ||
+		(os.Getenv("TERM") == "dumb" || (!isatty.IsTerminal(w.Fd()) && !isatty.IsCygwinTerminal(w.Fd()))) ||
+		disableColor) && !forceColor {
 		isTerm = false
 	}
 
@@ -244,8 +226,7 @@ func LoggerWithConfig(conf LoggerConfig) HandlerFunc {
 		if _, ok := skip[path]; !ok {
 			param := LogFormatterParams{
 				Request: c.Request,
-				isTerm:  isTerm,
-				Keys:    c.Keys,
+				IsTerm:  isTerm,
 			}
 
 			// Stop timer

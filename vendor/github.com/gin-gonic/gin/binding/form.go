@@ -4,11 +4,9 @@
 
 package binding
 
-import (
-	"net/http"
-)
+import "net/http"
 
-const defaultMemory = 32 << 20
+const defaultMemory = 32 * 1024 * 1024
 
 type formBinding struct{}
 type formPostBinding struct{}
@@ -55,9 +53,8 @@ func (formMultipartBinding) Bind(req *http.Request, obj interface{}) error {
 	if err := req.ParseMultipartForm(defaultMemory); err != nil {
 		return err
 	}
-	if err := mappingByPtr(obj, (*multipartRequest)(req), "form"); err != nil {
+	if err := mapForm(obj, req.MultipartForm.Value); err != nil {
 		return err
 	}
-
 	return validate(obj)
 }

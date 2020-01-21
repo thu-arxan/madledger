@@ -5,8 +5,6 @@
 
 package gin
 
-const stackBufSize = 128
-
 // cleanPath is the URL version of path.Clean, it returns a canonical URL path
 // for p, eliminating . and .. elements.
 //
@@ -26,11 +24,8 @@ func cleanPath(p string) string {
 		return "/"
 	}
 
-	// Reasonably sized buffer on stack to avoid allocations in the common case.
-	// If a larger buffer is required, it gets allocated dynamically.
-	buf := make([]byte, 0, stackBufSize)
-
 	n := len(p)
+	var buf []byte
 
 	// Invariants:
 	//      reading from path; r is index of next byte to process.
@@ -42,12 +37,7 @@ func cleanPath(p string) string {
 
 	if p[0] != '/' {
 		r = 0
-
-		if n+1 > stackBufSize {
-			buf = make([]byte, n+1)
-		} else {
-			buf = buf[:n+1]
-		}
+		buf = make([]byte, n+1)
 		buf[0] = '/'
 	}
 
@@ -79,7 +69,7 @@ func cleanPath(p string) string {
 				// can backtrack
 				w--
 
-				if len(buf) == 0 {
+				if buf == nil {
 					for w > 1 && p[w] != '/' {
 						w--
 					}
@@ -113,7 +103,7 @@ func cleanPath(p string) string {
 		w++
 	}
 
-	if len(buf) == 0 {
+	if buf == nil {
 		return p[:w]
 	}
 	return string(buf[:w])
@@ -121,20 +111,13 @@ func cleanPath(p string) string {
 
 // internal helper to lazily create a buffer if necessary.
 func bufApp(buf *[]byte, s string, w int, c byte) {
-	b := *buf
-	if len(b) == 0 {
+	if *buf == nil {
 		if s[w] == c {
 			return
 		}
 
-		if l := len(s); l > cap(b) {
-			*buf = make([]byte, len(s))
-		} else {
-			*buf = (*buf)[:l]
-		}
-		b = *buf
-
-		copy(b, s[:w])
+		*buf = make([]byte, len(s))
+		copy(*buf, s[:w])
 	}
-	b[w] = c
+	(*buf)[w] = c
 }
