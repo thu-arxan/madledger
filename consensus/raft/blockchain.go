@@ -279,7 +279,7 @@ func (chain *BlockChain) getConfChange(tx *Tx) (raftpb.ConfChange, error) {
 			return cfgChange, err
 		}
 	} else {
-		return cfgChange, errors.New("it's not raft config change tx")
+		return cfgChange, fmt.Errorf("it's not raft config change tx, get: %d", txType)
 	}
 	return cfgChange, err
 }

@@ -89,12 +89,15 @@ test:
 	@$(GOCMD) test madledger/tests -count=1 -cover
 
 performance:
-	@$(GOCMD) test madledger/tests/performance -count=1
+	@$(GO_TEST) madledger/tests/performance
 	@cat tests/performance/performance.out
 	@rm -rf tests/performance/performance.out
 
 clean:
-	@rm -rf tests/.bft	
+	@rm -rf tests/.bft
+	@cd tests/performance/raft && rm -rf .clients .orderer .peer
+	@cd tests/performance/solo && rm -rf .clients .orderer .peer
+	@cd tests/performance/bft && rm -rf .clients .orderer .peer
 
 syncevm:
 	@rm -rf vendor/evm
