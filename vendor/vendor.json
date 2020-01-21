@@ -33,14 +33,39 @@
 			"revision": ""
 		},
 		{
+			"checksumSHA1": "j1R0eVhVfQr5LRx2qyh1sEcFNMw=",
+			"path": "github.com/go-playground/universal-translator",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "pWAKtnAJBC/806TuEihhArvI6qY=",
+			"path": "github.com/go-playground/validator",
+			"revision": "fb6c45823ad5db49e788621271c6f86fa3a0f149",
+			"revisionTime": "2019-12-25T05:43:24Z"
+		},
+		{
+			"path": "github.com/go-playground/validator/v10",
+			"revision": ""
+		},
+		{
 			"checksumSHA1": "hHOpK73BJjC7dtbfNfKsceSZi9o=",
 			"path": "github.com/gorilla/mux",
 			"revision": "75dcda0896e109a2a22c9315bca3bb21b87b2ba5",
 			"revisionTime": "2020-01-12T19:17:43Z"
 		},
 		{
+			"checksumSHA1": "iAvrLLQPM1InqOwH19KxYUf4iU0=",
+			"path": "github.com/leodido/go-urn",
+			"revision": ""
+		},
+		{
 			"checksumSHA1": "PL1Zb+IBx15rO2wqslXSMvwnRtc=",
 			"path": "github.com/mattn/go-isatty",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "yKyxcyjgWtwj8xciqv7Y0Bpq6f4=",
+			"path": "github.com/ugorji/go/codec",
 			"revision": ""
 		},
 		{
