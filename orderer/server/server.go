@@ -121,7 +121,7 @@ func (s *Server) Start() error {
 	}()
 
 	// TODO: TLS support not implemented
-	haddr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-1)
+	haddr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100)
 	router := gin.Default()
 	err = s.initServer(router)
 	if err != nil {

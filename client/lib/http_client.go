@@ -201,8 +201,8 @@ type AddTxResp struct {
 }
 
 type GetTxStatusResp struct {
-	Error  string      `json:"error"`
-	Status pb.TxStatus `json:"status"`
+	Error  string       `json:"error"`
+	Status *pb.TxStatus `json:"status"`
 }
 
 // AddTxByHTTP try to add a tx
@@ -218,8 +218,9 @@ func (c *HTTPClient) AddTxByHTTP(tx *core.Tx) (*pb.TxStatus, error) {
 		if err != nil {
 			return nil, err
 		}
-		defer resp.Body.Close()
+
 		body, err := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
 		log.Infof("create resp is: %s", string(body))
 		err = json.Unmarshal(body, &info)
 		if info.Error != "" {
@@ -249,13 +250,16 @@ func (c *HTTPClient) AddTxByHTTP(tx *core.Tx) (*pb.TxStatus, error) {
 				"channelID": tx.Data.ChannelID,
 				"txID":      tx.ID,
 			})
+			log.Infof("ask %s for txstatus", c.peerHTTPClients[i])
 			resp, err := http.Post("http://"+c.peerHTTPClients[i]+"/v1/gettxstatus", "application/json", bytes.NewBuffer(requestBody))
+			log.Infof("get response from %s", c.peerHTTPClients[i])
 			if err != nil {
 				collector.AddError(err)
+				return
 			}
 			defer resp.Body.Close()
 			body, err := ioutil.ReadAll(resp.Body)
-
+			log.Info(string(body))
 			json.Unmarshal(body, &info)
 
 			if err != nil || info.Error != "" {
@@ -286,15 +290,15 @@ func (c *HTTPClient) GetHistoryByHTTP(address []byte) (*pb.TxHistory, error) {
 		go func(i int) {
 			var info GetTxHistoryResp
 			requestBody, _ := json.Marshal(map[string]string{
-				"address": string(address),
+				"address": hex.EncodeToString(address),
 			})
 			resp, err := http.Post("http://"+c.peerHTTPClients[i]+"/v1/listtxhistory", "application/json", bytes.NewBuffer(requestBody))
 			if err != nil {
 				collector.AddError(err)
 			}
-			defer resp.Body.Close()
-			body, err := ioutil.ReadAll(resp.Body)
 
+			body, err := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
 			json.Unmarshal(body, &info)
 
 			if err != nil || info.Error != "" {

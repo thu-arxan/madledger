@@ -44,7 +44,6 @@ func runStart(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	// go registerStop(s)
 	err = s.Start()
 	if err != nil {
 		return err

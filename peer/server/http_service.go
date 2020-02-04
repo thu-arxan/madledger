@@ -1,9 +1,11 @@
 package server
 
 import (
-	"github.com/gin-gonic/gin"
+	"encoding/hex"
 	pb "madledger/protos"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 // GetTxStatusReq ...
@@ -14,6 +16,7 @@ type GetTxStatusReq struct {
 
 // GetTxStatusByHTTP gets tx status by http
 func (hs *Server) GetTxStatusByHTTP(c *gin.Context) {
+	log.Info("start get tx status")
 	var j GetTxStatusReq
 	if err := c.ShouldBindJSON(&j); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -22,7 +25,10 @@ func (hs *Server) GetTxStatusByHTTP(c *gin.Context) {
 	chID := j.ChannelID
 	txID := j.TxID
 
+	log.Infof("before get tx status %s", txID)
 	status, err := hs.ChannelManager.GetTxStatus(chID, txID, true)
+	log.Infof("after get tx status %s, %v", txID, err)
+
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -35,6 +41,7 @@ func (hs *Server) GetTxStatusByHTTP(c *gin.Context) {
 		ContractAddress: status.ContractAddress,
 	}
 	c.JSON(http.StatusOK, gin.H{"status": result})
+	log.Info("finish get tx status")
 	return
 }
 
@@ -50,9 +57,11 @@ func (hs *Server) ListTxHistoryByHTTP(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	addr := []byte(j.Addr)
 
+	addr, _ := hex.DecodeString(j.Addr)
+	log.Info("addr is ", hex.EncodeToString(addr))
 	history := hs.ChannelManager.ListTxHistory(addr)
+	log.Info("get history is ", history)
 	var pbHistory = make(map[string]*pb.StringList)
 	for channelID, ids := range history {
 		value := new(pb.StringList)

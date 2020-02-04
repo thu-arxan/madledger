@@ -79,9 +79,6 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	}
 	server.ChannelManager = channelManager
 	server.ordererClients = ordererClients
-	if err != nil {
-		return nil, err
-	}
 
 	return server, nil
 }
@@ -119,7 +116,7 @@ func (s *Server) Start() error {
 	if err != nil {
 		return errors.New("Failed to start the peer server")
 	}
-	log.Infof("Start the peer server at %s", addr)
+
 	err = s.ChannelManager.start()
 	if err != nil {
 		return err
@@ -137,6 +134,7 @@ func (s *Server) Start() error {
 	pb.RegisterPeerServer(s.rpcServer, s)
 
 	go func() {
+		log.Infof("Start the peer server at %s", addr)
 		err = s.rpcServer.Serve(lis)
 		if err != nil {
 			log.Error("gRPC Serve error: ", err)
@@ -144,7 +142,7 @@ func (s *Server) Start() error {
 		}
 	}()
 
-	haddr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-1)
+	haddr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100)
 	router := gin.Default()
 	err = s.initServer(router)
 	if err != nil {
@@ -157,6 +155,7 @@ func (s *Server) Start() error {
 	}
 	go func() {
 		// service connections
+		log.Infof("Start the peer server at %s", haddr)
 		if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("listen: %s\n", err)
 		}
@@ -179,7 +178,7 @@ func (s *Server) Stop() {
 	// catching ctx.Done(). timeout of 5 seconds.
 	select {
 	case <-ctx.Done():
-		log.Println("timeout of 5 seconds.")
+		log.Println("timeout after 1 second.")
 	}
 	log.Println("Server exiting")
 }

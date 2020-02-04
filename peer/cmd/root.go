@@ -49,6 +49,9 @@ func setLog(debug bool) error {
 }
 
 func registerStop(s *server.Server, finish chan bool) {
+	if s == nil {
+		return
+	}
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	<-sigs
