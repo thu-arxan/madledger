@@ -1,55 +1,37 @@
 module.exports = {
-  title: "Tendermint Core",
-  description: "Documentation for Tendermint Core",
+  title: "Tendermint Documentation",
+  description: "Documentation for Tendermint Core.",
+  ga: "UA-51029217-1",
   dest: "./dist/docs",
   base: "/docs/",
   markdown: {
     lineNumbers: true
   },
   themeConfig: {
-    lastUpdated: "Last Updated",
-    nav: [{ text: "Back to Tendermint", link: "https://tendermint.com" }],
+    repo: "tendermint/tendermint",
+    editLinks: true,
+    docsDir: "docs",
+    docsBranch: "develop",
+    editLinkText: 'Edit this page on Github',
+    lastUpdated: true,
+    algolia: {
+      apiKey: '59f0e2deb984aa9cdf2b3a5fd24ac501',
+      indexName: 'tendermint',
+      debug: false
+    },
+    nav: [
+      { text: "Back to Tendermint", link: "https://tendermint.com" },
+      { text: "RPC", link: "https://tendermint.com/rpc/" }
+    ],
     sidebar: [
       {
-        title: "Getting Started",
+        title: "Introduction",
         collapsable: false,
         children: [
+          "/introduction/",
           "/introduction/quick-start",
           "/introduction/install",
-          "/introduction/introduction"
-        ]
-      },
-      {
-        title: "Tendermint Core",
-        collapsable: false,
-        children: [
-          "/tendermint-core/using-tendermint",
-          "/tendermint-core/configuration",
-          "/tendermint-core/rpc",
-          "/tendermint-core/running-in-production",
-          "/tendermint-core/fast-sync",
-          "/tendermint-core/how-to-read-logs",
-          "/tendermint-core/block-structure",
-          "/tendermint-core/light-client-protocol",
-          "/tendermint-core/metrics",
-          "/tendermint-core/secure-p2p",
-          "/tendermint-core/validators"
-        ]
-      },
-      {
-        title: "Tools",
-        collapsable: false,
-        children:  [
-	  "tools/benchmarking",
-	  "tools/monitoring"
-	]
-      },
-      {
-        title: "Networks",
-        collapsable: false,
-        children: [
-          "/networks/deploy-testnets",
-          "/networks/terraform-and-ansible",
+          "/introduction/what-is-tendermint"
         ]
       },
       {
@@ -64,6 +46,44 @@ module.exports = {
           "/app-dev/indexing-transactions",
           "/app-dev/abci-spec",
           "/app-dev/ecosystem"
+        ]
+      },
+      {
+        title: "Tendermint Core",
+        collapsable: false,
+        children: [
+          "/tendermint-core/",
+          "/tendermint-core/using-tendermint",
+          "/tendermint-core/configuration",
+          "/tendermint-core/rpc",
+          "/tendermint-core/running-in-production",
+          "/tendermint-core/fast-sync",
+          "/tendermint-core/how-to-read-logs",
+          "/tendermint-core/block-structure",
+          "/tendermint-core/light-client-protocol",
+          "/tendermint-core/metrics",
+          "/tendermint-core/secure-p2p",
+          "/tendermint-core/validators",
+          "/tendermint-core/mempool"
+        ]
+      },
+      {
+        title: "Networks",
+        collapsable: false,
+        children: [
+          "/networks/",
+          "/networks/docker-compose",
+          "/networks/terraform-and-ansible",
+        ]
+      },
+      {
+        title: "Tools",
+        collapsable: false,
+        children:  [
+          "/tools/",
+          "/tools/benchmarking",
+          "/tools/monitoring",
+          "/tools/remote-signer-validation"
         ]
       },
       {
@@ -99,9 +119,10 @@ module.exports = {
 	]
       },
       {
-        title: "ABCI Specification",
+        title: "ABCI Spec",
         collapsable: false,
         children: [
+          "/spec/abci/",
           "/spec/abci/abci",
           "/spec/abci/apps",
           "/spec/abci/client-server"

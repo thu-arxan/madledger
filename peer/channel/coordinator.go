@@ -1,6 +1,8 @@
 package channel
 
 import (
+	"fmt"
+	"madledger/common/event"
 	"madledger/common/util"
 	"sync"
 )
@@ -9,6 +11,7 @@ import (
 type Coordinator struct {
 	lock   sync.Mutex
 	states map[string]*State
+	hub    *event.Hub
 }
 
 // StateCode represent the code of state
@@ -40,6 +43,7 @@ type State struct {
 func NewCoordinator() *Coordinator {
 	c := new(Coordinator)
 	c.states = make(map[string]*State)
+	c.hub = event.NewHub()
 	return c
 }
 
@@ -59,6 +63,11 @@ func (c *Coordinator) CanRun(channelID string, num uint64) bool {
 		return state.code == Runable
 	}
 	return false
+}
+
+// Watch watch on the channel event
+func (c *Coordinator) Watch(channelID string, num uint64) {
+	c.hub.Watch(fmt.Sprintf("%s:%d", channelID, num), nil)
 }
 
 // Locks will lock some channels because all blocks should run after the config
@@ -87,5 +96,6 @@ func (c *Coordinator) Unlocks(nums map[string]uint64) {
 			state.code = Runable
 			c.states[channel] = state
 		}
+		c.hub.Done(fmt.Sprintf("%s:%d", channel, num), nil)
 	}
 }

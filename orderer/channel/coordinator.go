@@ -6,6 +6,7 @@ import (
 	"madledger/common/crypto"
 	"madledger/common/util"
 	"madledger/consensus"
+	raft "madledger/consensus/raft"
 	"madledger/consensus/solo"
 	"madledger/consensus/tendermint"
 	"madledger/core/types"
@@ -15,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	cc "madledger/blockchain/config"
+	bc "madledger/blockchain/config"
 	gc "madledger/blockchain/global"
 	ct "madledger/consensus/tendermint"
 	pb "madledger/protos"
@@ -77,9 +78,15 @@ func (c *Coordinator) Start() error {
 	}
 
 	go c.GM.Start()
+	time.Sleep(100 * time.Millisecond)
 	go c.CM.Start()
+	time.Sleep(100 * time.Millisecond)
 	for _, channelManager := range c.Managers {
-		go channelManager.Start()
+		// 开启manager之前，应该判断manager的init是否为true
+		if !channelManager.init {
+			log.Infof("coordinator/Start: start channel %s", channelManager.ID)
+			go channelManager.Start()
+		}
 	}
 	time.Sleep(10 * time.Millisecond)
 	return nil
@@ -174,13 +181,14 @@ func (c *Coordinator) createChannel(tx *types.Tx) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	var payload cc.Payload
+	var payload bc.Payload
 	err := json.Unmarshal(tx.Data.Payload, &payload)
 	if err != nil {
 		return err
 	}
 
 	var channelID = payload.ChannelID
+	log.Infof("Create channel %s", channelID)
 	switch channelID {
 	case types.GLOBALCHANNELID:
 		return fmt.Errorf("Channel %s is aleardy exist", channelID)
@@ -202,7 +210,7 @@ func (c *Coordinator) createChannel(tx *types.Tx) error {
 
 	c.db.WatchChannel(channelID)
 
-	return err
+	return nil
 }
 
 // getChannelManager return the manager of the channel
@@ -243,7 +251,20 @@ func (c *Coordinator) loadConfigChannel() error {
 	}
 	if !c.CM.HasGenesisBlock() {
 		log.Info("Creating genesis block of channel _config")
-		gb, err := cc.CreateGenesisBlock()
+		// create admins, we just config one admin
+		admins, err := bc.CreateAdmins()
+		if err != nil {
+			return err
+		}
+		gb, err := bc.CreateGenesisBlock(admins)
+		if err != nil {
+			return err
+		}
+		// put  admin's pubkey into leveldb
+		err = c.CM.db.UpdateSystemAdmin(&bc.Profile{
+			Public: true,
+			Admins: admins,
+		})
 		if err != nil {
 			return err
 		}
@@ -297,6 +318,7 @@ func (c *Coordinator) loadUserChannel() error {
 				return err
 			}
 			c.Managers[channelID] = manager
+			log.Infof("loadUserChannel: load channel %s from leveldb", channelID)
 		}
 	}
 	return nil
@@ -307,8 +329,8 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 	// set consensus
 	var channels = make(map[string]consensus.Config, 0)
 	defaultCfg := consensus.Config{
-		Timeout: 100,
-		MaxSize: 10,
+		Timeout: c.chainCfg.BatchTimeout,
+		MaxSize: c.chainCfg.BatchSize,
 		Number:  1,
 		Resume:  false,
 	}
@@ -323,6 +345,17 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 		consensus, err := solo.NewConsensus(channels)
 		if err != nil {
 			return err
+		}
+		c.Consensus = consensus
+	case config.RAFT:
+		raftConfig, err := getConfig(cfg.Raft.Path, cfg.Raft.ID, cfg.Raft.Nodes, cfg.Raft.Join, cfg.Raft.TLS, c.chainCfg.BatchTimeout, c.chainCfg.BatchSize)
+		if err != nil {
+			return err
+		}
+
+		consensus, err := raft.NewConseneus(raftConfig)
+		if err != nil {
+			return nil
 		}
 		c.Consensus = consensus
 	case config.BFT:
@@ -344,4 +377,22 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 		return fmt.Errorf("Unsupport consensus type:%d", cfg.Type)
 	}
 	return nil
+}
+
+func getConfig(path string, id uint64, peers map[uint64]string, join bool, tlsConfig config.TLSConfig, timeout, maxSize int) (*raft.Config, error) {
+	tlsCfg := consensus.TLSConfig{
+		Enable:  tlsConfig.Enable,
+		CA:      tlsConfig.CA,
+		RawCert: tlsConfig.RawCert,
+		Key:     tlsConfig.Key,
+		Pool:    tlsConfig.Pool,
+		Cert:    tlsConfig.Cert,
+	}
+	return raft.NewConfig(path, "localhost", id, peers, join, consensus.Config{
+		Timeout: timeout,
+		MaxSize: maxSize,
+		Resume:  false,
+		Number:  1,
+		TLS:     tlsCfg,
+	})
 }

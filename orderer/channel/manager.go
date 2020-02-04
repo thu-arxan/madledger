@@ -60,7 +60,7 @@ func (manager *Manager) Start() {
 	for {
 		select {
 		case cb := <-manager.cbc:
-			log.Infof("Receive block %d from consensus\n", cb.GetNumber())
+			log.Infof("Receive block %s:%d from consensus", manager.ID, cb.GetNumber())
 			// todo: if a tx is duplicated and it was added into consensus block succeed, then it may never receive response
 			txs, _ := manager.getTxsFromConsensusBlock(cb)
 			if len(txs) != 0 {
@@ -76,9 +76,15 @@ func (manager *Manager) Start() {
 				// If the channel is not the global channel, it should send a tx to the global channel
 				if manager.ID != types.GLOBALCHANNELID {
 					tx := types.NewGlobalTx(manager.ID, block.Header.Number, block.Hash())
+					// 打印非config通道向global通道中添加的tx信息
+					log.Infof("Channel %s add tx %s to global channel.", manager.ID, tx.ID)
+
 					if err := manager.coordinator.GM.AddTx(tx); err != nil {
-						log.Fatalf("Channel %s failed to add tx into global channel because %s", manager.ID, err)
-						return
+						// todo: This is temporary fix
+						if err.Error() != "The tx exist in the blockchain aleardy" {
+							log.Fatalf("Channel %s failed to add tx into global channel because %s", manager.ID, err)
+							return
+						}
 					}
 				}
 				if err := manager.AddBlock(block); err != nil {
@@ -122,9 +128,13 @@ func (manager *Manager) GetBlock(num uint64) (*types.Block, error) {
 func (manager *Manager) AddBlock(block *types.Block) error {
 	// first update db
 	if err := manager.db.AddBlock(block); err != nil {
+		log.Infof("manager.db.AddBlock error: %s add block %d, %s",
+			manager.ID, block.Header.Number, err.Error())
 		return err
 	}
 	if err := manager.cm.AddBlock(block); err != nil {
+		log.Infof("manager.cm.AddBlock error: %s add block %d, %s",
+			manager.ID, block.Header.Number, err.Error())
 		return err
 	}
 	// check is there is any need to update local state of orderer
@@ -158,6 +168,7 @@ func (manager *Manager) AddTx(tx *types.Tx) error {
 	if err != nil {
 		return err
 	}
+	
 	// Note: The reason why we must do this is because we must make sure we return the result after we store the block
 	// However, we may find a better way to do this if we allow there are more interactive between the consensus and orderer.
 	result := manager.hub.Watch(util.Hex(tx.Hash()), nil)
@@ -180,6 +191,11 @@ func (manager *Manager) IsAdmin(member *types.Member) bool {
 	return manager.db.IsAdmin(manager.ID, member)
 }
 
+// IsSystemAdmin return if the member is the system admin
+func (manager *Manager) IsSystemAdmin(member *types.Member) bool {
+	return manager.db.IsSystemAdmin(member)
+}
+
 // FetchBlockAsync will fetch book async.
 // TODO: fix the thread unsafety
 func (manager *Manager) FetchBlockAsync(num uint64) (*types.Block, error) {
@@ -199,10 +215,14 @@ func (manager *Manager) FetchBlockAsync(num uint64) (*types.Block, error) {
 func (manager *Manager) syncBlock() {
 	var num uint64 = 1
 	for {
+		log.Infof("Going to get block %d of channel %s from consensus", num, manager.ID)
 		cb, err := manager.coordinator.Consensus.GetBlock(manager.ID, num, true)
 		if err != nil {
-			fmt.Println(err)
+			log.Infof("Get block %d of channel %s from consensus failed, because %s", num, manager.ID, err.Error())
+			//fmt.Println(err)
 			continue
+		} else {
+			log.Infof("Get block %d of channel %s from consensus", num, manager.ID)
 		}
 		num++
 		manager.cbc <- cb
@@ -215,7 +235,10 @@ func (manager *Manager) getTxsFromConsensusBlock(block consensus.Block) (legal, 
 	var count = make(map[string]bool)
 	for _, tx := range txs {
 		if !util.Contain(count, tx.ID) && !manager.db.HasTx(tx) {
+			count[tx.ID] = true
 			legal = append(legal, tx)
+			log.Infof("getTxsFromConsensusBlock: block %d in %s add tx %s",
+				block.GetNumber(), manager.ID, tx.ID)
 		} else {
 			duplicate = append(duplicate, tx)
 		}

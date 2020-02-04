@@ -5,11 +5,13 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"sort"
 	"time"
 )
 
@@ -152,4 +154,75 @@ func IsLegalChannelName(channelID string) bool {
 		return false
 	}
 	return true
+}
+
+// GetAllFiles return all files of a dir
+func GetAllFiles(dirPth string, abs bool) (files []string, err error) {
+	var dirs []string
+	dir, err := ioutil.ReadDir(dirPth)
+	if err != nil {
+		return nil, err
+	}
+
+	PthSep := string(os.PathSeparator)
+
+	for _, fi := range dir {
+		if fi.IsDir() {
+			dirs = append(dirs, dirPth+PthSep+fi.Name())
+			GetAllFiles(dirPth+PthSep+fi.Name(), abs)
+		} else {
+			if abs {
+				files = append(files, dirPth+PthSep+fi.Name())
+			} else {
+				files = append(files, PthSep+fi.Name())
+			}
+
+		}
+	}
+
+	for _, table := range dirs {
+		temp, _ := GetAllFiles(table, abs)
+		for _, temp1 := range temp {
+			files = append(files, temp1)
+		}
+	}
+
+	return files, nil
+}
+
+// IsDirSame return is two dir contain same files
+// TODO: We are not compare data now
+func IsDirSame(a, b string) bool {
+	aFiles, err := GetAllFiles(a, false)
+	if err != nil {
+		return false
+	}
+	bFiles, err := GetAllFiles(b, false)
+	if err != nil {
+		return false
+	}
+	if len(aFiles) != len(bFiles) {
+		return false
+	}
+	sort.Strings(aFiles)
+	sort.Strings(bFiles)
+	for i := range aFiles {
+		if aFiles[i] != bFiles[i] {
+			fmt.Println(aFiles[i])
+			return false
+		}
+	}
+	return true
+}
+
+// CopyBytes copy bytes
+func CopyBytes(origin []byte) []byte {
+	if origin == nil {
+		return nil
+	}
+	var res = make([]byte, len(origin))
+	for i := range origin {
+		res[i] = origin[i]
+	}
+	return res
 }

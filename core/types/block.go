@@ -2,6 +2,7 @@ package types
 
 import (
 	"bytes"
+	"encoding/json"
 	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/common/util"
@@ -66,4 +67,15 @@ func NewBlockHeader(channelID string, num uint64, prevHash, merkleRootHash []byt
 		MerkleRoot: merkleRootHash,
 		Time:       util.Now(),
 	}
+}
+
+// Bytes return the bytes of Block
+func (b *Block) Bytes() []byte {
+	bytes, _ := json.Marshal(b)
+	return bytes
+}
+
+// GetNumber return the number of Block
+func (b *Block) GetNumber() uint64 {
+	return b.Header.Number
 }

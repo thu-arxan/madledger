@@ -32,7 +32,7 @@ func (m *Tx) Reset()         { *m = Tx{} }
 func (m *Tx) String() string { return proto.CompactTextString(m) }
 func (*Tx) ProtoMessage()    {}
 func (*Tx) Descriptor() ([]byte, []int) {
-	return fileDescriptor_tx_7fa3c8cd307c9e94, []int{0}
+	return fileDescriptor_tx_2bd102ffa2c55573, []int{0}
 }
 func (m *Tx) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Tx.Unmarshal(m, b)
@@ -90,7 +90,7 @@ func (m *TxData) Reset()         { *m = TxData{} }
 func (m *TxData) String() string { return proto.CompactTextString(m) }
 func (*TxData) ProtoMessage()    {}
 func (*TxData) Descriptor() ([]byte, []int) {
-	return fileDescriptor_tx_7fa3c8cd307c9e94, []int{1}
+	return fileDescriptor_tx_2bd102ffa2c55573, []int{1}
 }
 func (m *TxData) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TxData.Unmarshal(m, b)
@@ -167,7 +167,7 @@ func (m *TxSig) Reset()         { *m = TxSig{} }
 func (m *TxSig) String() string { return proto.CompactTextString(m) }
 func (*TxSig) ProtoMessage()    {}
 func (*TxSig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_tx_7fa3c8cd307c9e94, []int{2}
+	return fileDescriptor_tx_2bd102ffa2c55573, []int{2}
 }
 func (m *TxSig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TxSig.Unmarshal(m, b)
@@ -207,9 +207,9 @@ func init() {
 	proto.RegisterType((*TxSig)(nil), "protos.txSig")
 }
 
-func init() { proto.RegisterFile("tx.proto", fileDescriptor_tx_7fa3c8cd307c9e94) }
+func init() { proto.RegisterFile("tx.proto", fileDescriptor_tx_2bd102ffa2c55573) }
 
-var fileDescriptor_tx_7fa3c8cd307c9e94 = []byte{
+var fileDescriptor_tx_2bd102ffa2c55573 = []byte{
 	// 244 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x90, 0x4d, 0x4b, 0x33, 0x31,
 	0x10, 0xc7, 0x49, 0xf6, 0xe5, 0x79, 0x3a, 0xae, 0x45, 0xe6, 0x94, 0x83, 0xe0, 0x92, 0xd3, 0x7a,

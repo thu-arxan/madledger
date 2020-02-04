@@ -5,6 +5,7 @@ import (
 
 	cmn "github.com/tendermint/tendermint/libs/common"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
+	rpctypes "github.com/tendermint/tendermint/rpc/lib/types"
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/types"
 )
@@ -18,6 +19,11 @@ import (
 //
 // ```go
 // client := client.NewHTTP("tcp://0.0.0.0:26657", "/websocket")
+// err := client.Start()
+// if err != nil {
+//   // handle error
+// }
+// defer client.Stop()
 // info, err := client.BlockchainInfo(10, 10)
 // ```
 //
@@ -32,13 +38,13 @@ import (
 // 				"header": {
 // 					"app_hash": "",
 // 					"chain_id": "test-chain-6UTNIN",
-// 					"height": 10,
+// 					"height": "10",
 // 					"time": "2017-05-29T15:05:53.877Z",
-// 					"num_txs": 0,
+// 					"num_txs": "0",
 // 					"last_block_id": {
 // 						"parts": {
 // 							"hash": "3C78F00658E06744A88F24FF97A0A5011139F34A",
-// 							"total": 1
+// 							"total": "1"
 // 						},
 // 						"hash": "F70588DAB36BDA5A953D548A16F7D48C6C2DFD78"
 // 					},
@@ -49,13 +55,13 @@ import (
 // 				"block_id": {
 // 					"parts": {
 // 						"hash": "277A4DBEF91483A18B85F2F5677ABF9694DFA40F",
-// 						"total": 1
+// 						"total": "1"
 // 					},
 // 					"hash": "96B1D2F2D201BA4BC383EB8224139DB1294944E5"
 // 				}
 // 			}
 // 		],
-// 		"last_height": 5493
+// 		"last_height": "5493"
 // 	},
 // 	"id": "",
 // 	"jsonrpc": "2.0"
@@ -63,7 +69,7 @@ import (
 // ```
 //
 // <aside class="notice">Returns at most 20 items.</aside>
-func BlockchainInfo(minHeight, maxHeight int64) (*ctypes.ResultBlockchainInfo, error) {
+func BlockchainInfo(ctx *rpctypes.Context, minHeight, maxHeight int64) (*ctypes.ResultBlockchainInfo, error) {
 
 	// maximum 20 block metas
 	const limit int64 = 20
@@ -80,7 +86,9 @@ func BlockchainInfo(minHeight, maxHeight int64) (*ctypes.ResultBlockchainInfo, e
 		blockMetas = append(blockMetas, blockMeta)
 	}
 
-	return &ctypes.ResultBlockchainInfo{blockStore.Height(), blockMetas}, nil
+	return &ctypes.ResultBlockchainInfo{
+		LastHeight: blockStore.Height(),
+		BlockMetas: blockMetas}, nil
 }
 
 // error if either min or max are negative or min < max
@@ -123,6 +131,11 @@ func filterMinMax(height, min, max, limit int64) (int64, int64, error) {
 //
 // ```go
 // client := client.NewHTTP("tcp://0.0.0.0:26657", "/websocket")
+// err := client.Start()
+// if err != nil {
+//   // handle error
+// }
+// defer client.Stop()
 // info, err := client.Block(10)
 // ```
 //
@@ -143,21 +156,21 @@ func filterMinMax(height, min, max, limit int64) (int64, int64, error) {
 //             "block_id": {
 //               "parts": {
 //                 "hash": "3C78F00658E06744A88F24FF97A0A5011139F34A",
-//                 "total": 1
+//                 "total": "1"
 //               },
 //               "hash": "F70588DAB36BDA5A953D548A16F7D48C6C2DFD78"
 //             },
-//             "type": 2,
-//             "round": 0,
-//             "height": 9,
-//             "validator_index": 0,
+//             "type": "2",
+//             "round": "0",
+//             "height": "9",
+//             "validator_index": "0",
 //             "validator_address": "E89A51D60F68385E09E716D353373B11F8FACD62"
 //           }
 //         ],
 //         "blockID": {
 //           "parts": {
 //             "hash": "3C78F00658E06744A88F24FF97A0A5011139F34A",
-//             "total": 1
+//             "total": "1"
 //           },
 //           "hash": "F70588DAB36BDA5A953D548A16F7D48C6C2DFD78"
 //         }
@@ -168,13 +181,13 @@ func filterMinMax(height, min, max, limit int64) (int64, int64, error) {
 //       "header": {
 //         "app_hash": "",
 //         "chain_id": "test-chain-6UTNIN",
-//         "height": 10,
+//         "height": "10",
 //         "time": "2017-05-29T15:05:53.877Z",
-//         "num_txs": 0,
+//         "num_txs": "0",
 //         "last_block_id": {
 //           "parts": {
 //             "hash": "3C78F00658E06744A88F24FF97A0A5011139F34A",
-//             "total": 1
+//             "total": "1"
 //           },
 //           "hash": "F70588DAB36BDA5A953D548A16F7D48C6C2DFD78"
 //         },
@@ -187,13 +200,13 @@ func filterMinMax(height, min, max, limit int64) (int64, int64, error) {
 //       "header": {
 //         "app_hash": "",
 //         "chain_id": "test-chain-6UTNIN",
-//         "height": 10,
+//         "height": "10",
 //         "time": "2017-05-29T15:05:53.877Z",
-//         "num_txs": 0,
+//         "num_txs": "0",
 //         "last_block_id": {
 //           "parts": {
 //             "hash": "3C78F00658E06744A88F24FF97A0A5011139F34A",
-//             "total": 1
+//             "total": "1"
 //           },
 //           "hash": "F70588DAB36BDA5A953D548A16F7D48C6C2DFD78"
 //         },
@@ -204,7 +217,7 @@ func filterMinMax(height, min, max, limit int64) (int64, int64, error) {
 //       "block_id": {
 //         "parts": {
 //           "hash": "277A4DBEF91483A18B85F2F5677ABF9694DFA40F",
-//           "total": 1
+//           "total": "1"
 //         },
 //         "hash": "96B1D2F2D201BA4BC383EB8224139DB1294944E5"
 //       }
@@ -214,7 +227,7 @@ func filterMinMax(height, min, max, limit int64) (int64, int64, error) {
 //   "jsonrpc": "2.0"
 // }
 // ```
-func Block(heightPtr *int64) (*ctypes.ResultBlock, error) {
+func Block(ctx *rpctypes.Context, heightPtr *int64) (*ctypes.ResultBlock, error) {
 	storeHeight := blockStore.Height()
 	height, err := getHeight(storeHeight, heightPtr)
 	if err != nil {
@@ -223,7 +236,7 @@ func Block(heightPtr *int64) (*ctypes.ResultBlock, error) {
 
 	blockMeta := blockStore.LoadBlockMeta(height)
 	block := blockStore.LoadBlock(height)
-	return &ctypes.ResultBlock{blockMeta, block}, nil
+	return &ctypes.ResultBlock{BlockMeta: blockMeta, Block: block}, nil
 }
 
 // Get block commit at a given height.
@@ -235,6 +248,11 @@ func Block(heightPtr *int64) (*ctypes.ResultBlock, error) {
 //
 // ```go
 // client := client.NewHTTP("tcp://0.0.0.0:26657", "/websocket")
+// err := client.Start()
+// if err != nil {
+//   // handle error
+// }
+// defer client.Stop()
 // info, err := client.Commit(11)
 // ```
 //
@@ -255,21 +273,21 @@ func Block(heightPtr *int64) (*ctypes.ResultBlock, error) {
 //           "block_id": {
 //             "parts": {
 //               "hash": "9E37CBF266BC044A779E09D81C456E653B89E006",
-//               "total": 1
+//               "total": "1"
 //             },
 //             "hash": "CC6E861E31CA4334E9888381B4A9137D1458AB6A"
 //           },
-//           "type": 2,
-//           "round": 0,
-//           "height": 11,
-//           "validator_index": 0,
+//           "type": "2",
+//           "round": "0",
+//           "height": "11",
+//           "validator_index": "0",
 //           "validator_address": "E89A51D60F68385E09E716D353373B11F8FACD62"
 //         }
 //       ],
 //       "blockID": {
 //         "parts": {
 //           "hash": "9E37CBF266BC044A779E09D81C456E653B89E006",
-//           "total": 1
+//           "total": "1"
 //         },
 //         "hash": "CC6E861E31CA4334E9888381B4A9137D1458AB6A"
 //       }
@@ -277,13 +295,13 @@ func Block(heightPtr *int64) (*ctypes.ResultBlock, error) {
 //     "header": {
 //       "app_hash": "",
 //       "chain_id": "test-chain-6UTNIN",
-//       "height": 11,
+//       "height": "11",
 //       "time": "2017-05-29T15:05:54.893Z",
-//       "num_txs": 0,
+//       "num_txs": "0",
 //       "last_block_id": {
 //         "parts": {
 //           "hash": "277A4DBEF91483A18B85F2F5677ABF9694DFA40F",
-//           "total": 1
+//           "total": "1"
 //         },
 //         "hash": "96B1D2F2D201BA4BC383EB8224139DB1294944E5"
 //       },
@@ -296,7 +314,7 @@ func Block(heightPtr *int64) (*ctypes.ResultBlock, error) {
 //   "jsonrpc": "2.0"
 // }
 // ```
-func Commit(heightPtr *int64) (*ctypes.ResultCommit, error) {
+func Commit(ctx *rpctypes.Context, heightPtr *int64) (*ctypes.ResultCommit, error) {
 	storeHeight := blockStore.Height()
 	height, err := getHeight(storeHeight, heightPtr)
 	if err != nil {
@@ -329,6 +347,11 @@ func Commit(heightPtr *int64) (*ctypes.ResultCommit, error) {
 //
 // ```go
 // client := client.NewHTTP("tcp://0.0.0.0:26657", "/websocket")
+// err := client.Start()
+// if err != nil {
+//   // handle error
+// }
+// defer client.Stop()
 // info, err := client.BlockResults(10)
 // ```
 //
@@ -337,20 +360,20 @@ func Commit(heightPtr *int64) (*ctypes.ResultCommit, error) {
 //
 // ```json
 // {
-//  "height": 10,
+//  "height": "10",
 //  "results": [
 //   {
-//    "code": 0,
+//    "code": "0",
 //    "data": "CAFE00F00D"
 //   },
 //   {
-//    "code": 102,
+//    "code": "102",
 //    "data": ""
 //   }
 //  ]
 // }
 // ```
-func BlockResults(heightPtr *int64) (*ctypes.ResultBlockResults, error) {
+func BlockResults(ctx *rpctypes.Context, heightPtr *int64) (*ctypes.ResultBlockResults, error) {
 	storeHeight := blockStore.Height()
 	height, err := getHeight(storeHeight, heightPtr)
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	cmn "github.com/tendermint/tendermint/libs/common"
 	nm "github.com/tendermint/tendermint/node"
 )
 
@@ -21,7 +22,7 @@ func AddNodeFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("fast_sync", config.FastSync, "Fast blockchain syncing")
 
 	// abci flags
-	cmd.Flags().String("proxy_app", config.ProxyApp, "Proxy app address, or 'nilapp' or 'kvstore' for local testing.")
+	cmd.Flags().String("proxy_app", config.ProxyApp, "Proxy app address, or one of: 'kvstore', 'persistent_kvstore', 'counter', 'counter_serial' or 'noop' for local testing.")
 	cmd.Flags().String("abci", config.ABCI, "Specify abci transport (socket | grpc)")
 
 	// rpc flags
@@ -49,21 +50,25 @@ func NewRunNodeCmd(nodeProvider nm.NodeProvider) *cobra.Command {
 		Use:   "node",
 		Short: "Run the tendermint node",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Create & start node
 			n, err := nodeProvider(config, logger)
 			if err != nil {
 				return fmt.Errorf("Failed to create node: %v", err)
 			}
+
+			// Stop upon receiving SIGTERM or CTRL-C.
+			cmn.TrapSignal(logger, func() {
+				if n.IsRunning() {
+					n.Stop()
+				}
+			})
 
 			if err := n.Start(); err != nil {
 				return fmt.Errorf("Failed to start node: %v", err)
 			}
 			logger.Info("Started node", "nodeInfo", n.Switch().NodeInfo())
 
-			// Trap signal, run forever.
-			n.RunForever()
-
-			return nil
+			// Run forever.
+			select {}
 		},
 	}
 

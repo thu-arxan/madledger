@@ -33,7 +33,7 @@ func (m *Block) Reset()         { *m = Block{} }
 func (m *Block) String() string { return proto.CompactTextString(m) }
 func (*Block) ProtoMessage()    {}
 func (*Block) Descriptor() ([]byte, []int) {
-	return fileDescriptor_block_d7ec3521526abc82, []int{0}
+	return fileDescriptor_block_ccd341c96022d260, []int{0}
 }
 func (m *Block) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Block.Unmarshal(m, b)
@@ -86,7 +86,7 @@ func (m *BlockHeader) Reset()         { *m = BlockHeader{} }
 func (m *BlockHeader) String() string { return proto.CompactTextString(m) }
 func (*BlockHeader) ProtoMessage()    {}
 func (*BlockHeader) Descriptor() ([]byte, []int) {
-	return fileDescriptor_block_d7ec3521526abc82, []int{1}
+	return fileDescriptor_block_ccd341c96022d260, []int{1}
 }
 func (m *BlockHeader) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BlockHeader.Unmarshal(m, b)
@@ -153,9 +153,9 @@ func init() {
 	proto.RegisterType((*BlockHeader)(nil), "protos.BlockHeader")
 }
 
-func init() { proto.RegisterFile("block.proto", fileDescriptor_block_d7ec3521526abc82) }
+func init() { proto.RegisterFile("block.proto", fileDescriptor_block_ccd341c96022d260) }
 
-var fileDescriptor_block_d7ec3521526abc82 = []byte{
+var fileDescriptor_block_ccd341c96022d260 = []byte{
 	// 231 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x90, 0xc1, 0x4a, 0x03, 0x31,
 	0x10, 0x86, 0x49, 0xbb, 0xbb, 0xda, 0xd9, 0x9e, 0x46, 0x90, 0x41, 0x44, 0x42, 0x4f, 0x01, 0x61,

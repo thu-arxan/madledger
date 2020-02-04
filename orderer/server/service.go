@@ -2,8 +2,11 @@ package server
 
 import (
 	"errors"
+	"fmt"
+	"madledger/common"
 	"madledger/core/types"
 	pb "madledger/protos"
+	"madledger/common/crypto"
 
 	"golang.org/x/net/context"
 )
@@ -47,6 +50,23 @@ func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus,
 	tx, err := req.Tx.ConvertToTypes()
 	if err != nil {
 		return &status, err
+	}
+	// if tx is for confChange, we should check if the client is system admin
+	// get tx type according to recipient
+	txType, err := types.GetTxType(common.BytesToAddress(tx.Data.Recipient).String())
+	if err == nil && (txType == types.VALIDATOR || txType == types.NODE) {
+		pk, err := crypto.NewPublicKey(req.Tx.Data.Sig.PK)
+		if err != nil {
+			return &status, err
+		}
+		// create member to check if the client is system admin
+		member, err := types.NewMember(pk, "")
+		if err != nil {
+			return &status, err
+		}
+		if !s.cc.CM.IsSystemAdmin(member) { // not system admin, return error
+			return &status, fmt.Errorf("The client is not system admin and can't config the cluster.")
+		}
 	}
 	err = s.cc.AddTx(tx)
 	return &status, err

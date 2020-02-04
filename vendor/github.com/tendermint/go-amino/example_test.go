@@ -55,17 +55,17 @@ func Example() {
 
 	var bz []byte // the marshalled bytes.
 	var err error
-	bz, err = cdc.MarshalBinary(msg)
+	bz, err = cdc.MarshalBinaryLengthPrefixed(msg)
 	fmt.Printf("Encoded: %X (err: %v)\n", bz, err)
 
 	var msg2 Message
-	err = cdc.UnmarshalBinary(bz, &msg2)
+	err = cdc.UnmarshalBinaryLengthPrefixed(bz, &msg2)
 	fmt.Printf("Decoded: %v (err: %v)\n", msg2, err)
 	var bm2 = msg2.(*bcMessage)
 	fmt.Printf("Decoded successfully: %v\n", *bm == *bm2)
 
 	// Output:
-	// Encoded: 0C740613650A0341424310C801 (err: <nil>)
+	// Encoded: 0B740613650A034142431064 (err: <nil>)
 	// Decoded: &{ABC 100} (err: <nil>)
 	// Decoded successfully: true
 }

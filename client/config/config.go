@@ -1,7 +1,10 @@
 package config
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"madledger/common/crypto"
 
@@ -11,11 +14,23 @@ import (
 // Config is the combination of all config
 type Config struct {
 	Debug    bool          `yaml:"Debug"`
+	TLS      TLSConfig     `yaml:"TLS"`
 	Orderer  OrdererConfig `yaml:"Orderer"`
 	Peer     PeerConfig    `yaml:"Peer"`
 	KeyStore struct {
 		Keys []string `yaml:"Keys"`
 	} `yaml:"KeyStore"`
+}
+
+// TLSConfig is the config of tls
+type TLSConfig struct {
+	Enable  bool   `yaml:"Enable"`
+	CA      string `yaml:"CA"`
+	RawCert string `yaml:"Cert"`
+	Key     string `yaml:"Key"`
+	// Pool of CA
+	Pool *x509.CertPool
+	Cert *tls.Certificate
 }
 
 // LoadConfig load config from the config file
@@ -30,7 +45,36 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = cfg.GetTLSConfig()
+	if err != nil {
+		return nil, err
+	}
 	return &cfg, nil
+}
+
+// GetTLSConfig set tls config
+// TODO: maybe a better name
+func (cfg *Config) GetTLSConfig() error {
+	if cfg.TLS.Enable {
+		// load pool
+		pool := x509.NewCertPool()
+		ca, err := ioutil.ReadFile(cfg.TLS.CA)
+		if err != nil {
+			return err
+		}
+		ok := pool.AppendCertsFromPEM(ca)
+		if !ok {
+			return fmt.Errorf("Failed to load ca file: %s", cfg.TLS.CA)
+		}
+		// load cert
+		cert, err := tls.LoadX509KeyPair(cfg.TLS.RawCert, cfg.TLS.Key)
+		if err != nil {
+			return err
+		}
+		cfg.TLS.Pool = pool
+		cfg.TLS.Cert = &cert
+	}
+	return nil
 }
 
 // OrdererConfig is the config of orderer

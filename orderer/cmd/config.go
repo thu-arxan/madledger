@@ -14,6 +14,17 @@ Address: localhost
 # Should be false or true (default: true)
 Debug: true
 
+# Configure for the TLS
+TLS:
+  # Should be true of false (default: true)
+  Enable: true
+  # The path of CA cert, it should not be empty if Enable is true
+  CA: 
+  # Cert of the Blockchain, it should not be empty if Enable is true
+  Cert: 
+  # Key of the Blockchain, it should not be empty if Enable is true
+  Key: 
+
 # Configure for the BlockChain
 BlockChain:
   # Max time to create a block which unit is milliseconds (default: 1000)
@@ -28,7 +39,7 @@ BlockChain:
 # Consensus mechanism configuration
 Consensus:
   # will support solo, raft, bft. Only support solo yet and bft is constructed now.
-  Type: solo
+  Type: <<<ConsensusType>>>
   # Tendermint is the bft consensus.
   Tendermint:
     # The path of tendermint (default: orderer/.tendermint)
@@ -43,6 +54,17 @@ Consensus:
     # P2P Persistent Address, like c395828cc2baaa6f6af2bd13ce62d1e9484919c8@localhost:36656
     P2PAddress:
       -
+  # Raft is the raft consensus
+  Raft:
+    # The path of raft
+    Path: <<<RaftPath>>>
+    # ID should be int, and it should not be duplicate
+    ID:
+    # Node should be like 1@localhost:12345
+    Nodes:
+      -
+    # Should be true of false (default: false)
+    Join: false
 
 # DB only support leveldb now
 DB:

@@ -1,12 +1,14 @@
 package server
 
 import (
+	"crypto/tls"
 	"fmt"
+	"google.golang.org/grpc/credentials"
 	"madledger/orderer/channel"
 	"madledger/orderer/config"
-	"net"
-
 	pb "madledger/protos"
+	"net"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -68,7 +70,16 @@ func (s *Server) Start() error {
 	if err != nil {
 		return err
 	}
+
 	var opts []grpc.ServerOption
+	if s.config.TLS.Enable {
+		creds := credentials.NewTLS(&tls.Config{
+			ClientAuth:   tls.RequireAndVerifyClientCert,
+			Certificates: []tls.Certificate{*(s.config.TLS.Cert)},
+			ClientCAs:    s.config.TLS.Pool,
+		})
+		opts = append(opts, grpc.Creds(creds))
+	}
 	s.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterOrdererServer(s.rpcServer, s)
 	err = s.rpcServer.Serve(lis)
@@ -85,5 +96,6 @@ func (s *Server) Stop() {
 	s.rpcServer.Stop()
 	// }
 	s.cc.Stop()
+	time.Sleep(500 * time.Millisecond)
 	log.Info("Succeed to stop the orderer service")
 }

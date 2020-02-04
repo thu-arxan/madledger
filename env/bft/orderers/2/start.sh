@@ -1,1 +1,0 @@
-orderer start -c orderer.yaml

@@ -1,6 +1,7 @@
 package evm
 
 import (
+	"dca/util"
 	"encoding/hex"
 	"fmt"
 	"madledger/common"
@@ -34,10 +35,33 @@ func newAccount(seed ...byte) common.Account {
 	return common.NewDefaultAccount(addr)
 }
 
+func TestVmCall(t *testing.T) {
+	db := simulate.NewStateDB()
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
+
+	// Create accounts
+	account1 := newAccount(1)
+	code := `6080604052600a600060005090905534801561001b5760006000fd5b50610021565b61026d806100306000396000f3fe60806040523480156100115760006000fd5b506004361061005c5760003560e01c80631003e2d21461006257806327ee58a6146100a5578063370158ea146100e857806360fe47b1146101395780636d4ce63c146101805761005c565b60006000fd5b61008f600480360360208110156100795760006000fd5b810190808035906020019092919050505061019e565b6040518082815260200191505060405180910390f35b6100d2600480360360208110156100bc5760006000fd5b81019080803590602001909291905050506101c6565b6040518082815260200191505060405180910390f35b6100f06101ee565b604051808373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018281526020019250505060405180910390f35b610166600480360360208110156101505760006000fd5b8101908080359060200190929190505050610209565b604051808215151515815260200191505060405180910390f35b610188610225565b6040518082815260200191505060405180910390f35b6000816000600082828250540192505081909090555060006000505490506101c1565b919050565b6000816000600082828250540392505081909090555060006000505490506101e9565b919050565b600060003360006000505481915091509150610205565b9091565b600081600060005081909090555060019050610220565b919050565b60006000600050549050610234565b9056fea26469706673582212206d1f7e72f2d26816fe48ff60de6fa42d7b6fb40fc1603494b8c63221cd3c2c2364736f6c63430006000033`
+	byteCode, _ := util.HexToBytes(code)
+	output, address, err := vm.Create(account1, byteCode, []byte{}, 0)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%x\n", output)
+	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+	contract, _ := db.GetAccount(address)
+	input, _ := util.HexToBytes("6d4ce63c")
+	output, err = vm.Call(account1, contract, output, input, 0)
+	require.NoError(t, err)
+	fmt.Printf("%x\n", output)
+}
+
 // Runs a basic loop
 func TestVM(t *testing.T) {
 	db := simulate.NewStateDB()
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 
 	// Create accounts
 	account1 := newAccount(1)
@@ -60,7 +84,8 @@ func TestVM(t *testing.T) {
 
 func TestSHL(t *testing.T) {
 	db := simulate.NewStateDB()
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 	account1 := newAccount(1)
 	account2 := newAccount(1, 0, 1)
 
@@ -207,7 +232,8 @@ func TestSHL(t *testing.T) {
 
 func TestSHR(t *testing.T) {
 	db := simulate.NewStateDB()
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 	account1 := newAccount(1)
 	account2 := newAccount(1, 0, 1)
 
@@ -358,7 +384,8 @@ func TestSHR(t *testing.T) {
 
 func TestSAR(t *testing.T) {
 	db := simulate.NewStateDB()
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 	account1 := newAccount(1)
 	account2 := newAccount(1, 0, 1)
 
@@ -528,7 +555,8 @@ func TestSAR(t *testing.T) {
 //Test attempt to jump to bad destination (position 16)
 func TestJumpErr(t *testing.T) {
 	db := simulate.NewStateDB()
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 
 	// Create accounts
 	account1 := newAccount(1)
@@ -564,7 +592,8 @@ func TestSubcurrency(t *testing.T) {
 	fmt.Printf("%s\n", account1.GetAddress().String())
 	fmt.Printf("%s\n", account2.GetAddress().String())
 
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 
 	bytecode := MustSplice(PUSH3, 0x0F, 0x42, 0x40, CALLER, SSTORE, PUSH29, 0x01, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -598,7 +627,8 @@ func TestRevert(t *testing.T) {
 	key, value := []byte{0x00}, []byte{0x00}
 	db.SetAccount(account1)
 	db.SetStorage(account1.GetAddress(), common.LeftPadWord256(key), common.LeftPadWord256(value))
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 
 	bytecode := MustSplice(PUSH13, 0x72, 0x65, 0x76, 0x65, 0x72, 0x74, 0x65, 0x64, 0x20, 0x64, 0x61, 0x74, 0x61,
 		PUSH1, 0x00, SSTORE, PUSH32, 0x72, 0x65, 0x76, 0x65, 0x72, 0x74, 0x20, 0x6D, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
@@ -718,7 +748,8 @@ func TestRevert(t *testing.T) {
 
 func TestMemoryBounds(t *testing.T) {
 	db := simulate.NewStateDB()
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 	vm.memoryProvider = func() Memory {
 		return NewDynamicMemory(1024, 2048)
 	}
@@ -776,7 +807,8 @@ func TestMsgSender(t *testing.T) {
 	db.SetAccount(account1)
 	db.SetAccount(account2)
 
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 
 	// var gas uint64 = 100000
 
@@ -823,7 +855,8 @@ func TestMsgSender(t *testing.T) {
 
 func TestInvalid(t *testing.T) {
 	db := simulate.NewStateDB()
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 
 	// Create accounts
 	account1 := newAccount(1)
@@ -853,7 +886,8 @@ func TestReturnDataSize(t *testing.T) {
 		0x00, 0x00, 0x00, PUSH1, 0x00, MSTORE, PUSH1, 0x0E, PUSH1, 0x00, RETURN)
 	account2, _ := makeAccountWithCode(db, accountName, callcode)
 	db.SetAccount(account2)
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 
 	gas1, gas2 := byte(0x1), byte(0x1)
 	value := byte(0x69)
@@ -889,7 +923,8 @@ func TestReturnDataCopy(t *testing.T) {
 	account1 := newAccount(1)
 	account2, _ := makeAccountWithCode(db, accountName, callcode)
 	db.SetAccount(account2)
-	vm := NewEVM(newContext(), common.ZeroAddress, db)
+	wb := db.NewWriteBatch()
+	vm := NewEVM(newContext(), common.ZeroAddress, db, wb)
 
 	gas1, gas2 := byte(0x1), byte(0x1)
 	value := byte(0x69)

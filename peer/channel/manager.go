@@ -1,13 +1,14 @@
 package channel
 
 import (
+	"errors"
 	"madledger/blockchain"
 	"madledger/common"
 	"madledger/core/types"
 	"madledger/executor/evm"
 	"madledger/peer/db"
 	"madledger/peer/orderer"
-	"time"
+	"sync"
 
 	"github.com/sirupsen/logrus"
 )
@@ -18,6 +19,8 @@ var (
 
 // Manager is the manager of channel
 type Manager struct {
+	signalCh chan bool
+	stopCh   chan bool
 	identity *types.Member
 	// id is the id of channel
 	id string
@@ -25,22 +28,24 @@ type Manager struct {
 	db db.DB
 	// chain manager
 	cm          *blockchain.Manager
-	client      *orderer.Client
+	clients     []*orderer.Client
 	coordinator *Coordinator
 }
 
 // NewManager is the constructor of Manager
-func NewManager(id, dir string, identity *types.Member, db db.DB, client *orderer.Client, coordinator *Coordinator) (*Manager, error) {
+func NewManager(id, dir string, identity *types.Member, db db.DB, clients []*orderer.Client, coordinator *Coordinator) (*Manager, error) {
 	cm, err := blockchain.NewManager(id, dir)
 	if err != nil {
 		return nil, err
 	}
 	return &Manager{
+		signalCh:    make(chan bool, 1),
+		stopCh:      make(chan bool, 1),
 		identity:    identity,
 		id:          id,
 		db:          db,
 		cm:          cm,
-		client:      client,
+		clients:     clients,
 		coordinator: coordinator,
 	}, nil
 }
@@ -53,6 +58,9 @@ func (m *Manager) Start() {
 		// fmt.Println("Succeed to fetch block", m.id, ":", block.Header.Number)
 		if err == nil {
 			m.AddBlock(block)
+		} else if err.Error() == "Stop" {
+			m.stopCh <- true
+			return
 		}
 	}
 }
@@ -60,6 +68,8 @@ func (m *Manager) Start() {
 // Stop will stop the manager
 // TODO: find a good way to stop
 func (m *Manager) Stop() {
+	m.signalCh <- true
+	<-m.stopCh
 }
 
 // AddBlock add a block
@@ -75,16 +85,24 @@ func (m *Manager) AddBlock(block *types.Block) error {
 		log.Infof("Add global block %d", block.Header.Number)
 	case types.CONFIGCHANNELID:
 		m.AddConfigBlock(block)
+		log.Infof("Add config block %d", block.Header.Number)
 	default:
-		for {
-			if m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
-				log.Infof("Run block %s:%d", m.id, block.Header.Number)
-				m.RunBlock(block.Header.Number)
-				return nil
-			}
-			time.Sleep(10 * time.Millisecond)
+		if !m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
+			m.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
 		}
+		log.Infof("Run block %s: %d", m.id, block.Header.Number)
+		wb, err := m.RunBlock(block)
+		if err != nil {
+			return err
+		}
+		batch := wb.GetBatch()
+		err = m.db.SyncWriteBatch(batch)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
+
 	return nil
 }
 
@@ -92,23 +110,21 @@ func (m *Manager) AddBlock(block *types.Block) error {
 // It will return after the block is runned.
 // In the future, this will contains chains which rely on something or nothing
 // TODO: transfer is not implementation yet
-func (m *Manager) RunBlock(num uint64) error {
-	block, err := m.cm.GetBlock(num)
-	if err != nil {
-		return err
-	}
+func (m *Manager) RunBlock(block *types.Block) (db.WriteBatch, error) {
 	context := evm.NewContext(block)
+	wb := m.db.NewWriteBatch()
 	for i, tx := range block.Transactions {
 		senderAddress, err := tx.GetSender()
 		status := &db.TxStatus{
 			Err:         "",
-			BlockNumber: num,
+			BlockNumber: block.Header.Number,
 			BlockIndex:  i,
 			Output:      nil,
 		}
 		if err != nil {
 			status.Err = err.Error()
-			m.db.SetTxStatus(tx, status)
+			//m.db.SetTxStatus(tx, status)
+			wb.SetTxStatus(tx, status)
 			continue
 		}
 		receiverAddress := tx.GetReceiver()
@@ -116,24 +132,39 @@ func (m *Manager) RunBlock(num uint64) error {
 		sender, err := m.db.GetAccount(senderAddress)
 		if err != nil {
 			status.Err = err.Error()
-			m.db.SetTxStatus(tx, status)
+			//m.db.SetTxStatus(tx, status)
+			wb.SetTxStatus(tx, status)
 			continue
 		}
 
-		evm := evm.NewEVM(*context, senderAddress, m.db)
+		if receiverAddress.String() == types.CfgTendermintAddress.String() {
+			//m.db.SetTxStatus(tx, status)
+			wb.SetTxStatus(tx, status)
+			continue
+		}
+
+		if receiverAddress.String() == types.CfgRaftAddress.String() {
+			//m.db.SetTxStatus(tx, status)
+			wb.SetTxStatus(tx, status)
+			continue
+		}
+
+		evm := evm.NewEVM(*context, senderAddress, m.db, wb)
 		if receiverAddress.String() != common.ZeroAddress.String() {
 			// log.Info("This is a normal call")
 			// if the length of payload is not zero, this is a contract call
 			if len(tx.Data.Payload) != 0 && !m.db.AccountExist(receiverAddress) {
 				status.Err = "Invalid Address"
-				m.db.SetTxStatus(tx, status)
+				//m.db.SetTxStatus(tx, status)
+				wb.SetTxStatus(tx, status)
 				continue
 			}
 
 			receiver, err := m.db.GetAccount(receiverAddress)
 			if err != nil {
 				status.Err = err.Error()
-				m.db.SetTxStatus(tx, status)
+				//m.db.SetTxStatus(tx, status)
+				wb.SetTxStatus(tx, status)
 				continue
 			}
 			output, err := evm.Call(sender, receiver, receiver.GetCode(), tx.Data.Payload, 0)
@@ -141,7 +172,8 @@ func (m *Manager) RunBlock(num uint64) error {
 			if err != nil {
 				status.Err = err.Error()
 			}
-			m.db.SetTxStatus(tx, status)
+			//m.db.SetTxStatus(tx, status)
+			wb.SetTxStatus(tx, status)
 		} else {
 			log.Info("This is a create call")
 			output, addr, err := evm.Create(sender, tx.Data.Payload, []byte{}, 0)
@@ -150,13 +182,52 @@ func (m *Manager) RunBlock(num uint64) error {
 			if err != nil {
 				status.Err = err.Error()
 			}
-			m.db.SetTxStatus(tx, status)
+			//m.db.SetTxStatus(tx, status)
+			wb.SetTxStatus(tx, status)
 		}
 	}
-	// return errors.New("Not implementation yet")
-	return nil
+	return wb, nil
 }
 
+// todo: here we should support evil orderer
 func (m *Manager) fetchBlock() (*types.Block, error) {
-	return m.client.FetchBlock(m.id, m.cm.GetExcept(), true)
+	var lock sync.Mutex
+	var ch = make(chan bool, 1)
+	var errs = make([]error, len(m.clients))
+	var blocks = make([]*types.Block, len(m.clients))
+	id := m.id
+	except := m.cm.GetExcept()
+	for i := range m.clients {
+		go func(i int) {
+			block, err := m.clients[i].FetchBlock(id, except, true)
+			if err != nil {
+				errs[i] = err
+				lock.Lock()
+				defer lock.Unlock()
+				for i := range errs {
+					if errs[i] == nil {
+						return
+					}
+				}
+				ch <- false
+			} else {
+				blocks[i] = block
+				ch <- true
+			}
+		}(i)
+	}
+
+	select {
+	case ok := <-ch:
+		if ok {
+			for i := range blocks {
+				if blocks[i] != nil {
+					return blocks[i], nil
+				}
+			}
+		}
+		return nil, errs[0]
+	case <-m.signalCh:
+		return nil, errors.New("Stop")
+	}
 }

@@ -1,0 +1,37 @@
+#############################################################################
+#   This is a configuration file for the MadLedger client.
+#############################################################################
+
+# Should be false or true (default: true)
+Debug: true
+
+# Configure for the TLS
+TLS:
+  # Should be true of false (default: true)
+  Enable: false
+  # The path of CA cert, it should not be empty if Enable is true
+  CA: cert/ca.cer
+  # Cert of the Blockchain, it should not be empty if Enable is true
+  Cert: cert/client.pem
+  # Key of the Blockchain, it should not be empty if Enable is true
+  Key: cert/client.key
+
+# Address of orderers
+Orderer:
+  Address:
+    - localhost:56789
+    - localhost:45678
+    - localhost:12345
+  
+# Address of peers
+Peer:
+  Address:
+    - localhost:20500
+    - localhost:20501
+    - localhost:20502
+    - localhost:20503
+
+# KeyStore manage some private keys
+KeyStore:
+  Keys:
+    - .keystore/08efec105d5620e1d854ad6882ae31aad2cd06f025836a21d4418475d4436a23

@@ -6,7 +6,9 @@ import (
 	"madledger/common"
 	"madledger/common/util"
 	"madledger/core/types"
-	"time"
+	"sync"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -22,7 +24,13 @@ type LevelDB struct {
 	// the dir of data
 	dir     string
 	connect *leveldb.DB
+	lock    sync.Mutex
+	hub     *Hub
 }
+
+var (
+	log = logrus.WithFields(logrus.Fields{"app": "peer", "package": "db"})
+)
 
 // NewLevelDB is the constructor of LevelDB
 func NewLevelDB(dir string) (DB, error) {
@@ -33,6 +41,7 @@ func NewLevelDB(dir string) (DB, error) {
 		return nil, err
 	}
 	db.connect = connect
+	db.hub = NewHub()
 	return db, nil
 }
 
@@ -120,22 +129,24 @@ func (db *LevelDB) GetTxStatus(channelID, txID string) (*TxStatus, error) {
 
 // GetTxStatusAsync is the implementation of interface
 func (db *LevelDB) GetTxStatusAsync(channelID, txID string) (*TxStatus, error) {
+	db.lock.Lock()
 	var key = util.BytesCombine([]byte(channelID), []byte(txID))
-	for {
-		if ok, _ := db.connect.Has(key, nil); ok {
-			value, err := db.connect.Get(key, nil)
-			if err != nil {
-				return nil, err
-			}
-			var status TxStatus
-			err = json.Unmarshal(value, &status)
-			if err != nil {
-				return nil, err
-			}
-			return &status, nil
+	// for {
+	if ok, _ := db.connect.Has(key, nil); ok {
+		db.lock.Unlock()
+		value, err := db.connect.Get(key, nil)
+		if err != nil {
+			return nil, err
 		}
-		time.Sleep(10 * time.Millisecond)
+		var status TxStatus
+		err = json.Unmarshal(value, &status)
+		if err != nil {
+			return nil, err
+		}
+		return &status, nil
 	}
+	status := db.hub.Watch(txID, func() { db.lock.Unlock() })
+	return status, nil
 }
 
 // SetTxStatus is the implementation of interface
@@ -154,6 +165,7 @@ func (db *LevelDB) SetTxStatus(tx *types.Tx, status *TxStatus) error {
 		return err
 	}
 	db.addHistory(sender.Bytes(), tx.Data.ChannelID, tx.ID)
+	db.hub.Done(tx.ID, status)
 	return nil
 }
 
@@ -209,6 +221,13 @@ func (db *LevelDB) ListTxHistory(address []byte) map[string][]string {
 		value, _ := db.connect.Get(address, nil)
 		json.Unmarshal(value, &txs)
 	}
+
+	/*for channel, tx := range txs {
+		for _, id := range tx {
+			log.Infof("db/ListTxHistory: Channel %s, tx.ID %s", channel, id)
+		}
+	}*/
+
 	return txs
 }
 
@@ -218,6 +237,7 @@ func (db *LevelDB) addHistory(address []byte, channelID, txID string) {
 		txs[channelID] = []string{txID}
 		value, _ := json.Marshal(txs)
 		db.connect.Put(address, value, nil)
+		log.Infoln("account ", address, " Channel ", channelID, "add ", txID, "to db")
 	} else {
 		value, err := db.connect.Get(address, nil)
 		if err == nil {
@@ -229,6 +249,7 @@ func (db *LevelDB) addHistory(address []byte, channelID, txID string) {
 			}
 			value, _ := json.Marshal(txs)
 			db.connect.Put(address, value, nil)
+			log.Infoln("account ", address, " Channel ", channelID, "add ", txID, "to db")
 		}
 	}
 }
@@ -237,4 +258,105 @@ func (db *LevelDB) setChannels(channels []string) {
 	var key = []byte("channels")
 	value, _ := json.Marshal(channels)
 	db.connect.Put(key, value, nil)
+}
+
+// NewWriteBatch implement the interface, WriteBatch is a wrapper of leveldb.Batch
+func (db *LevelDB) NewWriteBatch() WriteBatch {
+	batch := new(leveldb.Batch)
+	return &WriteBatchWrapper{
+		batch: batch,
+		db:    db,
+	}
+}
+
+// SyncWriteBatch sync write batch into db
+func (db *LevelDB) SyncWriteBatch(batch *leveldb.Batch) error {
+	err := db.connect.Write(batch, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// WriteBatchWrapper is a wrapper of level.Batch
+type WriteBatchWrapper struct {
+	batch *leveldb.Batch
+	db    *LevelDB
+}
+
+// SetAccount is the implementation of interface
+func (wb *WriteBatchWrapper) SetAccount(account common.Account) error {
+	var key = util.BytesCombine([]byte("account:"), account.GetAddress().Bytes())
+	value, err := account.Bytes()
+	if err != nil {
+		return err
+	}
+	wb.batch.Put(key, value)
+	return nil
+
+}
+
+// RemoveAccount is the implementation of interface
+func (wb *WriteBatchWrapper) RemoveAccount(address common.Address) error {
+	var key = util.BytesCombine([]byte("account:"), address.Bytes())
+	wb.batch.Delete(key)
+	return nil
+}
+
+// SetStorage is the implementation of interface
+func (wb *WriteBatchWrapper) SetStorage(address common.Address, key common.Word256, value common.Word256) error {
+	storageKey := util.BytesCombine(address.Bytes(), key.Bytes())
+	wb.batch.Put(storageKey, value.Bytes())
+	return nil
+}
+
+// SetTxStatus is the implementation of interface
+func (wb *WriteBatchWrapper) SetTxStatus(tx *types.Tx, status *TxStatus) error {
+	value, err := json.Marshal(status)
+	if err != nil {
+		return err
+	}
+	var key = util.BytesCombine([]byte(tx.Data.ChannelID), []byte(tx.ID))
+	wb.batch.Put(key, value)
+	sender, err := tx.GetSender()
+	if err != nil {
+		return err
+	}
+	//db.addHistory(sender.Bytes(), tx.Data.ChannelID, tx.ID)
+	wb.addHistory(sender.Bytes(), tx.Data.ChannelID, tx.ID)
+	wb.db.hub.Done(tx.ID, status)
+	return nil
+}
+
+func (wb *WriteBatchWrapper) addHistory(address []byte, channelID, txID string) {
+	var txs = make(map[string][]string)
+	if ok, _ := wb.db.connect.Has(address, nil); !ok {
+		txs[channelID] = []string{txID}
+		value, _ := json.Marshal(txs)
+		//db.connect.Put(address, value, nil)
+		wb.batch.Put(address, value)
+		log.Infoln("account ", address, " Channel ", channelID, "add ", txID, "to db")
+	} else {
+		value, err := wb.db.connect.Get(address, nil)
+		if err == nil {
+			json.Unmarshal(value, &txs)
+			if !util.Contain(txs, channelID) {
+				txs[channelID] = []string{txID}
+			} else {
+				txs[channelID] = append(txs[channelID], txID)
+			}
+			value, _ := json.Marshal(txs)
+			//db.connect.Put(address, value, nil)
+			wb.batch.Put(address, value)
+			log.Infoln("account ", address, " Channel ", channelID, "add ", txID, "to db")
+		}
+	}
+}
+
+// GetBatch return the level.Batch
+func (wb *WriteBatchWrapper) GetBatch() *leveldb.Batch {
+	if wb == nil {
+		return nil
+	}
+	return wb.batch
 }

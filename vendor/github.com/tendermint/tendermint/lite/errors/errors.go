@@ -25,12 +25,6 @@ func (e errUnexpectedValidators) Error() string {
 		e.got, e.want)
 }
 
-type errTooMuchChange struct{}
-
-func (e errTooMuchChange) Error() string {
-	return "Insufficient signatures to validate due to valset changes"
-}
-
 type errUnknownValidators struct {
 	chainID string
 	height  int64
@@ -39,6 +33,12 @@ type errUnknownValidators struct {
 func (e errUnknownValidators) Error() string {
 	return fmt.Sprintf("Validators are unknown or missing for chain %s and height %d",
 		e.chainID, e.height)
+}
+
+type errEmptyTree struct{}
+
+func (e errEmptyTree) Error() string {
+	return "Tree is empty"
 }
 
 //----------------------------------------
@@ -80,22 +80,6 @@ func IsErrUnexpectedValidators(err error) bool {
 }
 
 //-----------------
-// ErrTooMuchChange
-
-// ErrTooMuchChange indicates that the underlying validator set was changed by >1/3.
-func ErrTooMuchChange() error {
-	return cmn.ErrorWrap(errTooMuchChange{}, "")
-}
-
-func IsErrTooMuchChange(err error) bool {
-	if err_, ok := err.(cmn.Error); ok {
-		_, ok := err_.Data().(errTooMuchChange)
-		return ok
-	}
-	return false
-}
-
-//-----------------
 // ErrUnknownValidators
 
 // ErrUnknownValidators indicates that some validator set was missing or unknown.
@@ -106,6 +90,21 @@ func ErrUnknownValidators(chainID string, height int64) error {
 func IsErrUnknownValidators(err error) bool {
 	if err_, ok := err.(cmn.Error); ok {
 		_, ok := err_.Data().(errUnknownValidators)
+		return ok
+	}
+	return false
+}
+
+//-----------------
+// ErrEmptyTree
+
+func ErrEmptyTree() error {
+	return cmn.ErrorWrap(errEmptyTree{}, "")
+}
+
+func IsErrEmptyTree(err error) bool {
+	if err_, ok := err.(cmn.Error); ok {
+		_, ok := err_.Data().(errEmptyTree)
 		return ok
 	}
 	return false

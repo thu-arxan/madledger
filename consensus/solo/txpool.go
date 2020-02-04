@@ -5,12 +5,14 @@ import (
 	"madledger/common/crypto"
 	"madledger/common/util"
 	"madledger/core/types"
+	"sync"
 )
 
 // txPool store all txs which is not packed
 type txPool struct {
 	hashes map[string]bool
 	txs    [][]byte
+	lock   sync.Mutex
 }
 
 // newTxPool is the constructor of txPool
@@ -22,6 +24,8 @@ func newTxPool() *txPool {
 
 // addTx add a transaction into pool
 func (pool *txPool) addTx(tx []byte) error {
+	pool.lock.Lock()
+	defer pool.lock.Unlock()
 	// check if the tx is duplicated
 	var hash = util.Hex(crypto.Hash(tx))
 	if util.Contain(pool.hashes, hash) {
@@ -36,12 +40,16 @@ func (pool *txPool) addTx(tx []byte) error {
 
 // getPoolSize return the tx size in pool
 func (pool *txPool) getPoolSize() int {
+	pool.lock.Lock()
+	defer pool.lock.Unlock()
 	return len(pool.txs)
 }
 
 // however, we can not gc right away
 // because the db is not updated yet
 func (pool *txPool) fetchTxs(maxSize int) [][]byte {
+	pool.lock.Lock()
+	defer pool.lock.Unlock()
 	var size = len(pool.txs)
 	if size > maxSize {
 		size = maxSize
@@ -54,5 +62,7 @@ func (pool *txPool) fetchTxs(maxSize int) [][]byte {
 
 // gc is not implementation yet
 func (pool *txPool) gc(block *types.Block) error {
+	pool.lock.Lock()
+	defer pool.lock.Unlock()
 	return nil
 }

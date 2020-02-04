@@ -18,6 +18,19 @@ type Tx struct {
 	Time int64
 }
 
+// TxType is the type of consensus
+type TxType int64
+
+// Here define some kind of tx type
+const (
+	_ TxType = iota
+	CREATECHANNEL
+	// VALIDATOR is the tendermint cfgChange tx
+	VALIDATOR
+	// NODE is the raft cfgChange tx
+	NODE
+)
+
 // TxData is the data of Tx
 type TxData struct {
 	ChannelID    string
@@ -115,9 +128,8 @@ func (tx *Tx) Verify() bool {
 
 // GetSender return the sender of the tx
 func (tx *Tx) GetSender() (common.Address, error) {
-	// return tx.Data.Sig.PK.Address()
 	if tx.Data.Sig == nil {
-		return common.ZeroAddress, nil
+		return common.ZeroAddress, errors.New("sig is empty")
 	}
 	pk, err := crypto.NewPublicKey(tx.Data.Sig.PK)
 	if err != nil {

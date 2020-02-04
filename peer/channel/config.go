@@ -10,6 +10,7 @@ import (
 
 // AddConfigBlock add a config block
 func (m *Manager) AddConfigBlock(block *types.Block) error {
+	nums := make(map[string]uint64)
 	for i, tx := range block.Transactions {
 		status := &db.TxStatus{
 			Err:         "",
@@ -35,11 +36,13 @@ func (m *Manager) AddConfigBlock(block *types.Block) error {
 					m.db.DeleteChannel(channelID)
 				}
 			}
+			nums[payload.ChannelID] = 0
 		} else {
 			status.Err = err.Error()
 		}
 		m.db.SetTxStatus(tx, status)
 	}
+	m.coordinator.Unlocks(nums)
 	return nil
 }
 

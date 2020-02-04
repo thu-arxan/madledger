@@ -1,8 +1,10 @@
 package server
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
+	"google.golang.org/grpc/credentials"
 	"madledger/peer/config"
 	"madledger/peer/orderer"
 	"net"
@@ -17,12 +19,12 @@ var (
 	log = logrus.WithFields(logrus.Fields{"app": "peer", "package": "server"})
 )
 
-// Server provide the serve of orderer
+// Server provide the serve of peer
 type Server struct {
 	config         *config.ServerConfig
 	rpcServer      *grpc.Server
 	ChannelManager *ChannelManager
-	ordererClient  *orderer.Client
+	ordererClients []*orderer.Client
 }
 
 // NewServer is the constructor of server
@@ -40,11 +42,7 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 	// load orderer config
-	ordererCfg, err := cfg.GetOrdererConfig()
-	if err != nil {
-		return nil, err
-	}
-	ordererClient, err := orderer.NewClient(ordererCfg.Address[0])
+	ordererClients, err := getOrdererClients(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -58,14 +56,35 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	channelManager, err := NewChannelManager(dbCfg.LevelDB.Dir, identity, chainCfg, ordererClient)
+	channelManager, err := NewChannelManager(dbCfg.LevelDB.Dir, identity, chainCfg, ordererClients)
 	if err != nil {
 		return nil, err
 	}
 	server.ChannelManager = channelManager
-	server.ordererClient = ordererClient
+	server.ordererClients = ordererClients
+	if err != nil {
+		return nil, err
+	}
 
 	return server, nil
+}
+
+// 获取ordererClient数组
+func getOrdererClients(cfg *config.Config) ([]*orderer.Client, error) {
+	// load orderer config
+	ordererCfg, err := cfg.GetOrdererConfig()
+	if err != nil {
+		return nil, err
+	}
+	var clients = make([]*orderer.Client, len(ordererCfg.Address))
+	for i := range ordererCfg.Address {
+		clients[i], err = orderer.NewClient(ordererCfg.Address[i], cfg)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return clients, nil
 }
 
 // Start starts the server
@@ -81,6 +100,14 @@ func (s *Server) Start() error {
 		return err
 	}
 	var opts []grpc.ServerOption
+	if s.config.TLS.Enable {
+		creds := credentials.NewTLS(&tls.Config{
+			ClientAuth:   tls.RequireAndVerifyClientCert,
+			Certificates: []tls.Certificate{*(s.config.TLS.Cert)},
+			ClientCAs:    s.config.TLS.Pool,
+		})
+		opts = append(opts, grpc.Creds(creds))
+	}
 	s.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterPeerServer(s.rpcServer, s)
 	err = s.rpcServer.Serve(lis)
@@ -95,7 +122,7 @@ func (s *Server) Start() error {
 // TODO: The channel manager failed to stop
 func (s *Server) Stop() error {
 	s.rpcServer.Stop()
-	// s.ChannelManager.stop()
-	log.Info("Succeed to stop the orderer service")
+	s.ChannelManager.stop()
+	log.Info("Succeed to stop the peer service")
 	return nil
 }

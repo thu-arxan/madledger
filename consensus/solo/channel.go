@@ -44,6 +44,8 @@ func (c *channel) start() error {
 	}
 	c.init = true
 	ticker := time.NewTicker(time.Duration(c.config.Timeout) * time.Millisecond)
+	// panic(c.config.Timeout)
+	log.Infof("Ticker duration is %d and block size is %d", c.config.Timeout, c.config.MaxSize)
 	defer ticker.Stop()
 	log.Infof("Channel %s start", c.id)
 	for {
@@ -64,9 +66,7 @@ func (c *channel) start() error {
 
 // AddTx will try to add a tx
 func (c *channel) AddTx(tx []byte) error {
-	c.lock.Lock()
 	err := c.addTx(tx)
-	c.lock.Unlock()
 	if err != nil {
 		return err
 	}

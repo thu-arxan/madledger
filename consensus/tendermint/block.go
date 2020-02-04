@@ -2,17 +2,17 @@ package tendermint
 
 // Block is the implementaion of tendermint Block
 type Block struct {
-	channelID string
-	num       uint64
-	txs       [][]byte
+	ChannelID string
+	Num       uint64
+	Txs       [][]byte
 }
 
 // GetNumber is the implementation of block
 func (block *Block) GetNumber() uint64 {
-	return block.num
+	return block.Num
 }
 
 // GetTxs is the implementation of block
 func (block *Block) GetTxs() [][]byte {
-	return block.txs
+	return block.Txs
 }

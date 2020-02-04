@@ -6,6 +6,7 @@ import (
 	"madledger/common"
 	"madledger/common/crypto/sha3"
 	"math/big"
+	"madledger/peer/db"
 )
 
 const (
@@ -22,10 +23,11 @@ type EVM struct {
 	returnData     []byte
 	cache          *Cache
 	memoryProvider func() Memory
+	wb             db.WriteBatch
 }
 
 // NewEVM is the constructor of EVM
-func NewEVM(context Context, origin common.Address, db StateDB) *EVM {
+func NewEVM(context Context, origin common.Address, db StateDB, wb db.WriteBatch) *EVM {
 	return &EVM{
 		context:        context,
 		db:             db,
@@ -33,6 +35,7 @@ func NewEVM(context Context, origin common.Address, db StateDB) *EVM {
 		stackDepth:     0,
 		cache:          NewCache(db),
 		memoryProvider: DefaultDynamicMemoryProvider,
+		wb:             wb,
 	}
 }
 
@@ -50,11 +53,12 @@ func (evm *EVM) Create(caller common.Account, code, input []byte, value uint64) 
 		return nil, common.ZeroAddress, err
 	}
 	contract.SetCode(output)
-	err = evm.cache.SetAccount(contract)
+	//err = evm.cache.SetAccount(contract)
+	err = evm.wb.SetAccount(contract)
 	if err != nil {
 		return nil, common.ZeroAddress, err
 	}
-	evm.cache.Sync()
+	evm.cache.Sync(evm.wb)
 
 	return output, contract.GetAddress(), nil
 }
@@ -74,7 +78,7 @@ func (evm *EVM) Call(caller, callee common.Account, code, input []byte, value ui
 		if err != nil {
 			return nil, err
 		}
-		evm.cache.Sync()
+		evm.cache.Sync(evm.wb)
 		return output, nil
 	}
 	return nil, nil

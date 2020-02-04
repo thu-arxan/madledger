@@ -2,12 +2,17 @@ package lib
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"madledger/common/crypto"
 	"madledger/core/types"
+	"sort"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc/credentials"
 
 	"google.golang.org/grpc"
 
@@ -16,11 +21,15 @@ import (
 	pb "madledger/protos"
 )
 
+var (
+	log = logrus.WithFields(logrus.Fields{"app": "client", "package": "lib"})
+)
+
 // Client is the Client to communicate with orderer
 type Client struct {
-	ordererClient pb.OrdererClient
-	peerClients   []pb.PeerClient
-	privKey       crypto.PrivateKey
+	ordererClients []pb.OrdererClient
+	peerClients    []pb.PeerClient
+	privKey        crypto.PrivateKey
 }
 
 // NewClient is the constructor of pb.OrdereClient
@@ -29,12 +38,18 @@ func NewClient(cfgFile string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return NewClientFromConfig(cfg)
+}
+
+// NewClientFromConfig will construct client from cfg
+func NewClientFromConfig(cfg *config.Config) (*Client, error) {
 	keyStore, err := cfg.GetKeyStoreConfig()
 	if err != nil {
 		return nil, err
 	}
 	// get clients
-	ordererClient, err := getOrdererClient(cfg)
+	ordererClients, err := getOrdererClients(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -44,38 +59,69 @@ func NewClient(cfgFile string) (*Client, error) {
 	}
 
 	return &Client{
-		ordererClient: ordererClient,
-		peerClients:   peerClients,
-		privKey:       keyStore.Keys[0],
+		ordererClients: ordererClients,
+		peerClients:    peerClients,
+		privKey:        keyStore.Keys[0],
 	}, nil
 }
 
-func getOrdererClient(cfg *config.Config) (pb.OrdererClient, error) {
-	conn, err := grpc.Dial(cfg.Orderer.Address[0], grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
-	if err != nil {
-		return nil, err
-	}
-	ordererClient := pb.NewOrdererClient(conn)
-	return ordererClient, nil
-}
-
-func getPeerClients(cfg *config.Config) ([]pb.PeerClient, error) {
-	var clients []pb.PeerClient
-	for _, address := range cfg.Peer.Address {
-		conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithTimeout(2000*time.Millisecond))
+// 获取ordererClient数组
+func getOrdererClients(cfg *config.Config) ([]pb.OrdererClient, error) {
+	var clients []pb.OrdererClient
+	for _, address := range cfg.Orderer.Address {
+		var opts []grpc.DialOption
+		var conn *grpc.ClientConn
+		var err error
+		if cfg.TLS.Enable {
+			creds := credentials.NewTLS(&tls.Config{
+				//ServerName:   "orderer.madledger.com",
+				Certificates: []tls.Certificate{*(cfg.TLS.Cert)},
+				RootCAs:      cfg.TLS.Pool,
+			})
+			opts = append(opts, grpc.WithTransportCredentials(creds))
+		} else {
+			opts = append(opts, grpc.WithInsecure())
+		}
+		opts = append(opts, grpc.WithTimeout(2000*time.Millisecond))
+		conn, err = grpc.Dial(address, opts...)
 		if err != nil {
 			return nil, err
 		}
-		peerClient := pb.NewPeerClient(conn)
-		clients = append(clients, peerClient)
+		ordererClient := pb.NewOrdererClient(conn)
+		clients = append(clients, ordererClient)
 	}
 
 	return clients, nil
 }
 
-// GetPrivKey return the private key
-func (c *Client) GetPrivKey() crypto.PrivateKey {
-	return c.privKey
+func getPeerClients(cfg *config.Config) ([]pb.PeerClient, error) {
+	var clients []pb.PeerClient
+	for _, address := range cfg.Peer.Address {
+		var opts []grpc.DialOption
+		var conn *grpc.ClientConn
+		var err error
+		if cfg.TLS.Enable {
+			creds := credentials.NewTLS(&tls.Config{
+				//ServerName:   "peer.madledger.com",
+				Certificates: []tls.Certificate{*(cfg.TLS.Cert)},
+				RootCAs:      cfg.TLS.Pool,
+			})
+			opts = append(opts, grpc.WithTransportCredentials(creds))
+		} else {
+			opts = append(opts, grpc.WithInsecure())
+		}
+		opts = append(opts, grpc.WithTimeout(2000*time.Millisecond))
+
+		conn, err = grpc.Dial(address, opts...)
+		if err != nil {
+			return nil, err
+		}
+
+		peerClient := pb.NewPeerClient(conn)
+		clients = append(clients, peerClient)
+	}
+
+	return clients, nil
 }
 
 // ListChannel list the info of channel
@@ -85,13 +131,30 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 	if err != nil {
 		return channelInfos, err
 	}
-	infos, err := c.ordererClient.ListChannels(context.Background(), &pb.ListChannelsRequest{
-		System: system,
-		PK:     pk,
-	})
-	if err != nil {
-		return channelInfos, err
+	var infos *pb.ChannelInfos
+
+	// 有多个ordererClient，遍历ordererClient直到成功获取the info of channels
+	for i, ordererClient := range c.ordererClients {
+		infos, err = ordererClient.ListChannels(context.Background(), &pb.ListChannelsRequest{
+			System: system,
+			PK:     pk,
+		})
+		times := i + 1
+		if err != nil {
+			// 打印出每一个出错信息
+			// 如果最后一个ordererClient仍然失败，需要return
+			if times == len(c.ordererClients) {
+				fmt.Printf("lib/client/ListChannel: try %d times (the last time) but failed to get the info of channels because %s\n", times, err)
+				return channelInfos, err
+			}
+			fmt.Printf("lib/client/ListChannel: try %d times but failed to get the info of channels because %s\n", times, err)
+		} else {
+			fmt.Printf("lib/client/ListChannel: try %d times and success to get %d channels' info\n", times, len(infos.Channels))
+			// 获取信息成功，break
+			break
+		}
 	}
+
 	for i, channel := range infos.Channels {
 		channelInfos = append(channelInfos, ChannelInfo{
 			Name:      channel.ChannelID,
@@ -103,11 +166,24 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 			channelInfos[i].System = true
 		}
 	}
+
+	// sort slice
+	sort.Slice(channelInfos, func(i, j int) bool {
+		if channelInfos[i].System != channelInfos[j].System {
+			if channelInfos[i].System {
+				return true
+			}
+			return false
+		}
+		return channelInfos[i].Name < channelInfos[j].Name
+	})
+
 	return channelInfos, nil
 }
 
 // CreateChannel create a channel
 func (c *Client) CreateChannel(channelID string, public bool, admins, members []*types.Member) error {
+	// log.Infof("Create channel %s", channelID)
 	self, err := types.NewMember(c.GetPrivKey().PubKey(), "admin")
 	if err != nil {
 		return err
@@ -130,16 +206,31 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 	})
 	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload, c.GetPrivKey())
 	pbTx, _ := pb.NewTx(typesTx)
+	/*fmt.Printf("CreateChannelContractAddress: %s\n",types.CreateChannelContractAddress.String())
+	fmt.Printf("CfgTendermintAddress: %s\n",types.CfgTendermintAddress.String())
+	fmt.Printf("CfgRaftAddress: %s\n",types.CfgRaftAddress.String())*/
 
-	_, err = c.ordererClient.CreateChannel(context.Background(), &pb.CreateChannelRequest{
-		Tx: pbTx,
-	})
-	if err != nil {
-		fmt.Printf("Failed to create channel %s because %s\n", channelID, err)
-		return err
+	var times int
+	for i, ordererClient := range c.ordererClients {
+		//fmt.Printf("Going to create channel %s by ordererClient[%d]\n", channelID, i)
+		_, err = ordererClient.CreateChannel(context.Background(), &pb.CreateChannelRequest{
+			Tx: pbTx,
+		})
+		times = i + 1
+		if err != nil {
+			// try to use other ordererClients until the last one still returns an error
+			if times == len(c.ordererClients) {
+				fmt.Printf("lib/client/CreateChannel: try %d times (the last time) but failed to create channel %s because %s\n", times, channelID, err)
+				return err
+			}
+			fmt.Printf("lib/client/CreateChannel: try %d times but failed to create channel %s because %s\n", times, channelID, err)
+		} else {
+			// create channel successfully and exit the loop
+			fmt.Printf("lib/client/CreateChannel: try %d times and success to create channel %s\n", times, channelID)
+			break
+		}
 	}
 
-	fmt.Println("Succeed!")
 	return nil
 }
 
@@ -149,15 +240,35 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = c.ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
-		Tx: pbTx,
-	})
-	if err != nil {
-		return nil, err
+
+	for i, ordererClient := range c.ordererClients {
+		_, err = ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
+			Tx: pbTx,
+		})
+
+		times := i + 1
+		if err != nil {
+			// if the client is not system admin, just exit the loop
+			if strings.Contains(err.Error(), "the client is not system admin and can not update validator") {
+				return nil, err
+			}
+			// try to use other ordererClients until the last one still returns an error
+			if times == len(c.ordererClients) {
+				fmt.Printf("lib/client/AddTx: try %d times(the last time) but fail to add tx %s because %s\n", times, tx.ID, err)
+				return nil, err
+			}
+			fmt.Printf("lib/client/AddTx: try %d times but fail to add tx %s because %s\n", times, tx.ID, err)
+		} else {
+			// add tx successfully and exit the loop
+			fmt.Printf("lib/client/AddTx: try %d times and success to add tx %s\n", times, tx.ID)
+			break
+		}
 	}
+
 	collector := NewCollector(len(c.peerClients))
 	for i := range c.peerClients {
 		go func(i int) {
+			// fmt.Printf("lib/client/AddTx: going to get tx status from peerClient[%d]\n", i)
 			status, err := c.peerClients[i].GetTxStatus(context.Background(), &pb.GetTxStatusRequest{
 				ChannelID: tx.Data.ChannelID,
 				TxID:      tx.ID,
@@ -165,8 +276,10 @@ func (c *Client) AddTx(tx *types.Tx) (*pb.TxStatus, error) {
 			})
 			if err != nil {
 				collector.Add(nil, err)
+				fmt.Printf("lib/client/AddTx: peerClient[%d] failed to get tx status because %s\n", i, err)
 			} else {
 				collector.Add(status, nil)
+				// fmt.Printf("lib/client/AddTx: peerClient[%d] success to get tx status\n", i)
 			}
 		}(i)
 	}
@@ -197,8 +310,16 @@ func (c *Client) GetHistory(address []byte) (*pb.TxHistory, error) {
 	result, err := collector.Wait()
 	if err != nil {
 		return nil, err
-	}
+	} /*else {
+		txHistorys := result.(*pb.TxHistory)
+		for channel, txs := range txHistorys.Txs {
+			for i, id := range txs.Value {
+				fmt.Printf("No.%d: Channel %s, tx.ID %s\n", i, channel, id)
+			}
+		}
+	}*/
 
+	fmt.Println("lib/client/GetHistory: get tx history successfully")
 	return result.(*pb.TxHistory), err
 }
 
@@ -220,4 +341,9 @@ func membersContain(members []*types.Member, member *types.Member) bool {
 		}
 	}
 	return false
+}
+
+// GetPrivKey return the private key
+func (c *Client) GetPrivKey() crypto.PrivateKey {
+	return c.privKey
 }

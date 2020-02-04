@@ -2,6 +2,8 @@ package tendermint
 
 import (
 	"encoding/json"
+	"fmt"
+	"madledger/common/util"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -54,6 +56,35 @@ func (db *DB) GetHash() []byte {
 	return nil
 }
 
+// AddBlock add a block
+func (db *DB) AddBlock(block *Block) error {
+	var key = []byte(fmt.Sprintf("%s:%d", block.ChannelID, block.Num))
+	data, err := json.Marshal(block)
+	if err != nil {
+		return err
+	}
+	err = db.connect.Put(key, data, nil)
+	if err != nil {
+		return err
+	}
+	db.SetChannelBlockNumber(block.ChannelID, block.Num)
+	return nil
+}
+
+// GetBlock get a block
+func (db *DB) GetBlock(channelID string, num uint64) *Block {
+	var key = []byte(fmt.Sprintf("%s:%d", channelID, num))
+	if exist, _ := db.connect.Has(key, nil); exist {
+		data, _ := db.connect.Get(key, nil)
+		var block Block
+		if err := json.Unmarshal(data, &block); err != nil {
+			return nil
+		}
+		return &block
+	}
+	return nil
+}
+
 // SetHash set the hash
 func (db *DB) SetHash(hash []byte) {
 	var key = []byte("hash")
@@ -66,4 +97,25 @@ func (db *DB) Close() error {
 		return db.connect.Close()
 	}
 	return nil
+}
+
+// SetChannelBlockNumber set the block number of channel
+func (db *DB) SetChannelBlockNumber(channelID string, num uint64) {
+	var key = []byte(fmt.Sprintf("number:%s", channelID))
+	data := util.Uint64ToBytes(num)
+	db.connect.Put(key, data, nil)
+}
+
+// GetChannelBlockNumber return the block number of channel
+func (db *DB) GetChannelBlockNumber(channelID string) uint64 {
+	var key = []byte(fmt.Sprintf("number:%s", channelID))
+	if exist, _ := db.connect.Has(key, nil); exist {
+		data, _ := db.connect.Get(key, nil)
+		num, err := util.BytesToUint64(data)
+		if err != nil {
+			return 0
+		}
+		return num
+	}
+	return 0
 }

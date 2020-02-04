@@ -3,13 +3,11 @@ package db
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/syndtr/goleveldb/leveldb"
 	cc "madledger/blockchain/config"
-	"madledger/core/types"
-
 	"madledger/common/event"
 	"madledger/common/util"
-
-	"github.com/syndtr/goleveldb/leveldb"
+	"madledger/core/types"
 )
 
 /*
@@ -18,7 +16,7 @@ import (
 *  3. Tx: key is combine of []byte(channelID) and []byte(txID), value is []byte("true")
  */
 
-// LevelDB is the implementation of DB on leveldb
+// LevelDB is the implementation of DB on orderer/data/leveldb
 type LevelDB struct {
 	// the dir of data
 	dir     string
@@ -66,6 +64,7 @@ func (db *LevelDB) HasChannel(id string) bool {
 func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
 	var key = getChannelProfileKey(id)
 	if !db.HasChannel(id) {
+		// 更新key为_config的记录，简单记录所有的test通道。 _config,  ["test11","test10","test21","test20"]
 		err := db.addChannel(id)
 		if err != nil {
 			return err
@@ -75,6 +74,9 @@ func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
 	if err != nil {
 		return err
 	}
+	//更新key为_config@id的记录, 具体内容示例如下：
+	// _config@test30 ,  {"Public":true,"Dependencies":null,"Members":[],
+	// "Admins":[{"PK":"BN2PLBpBd5BrSLfTY7QEBYQT0h6lFvWlZyuAVt3/bfEz1g5QJ2lIEXP2Zk15B6E2MWpA/Q4Yxnl+XjFGObvAKTY=","Name":"admin"}]}
 	err = db.connect.Put(key, data, nil)
 	if err != nil {
 		return err
@@ -91,6 +93,22 @@ func (db *LevelDB) AddBlock(block *types.Block) error {
 			return fmt.Errorf("The tx %s exists before", tx.ID)
 		}
 		db.connect.Put(key, []byte("true"), nil)
+	}
+	return nil
+}
+
+func (db *LevelDB) UpdateSystemAdmin(profile *cc.Profile) error {
+	var key = getSystemAdminKey()
+	data, err := json.Marshal(profile)
+	if err != nil {
+		return err
+	}
+	//更新key为_config$admin的记录, 具体内容示例如下：
+	//(_config$admin, {"Public":true,"Dependencies":null,"Members":null,"Admins":
+	// [{"PK":"BGXcjZ3bhemsoLP4HgBwnQ5gsc8VM91b3y8bW0b6knkWu8xCSKO2qiJXARMHcbtZtvU7Jos2A5kFCD1haJ/hLdg=","Name":"SystemAdmin"}]})
+	err = db.connect.Put(key, data, nil)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -152,6 +170,25 @@ func (db *LevelDB) IsAdmin(channelID string, member *types.Member) bool {
 	return false
 }
 
+func (db *LevelDB) IsSystemAdmin(member *types.Member) bool {
+	var p cc.Profile
+	var key = getSystemAdminKey()
+	data, err := db.connect.Get(key, nil)
+	if err != nil {
+		return false
+	}
+	err = json.Unmarshal(data, &p)
+	if err != nil {
+		return false
+	}
+	for i := range p.Admins {
+		if p.Admins[i].Equal(member) {
+			return true
+		}
+	}
+	return false
+}
+
 // WatchChannel is the implementation of DB
 func (db *LevelDB) WatchChannel(channelID string) {
 	db.hub.Watch(channelID, nil)
@@ -193,4 +230,8 @@ func (db *LevelDB) addChannel(id string) error {
 
 func getChannelProfileKey(id string) []byte {
 	return []byte(fmt.Sprintf("%s@%s", types.CONFIGCHANNELID, id))
+}
+
+func getSystemAdminKey() []byte {
+	return []byte(fmt.Sprintf("%s$admin", types.CONFIGCHANNELID))
 }

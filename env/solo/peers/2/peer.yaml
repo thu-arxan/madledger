@@ -34,4 +34,4 @@ DB:
 
 # KeyStore manage some private keys
 KeyStore:
-  Key: /home/liuyihua/gopath/src/madledger/env/solo/peers/2/.keystore/aae70c97ad4616fc99bca93c620f1dcc164d727e47c5f906ebd5bd9407ace133
+  Key: .keystore/aae70c97ad4616fc99bca93c620f1dcc164d727e47c5f906ebd5bd9407ace133

@@ -3,6 +3,8 @@ package db
 import (
 	"madledger/common"
 	"madledger/core/types"
+
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 // TxStatus return the status of tx
@@ -12,6 +14,15 @@ type TxStatus struct {
 	BlockIndex      int
 	Output          []byte
 	ContractAddress string
+}
+
+// WriteBatch define a write batch interface
+type WriteBatch interface {
+	RemoveAccount(address common.Address) error
+	SetAccount(account common.Account) error
+	SetStorage(address common.Address, key common.Word256, value common.Word256) error
+	SetTxStatus(tx *types.Tx, status *TxStatus) error
+	GetBatch() *leveldb.Batch
 }
 
 // DB provide a interface for peer to access the global state
@@ -39,4 +50,6 @@ type DB interface {
 	DeleteChannel(channelID string)
 	GetChannels() []string
 	ListTxHistory(address []byte) map[string][]string
+	NewWriteBatch() WriteBatch
+	SyncWriteBatch(batch *leveldb.Batch) error
 }
