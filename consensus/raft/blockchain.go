@@ -220,7 +220,7 @@ func (chain *BlockChain) addBlock(block *HybridBlock) error {
 		// every node need get confChange to avoid leader change
 		cfgChange, err := chain.getConfChange(t)
 		if err != nil {
-			if !strings.Contains(err.Error(), "It's not raft config change tx.") {
+			if !strings.Contains(err.Error(), "It's not raft config change tx") {
 				log.Infof("addBlock meets error:%v", err.Error())
 				return err
 			}
@@ -279,7 +279,8 @@ func (chain *BlockChain) getConfChange(tx *Tx) (raftpb.ConfChange, error) {
 			return cfgChange, err
 		}
 	} else {
-		return cfgChange, fmt.Errorf("it's not raft config change tx, get: %d", txType)
+		// todo: fucking use illegal words as error
+		return cfgChange, errors.New("It's not raft config change tx")
 	}
 	return cfgChange, err
 }
