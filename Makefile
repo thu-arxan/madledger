@@ -1,11 +1,50 @@
-# Go parameters
-GOCMD=go
+# Tool commands
+GOCMD		= go
+DOCKER_CMD	= docker
+
+# MadLedger versions used in Makefile
+MADLEDGER_VERSION		:= v0.0.1
+
+# Build flags (overridable)
+GO_LDFLAGS				?= -X madledger/version.GitCommit=`git rev-parse --short=8 HEAD` -X madledger/version.Version=$(MADLEDGER_VERSION)
+GO_TEST_FLAGS			?= $(GO_LDFLAGS)
+GO_TEST_COUNT			?= 1
+GO_TEST_TIMEOUT			?= 20m
+GO_SYMBOL				?= 					# eg:GO_SYMBOL="-v -race"
+
+# Go tools
+GO_TEST 		= $(GOCMD) test -parallel=1 -count=$(GO_TEST_COUNT) -timeout=$(GO_TEST_TIMEOUT) $(GO_SYMBOL)
+GO_BUILD		= $(GOCMD) build
+
+# Local variables used by makefile
+PROJECT_NAME           := madledger
+ARCH                   := $(shell uname -m)
+OS_NAME                := $(shell uname -s)
+
+# Test Packages
+# UNIT_PACKAGES	=	madledger/common/util \
+# 					madledger/common/event \
+# 					madledger/common/math \
+# 					madledger/common/hexutil \
+# 					madledger/common/crypto \
+# 					madledger/common/abi \
+# 					madledger/core \
+# 					madledger/protos \
+# 					madledger/blockchain/config \
+
+PACKAGES=$(shell go list ./...)
 
 all: vet build
 
 # go vet:format check, bug check
 vet:
 	@$(GOCMD) vet `go list ./...`
+
+# The below include contains tests(quick start, setup, client tx, etc)
+# include tests.mk
+
+unittest:
+	@$(GO_TEST) $(PACKAGES)
 
 build:
 	@echo "building orderer..."
@@ -34,8 +73,6 @@ test:
 
 	@$(GOCMD) test madledger/blockchain/config -count=1 -cover
 
-	@$(GOCMD) test madledger/executor/evm -count=1 -cover
-
 	@$(GOCMD) test madledger/consensus/solo -count=1 -cover
 	@$(GOCMD) test madledger/consensus/raft -count=1 -cover
 	@$(GOCMD) test madledger/consensus/tendermint -count=1 -cover
@@ -51,9 +88,19 @@ test:
 	@$(GOCMD) test madledger/tests -count=1 -cover
 
 performance:
-	@$(GOCMD) test madledger/tests/performance -count=1
+	@$(GO_TEST) madledger/tests/performance
 	@cat tests/performance/performance.out
 	@rm -rf tests/performance/performance.out
 
 docker:
 	@docker build -t madledger:alpha .
+
+clean:
+	@rm -rf tests/.bft
+	@cd tests/performance/raft && rm -rf .clients .orderer .peer
+	@cd tests/performance/solo && rm -rf .clients .orderer .peer
+	@cd tests/performance/bft && rm -rf .clients .orderer .peer
+
+syncevm:
+	@rm -rf vendor/evm
+	@cd ../evm && zip evm.zip $$(git ls-files) && unzip -d ../madledger/vendor/evm evm.zip && rm evm.zip

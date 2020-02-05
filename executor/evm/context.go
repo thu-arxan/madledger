@@ -1,36 +1,25 @@
 package evm
 
 import (
-	"madledger/common"
-	"madledger/core"
+	"evm"
 )
 
-// Context provide a context to run a contract on the evm
-type Context struct {
-	ChannelID string
-	// Number is the number of the block
-	Number uint64
-	// BlockHash is the hash of the block
-	BlockHash common.Hash
-	// BlockTime is the time of the block
-	BlockTime int64
-	// GasLimit limit the use of gas, now is useless
-	GasLimit uint64
-	// CoinBase, set it to zero
-	CoinBase common.Word256
-	// diffculty is zero
-	Diffculty uint64
-}
+// Context caches data changed in block, passed to each evm for tx.
+//
+// Context syncs cached data into disk after all txs of block have been handled.
+type Context interface {
+	// BlockFinalize should be called after RunBlock.
+	// In madevm, BlockFinalize will store logs for block generated during run txs of block into writebatch
+	BlockFinalize() error
+	// TxFinalize should be called after RunBlock.
+	// In madevm, TxFinalize will remove info associated with suicide account
+	// TxFinalize(db db.DB)
 
-// NewContext is the constructor of Context
-func NewContext(block *core.Block) *Context {
-	return &Context{
-		ChannelID: block.Header.ChannelID,
-		Number:    block.Header.Number,
-		BlockHash: block.Hash(),
-		BlockTime: block.Header.Time,
-		GasLimit:  0,
-		CoinBase:  common.ZeroWord256,
-		Diffculty: 0,
-	}
+	// BlockContext returns evm ctx, fill in block info
+	BlockContext() *evm.Context
+
+	// NewBlockchain creates blockchain for evm.EVM
+	NewBlockchain() evm.Blockchain
+	// NewDatabase creates db for evm.EVM, caches data between txs in block
+	NewDatabase() evm.DB
 }

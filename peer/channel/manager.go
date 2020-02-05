@@ -5,6 +5,7 @@ import (
 	"madledger/blockchain"
 	"madledger/common"
 	"madledger/core"
+
 	"madledger/executor/evm"
 	"madledger/peer/db"
 	"madledger/peer/orderer"
@@ -80,6 +81,9 @@ func (m *Manager) AddBlock(block *core.Block) error {
 	if err != nil {
 		return err
 	}
+	if err := m.db.PutBlock(block); err != nil {
+		return err
+	}
 	switch block.Header.ChannelID {
 	case core.GLOBALCHANNELID:
 		m.AddGlobalBlock(block)
@@ -96,6 +100,7 @@ func (m *Manager) AddBlock(block *core.Block) error {
 		if err != nil {
 			return err
 		}
+
 		batch := wb.GetBatch()
 		err = m.db.SyncWriteBatch(batch)
 		if err != nil {
@@ -112,9 +117,9 @@ func (m *Manager) AddBlock(block *core.Block) error {
 // In the future, this will contains chains which rely on something or nothing
 // TODO: transfer is not implementation yet
 func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
-	context := evm.NewContext(block)
 	wb := m.db.NewWriteBatch()
-
+	context := evm.NewContext(block, m.db, wb)
+	defer context.BlockFinalize()
 	// first parallel get sender to speed up
 	threadSize := runtime.NumCPU()
 	if threadSize < 2 {
@@ -168,10 +173,9 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			wb.SetTxStatus(tx, status)
 			continue
 		}
-
 		log.Debugf(" %v, %v, %v", sender, context, tx)
-
-		evm := evm.NewEVM(*context, senderAddress, m.db, wb)
+		gas := uint64(10000000)
+		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, gas, m.db, wb)
 		if receiverAddress.String() != common.ZeroAddress.String() {
 			// if the length of payload is not zero, this is a contract call
 			if len(tx.Data.Payload) != 0 && !m.db.AccountExist(receiverAddress) {
@@ -188,7 +192,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 				wb.SetTxStatus(tx, status)
 				continue
 			}
-			output, err := evm.Call(sender, receiver, receiver.GetCode(), tx.Data.Payload, 0)
+			output, err := evm.Call(sender, receiver, receiver.GetCode())
 			status.Output = output
 			if err != nil {
 				status.Err = err.Error()
@@ -196,7 +200,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			//m.db.SetTxStatus(tx, status)
 			wb.SetTxStatus(tx, status)
 		} else {
-			output, addr, err := evm.Create(sender, tx.Data.Payload, []byte{}, 0)
+			output, addr, err := evm.Create(sender)
 			status.Output = output
 			status.ContractAddress = addr.String()
 			if err != nil {
@@ -206,6 +210,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			wb.SetTxStatus(tx, status)
 		}
 	}
+	// wb.PersistLog([]byte(fmt.Sprintf("block_log_%d", block.GetNumber())))
 	return wb, nil
 }
 

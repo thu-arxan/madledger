@@ -23,6 +23,9 @@ type WriteBatch interface {
 	SetStorage(address common.Address, key common.Word256, value common.Word256) error
 	SetTxStatus(tx *core.Tx, status *TxStatus) error
 	GetBatch() *leveldb.Batch
+	// Put stores (key, value) into batch, the caller is responsible to avoid duplicate key
+	Put(key, value []byte)
+	RemoveAccountStorage(address common.Address)
 }
 
 // DB provide a interface for peer to access the global state
@@ -52,4 +55,9 @@ type DB interface {
 	ListTxHistory(address []byte) map[string][]string
 	NewWriteBatch() WriteBatch
 	SyncWriteBatch(batch *leveldb.Batch) error
+
+	// PutBlock stores block into db
+	PutBlock(block *core.Block) error
+	// GetBlock gets block by block.num from db
+	GetBlock(num uint64) (*core.Block, error)
 }

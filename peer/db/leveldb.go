@@ -3,6 +3,7 @@ package db
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"madledger/common"
 	"madledger/common/util"
 	"madledger/core"
@@ -276,6 +277,23 @@ func (db *LevelDB) SyncWriteBatch(batch *leveldb.Batch) error {
 	return nil
 }
 
+// PutBlock stores block into db
+func (db *LevelDB) PutBlock(block *core.Block) error {
+	data := block.Bytes()
+	key := fmt.Sprintf("bc_data_%d", block.GetNumber())
+	return db.connect.Put([]byte(key), data, nil)
+}
+
+// GetBlock gets block by block.num from db
+func (db *LevelDB) GetBlock(num uint64) (*core.Block, error) {
+	key := fmt.Sprintf("bc_data_%d", num)
+	data, err := db.connect.Get([]byte(key), nil)
+	if err != nil {
+		return nil, err
+	}
+	return core.UnmarshalBlock(data)
+}
+
 // WriteBatchWrapper is a wrapper of level.Batch
 type WriteBatchWrapper struct {
 	batch *leveldb.Batch
@@ -299,6 +317,19 @@ func (wb *WriteBatchWrapper) RemoveAccount(address common.Address) error {
 	var key = util.BytesCombine([]byte("account:"), address.Bytes())
 	wb.batch.Delete(key)
 	return nil
+}
+
+// RemoveAccountStorage delete all data associated with address
+func (wb *WriteBatchWrapper) RemoveAccountStorage(address common.Address) {
+	// delete all associated data
+	iter := wb.db.connect.NewIterator(nil, nil)
+	defer iter.Release()
+	addr := address.Bytes()
+	iter.Seek(addr)
+	for ; iter.Valid(); iter.Next() {
+		key := iter.Key()
+		wb.batch.Delete(key)
+	}
 }
 
 // SetStorage is the implementation of interface
@@ -347,6 +378,11 @@ func (wb *WriteBatchWrapper) addHistory(address []byte, channelID, txID string) 
 			wb.batch.Put(address, value)
 		}
 	}
+}
+
+// Put stores (key, value) into batch, the caller is responsible to avoid duplicate key
+func (wb *WriteBatchWrapper) Put(key, value []byte) {
+	wb.batch.Put(key, value)
 }
 
 // GetBatch return the level.Batch

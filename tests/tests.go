@@ -75,7 +75,8 @@ func createContract(t *testing.T, channelID string, client *client.Client) {
 
 	status, err = client.AddTx(tx)
 	require.NoError(t, err)
-	require.Equal(t, status.Err, "Duplicate address")
+	// require.Equal(t, status.Err, "Duplicate address")
+	require.Equal(t, status.Err, "")
 }
 
 func testCallContract(t *testing.T, client *client.Client) {
