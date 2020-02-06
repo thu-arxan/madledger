@@ -61,3 +61,9 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 func (manager *Manager) AddGlobalBlock(block *core.Block) error {
 	return nil
 }
+
+// AddAccountBlock add an account block
+// TODO: ab
+func (manager *Manager) AddAccountBlock(block *core.Block) error {
+	return nil
+}

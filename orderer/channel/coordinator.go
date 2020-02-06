@@ -336,6 +336,7 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 	}
 	channels[core.GLOBALCHANNELID] = defaultCfg
 	channels[core.CONFIGCHANNELID] = defaultCfg
+	channels[core.ACCOUNTCHANNELID] = defaultCfg
 	// set consensus of user channels
 	for channelID := range c.Managers {
 		channels[channelID] = defaultCfg
