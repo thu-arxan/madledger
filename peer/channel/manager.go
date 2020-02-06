@@ -91,6 +91,9 @@ func (m *Manager) AddBlock(block *core.Block) error {
 	case core.CONFIGCHANNELID:
 		m.AddConfigBlock(block)
 		log.Infof("Add config block %d", block.Header.Number)
+	case core.ACCOUNTCHANNELID:
+		m.AddAccountBlock(block)
+		log.Infof("Add account block %d", block.Header.Number)
 	default:
 		if !m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
 			m.coordinator.Watch(block.Header.ChannelID, block.Header.Number)

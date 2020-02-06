@@ -11,6 +11,8 @@ const (
 	GLOBALCHANNELID = "_global"
 	// CONFIGCHANNELID is the id of config channel
 	CONFIGCHANNELID = "_config"
+	// ACCOUNTCHANNELID is the id of account channel
+	ACCOUNTCHANNELID = "_account"
 )
 
 var (

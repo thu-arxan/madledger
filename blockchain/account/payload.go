@@ -1,8 +1,7 @@
 package account
 
-import "madledger/common"
-
+// todo: what is payload
 type Payload struct {
 	ChannelID string
-	account common.Account
+	//account common.Account
 }
