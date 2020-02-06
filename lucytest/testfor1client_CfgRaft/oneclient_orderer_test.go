@@ -2,7 +2,6 @@ package testfor1client_CfgRaft
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"math/rand"
@@ -11,6 +10,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 // change the package

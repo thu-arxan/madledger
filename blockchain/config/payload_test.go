@@ -2,7 +2,7 @@ package config
 
 import (
 	"madledger/common/crypto"
-	"madledger/core/types"
+	"madledger/core"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -38,7 +38,7 @@ func TestPublicPayload(t *testing.T) {
 	require.Equal(t, payload.IsMember(admin), true)
 	require.Equal(t, payload.IsMember(civilian), true)
 	// then set admin
-	payload.Profile.Admins = []*types.Member{admin}
+	payload.Profile.Admins = []*core.Member{admin}
 	require.Equal(t, payload.Verify(), true)
 	require.Equal(t, payload.IsAdmin(admin), true)
 	require.Equal(t, payload.IsMember(admin), true)
@@ -60,7 +60,7 @@ func TestPrivatePayload(t *testing.T) {
 		ChannelID: "private",
 		Profile: &Profile{
 			Public:  false,
-			Members: []*types.Member{admin},
+			Members: []*core.Member{admin},
 		},
 		Version: 1,
 	}
@@ -73,8 +73,8 @@ func TestPrivatePayload(t *testing.T) {
 		ChannelID: "private",
 		Profile: &Profile{
 			Public:  false,
-			Members: []*types.Member{civilian, admin},
-			Admins:  []*types.Member{admin},
+			Members: []*core.Member{civilian, admin},
+			Admins:  []*core.Member{admin},
 		},
 		Version: 1,
 	}
@@ -87,20 +87,20 @@ func TestPrivatePayload(t *testing.T) {
 		ChannelID: "private",
 		Profile: &Profile{
 			Public:  false,
-			Members: []*types.Member{civilian, criminal},
-			Admins:  []*types.Member{admin},
+			Members: []*core.Member{civilian, criminal},
+			Admins:  []*core.Member{admin},
 		},
 		Version: 1,
 	}
 	require.Equal(t, payload.Verify(), false)
 }
 
-func newMember(name string) *types.Member {
+func newMember(name string) *core.Member {
 	privKey, err := crypto.GeneratePrivateKey()
 	if err != nil {
 		return nil
 	}
 	pk := privKey.PubKey()
-	member, _ := types.NewMember(pk, name)
+	member, _ := core.NewMember(pk, name)
 	return member
 }

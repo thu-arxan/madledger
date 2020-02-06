@@ -12,7 +12,8 @@ import (
 	"madledger/common/util"
 	"madledger/consensus"
 	pb "madledger/consensus/raft/protos"
-	ctypes "madledger/core/types"
+	"madledger/core"
+
 	"net"
 	"strings"
 	"sync"
@@ -219,8 +220,8 @@ func (chain *BlockChain) addBlock(block *HybridBlock) error {
 		// every node need get confChange to avoid leader change
 		cfgChange, err := chain.getConfChange(t)
 		if err != nil {
-			if !strings.Contains(err.Error(), "It's not raft config change tx.") {
-				log.Infoln(err.Error())
+			if !strings.Contains(err.Error(), "It's not raft config change tx") {
+				log.Infof("addBlock meets error:%v", err.Error())
 				return err
 			}
 		} else {
@@ -260,22 +261,26 @@ func (chain *BlockChain) addBlock(block *HybridBlock) error {
 }
 
 func (chain *BlockChain) getConfChange(tx *Tx) (raftpb.ConfChange, error) {
-	var typesTx ctypes.Tx
+	var coreTx core.Tx
 	var cfgChange raftpb.ConfChange
-	err := json.Unmarshal(tx.Data, &typesTx)
+	err := json.Unmarshal(tx.Data, &coreTx)
+	// Note: The reason return nil because Tx may be just random bytes,
+	// and this is a bad implementation so we should change the way to do this
+	// TODO: Reimplement it
 	if err != nil {
-		return cfgChange, err
+		return cfgChange, nil
 	}
 	// get tx type according to recipient
-	//log.Infof("Recipient: %s", common.BytesToAddress(typesTx.Data.Recipient).String())
-	txType, err := ctypes.GetTxType(common.BytesToAddress(typesTx.Data.Recipient).String())
-	if err == nil && txType == ctypes.NODE {
-		err = json.Unmarshal(typesTx.Data.Payload, &cfgChange)
+	//log.Infof("Recipient: %s", common.BytesToAddress(coreTx.Data.Recipient).String())
+	txType, err := core.GetTxType(common.BytesToAddress(coreTx.Data.Recipient).String())
+	if err == nil && txType == core.NODE {
+		err = json.Unmarshal(coreTx.Data.Payload, &cfgChange)
 		if err != nil {
 			return cfgChange, err
 		}
 	} else {
-		return cfgChange, errors.New("it's not raft config change tx")
+		// todo: fucking use illegal words as error
+		return cfgChange, errors.New("It's not raft config change tx")
 	}
 	return cfgChange, err
 }

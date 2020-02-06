@@ -1,11 +1,11 @@
 package channel
 
 import (
-	"madledger/core/types"
+	"madledger/core"
 )
 
 // AddGlobalBlock add a global block
-func (m *Manager) AddGlobalBlock(block *types.Block) error {
+func (m *Manager) AddGlobalBlock(block *core.Block) error {
 	nums := make(map[string]uint64)
 	for _, tx := range block.Transactions {
 		payload, err := tx.GetGlobalTxPayload()

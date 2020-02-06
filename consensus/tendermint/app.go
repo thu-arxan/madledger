@@ -4,15 +4,16 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/tendermint/tendermint/abci/example/code"
-	"github.com/tendermint/tendermint/abci/types"
-	cmn "github.com/tendermint/tendermint/libs/common"
 	"madledger/common"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
-	ctypes "madledger/core/types"
+	"madledger/core"
 	"sync"
+
+	"github.com/tendermint/tendermint/abci/example/code"
+	"github.com/tendermint/tendermint/abci/types"
+	cmn "github.com/tendermint/tendermint/libs/common"
 )
 
 // Glue will connect consensus and tendermint
@@ -299,18 +300,18 @@ func (g *Glue) updateValidator(tx []byte) types.ResponseDeliverTx {
 			Code: code.CodeTypeEncodingError,
 			Log:  fmt.Sprintf("BytesToTx error %s", err)}
 	}
-	var typesTx ctypes.Tx
-	err = json.Unmarshal(tempTx.Data, &typesTx)
+	var coreTx core.Tx
+	err = json.Unmarshal(tempTx.Data, &coreTx)
 	if err != nil {
 		return types.ResponseDeliverTx{
 			Code: code.CodeTypeEncodingError,
 			Log:  fmt.Sprintf("Unmarshal error %s", err)}
 	}
 	// get tx type according to recipient
-	txType, err := ctypes.GetTxType(common.BytesToAddress(typesTx.Data.Recipient).String())
-	if err == nil && txType == ctypes.VALIDATOR {
+	txType, err := core.GetTxType(common.BytesToAddress(coreTx.Data.Recipient).String())
+	if err == nil && txType == core.VALIDATOR {
 		var validatorUpdate types.ValidatorUpdate
-		err = json.Unmarshal(typesTx.Data.Payload, &validatorUpdate)
+		err = json.Unmarshal(coreTx.Data.Payload, &validatorUpdate)
 		if err != nil {
 			return types.ResponseDeliverTx{
 				Code: code.CodeTypeEncodingError,

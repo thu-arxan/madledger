@@ -6,7 +6,7 @@ import (
 	"errors"
 	"madledger/client/lib"
 	"madledger/client/util"
-	coreTypes "madledger/core/types"
+	"madledger/core"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -74,7 +74,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	tx, err := coreTypes.NewTx(channelID, coreTypes.CfgTendermintAddress, validatorUpdate, client.GetPrivKey())
+	tx, err := core.NewTx(channelID, core.CfgTendermintAddress, validatorUpdate, 0, "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}

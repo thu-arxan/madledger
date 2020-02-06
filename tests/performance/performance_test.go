@@ -2,7 +2,7 @@ package performance
 
 import (
 	"fmt"
-	"madledger/core/types"
+	"madledger/core"
 	"madledger/tests/performance/bft"
 	"os"
 	"sync"
@@ -63,7 +63,7 @@ func TestPerformance(t *testing.T) {
 	var wg sync.WaitGroup
 	var callSize = 40
 	clients := getClients()
-	var txs = make([][]*types.Tx, clientSize)
+	var txs = make([][]*core.Tx, clientSize)
 	// create txs
 	for i := range txs {
 		txs[i] = CreateCallContractTx(fmt.Sprintf("test%d", i%channelSize), clients[i], callSize)

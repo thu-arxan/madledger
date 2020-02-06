@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/tendermint/tendermint/abci/types"
 	"io/ioutil"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
@@ -13,7 +12,8 @@ import (
 	"madledger/common"
 	"madledger/common/abi"
 	"madledger/common/util"
-	coreTypes "madledger/core/types"
+	"madledger/core"
+
 	oc "madledger/orderer/config"
 	orderer "madledger/orderer/server"
 	pc "madledger/peer/config"
@@ -23,8 +23,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tendermint/tendermint/abci/types"
+
 	"github.com/otiai10/copy"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var (
@@ -117,12 +119,12 @@ func loadClientConfig(cfgPath string) (*cc.Config, error) {
 	return &cfg, nil
 }
 
-func loadClient(node string) (*client.Client,error) {
+func loadClient(node string) (*client.Client, error) {
 	clientPath := getBFTClientPath(node)
 	cfgPath := getBFTClientConfigPath(node)
 	cfg, err := cc.LoadConfig(cfgPath)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	re, _ := regexp.Compile("^.*[.]keystore")
 	for i := range cfg.KeyStore.Keys {
@@ -130,9 +132,9 @@ func loadClient(node string) (*client.Client,error) {
 	}
 	client, err := client.NewClientFromConfig(cfg)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
-	return client,nil
+	return client, nil
 }
 
 func absBFTOrdererConfig(node int) error {
@@ -382,7 +384,7 @@ func addOrRemoveNode(pubKey string, power int64, channel string) error {
 		PubKey: pubkey,
 		Power:  power,
 	})
-	tx, err := coreTypes.NewTx(channel, coreTypes.CfgTendermintAddress, validatorUpdate, bftAdmin.GetPrivKey())
+	tx, err := core.NewTx(channel, core.CfgTendermintAddress, validatorUpdate, 0, "", bftAdmin.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -433,7 +435,7 @@ func createContractForCallTx(node string) error {
 	if err != nil {
 		return err
 	}
-	tx, err := coreTypes.NewTx("test"+node, common.ZeroAddress, contractCodes, bftClient.GetPrivKey())
+	tx, err := core.NewTx("test"+node, common.ZeroAddress, contractCodes, 0, "", bftClient.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -479,8 +481,8 @@ func getNumForCallTx(node string, num string) error {
 	}
 
 	channel := "test" + node
-	tx, err := coreTypes.NewTx(channel, common.HexToAddress("0x8de6ce45b289502e16aef93313fd3082993acb1f"), payloadBytes,
-		bftClient.GetPrivKey())
+	tx, err := core.NewTx(channel, common.HexToAddress("0x8de6ce45b289502e16aef93313fd3082993acb1f"), payloadBytes,
+		0, "", bftClient.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -514,8 +516,8 @@ func setNumForCallTx(node string, num string) error {
 	}
 
 	channel := "test" + node
-	tx, err := coreTypes.NewTx(channel, common.HexToAddress("0x8de6ce45b289502e16aef93313fd3082993acb1f"), payloadBytes,
-		bftClient.GetPrivKey())
+	tx, err := core.NewTx(channel, common.HexToAddress("0x8de6ce45b289502e16aef93313fd3082993acb1f"), payloadBytes,
+		0, "", bftClient.GetPrivKey())
 	if err != nil {
 		return err
 	}

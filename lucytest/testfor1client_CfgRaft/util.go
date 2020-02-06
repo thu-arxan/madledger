@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"go.etcd.io/etcd/raft/raftpb"
 	"io/ioutil"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
@@ -12,7 +11,7 @@ import (
 	"madledger/common"
 	"madledger/common/abi"
 	"madledger/common/util"
-	coreTypes "madledger/core/types"
+	coreTypes "madledger/core"
 	oc "madledger/orderer/config"
 	orderer "madledger/orderer/server"
 	pc "madledger/peer/config"
@@ -22,8 +21,10 @@ import (
 	"strings"
 	"time"
 
+	"go.etcd.io/etcd/raft/raftpb"
+
 	"github.com/otiai10/copy"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var (
@@ -360,7 +361,7 @@ func addNode(nodeID uint64, url string, channel string) error {
 		return err
 	}
 
-	tx, err := coreTypes.NewTx(channel, coreTypes.CfgRaftAddress, cc, raftAdmin.GetPrivKey())
+	tx, err := coreTypes.NewTx(channel, coreTypes.CfgRaftAddress, cc, 0, "", raftAdmin.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -390,7 +391,7 @@ func removeNode(nodeID uint64, channel string) error {
 		return err
 	}
 
-	tx, err := coreTypes.NewTx(channel, coreTypes.CfgRaftAddress, cc, raftAdmin.GetPrivKey())
+	tx, err := coreTypes.NewTx(channel, coreTypes.CfgRaftAddress, cc, 0, "", raftAdmin.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -445,7 +446,7 @@ func createContractForCallTx(channel string) error {
 	if err != nil {
 		return err
 	}
-	tx, err := coreTypes.NewTx(channel, common.ZeroAddress, contractCodes, raftClient[0].GetPrivKey())
+	tx, err := coreTypes.NewTx(channel, common.ZeroAddress, contractCodes, 0, "", raftClient[0].GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -492,7 +493,7 @@ func getNumForCallTx(node string, num string) error {
 
 	channel := "test" + node
 	tx, err := coreTypes.NewTx(channel, common.HexToAddress("0x8de6ce45b289502e16aef93313fd3082993acb1f"), payloadBytes,
-		raftClient[0].GetPrivKey())
+		0, "", raftClient[0].GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -527,7 +528,7 @@ func setNumForCallTx(node string, num string) error {
 
 	channel := "test" + node
 	tx, err := coreTypes.NewTx(channel, common.HexToAddress("0x8de6ce45b289502e16aef93313fd3082993acb1f"), payloadBytes,
-		raftClient[0].GetPrivKey())
+		0, "", raftClient[0].GetPrivKey())
 	if err != nil {
 		return err
 	}

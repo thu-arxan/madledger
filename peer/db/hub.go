@@ -48,7 +48,7 @@ func (h *Hub) Watch(id string, rec CallBack) *TxStatus {
 		if rec != nil {
 			rec()
 		}
-		h.lock.Unlock()
+		defer h.lock.Unlock()
 		return h.finish[id]
 	}
 

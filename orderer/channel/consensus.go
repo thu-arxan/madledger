@@ -2,18 +2,18 @@ package channel
 
 import (
 	"madledger/consensus"
-	"madledger/core/types"
+	"madledger/core"
 )
 
 // GetTxsFromConsensusBlock return txs in the consensus block.
-func GetTxsFromConsensusBlock(block consensus.Block) []*types.Tx {
-	var txs []*types.Tx
+func GetTxsFromConsensusBlock(block consensus.Block) []*core.Tx {
+	var txs []*core.Tx
 	for _, txBytes := range block.GetTxs() {
-		tx, err := types.BytesToTx(txBytes)
+		tx, err := core.BytesToTx(txBytes)
 		if err == nil {
 			txs = append(txs, tx)
 		} else {
-			log.Info(err)
+			log.Infof("get tx from consensus block failed because %v", err)
 		}
 	}
 	return txs

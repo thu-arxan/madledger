@@ -10,7 +10,7 @@ import (
 	"madledger/common"
 	"madledger/common/abi"
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
 	oc "madledger/orderer/config"
 	pc "madledger/peer/config"
 	"os"
@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/otiai10/copy"
 )
@@ -553,7 +553,7 @@ func setNumForCallTx(num string) error {
 	}
 
 	addr := "0x8de6ce45b289502e16aef93313fd3082993acb1f"
-	tx, err := types.NewTx("test0", common.HexToAddress(addr), payloadBytes, raftClients[0].GetPrivKey())
+	tx, err := core.NewTx("test0", common.HexToAddress(addr), payloadBytes, 0, "", raftClients[0].GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -567,14 +567,14 @@ func setNumForCallTx(num string) error {
 
 func getNumForCallTx(num string) error {
 	abiPath := fmt.Sprintf(getRAFTClientPath(0) + "/MyTest.abi")
-	var inputs []string = make([]string, 0)
+	var inputs = make([]string, 0)
 	payloadBytes, err := abi.GetPayloadBytes(abiPath, "getNum", inputs)
 	if err != nil {
 		return err
 	}
 
 	addr := "0x8de6ce45b289502e16aef93313fd3082993acb1f"
-	tx, err := types.NewTx("test0", common.HexToAddress(addr), payloadBytes, raftClients[0].GetPrivKey())
+	tx, err := core.NewTx("test0", common.HexToAddress(addr), payloadBytes, 0, "", raftClients[0].GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -625,7 +625,6 @@ func startOrderer(node int) string {
 		time.Sleep(1 * time.Second)
 	}
 }
-
 
 func compareTxs() error {
 	// get tx history from peer0

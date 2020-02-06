@@ -4,10 +4,12 @@ import (
 	"errors"
 	"madledger/blockchain"
 	"madledger/common"
-	"madledger/core/types"
+	"madledger/core"
+
 	"madledger/executor/evm"
 	"madledger/peer/db"
 	"madledger/peer/orderer"
+	"runtime"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -21,7 +23,7 @@ var (
 type Manager struct {
 	signalCh chan bool
 	stopCh   chan bool
-	identity *types.Member
+	identity *core.Member
 	// id is the id of channel
 	id string
 	// db is the database
@@ -33,7 +35,7 @@ type Manager struct {
 }
 
 // NewManager is the constructor of Manager
-func NewManager(id, dir string, identity *types.Member, db db.DB, clients []*orderer.Client, coordinator *Coordinator) (*Manager, error) {
+func NewManager(id, dir string, identity *core.Member, db db.DB, clients []*orderer.Client, coordinator *Coordinator) (*Manager, error) {
 	cm, err := blockchain.NewManager(id, dir)
 	if err != nil {
 		return nil, err
@@ -73,17 +75,20 @@ func (m *Manager) Stop() {
 }
 
 // AddBlock add a block
-func (m *Manager) AddBlock(block *types.Block) error {
+func (m *Manager) AddBlock(block *core.Block) error {
 	// add into the blockchain
 	err := m.cm.AddBlock(block)
 	if err != nil {
 		return err
 	}
+	if err := m.db.PutBlock(block); err != nil {
+		return err
+	}
 	switch block.Header.ChannelID {
-	case types.GLOBALCHANNELID:
+	case core.GLOBALCHANNELID:
 		m.AddGlobalBlock(block)
 		log.Infof("Add global block %d", block.Header.Number)
-	case types.CONFIGCHANNELID:
+	case core.CONFIGCHANNELID:
 		m.AddConfigBlock(block)
 		log.Infof("Add config block %d", block.Header.Number)
 	default:
@@ -95,6 +100,7 @@ func (m *Manager) AddBlock(block *types.Block) error {
 		if err != nil {
 			return err
 		}
+
 		batch := wb.GetBatch()
 		err = m.db.SyncWriteBatch(batch)
 		if err != nil {
@@ -110,9 +116,31 @@ func (m *Manager) AddBlock(block *types.Block) error {
 // It will return after the block is runned.
 // In the future, this will contains chains which rely on something or nothing
 // TODO: transfer is not implementation yet
-func (m *Manager) RunBlock(block *types.Block) (db.WriteBatch, error) {
-	context := evm.NewContext(block)
+func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 	wb := m.db.NewWriteBatch()
+	context := evm.NewContext(block, m.db, wb)
+	defer context.BlockFinalize()
+	// first parallel get sender to speed up
+	threadSize := runtime.NumCPU()
+	if threadSize < 2 {
+		threadSize = 2
+	}
+	var ch = make(chan bool, threadSize)
+	var wg sync.WaitGroup
+	for i := range block.Transactions {
+		wg.Add(1)
+		tx := block.Transactions[i]
+		ch <- true
+		go func() {
+			defer func() {
+				<-ch
+				wg.Done()
+			}()
+			tx.GetSender()
+		}()
+	}
+	wg.Wait()
+
 	for i, tx := range block.Transactions {
 		senderAddress, err := tx.GetSender()
 		status := &db.TxStatus{
@@ -123,12 +151,11 @@ func (m *Manager) RunBlock(block *types.Block) (db.WriteBatch, error) {
 		}
 		if err != nil {
 			status.Err = err.Error()
-			//m.db.SetTxStatus(tx, status)
 			wb.SetTxStatus(tx, status)
 			continue
 		}
 		receiverAddress := tx.GetReceiver()
-		log.Infof("The address of receiver is %s", receiverAddress.String())
+
 		sender, err := m.db.GetAccount(senderAddress)
 		if err != nil {
 			status.Err = err.Error()
@@ -137,21 +164,19 @@ func (m *Manager) RunBlock(block *types.Block) (db.WriteBatch, error) {
 			continue
 		}
 
-		if receiverAddress.String() == types.CfgTendermintAddress.String() {
-			//m.db.SetTxStatus(tx, status)
+		if receiverAddress.String() == core.CfgTendermintAddress.String() {
 			wb.SetTxStatus(tx, status)
 			continue
 		}
 
-		if receiverAddress.String() == types.CfgRaftAddress.String() {
-			//m.db.SetTxStatus(tx, status)
+		if receiverAddress.String() == core.CfgRaftAddress.String() {
 			wb.SetTxStatus(tx, status)
 			continue
 		}
-
-		evm := evm.NewEVM(*context, senderAddress, m.db, wb)
+		log.Debugf(" %v, %v, %v", sender, context, tx)
+		gas := uint64(10000000)
+		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, gas, m.db, wb)
 		if receiverAddress.String() != common.ZeroAddress.String() {
-			// log.Info("This is a normal call")
 			// if the length of payload is not zero, this is a contract call
 			if len(tx.Data.Payload) != 0 && !m.db.AccountExist(receiverAddress) {
 				status.Err = "Invalid Address"
@@ -167,7 +192,7 @@ func (m *Manager) RunBlock(block *types.Block) (db.WriteBatch, error) {
 				wb.SetTxStatus(tx, status)
 				continue
 			}
-			output, err := evm.Call(sender, receiver, receiver.GetCode(), tx.Data.Payload, 0)
+			output, err := evm.Call(sender, receiver, receiver.GetCode())
 			status.Output = output
 			if err != nil {
 				status.Err = err.Error()
@@ -175,8 +200,7 @@ func (m *Manager) RunBlock(block *types.Block) (db.WriteBatch, error) {
 			//m.db.SetTxStatus(tx, status)
 			wb.SetTxStatus(tx, status)
 		} else {
-			log.Info("This is a create call")
-			output, addr, err := evm.Create(sender, tx.Data.Payload, []byte{}, 0)
+			output, addr, err := evm.Create(sender)
 			status.Output = output
 			status.ContractAddress = addr.String()
 			if err != nil {
@@ -186,15 +210,16 @@ func (m *Manager) RunBlock(block *types.Block) (db.WriteBatch, error) {
 			wb.SetTxStatus(tx, status)
 		}
 	}
+	// wb.PersistLog([]byte(fmt.Sprintf("block_log_%d", block.GetNumber())))
 	return wb, nil
 }
 
 // todo: here we should support evil orderer
-func (m *Manager) fetchBlock() (*types.Block, error) {
+func (m *Manager) fetchBlock() (*core.Block, error) {
 	var lock sync.Mutex
 	var ch = make(chan bool, 1)
 	var errs = make([]error, len(m.clients))
-	var blocks = make([]*types.Block, len(m.clients))
+	var blocks = make([]*core.Block, len(m.clients))
 	id := m.id
 	except := m.cm.GetExcept()
 	for i := range m.clients {

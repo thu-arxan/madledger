@@ -110,6 +110,13 @@ func TestRestart(t *testing.T) {
 	time.Sleep(2 * time.Second)
 }
 
+func TestReStop(t *testing.T) {
+	for i := range rns {
+		fmt.Printf("Stop raft %d\n", i)
+		rns[i].Stop()
+	}
+	os.RemoveAll(getTestPath())
+}
 func getTestPath() string {
 	gopath := os.Getenv("GOPATH")
 	testPath, _ := util.MakeFileAbs("src/madledger/consensus/raft/.test", gopath)

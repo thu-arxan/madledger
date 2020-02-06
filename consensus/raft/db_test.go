@@ -1,8 +1,6 @@
 package raft
 
 import (
-	"fmt"
-	"github.com/syndtr/goleveldb/leveldb"
 	"madledger/common/util"
 	"os"
 	"testing"
@@ -19,22 +17,6 @@ func TestDB(t *testing.T) {
 	_, err = NewDB(getDBPath())
 	require.Errorf(t, err, "resource temporarily unavailable")
 	db.Close()
-}
-
-func TestGetDB(t *testing.T) {
-	//path:="/home/hadoop/GOPATH/src/madledger/tests/raft/orderers/0/.raft/db"
-	path := "/home/hadoop/GOPATH/src/madledger/tests/raft/orderers/0/data/leveldb"
-	db, err := leveldb.OpenFile(path, nil)
-	fmt.Printf("Get raft.db from %s\n", path)
-	require.NoError(t, err)
-	defer db.Close()
-	iter := db.NewIterator(nil, nil)
-	for iter.Next() {
-		key := string(iter.Key())
-		value := string(iter.Value())
-		fmt.Printf("(%s, %s)\n", key, value)
-	}
-	iter.Release()
 }
 
 func TestBlock(t *testing.T) {
@@ -65,6 +47,6 @@ func TestEnd(t *testing.T) {
 
 func getDBPath() string {
 	gopath := os.Getenv("GOPATH")
-	storePath, _ := util.MakeFileAbs("src/transaction_service/blockchain/chain/raft/.db", gopath)
+	storePath, _ := util.MakeFileAbs("src/madledger/blockchain/chain/raft/.db", gopath)
 	return storePath
 }

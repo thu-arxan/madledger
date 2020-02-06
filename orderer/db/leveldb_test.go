@@ -7,7 +7,7 @@ import (
 	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
 	"os"
 	"testing"
 
@@ -66,10 +66,10 @@ func TestUpdateChannel(t *testing.T) {
 		t.Fatal(errors.New("Channel _global is not contained"))
 	}
 	// add user channel
-	admin, _ := types.NewMember(privKey.PubKey(), "admin")
+	admin, _ := core.NewMember(privKey.PubKey(), "admin")
 	err = db.UpdateChannel("test", &cc.Profile{
 		Public: true,
-		Admins: []*types.Member{admin},
+		Admins: []*core.Member{admin},
 	})
 	require.NoError(t, err)
 	channels = db.ListChannel()
@@ -80,13 +80,13 @@ func TestUpdateChannel(t *testing.T) {
 }
 
 func TestAddBlock(t *testing.T) {
-	tx1, _ := types.NewTx("test", common.ZeroAddress, []byte("1"), privKey)
-	tx2, _ := types.NewTx("test", common.ZeroAddress, []byte("2"), privKey)
-	block1 := types.NewBlock("test", 0, types.GenesisBlockPrevHash, []*types.Tx{tx1, tx2})
+	tx1, _ := core.NewTx("test", common.ZeroAddress, []byte("1"), 0, "", privKey)
+	tx2, _ := core.NewTx("test", common.ZeroAddress, []byte("2"), 0, "", privKey)
+	block1 := core.NewBlock("test", 0, core.GenesisBlockPrevHash, []*core.Tx{tx1, tx2})
 	err := db.AddBlock(block1)
 	require.NoError(t, err)
 
-	block2 := types.NewBlock("test", 1, block1.Hash().Bytes(), []*types.Tx{tx1})
+	block2 := core.NewBlock("test", 1, block1.Hash().Bytes(), []*core.Tx{tx1})
 	err = db.AddBlock(block2)
 	require.Error(t, err)
 
@@ -96,15 +96,15 @@ func TestAddBlock(t *testing.T) {
 }
 
 func TestIsMember(t *testing.T) {
-	member, _ := types.NewMember(privKey.PubKey(), "admin")
+	member, _ := core.NewMember(privKey.PubKey(), "admin")
 	require.True(t, db.IsMember("test", member))
-	require.True(t, db.IsMember(types.GLOBALCHANNELID, member))
+	require.True(t, db.IsMember(core.GLOBALCHANNELID, member))
 }
 
 func TestIsAdmin(t *testing.T) {
-	member, _ := types.NewMember(privKey.PubKey(), "admin")
+	member, _ := core.NewMember(privKey.PubKey(), "admin")
 	require.True(t, db.IsAdmin("test", member))
-	require.False(t, db.IsAdmin(types.GLOBALCHANNELID, member))
+	require.False(t, db.IsAdmin(core.GLOBALCHANNELID, member))
 }
 
 func TestEnd(t *testing.T) {

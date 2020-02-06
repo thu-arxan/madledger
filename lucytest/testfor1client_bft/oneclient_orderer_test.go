@@ -7,7 +7,7 @@ import (
 	cliu "madledger/client/util"
 	"madledger/common"
 	"madledger/common/abi"
-	"madledger/core/types"
+	"madledger/core"
 	"os"
 	"regexp"
 	"strconv"
@@ -100,7 +100,7 @@ func TestBFTCreateTxAfterRestart1OB(t *testing.T) {
 	contractCodes, err := readCodes(getBFTClientPath(1) + "/MyTest.bin")
 	require.NoError(t, err)
 	client := bftClients[1]
-	tx, err := types.NewTx("test4", common.ZeroAddress, contractCodes, client.GetPrivKey())
+	tx, err := core.NewTx("test4", common.ZeroAddress, contractCodes, 0, "", client.GetPrivKey())
 	require.NoError(t, err)
 
 	status, err := client.AddTx(tx)
@@ -121,12 +121,12 @@ func TestBFTCallTxAfterRestart1OB(t *testing.T) {
 	//client1 call smart contract
 	abiPath := fmt.Sprintf(getBFTClientPath(1) + "/MyTest.abi")
 	funcName := "getNum"
-	var inputs []string = make([]string, 0)
+	var inputs = make([]string, 0)
 	payloadBytes, err := abi.GetPayloadBytes(abiPath, funcName, inputs)
 	require.NoError(t, err)
 
-	tx, err := types.NewTx("test4", common.HexToAddress("0x0619e2393802cc99e90cf892b92a113f19af5887"),
-		payloadBytes, bftClients[1].GetPrivKey())
+	tx, err := core.NewTx("test4", common.HexToAddress("0x0619e2393802cc99e90cf892b92a113f19af5887"),
+		payloadBytes, 0, "", bftClients[1].GetPrivKey())
 	require.NoError(t, err)
 
 	_, err = bftClients[1].AddTx(tx)

@@ -2,16 +2,17 @@ package testfor2clients_raft
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"madledger/common"
-	"madledger/core/types"
+	"madledger/core"
 	"os"
 	"regexp"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestInitEnv2PR(t *testing.T) {
@@ -63,7 +64,7 @@ func TestRaftCreateChannels2PR(t *testing.T) {
 		if i == 5 {
 			go func() {
 				fmt.Println("Restart peer 0 ...")
-				raftPeers[0]=startPeer(0)
+				raftPeers[0] = startPeer(0)
 			}()
 		}
 		channel := "test0"
@@ -100,7 +101,7 @@ func TestRaftCreateTx2PR(t *testing.T) {
 		if m == 6 {
 			go func() {
 				fmt.Println("Restart peer 0 ...")
-				raftPeers[0]=startPeer(0)
+				raftPeers[0] = startPeer(0)
 			}()
 		}
 		// client 0 create contract
@@ -111,7 +112,7 @@ func TestRaftCreateTx2PR(t *testing.T) {
 			channel = "test0" + strconv.Itoa(m)
 		}
 		fmt.Printf("Create contract %d on channel %s ...\n", m, channel)
-		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, raftClients[0].GetPrivKey())
+		tx, err := core.NewTx(channel, common.ZeroAddress, contractCodes, 0, "", raftClients[0].GetPrivKey())
 		require.NoError(t, err)
 
 		_, err = raftClients[0].AddTx(tx)
@@ -125,7 +126,7 @@ func TestRaftCreateTx2PR(t *testing.T) {
 			channel = "test1" + strconv.Itoa(m)
 		}
 		fmt.Printf("Create contract %d on channel %s ...\n", m, channel)
-		tx, err = types.NewTx(channel, common.ZeroAddress, contractCodes, raftClients[1].GetPrivKey())
+		tx, err = core.NewTx(channel, common.ZeroAddress, contractCodes, 0, "", raftClients[1].GetPrivKey())
 		require.NoError(t, err)
 
 		_, err = raftClients[1].AddTx(tx)
@@ -148,7 +149,7 @@ func TestRaftCallTx2PR(t *testing.T) {
 		if m == 6 {
 			go func() {
 				fmt.Println("Restart peer 0 ...")
-				raftPeers[0]=startPeer(0)
+				raftPeers[0] = startPeer(0)
 			}()
 		}
 

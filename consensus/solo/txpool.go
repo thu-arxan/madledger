@@ -4,7 +4,7 @@ import (
 	"errors"
 	"madledger/common/crypto"
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
 	"sync"
 )
 
@@ -61,7 +61,7 @@ func (pool *txPool) fetchTxs(maxSize int) [][]byte {
 }
 
 // gc is not implementation yet
-func (pool *txPool) gc(block *types.Block) error {
+func (pool *txPool) gc(block *core.Block) error {
 	pool.lock.Lock()
 	defer pool.lock.Unlock()
 	return nil

@@ -2,7 +2,6 @@ package testfor2clients_CfgRaft
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"os"
@@ -10,6 +9,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 // change the package
@@ -34,10 +35,10 @@ func TestRaftPeersStart12RC(t *testing.T) {
 }
 
 func TestRaftLoadClients2RC(t *testing.T) {
-	time.Sleep(1*time.Second)
-	require.NoError(t, loadClient("0",0))
-	require.NoError(t,loadClient("1",1))
-	require.NoError(t,loadClient("3",2))
+	time.Sleep(1 * time.Second)
+	require.NoError(t, loadClient("0", 0))
+	require.NoError(t, loadClient("1", 1))
+	require.NoError(t, loadClient("3", 2))
 }
 
 func TestRaftLoadAdmin2RC(t *testing.T) {

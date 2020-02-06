@@ -3,7 +3,7 @@ package tests
 import (
 	"madledger/common"
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
 	pc "madledger/peer/config"
 	"os"
 	"testing"
@@ -46,7 +46,7 @@ func TestAllSoloCreateChannel(t *testing.T) {
 	cfg, _ := pc.LoadConfig(cfgFilePath)
 	identity, err := cfg.GetIdentity()
 	require.NoError(t, err)
-	testCreateChannel(t, client, []*types.Member{identity})
+	testCreateChannel(t, client, []*core.Member{identity})
 }
 
 func TestAllSoloCreateContract(t *testing.T) {

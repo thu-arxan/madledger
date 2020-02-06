@@ -1,8 +1,6 @@
 package crypto
 
 import (
-	"encoding/hex"
-	"errors"
 	"madledger/common"
 	"madledger/common/crypto/sha3"
 
@@ -20,15 +18,6 @@ type SECP256K1PublicKey secp256k1.PublicKey
 
 // SECP256K1Signature defines the secp256k1 signature
 type SECP256K1Signature secp256k1.Signature
-
-// HexToSECP256K1PrivateKey convert a hex string to PrivateKey
-func HexToSECP256K1PrivateKey(h string) (PrivateKey, error) {
-	b, err := hex.DecodeString(h)
-	if err != nil {
-		return nil, errors.New("invalid hex string")
-	}
-	return toSECP256K1PrivateKey(b)
-}
 
 // GenerateSECP256K1PrivateKey return a new secp256k1 private key
 func GenerateSECP256K1PrivateKey() (PrivateKey, error) {
@@ -117,41 +106,3 @@ func toSECP256K1PrivateKey(bs []byte) (PrivateKey, error) {
 	priv, _ := secp256k1.PrivKeyFromBytes(bs)
 	return (SECP256K1PrivateKey)(*priv), nil
 }
-
-// // toECDSA creates a private key with the given D value. The strict parameter
-// // controls whether the key's length should be enforced at the curve size or
-// // it can also accept legacy encodings (0 prefixes).
-// func toECDSA(d []byte, strict bool) (*ecdsa.PrivateKey, error) {
-// 	priv := new(ecdsa.PrivateKey)
-// 	priv.PublicKey.Curve = S256()
-// 	if strict && 8*len(d) != priv.Params().BitSize {
-// 		return nil, fmt.Errorf("invalid length, need %d bits", priv.Params().BitSize)
-// 	}
-// 	priv.D = new(big.Int).SetBytes(d)
-
-// 	// The priv.D must < N
-// 	if priv.D.Cmp(secp256k1N) >= 0 {
-// 		return nil, fmt.Errorf("invalid private key, >=N")
-// 	}
-// 	// The priv.D must not be zero or negative.
-// 	if priv.D.Sign() <= 0 {
-// 		return nil, fmt.Errorf("invalid private key, zero or negative")
-// 	}
-
-// 	priv.PublicKey.X, priv.PublicKey.Y = priv.PublicKey.Curve.ScalarBaseMult(d)
-// 	if priv.PublicKey.X == nil {
-// 		return nil, errors.New("invalid private key")
-// 	}
-// 	return priv, nil
-// }
-
-// // S256 returns an instance of the secp256k1 curve.
-// func S256() elliptic.Curve {
-// 	return secp256k1.S256()
-// }
-
-// func zeroBytes(bytes []byte) {
-// 	for i := range bytes {
-// 		bytes[i] = 0
-// 	}
-// }

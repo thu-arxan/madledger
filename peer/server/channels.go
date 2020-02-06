@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
 	"madledger/peer/channel"
 	"madledger/peer/config"
 	"madledger/peer/db"
@@ -15,7 +15,7 @@ import (
 // ChannelManager manages all the channels
 type ChannelManager struct {
 	db       db.DB
-	identity *types.Member
+	identity *core.Member
 	// Channels manager all user channels
 	// maybe can use sync.Map, but the advantage is not significant
 	Channels map[string]*channel.Manager
@@ -33,7 +33,7 @@ type ChannelManager struct {
 }
 
 // NewChannelManager is the constructor of ChannelManager
-func NewChannelManager(dbDir string, identity *types.Member, chainCfg *config.BlockChainConfig, ordererClients []*orderer.Client) (*ChannelManager, error) {
+func NewChannelManager(dbDir string, identity *core.Member, chainCfg *config.BlockChainConfig, ordererClients []*orderer.Client) (*ChannelManager, error) {
 	m := new(ChannelManager)
 	m.signalCh = make(chan bool, 1)
 	m.stopCh = make(chan bool, 1)
@@ -49,11 +49,11 @@ func NewChannelManager(dbDir string, identity *types.Member, chainCfg *config.Bl
 	m.chainCfg = chainCfg
 	m.coordinator = channel.NewCoordinator()
 	// set global channel manager
-	globalManager, err := channel.NewManager(types.GLOBALCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, types.GLOBALCHANNELID), identity, m.db, ordererClients, m.coordinator)
+	globalManager, err := channel.NewManager(core.GLOBALCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, core.GLOBALCHANNELID), identity, m.db, ordererClients, m.coordinator)
 	if err != nil {
 		return nil, err
 	}
-	configManager, err := channel.NewManager(types.CONFIGCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, types.CONFIGCHANNELID), identity, m.db, ordererClients, m.coordinator)
+	configManager, err := channel.NewManager(core.CONFIGCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, core.CONFIGCHANNELID), identity, m.db, ordererClients, m.coordinator)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (m *ChannelManager) start() error {
 				channels := m.db.GetChannels()
 				for _, channel := range channels {
 					switch channel {
-					case types.GLOBALCHANNELID, types.CONFIGCHANNELID:
+					case core.GLOBALCHANNELID, core.CONFIGCHANNELID:
 					default:
 						if !m.hasChannel(channel) {
 							manager, err := m.loadChannel(channel)

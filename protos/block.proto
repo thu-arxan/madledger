@@ -19,7 +19,6 @@ message BlockHeader {
     uint64 Number = 3;
     // The hash of PrevBlock
     bytes PrevBlock = 4;
-    // Do this should change to BitCoin as MerkleRoot?
     bytes MerkleRoot = 5;
-    uint64 Time = 6;
+    int64 Time = 6;
 }

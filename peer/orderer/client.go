@@ -3,11 +3,12 @@ package orderer
 import (
 	"context"
 	"crypto/tls"
-	"google.golang.org/grpc/credentials"
 	"madledger/peer/config"
 	"time"
 
-	"madledger/core/types"
+	"google.golang.org/grpc/credentials"
+
+	"madledger/core"
 	pb "madledger/protos"
 
 	"google.golang.org/grpc"
@@ -47,7 +48,7 @@ func NewClient(addr string, cfg *config.Config) (*Client, error) {
 }
 
 // FetchBlock return block if exist, else return error
-func (c *Client) FetchBlock(channelID string, num uint64, async bool) (*types.Block, error) {
+func (c *Client) FetchBlock(channelID string, num uint64, async bool) (*core.Block, error) {
 	var behavior = pb.Behavior_FAIL_IF_NOT_READY
 	if async {
 		behavior = pb.Behavior_RETURN_UNTIL_READY
@@ -60,8 +61,7 @@ func (c *Client) FetchBlock(channelID string, num uint64, async bool) (*types.Bl
 	if err != nil {
 		return nil, err
 	}
-	typesBlock, err := ConvertBlockFromPbToTypes(pbBlock)
-	return typesBlock, err
+	return pbBlock.ToCore()
 }
 
 // ListChannels return all channels

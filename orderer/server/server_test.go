@@ -9,7 +9,7 @@ import (
 	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
 	"madledger/orderer/config"
 	pb "madledger/protos"
 	"os"
@@ -66,7 +66,7 @@ func TestListChannelsAtNil(t *testing.T) {
 
 	for _, channel := range infos.Channels {
 		switch channel.ChannelID {
-		case types.GLOBALCHANNELID, types.CONFIGCHANNELID:
+		case core.GLOBALCHANNELID, core.CONFIGCHANNELID:
 			require.Equal(t, channel.BlockSize, uint64(1))
 		default:
 			t.Fatal(fmt.Errorf("Unknown channel %s", channel.ChannelID))
@@ -85,19 +85,19 @@ func TestFetchBlockAtNil(t *testing.T) {
 	require.NoError(t, err)
 
 	globalGenesisBlock, err := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
-		ChannelID: types.GLOBALCHANNELID,
+		ChannelID: core.GLOBALCHANNELID,
 		Number:    0,
 	})
 	require.NoError(t, err)
 	require.Equal(t, globalGenesisBlock.Header.Number, uint64(0))
 	// set global genesis block hash
-	typesGlobalGenesisBlock, err := globalGenesisBlock.ConvertToTypes()
+	typesGlobalGenesisBlock, err := globalGenesisBlock.ToCore()
 	require.NoError(t, err)
 
-	genesisBlocksHash[types.GLOBALCHANNELID] = typesGlobalGenesisBlock.Hash()
+	genesisBlocksHash[core.GLOBALCHANNELID] = typesGlobalGenesisBlock.Hash()
 	// test bigger number
 	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
-		ChannelID: types.GLOBALCHANNELID,
+		ChannelID: core.GLOBALCHANNELID,
 		Number:    1,
 	})
 	require.Error(t, err)
@@ -115,16 +115,16 @@ func TestFetchBlockAtNil(t *testing.T) {
 	require.Error(t, err)
 	// get genesis block of config
 	configGenesisBlock, err := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
-		ChannelID: types.CONFIGCHANNELID,
+		ChannelID: core.CONFIGCHANNELID,
 		Number:    0,
 	})
 	require.NoError(t, err)
 	require.Equal(t, configGenesisBlock.Header.Number, uint64(0))
 	// set config genesis block hash
-	typesConfigGenesisBlock, err := configGenesisBlock.ConvertToTypes()
+	typesConfigGenesisBlock, err := configGenesisBlock.ToCore()
 	require.NoError(t, err)
 
-	genesisBlocksHash[types.CONFIGCHANNELID] = typesConfigGenesisBlock.Hash()
+	genesisBlocksHash[core.CONFIGCHANNELID] = typesConfigGenesisBlock.Hash()
 	server.Stop()
 }
 
@@ -159,20 +159,20 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 	require.NoError(t, err)
 	// compare global genesis block
 	globalGenesisBlock, _ := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
-		ChannelID: types.GLOBALCHANNELID,
+		ChannelID: core.GLOBALCHANNELID,
 		Number:    0,
 	})
-	typesGlobalGenesisBlock, _ := globalGenesisBlock.ConvertToTypes()
-	if !reflect.DeepEqual(typesGlobalGenesisBlock.Hash().Bytes(), genesisBlocksHash[types.GLOBALCHANNELID].Bytes()) {
+	typesGlobalGenesisBlock, _ := globalGenesisBlock.ToCore()
+	if !reflect.DeepEqual(typesGlobalGenesisBlock.Hash().Bytes(), genesisBlocksHash[core.GLOBALCHANNELID].Bytes()) {
 		t.Fatal()
 	}
 	// compare config genesis block
 	configGenesisBlock, _ := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
-		ChannelID: types.CONFIGCHANNELID,
+		ChannelID: core.CONFIGCHANNELID,
 		Number:    0,
 	})
-	typesConfigGenesisBlock, _ := configGenesisBlock.ConvertToTypes()
-	if !reflect.DeepEqual(typesConfigGenesisBlock.Hash().Bytes(), genesisBlocksHash[types.CONFIGCHANNELID].Bytes()) {
+	typesConfigGenesisBlock, _ := configGenesisBlock.ToCore()
+	if !reflect.DeepEqual(typesConfigGenesisBlock.Hash().Bytes(), genesisBlocksHash[core.CONFIGCHANNELID].Bytes()) {
 		t.Fatal()
 	}
 	server.Stop()
@@ -213,10 +213,10 @@ func TestServerRestartWithUserChannel(t *testing.T) {
 	// Then try to send a tx to test channel
 	// then add a tx into test channel
 	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
-	typesTx, err := types.NewTx("test", common.ZeroAddress, []byte("Just for test"), privKey)
+	coreTx, err := core.NewTx("test", common.ZeroAddress, []byte("Just for test"), 0, "", privKey)
 	require.NoError(t, err)
 
-	pbTx, err := pb.NewTx(typesTx)
+	pbTx, err := pb.NewTx(coreTx)
 	require.NoError(t, err)
 
 	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
@@ -244,15 +244,15 @@ func TestFetchBlockAsync(t *testing.T) {
 	require.Len(t, channelInfos.Channels, 3)
 	var globalInfo *pb.ChannelInfo
 	for _, channelInfo := range channelInfos.Channels {
-		if channelInfo.ChannelID == types.GLOBALCHANNELID {
+		if channelInfo.ChannelID == core.GLOBALCHANNELID {
 			globalInfo = channelInfo
 			break
 		}
 		switch channelInfo.ChannelID {
-		case types.GLOBALCHANNELID:
+		case core.GLOBALCHANNELID:
 			globalInfo = channelInfo
 			require.Equal(t, globalInfo.Identity, pb.Identity_MEMBER)
-		case types.CONFIGCHANNELID:
+		case core.CONFIGCHANNELID:
 			require.Equal(t, channelInfo.Identity, pb.Identity_MEMBER)
 		case "test":
 			require.Equal(t, channelInfo.Identity, pb.Identity_ADMIN)
@@ -263,7 +263,7 @@ func TestFetchBlockAsync(t *testing.T) {
 	exceptNum := globalInfo.BlockSize
 	// try to fecth the block sync which is not exist
 	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
-		ChannelID: types.GLOBALCHANNELID,
+		ChannelID: core.GLOBALCHANNELID,
 		Number:    exceptNum,
 		Behavior:  pb.Behavior_FAIL_IF_NOT_READY,
 	})
@@ -272,7 +272,7 @@ func TestFetchBlockAsync(t *testing.T) {
 	// Then async fetch block
 	// first here is a block which is exist
 	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
-		ChannelID: types.GLOBALCHANNELID,
+		ChannelID: core.GLOBALCHANNELID,
 		Number:    0,
 		Behavior:  pb.Behavior_RETURN_UNTIL_READY,
 	})
@@ -284,12 +284,12 @@ func TestFetchBlockAsync(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		block, err := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
-			ChannelID: types.GLOBALCHANNELID,
+			ChannelID: core.GLOBALCHANNELID,
 			Number:    exceptNum,
 			Behavior:  pb.Behavior_RETURN_UNTIL_READY,
 		})
 		require.NoError(t, err)
-		require.Equal(t, block.Header.ChannelID, types.GLOBALCHANNELID)
+		require.Equal(t, block.Header.ChannelID, core.GLOBALCHANNELID)
 		require.Equal(t, block.Header.Number, exceptNum)
 	}()
 	wg.Add(1)
@@ -320,10 +320,10 @@ func TestAddDuplicateTxs(t *testing.T) {
 	// Then try to send a tx to test channel
 	// then add a tx into test channel
 	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
-	typesTx, err := types.NewTx("test", common.ZeroAddress, []byte("Duplicate"), privKey)
+	coreTx, err := core.NewTx("test", common.ZeroAddress, []byte("Duplicate"), 0, "", privKey)
 	require.NoError(t, err)
 
-	pbTx, err := pb.NewTx(typesTx)
+	pbTx, err := pb.NewTx(coreTx)
 	require.NoError(t, err)
 
 	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
@@ -357,19 +357,19 @@ func getClient() (pb.OrdererClient, error) {
 }
 
 func getCreateChannelTx(channelID string) *pb.Tx {
-	admin, _ := types.NewMember(privKey.PubKey(), "admin")
+	admin, _ := core.NewMember(privKey.PubKey(), "admin")
 	payload, _ := json.Marshal(cc.Payload{
 		ChannelID: channelID,
 		Profile: &cc.Profile{
 			Public: true,
-			Admins: []*types.Member{admin},
+			Admins: []*core.Member{admin},
 		},
 		Version: 1,
 	})
 	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
-	typesTx, _ := types.NewTx(types.CONFIGCHANNELID, types.CreateChannelContractAddress, payload, privKey)
+	coreTx, _ := core.NewTx(core.CONFIGCHANNELID, core.CreateChannelContractAddress, payload, 0, "", privKey)
 
-	pbTx, _ := pb.NewTx(typesTx)
+	pbTx, _ := pb.NewTx(coreTx)
 	return pbTx
 }
 

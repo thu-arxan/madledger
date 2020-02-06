@@ -2,7 +2,7 @@ package db
 
 import (
 	"madledger/common"
-	"madledger/core/types"
+	"madledger/core"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -21,8 +21,11 @@ type WriteBatch interface {
 	RemoveAccount(address common.Address) error
 	SetAccount(account common.Account) error
 	SetStorage(address common.Address, key common.Word256, value common.Word256) error
-	SetTxStatus(tx *types.Tx, status *TxStatus) error
+	SetTxStatus(tx *core.Tx, status *TxStatus) error
 	GetBatch() *leveldb.Batch
+	// Put stores (key, value) into batch, the caller is responsible to avoid duplicate key
+	Put(key, value []byte)
+	RemoveAccountStorage(address common.Address)
 }
 
 // DB provide a interface for peer to access the global state
@@ -44,7 +47,7 @@ type DB interface {
 	// GetStatus return the status of the tx
 	GetTxStatus(channelID, txID string) (*TxStatus, error)
 	GetTxStatusAsync(channelID, txID string) (*TxStatus, error)
-	SetTxStatus(tx *types.Tx, status *TxStatus) error
+	SetTxStatus(tx *core.Tx, status *TxStatus) error
 	BelongChannel(channelID string) bool
 	AddChannel(channelID string)
 	DeleteChannel(channelID string)
@@ -52,4 +55,9 @@ type DB interface {
 	ListTxHistory(address []byte) map[string][]string
 	NewWriteBatch() WriteBatch
 	SyncWriteBatch(batch *leveldb.Batch) error
+
+	// PutBlock stores block into db
+	PutBlock(block *core.Block) error
+	// GetBlock gets block by block.num from db
+	GetBlock(num uint64) (*core.Block, error)
 }

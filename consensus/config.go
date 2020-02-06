@@ -11,9 +11,10 @@ type Config struct {
 	MaxSize int
 	Resume  bool
 	Number  uint64
-	TLS TLSConfig
+	TLS     TLSConfig
 }
 
+// TLSConfig ...
 type TLSConfig struct {
 	Enable  bool
 	CA      string

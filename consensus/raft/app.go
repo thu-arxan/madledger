@@ -52,10 +52,10 @@ func (a *App) Start() error {
 	a.db = db
 	// to avoid add replicated HybridBlock when raft is not leader before closed
 	// minBlock should be zero or chainNum + 1
-	num:=db.GetChainNum()
-	if num!=0{
+	num := db.GetChainNum()
+	if num != 0 {
 		atomic.StoreUint64(&(a.minBlock), num+1)
-	}else {
+	} else {
 		atomic.StoreUint64(&(a.minBlock), 0)
 	}
 	//atomic.StoreUint64(&(a.minBlock), db.GetMinBlock())
@@ -187,37 +187,3 @@ func (a *App) fetchBlockDone(num uint64) {
 func (a *App) getMinBlock() uint64 {
 	return atomic.LoadUint64(&(a.minBlock))
 }
-
-// // GetBlock is the implementation of interface
-// func (a *App) GetBlock(channelID string, num uint64, async bool) (consensus.Block, error) {
-// 	a.lock.Lock()
-// 	for i := range a.blocks {
-// 		if a.blocks[i].GetNumber() == num {
-// 			defer a.lock.Unlock()
-// 			log.Infof("consensus/raft/app: get block %d from app.blocks[%s]", num, channelID)
-// 			return a.blocks[i], nil
-// 		}
-// 	}
-// 	a.lock.Unlock()
-// 	// But block is not in blocks does not mean it is not exist
-// 	// todo: can't get block from db
-// 	block, _ := a.db.GetBlock(num)
-// 	if block != nil {
-// 		log.Infof("consensus/raft/app: get block %d from a.db and key is %s", num, channelID)
-// 		return block, nil
-// 	}
-
-// 	if async {
-// 		log.Infof("Watch block %s", fmt.Sprintf("%s:%d", channelID, num))
-// 		a.hub.Watch(fmt.Sprintf("%s:%d", channelID, num), nil)
-// 		a.lock.Lock()
-// 		defer a.lock.Unlock()
-// 		for i := range a.blocks {
-// 			if a.blocks[i].GetNumber() == num {
-// 				log.Infof("consensus/raft/app: get block %d from a.blocks[%s] asynchronously", num, channelID)
-// 				return a.blocks[i], nil
-// 			}
-// 		}
-// 	}
-// 	return nil, fmt.Errorf("Block %s:%d is not exist", channelID, num)
-// }

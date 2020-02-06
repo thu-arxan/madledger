@@ -1,1 +1,0 @@
-go test -v madledger/consensus/raft -count=1

@@ -135,7 +135,7 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 			return nil
 		}
 
-		log.Info(err)
+		log.Debugf("add tx meets error:%v", err)
 		// then parse leader id
 		if strings.Contains(err.Error(), "Please send to leader") {
 			id, err := strconv.ParseUint(strings.Replace(err.Error(), "rpc error: code = Unknown "+
@@ -149,7 +149,7 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 			return err
 		}
 		// error except tx exist and the id is not leader
-		log.Infoln("Error unknown, set leader randomly.")
+		log.Info("Error unknown, set leader randomly.")
 		c.setLeader(c.ids[util.RandNum(len(c.ids))])
 		time.Sleep(200 * time.Millisecond)
 	}

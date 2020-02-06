@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"madledger/common/crypto"
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
 	"os"
 
 	yaml "gopkg.in/yaml.v2"
@@ -38,6 +38,7 @@ type Config struct {
 	} `yaml:"KeyStore"`
 }
 
+// TLSConfig ...
 type TLSConfig struct {
 	Enable  bool   `yaml:"Enable"`
 	CA      string `yaml:"CA"`
@@ -96,7 +97,7 @@ func (cfg *Config) GetServerConfig() (*ServerConfig, error) {
 	}, nil
 }
 
-// checkTLSConfig check the tls config and set necessary things
+// GetTLSConfig check the tls config and set necessary things
 func (cfg *Config) GetTLSConfig() error {
 	if cfg.TLS.Enable {
 		if cfg.TLS.CA == "" {
@@ -198,7 +199,7 @@ func (cfg *Config) GetDBConfig() (*DBConfig, error) {
 }
 
 // GetIdentity return the identity of peer
-func (cfg *Config) GetIdentity() (*types.Member, error) {
+func (cfg *Config) GetIdentity() (*core.Member, error) {
 	if cfg.KeyStore.Key == "" {
 		return nil, errors.New("The key should not be nil")
 	}
@@ -207,7 +208,7 @@ func (cfg *Config) GetIdentity() (*types.Member, error) {
 		return nil, err
 	}
 
-	identity, err := types.NewMember(privKey.PubKey(), "self")
+	identity, err := core.NewMember(privKey.PubKey(), "self")
 	if err != nil {
 		return nil, err
 	}

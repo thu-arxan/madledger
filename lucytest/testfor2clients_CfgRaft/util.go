@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"go.etcd.io/etcd/raft/raftpb"
 	"io/ioutil"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
@@ -12,7 +11,7 @@ import (
 	"madledger/common"
 	"madledger/common/abi"
 	"madledger/common/util"
-	coreTypes "madledger/core/types"
+	coreTypes "madledger/core"
 	oc "madledger/orderer/config"
 	orderer "madledger/orderer/server"
 	pc "madledger/peer/config"
@@ -22,8 +21,10 @@ import (
 	"strings"
 	"time"
 
+	"go.etcd.io/etcd/raft/raftpb"
+
 	"github.com/otiai10/copy"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var (
@@ -225,7 +226,7 @@ func startOrderer(node int) string {
 		_, err := cmd.Output()
 		if err != nil {
 			fmt.Printf("Run orderer failed, because %s\n", err.Error())
-			if !strings.Contains(err.Error(),"exit status") {
+			if !strings.Contains(err.Error(), "exit status") {
 				panic(fmt.Sprintf("Run orderer failed, because %s\n", err.Error()))
 			}
 		}
@@ -269,7 +270,7 @@ func startPeer(node int) string {
 		_, err := cmd.Output()
 		if err != nil {
 			fmt.Printf("Run peer failed, because %s\n", err.Error())
-			if !strings.Contains(err.Error(),"exit status") {
+			if !strings.Contains(err.Error(), "exit status") {
 				panic(fmt.Sprintf("Run peer failed, because %s\n", err.Error()))
 			}
 		}
@@ -364,7 +365,7 @@ func addNode(nodeID uint64, url string, channel string) error {
 		return err
 	}
 
-	tx, err := coreTypes.NewTx(channel, coreTypes.CfgRaftAddress, cc, raftAdmin.GetPrivKey())
+	tx, err := coreTypes.NewTx(channel, coreTypes.CfgRaftAddress, cc, 0, "", raftAdmin.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -394,7 +395,7 @@ func removeNode(nodeID uint64, channel string) error {
 		return err
 	}
 
-	tx, err := coreTypes.NewTx(channel, coreTypes.CfgRaftAddress, cc, raftAdmin.GetPrivKey())
+	tx, err := coreTypes.NewTx(channel, coreTypes.CfgRaftAddress, cc, 0, "", raftAdmin.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -415,7 +416,7 @@ func removeNode(nodeID uint64, channel string) error {
 	return nil
 }
 
-func loadClient(node string,index int)  error{
+func loadClient(node string, index int) error {
 	clientPath := getRaftClientPath(node)
 	cfgPath := getRaftClientConfigPath(node)
 	cfg, err := cc.LoadConfig(cfgPath)
@@ -430,7 +431,7 @@ func loadClient(node string,index int)  error{
 	if err != nil {
 		return err
 	}
-	raftClient[index]=client
+	raftClient[index] = client
 	return nil
 }
 
@@ -440,7 +441,7 @@ func createContractForCallTx(channel string, node string, client *client.Client)
 	if err != nil {
 		return err
 	}
-	tx, err := coreTypes.NewTx(channel, common.ZeroAddress, contractCodes, client.GetPrivKey())
+	tx, err := coreTypes.NewTx(channel, common.ZeroAddress, contractCodes, 0, "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -487,7 +488,7 @@ func getNumForCallTx(node string, num string) error {
 
 	channel := "test" + node
 	tx, err := coreTypes.NewTx(channel, common.HexToAddress("0x8de6ce45b289502e16aef93313fd3082993acb1f"), payloadBytes,
-		raftClient[0].GetPrivKey())
+		0, "", raftClient[0].GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -522,7 +523,7 @@ func setNumForCallTx(node string, num string) error {
 
 	channel := "test" + node
 	tx, err := coreTypes.NewTx(channel, common.HexToAddress("0x8de6ce45b289502e16aef93313fd3082993acb1f"), payloadBytes,
-		raftClient[0].GetPrivKey())
+		0, "", raftClient[0].GetPrivKey())
 	if err != nil {
 		return err
 	}

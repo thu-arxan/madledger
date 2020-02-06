@@ -3,6 +3,7 @@ package util
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -12,6 +13,7 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -225,4 +227,14 @@ func CopyBytes(origin []byte) []byte {
 		res[i] = origin[i]
 	}
 	return res
+}
+
+// HexToBytes will remove 0x or 0X of begin ,and then call hex.DecodeString
+func HexToBytes(s string) ([]byte, error) {
+	if strings.HasPrefix(s, "0x") {
+		s = strings.Replace(s, "0x", "", 1)
+	} else if strings.HasPrefix(s, "0X") {
+		s = strings.Replace(s, "0X", "", 1)
+	}
+	return hex.DecodeString(s)
 }

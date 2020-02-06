@@ -3,9 +3,10 @@ package db
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"madledger/common"
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -150,7 +151,7 @@ func (db *LevelDB) GetTxStatusAsync(channelID, txID string) (*TxStatus, error) {
 }
 
 // SetTxStatus is the implementation of interface
-func (db *LevelDB) SetTxStatus(tx *types.Tx, status *TxStatus) error {
+func (db *LevelDB) SetTxStatus(tx *core.Tx, status *TxStatus) error {
 	value, err := json.Marshal(status)
 	if err != nil {
 		return err
@@ -237,7 +238,6 @@ func (db *LevelDB) addHistory(address []byte, channelID, txID string) {
 		txs[channelID] = []string{txID}
 		value, _ := json.Marshal(txs)
 		db.connect.Put(address, value, nil)
-		log.Infoln("account ", address, " Channel ", channelID, "add ", txID, "to db")
 	} else {
 		value, err := db.connect.Get(address, nil)
 		if err == nil {
@@ -249,7 +249,6 @@ func (db *LevelDB) addHistory(address []byte, channelID, txID string) {
 			}
 			value, _ := json.Marshal(txs)
 			db.connect.Put(address, value, nil)
-			log.Infoln("account ", address, " Channel ", channelID, "add ", txID, "to db")
 		}
 	}
 }
@@ -278,6 +277,23 @@ func (db *LevelDB) SyncWriteBatch(batch *leveldb.Batch) error {
 	return nil
 }
 
+// PutBlock stores block into db
+func (db *LevelDB) PutBlock(block *core.Block) error {
+	data := block.Bytes()
+	key := fmt.Sprintf("bc_data_%d", block.GetNumber())
+	return db.connect.Put([]byte(key), data, nil)
+}
+
+// GetBlock gets block by block.num from db
+func (db *LevelDB) GetBlock(num uint64) (*core.Block, error) {
+	key := fmt.Sprintf("bc_data_%d", num)
+	data, err := db.connect.Get([]byte(key), nil)
+	if err != nil {
+		return nil, err
+	}
+	return core.UnmarshalBlock(data)
+}
+
 // WriteBatchWrapper is a wrapper of level.Batch
 type WriteBatchWrapper struct {
 	batch *leveldb.Batch
@@ -303,6 +319,19 @@ func (wb *WriteBatchWrapper) RemoveAccount(address common.Address) error {
 	return nil
 }
 
+// RemoveAccountStorage delete all data associated with address
+func (wb *WriteBatchWrapper) RemoveAccountStorage(address common.Address) {
+	// delete all associated data
+	iter := wb.db.connect.NewIterator(nil, nil)
+	defer iter.Release()
+	addr := address.Bytes()
+	iter.Seek(addr)
+	for ; iter.Valid(); iter.Next() {
+		key := iter.Key()
+		wb.batch.Delete(key)
+	}
+}
+
 // SetStorage is the implementation of interface
 func (wb *WriteBatchWrapper) SetStorage(address common.Address, key common.Word256, value common.Word256) error {
 	storageKey := util.BytesCombine(address.Bytes(), key.Bytes())
@@ -311,7 +340,7 @@ func (wb *WriteBatchWrapper) SetStorage(address common.Address, key common.Word2
 }
 
 // SetTxStatus is the implementation of interface
-func (wb *WriteBatchWrapper) SetTxStatus(tx *types.Tx, status *TxStatus) error {
+func (wb *WriteBatchWrapper) SetTxStatus(tx *core.Tx, status *TxStatus) error {
 	value, err := json.Marshal(status)
 	if err != nil {
 		return err
@@ -335,7 +364,6 @@ func (wb *WriteBatchWrapper) addHistory(address []byte, channelID, txID string) 
 		value, _ := json.Marshal(txs)
 		//db.connect.Put(address, value, nil)
 		wb.batch.Put(address, value)
-		log.Infoln("account ", address, " Channel ", channelID, "add ", txID, "to db")
 	} else {
 		value, err := wb.db.connect.Get(address, nil)
 		if err == nil {
@@ -348,9 +376,13 @@ func (wb *WriteBatchWrapper) addHistory(address []byte, channelID, txID string) 
 			value, _ := json.Marshal(txs)
 			//db.connect.Put(address, value, nil)
 			wb.batch.Put(address, value)
-			log.Infoln("account ", address, " Channel ", channelID, "add ", txID, "to db")
 		}
 	}
+}
+
+// Put stores (key, value) into batch, the caller is responsible to avoid duplicate key
+func (wb *WriteBatchWrapper) Put(key, value []byte) {
+	wb.batch.Put(key, value)
 }
 
 // GetBatch return the level.Batch

@@ -2,16 +2,17 @@ package testfor2clients_bft
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"madledger/common"
-	"madledger/core/types"
+	"madledger/core"
 	"os"
 	"regexp"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestInitEnv2PB(t *testing.T) {
@@ -63,7 +64,7 @@ func TestBFTCreateChannels2PB(t *testing.T) {
 		if m == 5 { // restart peer0
 			go func() {
 				fmt.Println("Restart peer 0 ...")
-				bftPeers[0]=startPeer(0)
+				bftPeers[0] = startPeer(0)
 			}()
 		}
 		// client 0 create channel
@@ -102,7 +103,7 @@ func TestBFTCreateTx2PB(t *testing.T) {
 		if m == 5 { // restart peer0
 			go func() {
 				fmt.Println("Restart peer 0 ...")
-				bftPeers[0]=startPeer(0)
+				bftPeers[0] = startPeer(0)
 			}()
 		}
 		// client 0 create contract
@@ -113,7 +114,7 @@ func TestBFTCreateTx2PB(t *testing.T) {
 		contractCodes, err := readCodes(getBFTClientPath(0) + "/MyTest.bin")
 		require.NoError(t, err)
 		fmt.Printf("Create contract %d on channel %s by client0 ...\n", m, channel)
-		tx, err := types.NewTx(channel, common.ZeroAddress, contractCodes, bftClients[0].GetPrivKey())
+		tx, err := core.NewTx(channel, common.ZeroAddress, contractCodes, 0, "", bftClients[0].GetPrivKey())
 		require.NoError(t, err)
 
 		_, err = bftClients[0].AddTx(tx)
@@ -127,7 +128,7 @@ func TestBFTCreateTx2PB(t *testing.T) {
 		contractCodes, err = readCodes(getBFTClientPath(1) + "/MyTest.bin")
 		require.NoError(t, err)
 		fmt.Printf("Create contract %d on channel %s by client1 ...\n", m, channel)
-		tx, err = types.NewTx(channel, common.ZeroAddress, contractCodes, bftClients[1].GetPrivKey())
+		tx, err = core.NewTx(channel, common.ZeroAddress, contractCodes, 0, "", bftClients[1].GetPrivKey())
 		require.NoError(t, err)
 
 		_, err = bftClients[1].AddTx(tx)
@@ -150,7 +151,7 @@ func TestBFTCallTx2PB(t *testing.T) {
 		if m == 5 { // restart peer0
 			go func() {
 				fmt.Println("Restart peer 0 ...")
-				bftPeers[0]=startPeer(0)
+				bftPeers[0] = startPeer(0)
 			}()
 		}
 

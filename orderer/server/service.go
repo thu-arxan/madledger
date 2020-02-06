@@ -2,11 +2,10 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"madledger/common"
-	"madledger/core/types"
-	pb "madledger/protos"
 	"madledger/common/crypto"
+	"madledger/core"
+	pb "madledger/protos"
 
 	"golang.org/x/net/context"
 )
@@ -27,14 +26,14 @@ func (s *Server) ListChannels(ctx context.Context, req *pb.ListChannelsRequest) 
 
 // CreateChannel is the implementation of protos
 func (s *Server) CreateChannel(ctx context.Context, req *pb.CreateChannelRequest) (*pb.ChannelInfo, error) {
-	tx, err := req.GetTx().ConvertToTypes()
+	tx, err := req.GetTx().ToCore()
 	if err != nil {
 		return nil, err
 	}
 	if !tx.Verify() {
 		return nil, errors.New("The tx is not a valid tx")
 	}
-	if tx.GetReceiver().String() != types.CreateChannelContractAddress.String() {
+	if tx.GetReceiver().String() != core.CreateChannelContractAddress.String() {
 		return nil, errors.New("The receiver of the tx is not the valid contract address")
 	}
 	_, err = s.cc.CreateChannel(tx)
@@ -47,25 +46,25 @@ func (s *Server) CreateChannel(ctx context.Context, req *pb.CreateChannelRequest
 // AddTx is the implementation of protos
 func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus, error) {
 	var status pb.TxStatus
-	tx, err := req.Tx.ConvertToTypes()
+	tx, err := req.Tx.ToCore()
 	if err != nil {
 		return &status, err
 	}
 	// if tx is for confChange, we should check if the client is system admin
 	// get tx type according to recipient
-	txType, err := types.GetTxType(common.BytesToAddress(tx.Data.Recipient).String())
-	if err == nil && (txType == types.VALIDATOR || txType == types.NODE) {
+	txType, err := core.GetTxType(common.BytesToAddress(tx.Data.Recipient).String())
+	if err == nil && (txType == core.VALIDATOR || txType == core.NODE) {
 		pk, err := crypto.NewPublicKey(req.Tx.Data.Sig.PK)
 		if err != nil {
 			return &status, err
 		}
 		// create member to check if the client is system admin
-		member, err := types.NewMember(pk, "")
+		member, err := core.NewMember(pk, "")
 		if err != nil {
 			return &status, err
 		}
 		if !s.cc.CM.IsSystemAdmin(member) { // not system admin, return error
-			return &status, fmt.Errorf("The client is not system admin and can't config the cluster.")
+			return &status, errors.New("The client is not system admin and can't config the cluster")
 		}
 	}
 	err = s.cc.AddTx(tx)

@@ -9,7 +9,7 @@ import (
 	"madledger/common"
 	"madledger/common/abi"
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
 	oc "madledger/orderer/config"
 	pc "madledger/peer/config"
 	"os"
@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/otiai10/copy"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var (
@@ -186,7 +186,6 @@ func startPeer(node int) string {
 	}
 }
 
-
 func createChannelForCallTx() error {
 	// client 0 create channel
 	err := bftClients[0].CreateChannel("test0", true, nil, nil)
@@ -208,7 +207,7 @@ func createContractForCallTx() error {
 	if err != nil {
 		return err
 	}
-	tx, err := types.NewTx("test0", common.ZeroAddress, contractCodes, bftClients[0].GetPrivKey(),)
+	tx, err := core.NewTx("test0", common.ZeroAddress, contractCodes, 0, "", bftClients[0].GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -222,7 +221,7 @@ func createContractForCallTx() error {
 	if err != nil {
 		return err
 	}
-	tx, err = types.NewTx("test1", common.ZeroAddress, contractCodes, bftClients[1].GetPrivKey())
+	tx, err = core.NewTx("test1", common.ZeroAddress, contractCodes, 0, "", bftClients[1].GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -250,7 +249,7 @@ func setNumForCallTx(node int, num string) error {
 	} else {
 		addr = "0x1b66001e01d3c8d3893187fee59e3bea1d9bdd9b"
 	}
-	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	tx, err := core.NewTx(channel, common.HexToAddress(addr), payloadBytes, 0, "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -264,7 +263,7 @@ func setNumForCallTx(node int, num string) error {
 
 func getNumForCallTx(node int, num string) error {
 	abiPath := fmt.Sprintf(getBFTClientPath(node) + "/MyTest.abi")
-	var inputs []string = make([]string, 0)
+	var inputs = make([]string, 0)
 	payloadBytes, err := abi.GetPayloadBytes(abiPath, "getNum", inputs)
 	if err != nil {
 		return err
@@ -278,7 +277,7 @@ func getNumForCallTx(node int, num string) error {
 	} else {
 		addr = "0x1b66001e01d3c8d3893187fee59e3bea1d9bdd9b"
 	}
-	tx, err := types.NewTx(channel, common.HexToAddress(addr), payloadBytes, client.GetPrivKey())
+	tx, err := core.NewTx(channel, common.HexToAddress(addr), payloadBytes, 0, "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -302,8 +301,6 @@ func getNumForCallTx(node int, num string) error {
 	}
 	return nil
 }
-
-
 
 func absBFTOrdererConfig(node int) error {
 	cfgPath := getBFTOrdererConfigPath(node)
@@ -351,7 +348,6 @@ func compareChannels() error {
 	fmt.Println("CompareChannels: channels between two orderers are consistent.")
 	return nil
 }
-
 
 func loadOrdererConfig(cfgPath string) (*oc.Config, error) {
 	cfgBytes, err := ioutil.ReadFile(cfgPath)

@@ -3,11 +3,12 @@ package db
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/syndtr/goleveldb/leveldb"
 	cc "madledger/blockchain/config"
 	"madledger/common/event"
 	"madledger/common/util"
-	"madledger/core/types"
+	"madledger/core"
+
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 /*
@@ -41,7 +42,7 @@ func NewLevelDB(dir string) (DB, error) {
 
 // ListChannel is the implementation of DB
 func (db *LevelDB) ListChannel() []string {
-	var key = []byte(types.CONFIGCHANNELID)
+	var key = []byte(core.CONFIGCHANNELID)
 	var channels []string
 	data, err := db.connect.Get(key, nil)
 	if err != nil {
@@ -86,7 +87,7 @@ func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
 }
 
 // AddBlock will records all txs in the block to get rid of duplicated txs
-func (db *LevelDB) AddBlock(block *types.Block) error {
+func (db *LevelDB) AddBlock(block *core.Block) error {
 	for _, tx := range block.Transactions {
 		key := util.BytesCombine([]byte(block.Header.ChannelID), []byte(tx.ID))
 		if exist, _ := db.connect.Has(key, nil); exist {
@@ -97,6 +98,7 @@ func (db *LevelDB) AddBlock(block *types.Block) error {
 	return nil
 }
 
+// UpdateSystemAdmin update system admin
 func (db *LevelDB) UpdateSystemAdmin(profile *cc.Profile) error {
 	var key = getSystemAdminKey()
 	data, err := json.Marshal(profile)
@@ -114,7 +116,7 @@ func (db *LevelDB) UpdateSystemAdmin(profile *cc.Profile) error {
 }
 
 // HasTx return if the tx is contained
-func (db *LevelDB) HasTx(tx *types.Tx) bool {
+func (db *LevelDB) HasTx(tx *core.Tx) bool {
 	key := util.BytesCombine([]byte(tx.Data.ChannelID), []byte(tx.ID))
 
 	if exist, _ := db.connect.Has(key, nil); exist {
@@ -124,7 +126,7 @@ func (db *LevelDB) HasTx(tx *types.Tx) bool {
 }
 
 // IsMember is the implementation of DB
-func (db *LevelDB) IsMember(channelID string, member *types.Member) bool {
+func (db *LevelDB) IsMember(channelID string, member *core.Member) bool {
 	var p cc.Profile
 	var key = getChannelProfileKey(channelID)
 	if db.HasChannel(channelID) {
@@ -149,7 +151,7 @@ func (db *LevelDB) IsMember(channelID string, member *types.Member) bool {
 }
 
 // IsAdmin is the implementation of DB
-func (db *LevelDB) IsAdmin(channelID string, member *types.Member) bool {
+func (db *LevelDB) IsAdmin(channelID string, member *core.Member) bool {
 	var p cc.Profile
 	var key = getChannelProfileKey(channelID)
 	if db.HasChannel(channelID) {
@@ -170,7 +172,8 @@ func (db *LevelDB) IsAdmin(channelID string, member *types.Member) bool {
 	return false
 }
 
-func (db *LevelDB) IsSystemAdmin(member *types.Member) bool {
+// IsSystemAdmin return if the member is the system admin
+func (db *LevelDB) IsSystemAdmin(member *core.Member) bool {
 	var p cc.Profile
 	var key = getSystemAdminKey()
 	data, err := db.connect.Get(key, nil)
@@ -199,9 +202,9 @@ func (db *LevelDB) Close() error {
 	return db.connect.Close()
 }
 
-// addChannel add a record into key types.CONFIGCHANNELID
+// addChannel add a record into key core.CONFIGCHANNELID
 func (db *LevelDB) addChannel(id string) error {
-	var key = []byte(types.CONFIGCHANNELID)
+	var key = []byte(core.CONFIGCHANNELID)
 	exist, _ := db.connect.Has(key, nil)
 	var ids []string
 	if exist {
@@ -229,9 +232,9 @@ func (db *LevelDB) addChannel(id string) error {
 }
 
 func getChannelProfileKey(id string) []byte {
-	return []byte(fmt.Sprintf("%s@%s", types.CONFIGCHANNELID, id))
+	return []byte(fmt.Sprintf("%s@%s", core.CONFIGCHANNELID, id))
 }
 
 func getSystemAdminKey() []byte {
-	return []byte(fmt.Sprintf("%s$admin", types.CONFIGCHANNELID))
+	return []byte(fmt.Sprintf("%s$admin", core.CONFIGCHANNELID))
 }
