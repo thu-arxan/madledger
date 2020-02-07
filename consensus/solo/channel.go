@@ -7,6 +7,7 @@ import (
 	"madledger/common/util"
 	"madledger/consensus"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -20,7 +21,7 @@ type channel struct {
 	num    uint64
 	// todo: gc to reduce the storage
 	blocks map[uint64]*Block
-	init   bool
+	init   int32
 	stop   chan bool
 }
 
@@ -33,16 +34,16 @@ func newChannel(id string, config consensus.Config) *channel {
 		pool:   newTxPool(),
 		hub:    event.NewHub(),
 		blocks: make(map[uint64]*Block),
-		init:   false,
+		init:   0,
 		stop:   make(chan bool),
 	}
 }
 
 func (c *channel) start() error {
-	if c.init {
+	if c.initialized() {
 		return fmt.Errorf("Consensus of channel %s is aleardy start", c.id)
 	}
-	c.init = true
+	c.setInit(1)
 	ticker := time.NewTicker(time.Duration(c.config.Timeout) * time.Millisecond)
 	// panic(c.config.Timeout)
 	log.Infof("Ticker duration is %d and block size is %d", c.config.Timeout, c.config.MaxSize)
@@ -58,10 +59,18 @@ func (c *channel) start() error {
 			}
 		case <-c.stop:
 			log.Infof("Stop channel %s consensus", c.id)
-			c.init = false
+			c.setInit(0)
 			return nil
 		}
 	}
+}
+
+func (c *channel) setInit(init int32) {
+	atomic.StoreInt32(&c.init, init)
+}
+
+func (c *channel) initialized() bool {
+	return atomic.LoadInt32(&c.init) != 0
 }
 
 // AddTx will try to add a tx
@@ -86,7 +95,7 @@ func (c *channel) addTx(tx []byte) error {
 // Stop will block the work of channel
 func (c *channel) Stop() {
 	c.stop <- true
-	for c.init {
+	for c.initialized() {
 		time.Sleep(1 * time.Millisecond)
 	}
 }

@@ -89,7 +89,7 @@ func (m *manager) startChannel(channelID string) error {
 	if err != nil {
 		return err
 	}
-	if channel.init {
+	if channel.initialized() {
 		return fmt.Errorf("Channel %s is starting aleardy", channelID)
 	}
 	go channel.start()

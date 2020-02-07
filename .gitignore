@@ -21,3 +21,4 @@ env/raft/clients
 *.log
 .bft
 *.out
+.vscode

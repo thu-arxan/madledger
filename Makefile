@@ -14,6 +14,7 @@ GO_SYMBOL				?= 					# eg:GO_SYMBOL="-v -race"
 
 # Go tools
 GO_TEST 		= $(GOCMD) test -parallel=1 -count=$(GO_TEST_COUNT) -timeout=$(GO_TEST_TIMEOUT) $(GO_SYMBOL)
+GO_TEST_UNIT	= $(GO_TEST) -cover
 GO_BUILD		= $(GOCMD) build
 
 # Local variables used by makefile
@@ -61,31 +62,31 @@ proto:
 
 # test:
 test:
-	@$(GOCMD) test madledger/common/util -count=1 -cover
-	@$(GOCMD) test madledger/common/event -count=1 -cover
-	@$(GOCMD) test madledger/common/math -count=1 -cover
-	@$(GOCMD) test madledger/common/crypto -count=1 -cover
-	@$(GOCMD) test madledger/common/abi -count=1 -cover
+	@$(GO_TEST_UNIT) madledger/common/util
+	@$(GO_TEST_UNIT) madledger/common/event
+	@$(GO_TEST_UNIT) madledger/common/math
+	@$(GO_TEST_UNIT) madledger/common/crypto
+	@$(GO_TEST_UNIT) madledger/common/abi
 
-	@$(GOCMD) test madledger/core -count=1 -cover
+	@$(GO_TEST_UNIT) madledger/core
 
-	@$(GOCMD) test madledger/protos -count=1 -cover
+	@$(GO_TEST_UNIT) madledger/protos
 
-	@$(GOCMD) test madledger/blockchain/config -count=1 -cover
+	@$(GO_TEST_UNIT) madledger/blockchain/config
 
-	@$(GOCMD) test madledger/consensus/solo -count=1 -cover
-	@$(GOCMD) test madledger/consensus/raft -count=1 -cover
-	@$(GOCMD) test madledger/consensus/tendermint -count=1 -cover
+	@$(GO_TEST_UNIT) madledger/consensus/solo
+	@$(GO_TEST_UNIT) madledger/consensus/raft
+	@$(GO_TEST_UNIT) madledger/consensus/tendermint
 
-	@$(GOCMD) test madledger/orderer/config -count=1 -cover
-	@$(GOCMD) test madledger/orderer/db -count=1 -cover
-	@$(GOCMD) test madledger/orderer/server -count=1 -cover
+	@$(GO_TEST_UNIT) madledger/orderer/config
+	@$(GO_TEST_UNIT) madledger/orderer/db
+	@$(GO_TEST_UNIT) madledger/orderer/server
 
-	@$(GOCMD) test madledger/peer/db -count=1 -cover
-	@$(GOCMD) test madledger/peer/config -count=1 -cover
+	@$(GO_TEST_UNIT) madledger/peer/db
+	@$(GO_TEST_UNIT) madledger/peer/config
 
 	@echo "Next test may cost 1 minutes ..."
-	@$(GOCMD) test madledger/tests -count=1 -cover
+	@$(GO_TEST_UNIT) madledger/tests
 
 performance:
 	@$(GO_TEST) madledger/tests/performance

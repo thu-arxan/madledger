@@ -7,7 +7,11 @@
 ## TODO
 
 * [x] EVM移植
-* [ ] Account suicide之后，相关数据需要从数据库中删除
+* [x] Account suicide之后，相关数据需要从数据库中删除
+* [ ] 测试Account suicide之后，相关数据是否删除
+* [ ] Raft部分代码重构
+* [ ] Raft部分，多链共识
+* [ ] 添加AddNode, RemoveNode接口
 
 ## Fix Me
 

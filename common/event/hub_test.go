@@ -13,6 +13,7 @@ import (
 var (
 	eventSize   = 2048
 	eventLength = 32
+	chLimit     = 5000
 )
 
 func TestWatch(t *testing.T) {
@@ -24,6 +25,7 @@ func TestWatch(t *testing.T) {
 	}
 
 	var wg sync.WaitGroup
+	ch := make(chan bool, chLimit)
 	// register events
 	wg.Add(1)
 	go func() {
@@ -31,8 +33,12 @@ func TestWatch(t *testing.T) {
 		for i := 0; i < eventSize*10; i++ {
 			event := events[i%eventSize]
 			wg.Add(1)
+			ch <- true
 			go func(i int) {
-				defer wg.Done()
+				defer func() {
+					wg.Done()
+					<-ch
+				}()
 				result := hub.Watch(event, nil)
 				require.EqualError(t, result.Err, fmt.Sprintf("Error is %d", i%eventSize))
 			}(i)
@@ -46,8 +52,12 @@ func TestWatch(t *testing.T) {
 		for i := 0; i < eventSize; i++ {
 			event := events[i]
 			wg.Add(1)
+			ch <- true
 			go func(i int) {
-				wg.Done()
+				defer func() {
+					wg.Done()
+					<-ch
+				}()
 				hub.Done(event, &Result{
 					Err: fmt.Errorf("Error is %d", i),
 				})
@@ -71,6 +81,7 @@ func TestWatches(t *testing.T) {
 	}
 
 	var wg sync.WaitGroup
+	ch := make(chan bool, chLimit)
 	// register events
 	wg.Add(1)
 	go func() {
@@ -86,8 +97,12 @@ func TestWatches(t *testing.T) {
 				es = append(es, events[(i+1)%eventSize])
 			}
 			wg.Add(1)
+			ch <- true
 			go func(i int) {
-				defer wg.Done()
+				defer func() {
+					wg.Done()
+					<-ch
+				}()
 				randomSleep()
 				result := hub.Watch(event, nil)
 				if i%2 == 0 {
@@ -106,8 +121,12 @@ func TestWatches(t *testing.T) {
 		for i := 0; i < eventSize; i++ {
 			event := events[i]
 			wg.Add(1)
+			ch <- true
 			go func(i int) {
-				wg.Done()
+				defer func() {
+					wg.Done()
+					<-ch
+				}()
 				randomSleep()
 				if i%2 == 0 {
 					hub.Done(event, &Result{
