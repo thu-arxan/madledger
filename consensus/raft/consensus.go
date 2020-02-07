@@ -96,7 +96,7 @@ func NewConseneus(cfg *Config) (*Consensus, error) {
 func (c *Consensus) Start() error {
 	c.clients = make(map[uint64]*Client)
 	c.ids = make([]uint64, 0)
-	for id, addr := range c.cfg.ec.peers {
+	for id, addr := range c.cfg.ec.GetPeers() {
 		client, err := NewClient(addr, c.cfg.cc.TLS)
 		if err != nil {
 			return err
@@ -116,8 +116,8 @@ func (c *Consensus) Start() error {
 // Stop is the implementation of interface
 func (c *Consensus) Stop() error {
 	c.chain.Stop()
-	c.chain.raft.Stop()
-	c.chain.rpcServer.Stop()
+	// c.chain.raft.Stop()
+	// c.chain.rpcServer.Stop()
 	return nil
 	//return errors.New("Not implementation yet")
 }
@@ -129,9 +129,9 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 	// todo: we should parse the leader address other than random choose a leader
 	for i := 0; i < 100; i++ {
 		log.Infof("Try to add tx to raft %d, this is %d times' trying.", c.leader, i)
-		err = c.clients[c.getLeader()].addTx(channelID, tx, c.cfg.ec.id)
+		err = c.clients[c.getLeader()].addTx(channelID, tx, c.cfg.id)
 		if err == nil || strings.Contains(err.Error(), "Transaction is aleardy in the pool") {
-			log.Infof("Succeed to add tx to raft %d, I'm raft %d", c.leader, c.cfg.ec.id)
+			log.Infof("Succeed to add tx to raft %d, I'm raft %d", c.leader, c.cfg.id)
 			return nil
 		}
 

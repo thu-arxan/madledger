@@ -1,8 +1,7 @@
-package raft
+package eraft
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"madledger/common/util"
 	"time"
@@ -11,7 +10,7 @@ import (
 )
 
 type dbBlocks struct {
-	Blocks []*HybridBlock
+	Blocks []*Block
 }
 
 // DB is the database of raft
@@ -40,30 +39,30 @@ func (db *DB) Close() {
 }
 
 // PutBlock put a block into db
-func (db *DB) PutBlock(block *HybridBlock) {
+func (db *DB) PutBlock(block *Block) {
 	var key = util.Uint64ToBytes(block.GetNumber())
-	log.Infof("Put hybridBlock %d into raft.db", block.GetNumber())
+	log.Infof("Put Block %d into raft.db", block.GetNumber())
 	db.connect.Put(key, block.Bytes(), nil)
 }
 
-// GetHybridBlock return the hybrid block which Num is num
-// Return nil, errors.New("Not exist") if not exist
-func (db *DB) GetHybridBlock(num uint64) (*HybridBlock, error) {
-	var key = util.Uint64ToBytes(num)
-	has, err := db.connect.Has(key, nil)
-	if err != nil {
-		return nil, err
-	}
-	if has {
-		value, err := db.connect.Get(key, nil)
-		if err != nil {
-			return nil, err
-		}
-		return UnmarshalHybridBlock(value), nil
-	}
+// // GetHybridBlock return the hybrid block which Num is num
+// // Return nil, errors.New("Not exist") if not exist
+// func (db *DB) GetHybridBlock(num uint64) (*HybridBlock, error) {
+// 	var key = util.Uint64ToBytes(num)
+// 	has, err := db.connect.Has(key, nil)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	if has {
+// 		value, err := db.connect.Get(key, nil)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		return UnmarshalHybridBlock(value), nil
+// 	}
 
-	return nil, errors.New("Not exist")
-}
+// 	return nil, errors.New("Not exist")
+// }
 
 // GetMinBlock return min block number for restore
 func (db *DB) GetMinBlock() uint64 {

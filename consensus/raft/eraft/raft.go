@@ -1,4 +1,4 @@
-package raft
+package eraft
 
 import (
 	"errors"
@@ -83,7 +83,7 @@ func (r *Raft) Stop() {
 // gurantee this, so we are trying our best to forbid follower or candidate adding block, but the fact is
 // the first one trying to add block which num is except can succeed, but it maybe leader very possible.
 // And this function should gurantee that return nil if the block is really added(works in the app)
-func (r *Raft) AddBlock(block *HybridBlock) error {
+func (r *Raft) AddBlock(block *Block) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -104,7 +104,7 @@ func (r *Raft) AddBlock(block *HybridBlock) error {
 }
 
 // BlockCh provide a channel to fetch blocks
-func (r *Raft) BlockCh() chan *HybridBlock {
+func (r *Raft) BlockCh() chan *Block {
 	return r.app.blockCh
 }
 
@@ -119,7 +119,7 @@ func (r *Raft) GetLeader() uint64 {
 }
 
 // NotifyLater provide a mechanism for blockchain system to deal with the block which is too advanced
-func (r *Raft) NotifyLater(block *HybridBlock) {
+func (r *Raft) NotifyLater(block *Block) {
 	r.app.notifyLater(block)
 }
 
@@ -137,4 +137,8 @@ func (r *Raft) setStatus(status int32) {
 
 func (r *Raft) getStatus() int32 {
 	return atomic.LoadInt32(&r.status)
+}
+
+func (r *Raft) GetID() uint64 {
+	return r.cfg.id
 }

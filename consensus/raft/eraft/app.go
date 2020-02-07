@@ -1,4 +1,4 @@
-package raft
+package eraft
 
 import (
 	"encoding/json"
@@ -17,8 +17,8 @@ type App struct {
 	cfg    *EraftConfig
 	status int32 // only Running and Stopped
 
-	blocks  map[uint64]*HybridBlock
-	blockCh chan *HybridBlock
+	blocks  map[uint64]*Block
+	blockCh chan *Block
 	hub     *event.Hub
 	// minBlock is the min block number that the blockchain system needed
 	minBlock uint64
@@ -29,8 +29,8 @@ type App struct {
 func NewApp(cfg *EraftConfig) (*App, error) {
 	return &App{
 		cfg:     cfg,
-		blocks:  make(map[uint64]*HybridBlock),
-		blockCh: make(chan *HybridBlock, 2048),
+		blocks:  make(map[uint64]*Block),
+		blockCh: make(chan *Block, 2048),
 		hub:     event.NewHub(),
 		status:  Stopped,
 	}, nil
@@ -50,7 +50,7 @@ func (a *App) Start() error {
 		return err
 	}
 	a.db = db
-	// to avoid add replicated HybridBlock when raft is not leader before closed
+	// to avoid add replicated Block when raft is not leader before closed
 	// minBlock should be zero or chainNum + 1
 	num := db.GetChainNum()
 	if num != 0 {
@@ -83,16 +83,16 @@ func (a *App) Commit(data []byte) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	if block := UnmarshalHybridBlock(data); block != nil {
+	if block := UnmarshalBlock(data); block != nil {
 		hash := string(crypto.Hash(block.Bytes()))
 		if !util.Contain(a.blocks, block.GetNumber()) {
 			a.blocks[block.GetNumber()] = block
 			if block.GetNumber() < a.getMinBlock() {
-				// don't put HybridBlock thing because it's already in raft.db
+				// don't put Block thing because it's already in raft.db
 				a.hub.Done(hash, nil)
 				a.blockCh <- block
 			} else if block.GetNumber() >= a.getMinBlock() {
-				// Put HybridBlock into raft.db and tell raft it's done
+				// Put Block into raft.db and tell raft it's done
 				a.db.PutBlock(block)
 				a.hub.Done(hash, nil)
 				a.blockCh <- block
@@ -119,7 +119,7 @@ func (a *App) Marshal() ([]byte, error) {
 
 // UnMarshal recover from snapshot
 func (a *App) UnMarshal(data []byte) error {
-	var blocks map[uint64]*HybridBlock
+	var blocks map[uint64]*Block
 	if err := json.Unmarshal(data, &blocks); err != nil {
 		return err
 	}
@@ -163,14 +163,14 @@ func (a *App) UnMarshal(data []byte) error {
 	return nil
 }
 
-func (a *App) watch(block *HybridBlock) error {
+func (a *App) watch(block *Block) error {
 	hash := string(crypto.Hash(block.Bytes()))
 	res := a.hub.Watch(hash, nil)
 	return res.Err
 }
 
 // notifyLater provide a mechanism for blockchain system to deal with the block which is too advanced
-func (a *App) notifyLater(block *HybridBlock) {
+func (a *App) notifyLater(block *Block) {
 	a.blockCh <- block
 }
 

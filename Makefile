@@ -59,6 +59,7 @@ build:
 
 proto:
 	@ cd protos && protoc --go_out=plugins=grpc:. *.proto
+	@ cd consensus/raft/protos && protoc --go_out=plugins=grpc:. *.proto
 
 # test:
 test:
