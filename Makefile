@@ -57,3 +57,9 @@ performance:
 
 docker:
 	@docker build -t madledger:alpha .
+
+httptest:
+	@-kill -9 `pidof orderer`
+	@-kill -9 `pidof peer`
+	@go test madledger/tests -v -count=1 > log.out
+	@tail log.out
