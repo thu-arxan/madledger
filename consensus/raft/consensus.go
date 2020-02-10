@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"madledger/consensus"
+	"madledger/core"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -48,7 +49,6 @@ func (c *Client) newConn() error {
 	var err error
 	if c.TLS.Enable {
 		creds := credentials.NewTLS(&tls.Config{
-			//ServerName:   "orderer.madledger.com",
 			Certificates: []tls.Certificate{*(c.TLS.Cert)},
 			RootCAs:      c.TLS.Pool,
 		})
@@ -123,13 +123,16 @@ func (c *Consensus) Stop() error {
 }
 
 // AddTx is the implementation of interface
-func (c *Consensus) AddTx(channelID string, tx []byte) error {
+func (c *Consensus) AddTx(tx *core.Tx) error {
 	var err error
+
+	channelID := tx.Data.ChannelID
+	bytes, _ := tx.Bytes()
 	log.Infof("Consensus.AddTx: Add tx of channel %s.", channelID)
 	// todo: we should parse the leader address other than random choose a leader
 	for i := 0; i < 100; i++ {
 		log.Infof("Try to add tx to raft %d, this is %d times' trying.", c.leader, i)
-		err = c.clients[c.getLeader()].addTx(channelID, tx, c.cfg.id)
+		err = c.clients[c.getLeader()].addTx(channelID, bytes, c.cfg.id)
 		if err == nil || strings.Contains(err.Error(), "Transaction is aleardy in the pool") {
 			log.Infof("Succeed to add tx to raft %d, I'm raft %d", c.leader, c.cfg.id)
 			return nil

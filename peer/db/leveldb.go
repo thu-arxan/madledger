@@ -223,12 +223,6 @@ func (db *LevelDB) ListTxHistory(address []byte) map[string][]string {
 		json.Unmarshal(value, &txs)
 	}
 
-	/*for channel, tx := range txs {
-		for _, id := range tx {
-			log.Infof("db/ListTxHistory: Channel %s, tx.ID %s", channel, id)
-		}
-	}*/
-
 	return txs
 }
 

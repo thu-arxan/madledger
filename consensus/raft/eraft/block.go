@@ -1,6 +1,9 @@
 package eraft
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"madledger/core"
+)
 
 // Block is the implementaion of raft Block
 type Block struct {
@@ -15,8 +18,17 @@ func (block *Block) GetNumber() uint64 {
 }
 
 // GetTxs is the implementation of block
-func (block *Block) GetTxs() [][]byte {
-	return block.Txs
+func (block *Block) GetTxs() []*core.Tx {
+	var txs []*core.Tx
+	for _, txBytes := range block.Txs {
+		tx, err := core.BytesToTx(txBytes)
+		if err == nil {
+			txs = append(txs, tx)
+		} else {
+			log.Infof("get tx from consensus block failed because %v", err)
+		}
+	}
+	return txs
 }
 
 // Bytes return bytes of block

@@ -2,7 +2,6 @@ package solo
 
 import (
 	"errors"
-	"madledger/common/crypto"
 	"madledger/common/util"
 	"madledger/core"
 	"sync"
@@ -10,30 +9,30 @@ import (
 
 // txPool store all txs which is not packed
 type txPool struct {
-	hashes map[string]bool
-	txs    [][]byte
-	lock   sync.Mutex
+	ids  map[string]bool
+	txs  []*core.Tx
+	lock sync.Mutex
 }
 
 // newTxPool is the constructor of txPool
 func newTxPool() *txPool {
 	pool := new(txPool)
-	pool.hashes = make(map[string]bool)
+	pool.ids = make(map[string]bool)
 	return pool
 }
 
 // addTx add a transaction into pool
-func (pool *txPool) addTx(tx []byte) error {
+func (pool *txPool) addTx(tx *core.Tx) error {
 	pool.lock.Lock()
 	defer pool.lock.Unlock()
 	// check if the tx is duplicated
-	var hash = util.Hex(crypto.Hash(tx))
-	if util.Contain(pool.hashes, hash) {
+	var id = tx.ID
+	if util.Contain(pool.ids, id) {
 		return errors.New("Transaction is aleardy in the pool")
 	}
 
 	// add tx into the record
-	pool.hashes[hash] = true
+	pool.ids[id] = true
 	pool.txs = append(pool.txs, tx)
 	return nil
 }
@@ -47,7 +46,7 @@ func (pool *txPool) getPoolSize() int {
 
 // however, we can not gc right away
 // because the db is not updated yet
-func (pool *txPool) fetchTxs(maxSize int) [][]byte {
+func (pool *txPool) fetchTxs(maxSize int) []*core.Tx {
 	pool.lock.Lock()
 	defer pool.lock.Unlock()
 	var size = len(pool.txs)

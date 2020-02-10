@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"madledger/consensus"
+	"madledger/core"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -71,14 +72,16 @@ func (c *Consensus) AddChannel(channelID string, cfg consensus.Config) error {
 }
 
 // AddTx is the implementation of interface
-func (c *Consensus) AddTx(channelID string, tx []byte) error {
+func (c *Consensus) AddTx(tx *core.Tx) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	if c.status != consensus.Started {
 		return errors.New("The service is not started")
 	}
-	return c.app.AddTx(channelID, tx)
+
+	bytes, _ := tx.Bytes()
+	return c.app.AddTx(tx.Data.ChannelID, bytes)
 }
 
 // SyncBlocks is the implementation of interface
