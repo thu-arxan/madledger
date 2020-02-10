@@ -224,10 +224,10 @@ func (m *Manager) fetchBlock() (*core.Block, error) {
 	var errs = make([]error, len(m.clients))
 	var blocks = make([]*core.Block, len(m.clients))
 	id := m.id
-	except := m.cm.GetExcept()
+	expect := m.cm.GetExpect()
 	for i := range m.clients {
 		go func(i int) {
-			block, err := m.clients[i].FetchBlock(id, except, true)
+			block, err := m.clients[i].FetchBlock(id, expect, true)
 			if err != nil {
 				errs[i] = err
 				lock.Lock()

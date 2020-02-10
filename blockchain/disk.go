@@ -12,7 +12,7 @@ import (
 	"strconv"
 )
 
-// load loads a channel and return the block excepted
+// load loads a channel and return the block expected
 // if the envirnoment is not completed, then complete the env
 // todo: the damaged circumstance is not consided completed
 func load(dir string) (uint64, error) {

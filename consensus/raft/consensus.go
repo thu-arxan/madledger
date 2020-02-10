@@ -148,7 +148,7 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 		if strings.Contains(err.Error(), "I've been removed from cluster") {
 			return err
 		}
-		// error except tx exist and the id is not leader
+		// error expect tx exist and the id is not leader
 		log.Info("Error unknown, set leader randomly.")
 		c.setLeader(c.ids[util.RandNum(len(c.ids))])
 		time.Sleep(200 * time.Millisecond)

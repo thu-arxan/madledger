@@ -18,12 +18,12 @@ type Manager struct {
 	lock   *sync.Mutex
 	id     string
 	dir    string
-	except uint64
+	expect uint64
 }
 
 // NewManager is the constructor of manager
 func NewManager(id, dir string) (*Manager, error) {
-	except, err := load(dir)
+	expect, err := load(dir)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func NewManager(id, dir string) (*Manager, error) {
 		lock:   new(sync.Mutex),
 		id:     id,
 		dir:    dir,
-		except: except,
+		expect: expect,
 	}
 
 	return &m, nil
@@ -41,7 +41,7 @@ func NewManager(id, dir string) (*Manager, error) {
 func (manager *Manager) HasGenesisBlock() bool {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
-	return manager.except != 0
+	return manager.expect != 0
 }
 
 // GetBlock return the block of num
@@ -49,18 +49,18 @@ func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 
-	if num >= manager.except {
+	if num >= manager.expect {
 		return nil, errors.New("The block is not exist")
 	}
 	return manager.loadBlock(num)
 }
 
-// GetExcept return the except
-func (manager *Manager) GetExcept() uint64 {
+// GetExpect return the expect
+func (manager *Manager) GetExpect() uint64 {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 
-	return manager.except
+	return manager.expect
 }
 
 // GetPrevBlock return the prev block
@@ -68,12 +68,12 @@ func (manager *Manager) GetPrevBlock() *core.Block {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 
-	if manager.except == 0 {
+	if manager.expect == 0 {
 		return nil
 	}
-	block, err := manager.loadBlock(manager.except - 1)
+	block, err := manager.loadBlock(manager.expect - 1)
 	if err != nil {
-		log.Warnf("channel %s manager failed to load block %d because of %v", manager.id, manager.except-1, err)
+		log.Warnf("channel %s manager failed to load block %d because of %v", manager.id, manager.expect-1, err)
 	}
 	return block
 }
@@ -83,10 +83,10 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 
-	if block.Header.Number != manager.except {
-		return fmt.Errorf("Channel %s except block %d while receive block %d", manager.id, manager.except, block.Header.Number)
+	if block.Header.Number != manager.expect {
+		return fmt.Errorf("Channel %s expect block %d while receive block %d", manager.id, manager.expect, block.Header.Number)
 	}
-	log.Infof("Channel %s add block %d", manager.id, manager.except)
+	log.Infof("Channel %s add block %d", manager.id, manager.expect)
 	var err error
 
 	err = manager.storeBlock(block)
@@ -97,6 +97,6 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 	if err != nil {
 		return err
 	}
-	manager.except++
+	manager.expect++
 	return nil
 }

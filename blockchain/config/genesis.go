@@ -25,7 +25,7 @@ func CreateGenesisBlock(admins []*core.Member) (*core.Block, error) {
 	}, Payload{
 		ChannelID: core.ACCOUNTCHANNELID,
 		Profile: &Profile {
-			Public: false,
+			Public: true,
 		},
 		Version: 1,
 	}, Payload{ // this payload is used to record the info of  system admin

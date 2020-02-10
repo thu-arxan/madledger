@@ -152,7 +152,7 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 
 // GetBlockSize return the size of blocks
 func (manager *Manager) GetBlockSize() uint64 {
-	return manager.cm.GetExcept()
+	return manager.cm.GetExpect()
 }
 
 // AddTx try to add a tx
@@ -201,7 +201,7 @@ func (manager *Manager) IsSystemAdmin(member *core.Member) bool {
 // FetchBlockAsync will fetch book async.
 // TODO: fix the thread unsafety
 func (manager *Manager) FetchBlockAsync(num uint64) (*core.Block, error) {
-	if manager.cm.GetExcept() <= num {
+	if manager.cm.GetExpect() <= num {
 		manager.hub.Watch(string(num), nil)
 	}
 

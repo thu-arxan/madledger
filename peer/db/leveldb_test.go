@@ -154,9 +154,9 @@ func TestListTxHistory(t *testing.T) {
 		t.Fatal(err)
 	}
 	history := db.ListTxHistory(address.Bytes())
-	exceptHistory := make(map[string][]string)
-	exceptHistory["test"] = []string{tx1.ID, tx2.ID}
-	if !reflect.DeepEqual(history, exceptHistory) {
+	expectHistory := make(map[string][]string)
+	expectHistory["test"] = []string{tx1.ID, tx2.ID}
+	if !reflect.DeepEqual(history, expectHistory) {
 		t.Fatal()
 	}
 }
