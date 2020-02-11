@@ -2,8 +2,8 @@ package channel
 
 import (
 	"encoding/json"
+	ac "madledger/blockchain/account"
 	cc "madledger/blockchain/config"
-	aa "madledger/blockchain/account"
 	"madledger/consensus"
 	"madledger/core"
 )
@@ -66,12 +66,16 @@ func (manager *Manager) AddGlobalBlock(block *core.Block) error {
 // AddAccountBlock add an account block
 // TODO: ab
 func (manager *Manager) AddAccountBlock(block *core.Block) error {
+	if block.Header.Number == 0 {
+		return nil
+	}
+
 	for _, tx := range block.Transactions {
-		var payload aa.Payload
+		var payload ac.Payload
 		json.Unmarshal(tx.Data.Payload, &payload)
-		var channelID = tx.Data.ChannelID
-		var action = payload.Action
-		var value = tx.Data.Value
+		var channelID= tx.Data.ChannelID
+		var action= payload.Action
+		var value= tx.Data.Value
 		var err error
 		if action == "issue" {
 			err = manager.db.UpdateAccountIssue(channelID, value)
@@ -83,6 +87,8 @@ func (manager *Manager) AddAccountBlock(block *core.Block) error {
 		if err != nil {
 			return err
 		}
+
 	}
+
 	return nil
 }
