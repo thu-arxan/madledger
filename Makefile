@@ -34,7 +34,7 @@ OS_NAME                := $(shell uname -s)
 
 PACKAGES=$(shell go list ./...)
 
-all: vet build
+all: vet install
 
 # go vet:format check, bug check
 vet:
@@ -46,14 +46,14 @@ vet:
 unittest:
 	@$(GO_TEST) $(PACKAGES)
 
-build:
-	@echo "building orderer..."
+install:
+	@echo "install orderer..."
 	@$(GOCMD) install madledger/orderer
 
-	@echo "building peer..."
+	@echo "install peer..."
 	@$(GOCMD) install madledger/peer
 
-	@echo "building client..."
+	@echo "install client..."
 	@$(GOCMD) install madledger/client
 
 proto:

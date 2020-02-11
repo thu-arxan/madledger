@@ -11,17 +11,6 @@ Address: localhost
 # Should be false or true (default: true)
 Debug: true
 
-# Configure for the TLS
-TLS:
-  # Should be true of false (default: true)
-  Enable: false
-  # The path of CA cert, it should not be empty if Enable is true
-  CA: 
-  # Cert of the Blockchain, it should not be empty if Enable is true
-  Cert: 
-  # Key of the Blockchain, it should not be empty if Enable is true
-  Key: 
-
 # Configure for the BlockChain
 BlockChain:
   # Max time to create a block which unit is milliseconds (default: 1000)
@@ -29,7 +18,7 @@ BlockChain:
   # Max txs can be included in a block (defalut: 100)
   BatchSize: 100
   # Path to store the blocks (default: orderer/data/blocks)
-  Path: /home/liuyihua/gopath/src/madledger/orderer/config/data/blocks
+  Path: ./data/blocks
   # If verify the rightness of blocks (default: false)
   Verify: false
 
@@ -40,28 +29,17 @@ Consensus:
   # Tendermint is the bft consensus.
   Tendermint:
     # The path of tendermint (default: orderer/.tendermint)
-    Path: /home/liuyihua/gopath/src/madledger/orderer/config/.tendermint
+    Path: .tendermint
     # Some ports
     Port:
       P2P: 26656
       RPC: 26657
       APP: 26658
     # ID means to identity in p2p connections
-    ID: 200fd1ad575274a457a69af7baf9b974fea4b2ff
+    ID: 3f0355cf684992751d8fa545065b1d5b3179af24
     # P2P Persistent Address, like c395828cc2baaa6f6af2bd13ce62d1e9484919c8@localhost:36656
     P2PAddress:
       -
-  # Raft is the raft consensus
-  Raft:
-    # The path of raft
-    Path: /home/liuyihua/gopath/src/madledger/orderer/config/.raft
-    # ID should be int, and it should not be duplicate
-    ID:
-    # Node should be like 1@localhost:12345
-    Nodes:
-      -
-    # Should be true of false (default: false)
-    Join: false
 
 # DB only support leveldb now
 DB:
@@ -69,4 +47,4 @@ DB:
   # LevelDB
   LevelDB:
     # The path of leveldb (default: orderer/data/leveldb)
-    Path: /home/liuyihua/gopath/src/madledger/orderer/config/data/leveldb
+    Path: ./data/leveldb
