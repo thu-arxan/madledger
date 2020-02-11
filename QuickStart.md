@@ -71,7 +71,7 @@ peer init -c peer.yaml
 
 安装后，就可以按照相应规则生成配置文件并启动相关服务了。`env_local`文件夹中准备了一些可用于本机启动相关服务并运行测试的配置文件和测试脚本，开发者可利用该脚本和配置文件启动服务进行测试，也可自行生成。
 
-系统目前支持三种共识协议，每一种共识协议的配置文件略有不同。具体区别可查看`orderer/config`目录下的[文档](orderer/conifig/README.md)
+系统目前支持三种共识协议，每一种共识协议下，`client, peer`模块的配置大体一致，`orderer`模块配置文件略有不同。具体区别可查看`orderer/config`目录下的[文档](orderer/conifig/README.md)。
 
 ### 5.1. Solo
 
