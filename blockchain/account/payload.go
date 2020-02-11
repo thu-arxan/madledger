@@ -2,6 +2,7 @@ package account
 
 // todo: what is payload
 type Payload struct {
-	ChannelID string
+	//ChannelID string
 	//account common.Account
+	Action string // transfer or issue
 }

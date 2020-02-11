@@ -1,9 +1,12 @@
 package db
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"github.com/syndtr/goleveldb/leveldb/errors"
 	cc "madledger/blockchain/config"
+	"madledger/common"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/core"
@@ -84,6 +87,61 @@ func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
 	}
 	db.hub.Done(id, nil)
 	return nil
+}
+
+// UpdateAccountIssue is the implementation of DB
+func (db *LevelDB) UpdateAccountIssue(id string, value uint64) error {
+	var key = []byte("_account")
+	if !db.HasChannel(id) {
+		err := db.addChannel(id)
+		if err != nil {
+			return err
+		}
+	}
+
+	err := db.updateAmount(key, value)
+	if err != nil {
+		return err
+	}
+	db.hub.Done(id, nil)
+	return nil
+}
+
+// UpdateAccountIssue is the implementation of DB
+func (db *LevelDB) UpdateAccountTransfer(id string, sender common.Address, receiver common.Address, value uint64) error {
+
+	if !db.HasChannel(id) {
+		err := db.addChannel(id)
+		if err != nil {
+			return err
+		}
+	}
+	senderKey := sender.Bytes()
+	receiverKey := receiver.Bytes()
+
+	err := db.updateAmount(senderKey, -value)
+	if err != nil {
+		return err
+	}
+	err = db.updateAmount(receiverKey, value)
+	if err != nil {
+		return err
+	}
+	db.hub.Done(id, nil)
+	return nil
+}
+
+func (db *LevelDB) updateAmount(key []byte, value uint64) error {
+	v, err := db.connect.Get(key, nil)
+	var buf = make([]byte, 8)
+
+	if err == errors.ErrNotFound {
+		binary.BigEndian.PutUint64(buf, value)
+		db.connect.Put(key, buf, nil)
+	}
+	value = value + binary.BigEndian.Uint64(v)
+	binary.BigEndian.PutUint64(buf, value)
+	return db.connect.Put(key, buf, nil)
 }
 
 // AddBlock will records all txs in the block to get rid of duplicated txs
