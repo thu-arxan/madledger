@@ -12,7 +12,7 @@ type Raft struct {
 	lock sync.Mutex
 
 	cfg   *EraftConfig
-	eraft *ERaft
+	eraft *ERaft // etcd raft, used for consensus
 	app   *App
 
 	status int32
@@ -139,6 +139,7 @@ func (r *Raft) getStatus() int32 {
 	return atomic.LoadInt32(&r.status)
 }
 
+// GetID ...
 func (r *Raft) GetID() uint64 {
 	return r.cfg.id
 }

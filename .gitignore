@@ -22,3 +22,4 @@ env/raft/clients
 .bft
 *.out
 .vscode
+.raft

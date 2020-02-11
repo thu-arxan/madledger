@@ -22,8 +22,8 @@ type EraftConfig struct {
 	eraftPort int
 	// The port of raft blockchain port
 	chainPort int
-	// The listen address, it should be consensus with the blockchain service
-	address string
+	// The listen host, it should be consensus with the blockchain service
+	host string
 
 	snapshotInterval uint64
 }
@@ -46,7 +46,7 @@ func NewEraftConfig(dir, address string, id uint64, nodes map[uint64]string, joi
 		url:              url,
 		eraftPort:        chainPort + 1,
 		chainPort:        chainPort,
-		address:          address,
+		host:             address,
 		snapshotInterval: 100,
 	}, nil
 }
@@ -61,17 +61,17 @@ func (c *EraftConfig) GetPeers() map[uint64]string {
 	return c.peers
 }
 
-// GetLocalChainAddress ...
-func (c *EraftConfig) GetLocalChainAddress() string {
-	return fmt.Sprintf("%s:%d", c.address, c.chainPort)
-}
+// // GetLocalChainAddress ...
+// func (c *EraftConfig) GetLocalChainAddress() string {
+// 	return fmt.Sprintf("%s:%d", c.host, c.chainPort)
+// }
 
-func (c *EraftConfig) getChainAddress() string {
-	return fmt.Sprintf("%s:%d", c.url, c.chainPort)
-}
+// func (c *EraftConfig) getChainAddress() string {
+// 	return fmt.Sprintf("%s:%d", c.url, c.chainPort)
+// }
 
 func (c *EraftConfig) getLocalERaftAddress() string {
-	return fmt.Sprintf("%s:%d", c.address, c.eraftPort)
+	return fmt.Sprintf("%s:%d", c.host, c.eraftPort)
 }
 
 func (c *EraftConfig) getERaftAddress() string {
