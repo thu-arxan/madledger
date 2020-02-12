@@ -1,3 +1,6 @@
+# Orderer配置说明
+
+```yaml
 #############################################################################
 #   This is a configuration file for the MadLedger orderer.
 #############################################################################
@@ -70,3 +73,21 @@ DB:
   LevelDB:
     # The path of leveldb (default: orderer/data/leveldb)
     Path: /home/liuyihua/gopath/src/madledger/orderer/config/data/leveldb
+```
+
+上述`yaml`配置文件中的注释已经足够详尽了，这里只对`Consensus`的配置进行一下说明：
+
+- solo: solo模式下，只需要将Consensus.Type设置为solo即可，不需要做其他的配置。
+- raft: raft模式下,各参数含义如下：
+  - Path: raft日志、存储目录。
+  - ID: 节点ID, 大于0，且不可重复。
+  - Nodes: 启动时已知的orderer节点列表，格式为id@host:port,需要包含自身
+  - Join: 如果系统已经启动并运行，需要临时增加一个节点，该节点的Join参数需要设置为true，其他情况设置为false
+- bft: bft模式下，各参数含义如下：
+  - Path: tendermint的日志、存储目录
+  - Port:
+    - P2P: p2p服务监听的端口号
+    - RPC: RPC服务监听的端口号
+    - APP: 应用服务监听的端口号
+  - ID: 节点在p2p通信中的识别号，不可重复
+  - P2PAddress: 网络中其他orderer节点的p2p通信地址，格式为ID@host:port

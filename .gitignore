@@ -23,3 +23,4 @@ env/raft/clients
 *.out
 .vscode
 .raft
+samples
