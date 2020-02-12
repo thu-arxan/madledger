@@ -90,16 +90,28 @@ func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
 }
 
 // UpdateAccountIssue is the implementation of DB
-func (db *LevelDB) UpdateAccountIssue(id string, value uint64) error {
+func (db *LevelDB) UpdateAccountIssue(id string, sender common.Address, value uint64) error {
 	var key = []byte("_account")
+	var adminKey = []byte("admin")
 	if !db.HasChannel(id) {
 		err := db.addChannel(id)
 		if err != nil {
 			return err
 		}
+
+		err = db.connect.Put(adminKey, sender.Bytes(), nil)
+		if err != nil {
+			return err
+		}
+	}
+	adminAddrByte, err := db.connect.Get(adminKey, nil)
+	var adminAddr common.Address
+	adminAddr.SetBytes(adminAddrByte)
+	if adminAddr != sender {
+		return errors.New("Not admin of _account channel")
 	}
 
-	err := db.updateAmount(key, value)
+	err = db.updateAmount(key, value)
 	if err != nil {
 		return err
 	}
