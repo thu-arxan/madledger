@@ -22,7 +22,7 @@ type channel struct {
 	// todo: gc to reduce the storage
 	blocks map[uint64]*Block
 	init   int32
-	stop   chan bool
+	stop   chan *chan bool
 }
 
 func newChannel(id string, config consensus.Config) *channel {
@@ -35,7 +35,7 @@ func newChannel(id string, config consensus.Config) *channel {
 		hub:    event.NewHub(),
 		blocks: make(map[uint64]*Block),
 		init:   0,
-		stop:   make(chan bool),
+		stop:   make(chan *chan bool),
 	}
 }
 
@@ -57,9 +57,10 @@ func (c *channel) start() error {
 			if c.pool.getPoolSize() >= c.config.MaxSize {
 				c.createBlock(c.pool.fetchTxs(c.config.MaxSize))
 			}
-		case <-c.stop:
+		case ch := <-c.stop:
 			log.Infof("Stop channel %s consensus", c.id)
 			c.setInit(0)
+			*ch <- true
 			return nil
 		}
 	}
@@ -94,10 +95,9 @@ func (c *channel) addTx(tx []byte) error {
 
 // Stop will block the work of channel
 func (c *channel) Stop() {
-	c.stop <- true
-	for c.initialized() {
-		time.Sleep(1 * time.Millisecond)
-	}
+	stopDone := make(chan bool, 1)
+	c.stop <- &stopDone
+	<-stopDone
 }
 
 func (c *channel) createBlock(txs [][]byte) error {
