@@ -2,6 +2,7 @@ package raft
 
 import (
 	"madledger/consensus"
+	"madledger/core"
 	"sync/atomic"
 	"time"
 
@@ -70,16 +71,18 @@ func (c *Consensus) Stop() error {
 }
 
 // AddTx is the implementation of interface
-func (c *Consensus) AddTx(channelID string, tx []byte) error {
+func (c *Consensus) AddTx(tx *core.Tx) error {
 	var err error
-	// todo: modify log
-	log.Infof("Consensus.AddTx: Add tx of channel %s.", channelID)
+
+	bytes, _ := tx.Bytes()
+	channelID := tx.Data.ChannelID
+
 	// todo: we should parse the leader address other than random choose a leader
 	// todo: modify the upper bounds of attempt times
 	for i := 0; i < 100; i++ {
 		leader := c.getLeader()
-		log.Infof("Try to add tx to raft %d, this is %d times' trying.", leader, i)
-		err = c.clients[leader].addTx(channelID, tx, c.cfg.id)
+		log.Infof("Raft[%d] try %d times to add tx %s to node[%d]", c.cfg.id, i, tx.ID, leader)
+		err = c.clients[leader].addTx(channelID, bytes, c.cfg.id)
 		if err == nil {
 			log.Debugf("Node[%d] succeed to add tx to leader[%d]", c.cfg.id, c.leader)
 			return nil
@@ -98,13 +101,13 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 			}
 			c.setLeader(id)
 		default:
-			log.Infof("Unknown error: %v", err)
+			log.Infof("Add tx %s Unknown error: %v", tx.ID, err)
 			c.setLeader(c.ids[util.RandNum(len(c.ids))])
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
 
-	log.Infof("Add tx failed: %v", err)
+	log.Infof("Add tx %s failed: %v", tx.ID, err)
 	return err
 }
 

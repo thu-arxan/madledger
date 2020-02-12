@@ -2,10 +2,10 @@ package solo
 
 import (
 	"fmt"
-	"madledger/common/crypto"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
+	"madledger/core"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -46,7 +46,7 @@ func (c *channel) start() error {
 	c.setInit(1)
 	ticker := time.NewTicker(time.Duration(c.config.Timeout) * time.Millisecond)
 	// panic(c.config.Timeout)
-	log.Infof("Ticker duration is %d and block size is %d", c.config.Timeout, c.config.MaxSize)
+	// log.Infof("Ticker duration is %d and block size is %d", c.config.Timeout, c.config.MaxSize)
 	defer ticker.Stop()
 	log.Infof("Channel %s start", c.id)
 	for {
@@ -75,7 +75,7 @@ func (c *channel) initialized() bool {
 }
 
 // AddTx will try to add a tx
-func (c *channel) AddTx(tx []byte) error {
+func (c *channel) AddTx(tx *core.Tx) error {
 	err := c.addTx(tx)
 	if err != nil {
 		return err
@@ -85,11 +85,11 @@ func (c *channel) AddTx(tx []byte) error {
 		c.txs <- true
 	}()
 
-	result := c.hub.Watch(util.Hex(crypto.Hash(tx)), nil)
+	result := c.hub.Watch(tx.ID, nil)
 	return result.Err
 }
 
-func (c *channel) addTx(tx []byte) error {
+func (c *channel) addTx(tx *core.Tx) error {
 	return c.pool.addTx(tx)
 }
 
@@ -100,7 +100,7 @@ func (c *channel) Stop() {
 	<-stopDone
 }
 
-func (c *channel) createBlock(txs [][]byte) error {
+func (c *channel) createBlock(txs []*core.Tx) error {
 	if len(txs) == 0 {
 		return nil
 	}
@@ -112,8 +112,7 @@ func (c *channel) createBlock(txs [][]byte) error {
 	c.blocks[block.num] = block
 	c.num++
 	for _, tx := range block.txs {
-		hash := util.Hex(crypto.Hash(tx))
-		c.hub.Done(hash, nil)
+		c.hub.Done(tx.ID, nil)
 	}
 
 	c.hub.Done(string(block.num), nil)

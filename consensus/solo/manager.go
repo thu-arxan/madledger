@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"madledger/common/util"
 	"madledger/consensus"
+	"madledger/core"
 	"sync"
 	"time"
 )
@@ -64,8 +65,8 @@ func (m *manager) get(channelID string) (*channel, error) {
 }
 
 // AddTx add a tx
-func (m *manager) AddTx(channelID string, tx []byte) error {
-	channel, err := m.get(channelID)
+func (m *manager) AddTx(tx *core.Tx) error {
+	channel, err := m.get(tx.Data.ChannelID)
 	if err != nil {
 		return err
 	}
