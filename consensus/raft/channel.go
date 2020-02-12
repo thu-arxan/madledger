@@ -12,7 +12,6 @@ import (
 	"time"
 )
 
-// stolen from solo, to be modified
 type channel struct {
 	id     string
 	lock   sync.Mutex
@@ -21,7 +20,8 @@ type channel struct {
 	txs    chan bool
 	pool   *txPool
 	hub    *event.Hub
-	num    uint64
+	// todo: read it from db
+	num uint64 // block height
 	// todo: gc to reduce the storage
 	blocks map[uint64]*eraft.Block
 	init   int32

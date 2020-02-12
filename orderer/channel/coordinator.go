@@ -353,7 +353,7 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 			return err
 		}
 
-		consensus, err := raft.NewConseneus(raftConfig)
+		consensus, err := raft.NewConsensus(channels, raftConfig)
 		if err != nil {
 			return nil
 		}

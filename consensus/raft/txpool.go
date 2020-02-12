@@ -60,7 +60,7 @@ func (pool *txPool) fetchTxs(maxSize int) [][]byte {
 	return result
 }
 
-// gc is not implementation yet
+// todo: gc is not implementation yet
 func (pool *txPool) gc(block *core.Block) error {
 	pool.lock.Lock()
 	defer pool.lock.Unlock()

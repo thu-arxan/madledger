@@ -1,7 +1,6 @@
 package raft
 
 import (
-	"errors"
 	"madledger/consensus"
 	"sync/atomic"
 	"time"
@@ -12,18 +11,23 @@ import (
 // Consensus is the implementation of interface
 // Consensus keeps connections to raft services
 type Consensus struct {
-	cfg     *Config
-	chain   *BlockChain // manage channels
-	clients map[uint64]*Client
-	ids     []uint64 // peer id
-	leader  uint64   // leader id
+	cfg     *Config            // raft config
+	chain   *BlockChain        // grpc service, manage channels
+	clients map[uint64]*Client // grpc clients
+	ids     []uint64           // peer id
+	leader  uint64             // leader id
 }
 
-// NewConseneus is the constructor of Consensus
-func NewConseneus(cfg *Config) (*Consensus, error) {
+// NewConsensus is the constructor of Consensus
+func NewConsensus(channels map[string]consensus.Config, cfg *Config) (*Consensus, error) {
 	chain, err := NewBlockChain(cfg)
 	if err != nil {
 		return nil, err
+	}
+	for id, cc := range channels {
+		if err := chain.addChannels(id, cc); err != nil {
+			return nil, err
+		}
 	}
 	return &Consensus{
 		cfg:   cfg,
@@ -35,7 +39,8 @@ func NewConseneus(cfg *Config) (*Consensus, error) {
 func (c *Consensus) Start() error {
 	c.clients = make(map[uint64]*Client)
 	c.ids = make([]uint64, 0)
-	for id, addr := range c.cfg.ec.GetPeers() {
+	// init grpc clients to connect with peers through grpc
+	for id, addr := range c.cfg.peers {
 		client, err := NewClient(addr, c.cfg.cc.TLS)
 		if err != nil {
 			return err
@@ -56,9 +61,6 @@ func (c *Consensus) Start() error {
 // Stop is the implementation of interface
 func (c *Consensus) Stop() error {
 	c.chain.Stop()
-	// todo
-	// c.chain.raft.Stop()
-	// c.chain.rpcServer.Stop()
 
 	// close client conn
 	for _, client := range c.clients {
@@ -107,10 +109,11 @@ func (c *Consensus) AddTx(channelID string, tx []byte) error {
 }
 
 // AddChannel is the implementation of interface
-// Note: we can ignore this function now
 func (c *Consensus) AddChannel(channelID string, cfg consensus.Config) error {
-	log.Infof("Add channel %s", channelID)
-	return errors.New("not implement")
+	if err := c.chain.addChannels(channelID, cfg); err != nil {
+		return err
+	}
+	return c.chain.startChannel(channelID)
 }
 
 // GetBlock is the implementation of interface

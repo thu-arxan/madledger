@@ -16,3 +16,4 @@
 ## Fix Me
 
 * [ ] 修改增加Tx.Data.Value后部分代码未传入Value的问题
+* [ ] 初始化时，Channel 的BlockNum需要从数据库中读入

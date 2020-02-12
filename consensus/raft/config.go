@@ -7,8 +7,9 @@ import (
 
 // Config is the config of consensus
 type Config struct {
-	id  uint64
-	dir string // root dir for raft storage
+	id    uint64
+	dir   string            // root dir for raft storage
+	peers map[uint64]string // id => grpc addr
 	// consensus config
 	cc consensus.Config
 	// eraft config
@@ -23,9 +24,10 @@ func NewConfig(dir, address string, id uint64, nodes map[uint64]string, join boo
 	}
 
 	return &Config{
-		dir: dir,
-		cc:  cc,
-		ec:  ec,
-		id:  id,
+		id:    id,
+		dir:   dir,
+		peers: nodes,
+		cc:    cc,
+		ec:    ec,
 	}, nil
 }
