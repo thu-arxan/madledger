@@ -2,6 +2,8 @@ package db
 
 import (
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/core"
@@ -18,6 +20,7 @@ var (
 	rawSecp256k1Bytes, _ = hex.DecodeString(secp256k1String)
 	rawPrivKey           = rawSecp256k1Bytes
 	privKey, _           = crypto.NewPrivateKey(rawPrivKey)
+	benckmark            = true
 )
 
 var (
@@ -161,6 +164,56 @@ func TestListTxHistory(t *testing.T) {
 	}
 }
 
+func TestBenchmark(t *testing.T) {
+	if !benckmark {
+		return
+	}
+	var size = 10000
+	var accounts = make([]common.Account, size)
+	for i := 0; i < size; i++ {
+		accounts[i] = newAccount()
+	}
+	var begin = time.Now()
+	for i := 0; i < size; i++ {
+		accounts[i].Bytes()
+	}
+	fmt.Printf("marshal %d accounts cost %v\n", size, time.Since(begin))
+	begin = time.Now()
+	for i := 0; i < size; i++ {
+		MarshalAccount(accounts[i])
+	}
+	fmt.Printf("fast marshal %d accounts cost %v\n", size, time.Since(begin))
+	begin = time.Now()
+	bytes, _ := accounts[0].Bytes()
+	for i := 0; i < size; i++ {
+		var account common.DefaultAccount
+		json.Unmarshal(bytes, &account)
+	}
+	fmt.Printf("unmarshal %d accounts cost %v\n", size, time.Since(begin))
+	begin = time.Now()
+	bytes = MarshalAccount(accounts[0])
+	for i := 0; i < size; i++ {
+		UnmarshalAccount(bytes)
+	}
+	fmt.Printf("fast unmarshal %d accounts cost %v\n", size, time.Since(begin))
+	begin = time.Now()
+	for i := 0; i < size; i++ {
+		db.SetAccount(accounts[i])
+	}
+	fmt.Printf("add %d accounts cost %v\n", size, time.Since(begin))
+	begin = time.Now()
+	for i := 0; i < size; i++ {
+		db.GetAccount(accounts[i].GetAddress())
+	}
+	fmt.Printf("get %d accounts cost %v\n", size, time.Since(begin))
+}
+
 func TestEnd(t *testing.T) {
 	os.RemoveAll(dir)
+}
+
+func newAccount() common.Account {
+	priv, _ := crypto.GeneratePrivateKey()
+	addr, _ := priv.PubKey().Address()
+	return common.NewDefaultAccount(addr)
 }
