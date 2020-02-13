@@ -79,11 +79,15 @@ func (manager *Manager) AddAccountBlock(block *core.Block) error {
 		var err error
 		sender, _ := tx.GetSender()
 		receiver := tx.GetReceiver()
-		if action == "issue" {
-			err = manager.db.UpdateAccountIssue(channelID, sender, value)
-		} else if action == "transfer" {
-			err = manager.db.UpdateAccountTransfer(channelID, sender, receiver, value)
+		switch action {
+		case "issue":
+			err = manager.db.UpdateAccountIssue(channelID, sender.Bytes(), receiver.Bytes(), value)
+		case "transfer":
+			err = manager.db.UpdateAccountTransfer(channelID, sender.Bytes(), receiver.Bytes(), value)
+		case "transferToChannel":
+			err = manager.db.UpdateAccountTransfer(channelID, sender.Bytes(), []byte("_account@account"), value)
 		}
+
 		if err != nil {
 			return err
 		}

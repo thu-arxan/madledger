@@ -1,12 +1,12 @@
 package db
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	cc "madledger/blockchain/config"
-	"madledger/common"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/core"
@@ -90,8 +90,8 @@ func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
 }
 
 // UpdateAccountIssue is the implementation of DB
-func (db *LevelDB) UpdateAccountIssue(id string, sender common.Address, value uint64) error {
-	var key = []byte("_account")
+func (db *LevelDB) UpdateAccountIssue(id string, sender []byte, receiver []byte, value uint64) error {
+
 	var adminKey = []byte("admin")
 	if !db.HasChannel(id) {
 		err := db.addChannel(id)
@@ -99,19 +99,18 @@ func (db *LevelDB) UpdateAccountIssue(id string, sender common.Address, value ui
 			return err
 		}
 
-		err = db.connect.Put(adminKey, sender.Bytes(), nil)
+		err = db.connect.Put(adminKey, sender, nil)
 		if err != nil {
 			return err
 		}
 	}
 	adminAddrByte, err := db.connect.Get(adminKey, nil)
-	var adminAddr common.Address
-	adminAddr.SetBytes(adminAddrByte)
-	if adminAddr != sender {
+
+	if !bytes.Equal(adminAddrByte, sender) {
 		return errors.New("Not admin of _account channel")
 	}
 
-	err = db.updateAmount(key, value)
+	err = db.updateAmount(receiver, value)
 	if err != nil {
 		return err
 	}
@@ -120,7 +119,7 @@ func (db *LevelDB) UpdateAccountIssue(id string, sender common.Address, value ui
 }
 
 // UpdateAccountIssue is the implementation of DB
-func (db *LevelDB) UpdateAccountTransfer(id string, sender common.Address, receiver common.Address, value uint64) error {
+func (db *LevelDB) UpdateAccountTransfer(id string, sender []byte, receiver []byte, value uint64) error {
 
 	if !db.HasChannel(id) {
 		err := db.addChannel(id)
@@ -128,14 +127,12 @@ func (db *LevelDB) UpdateAccountTransfer(id string, sender common.Address, recei
 			return err
 		}
 	}
-	senderKey := sender.Bytes()
-	receiverKey := receiver.Bytes()
 
-	err := db.updateAmount(senderKey, -value)
+	err := db.updateAmount(sender, -value)
 	if err != nil {
 		return err
 	}
-	err = db.updateAmount(receiverKey, value)
+	err = db.updateAmount(receiver, value)
 	if err != nil {
 		return err
 	}
