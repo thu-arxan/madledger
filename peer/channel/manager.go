@@ -101,12 +101,7 @@ func (m *Manager) AddBlock(block *core.Block) error {
 			return err
 		}
 
-		batch := wb.GetBatch()
-		err = m.db.SyncWriteBatch(batch)
-		if err != nil {
-			return err
-		}
-		return nil
+		return wb.Sync()
 	}
 
 	return nil

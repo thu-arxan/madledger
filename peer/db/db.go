@@ -3,8 +3,6 @@ package db
 import (
 	"madledger/common"
 	"madledger/core"
-
-	"github.com/syndtr/goleveldb/leveldb"
 )
 
 // TxStatus return the status of tx
@@ -22,10 +20,10 @@ type WriteBatch interface {
 	SetAccount(account common.Account) error
 	SetStorage(address common.Address, key common.Word256, value common.Word256) error
 	SetTxStatus(tx *core.Tx, status *TxStatus) error
-	GetBatch() *leveldb.Batch
 	// Put stores (key, value) into batch, the caller is responsible to avoid duplicate key
 	Put(key, value []byte)
 	RemoveAccountStorage(address common.Address)
+	Sync() error
 }
 
 // DB provide a interface for peer to access the global state
@@ -59,8 +57,6 @@ type DB interface {
 	GetChannels() []string
 	ListTxHistory(address []byte) map[string][]string
 	NewWriteBatch() WriteBatch
-	// TODO: This is ugly, we should use Sync of WriteBatch
-	SyncWriteBatch(batch *leveldb.Batch) error
 
 	// PutBlock stores block into db
 	// TODO: Maybe write batch?

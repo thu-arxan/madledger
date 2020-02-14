@@ -226,12 +226,6 @@ func (db *LevelDB) ListTxHistory(address []byte) map[string][]string {
 		json.Unmarshal(value, &txs)
 	}
 
-	/*for channel, tx := range txs {
-		for _, id := range tx {
-			log.Infof("db/ListTxHistory: Channel %s, tx.ID %s", channel, id)
-		}
-	}*/
-
 	return txs
 }
 
@@ -272,13 +266,13 @@ func (db *LevelDB) NewWriteBatch() WriteBatch {
 }
 
 // SyncWriteBatch sync write batch into db
-func (db *LevelDB) SyncWriteBatch(batch *leveldb.Batch) error {
-	err := db.connect.Write(batch, nil)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+// func (db *LevelDB) SyncWriteBatch(batch *leveldb.Batch) error {
+// 	err := db.connect.Write(batch, nil)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
 
 // PutBlock stores block into db
 func (db *LevelDB) PutBlock(block *core.Block) error {
@@ -389,13 +383,18 @@ func (wb *WriteBatchWrapper) Put(key, value []byte) {
 	wb.batch.Put(key, value)
 }
 
-// GetBatch return the level.Batch
-func (wb *WriteBatchWrapper) GetBatch() *leveldb.Batch {
-	if wb == nil {
-		return nil
-	}
-	return wb.batch
+// Sync sync batch to database
+func (wb *WriteBatchWrapper) Sync() error {
+	return wb.db.connect.Write(wb.batch, nil)
 }
+
+// GetBatch return the level.Batch
+// func (wb *WriteBatchWrapper) GetBatch() *leveldb.Batch {
+// 	if wb == nil {
+// 		return nil
+// 	}
+// 	return wb.batch
+// }
 
 // MarshalAccount provide a fast marshal implementaion of marshal account
 func MarshalAccount(account common.Account) []byte {
