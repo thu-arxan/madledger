@@ -99,11 +99,16 @@ func (manager *Manager) AddAccountBlock(block *core.Block) error {
 			if issueValue < 0 {
 				issueValue = 0
 			}
-			err = manager.issue(tx.Data.Sig.PK, receiver, uint64(issueValue))
+			err = manager.issue(tx.Data.Sig.PK, receiver, issueValue)
 		case "transfer":
-			err = manager.db.UpdateAccount(nil)
-
+			// if value < 0, sender get money from receiver ??
+			transferValue := tx.Data.Value
+			if transferValue < 0 {
+				transferValue = 0
+			}
+			err = manager.transfer(sender, receiver, transferValue)
 		}
+
 		if err != nil {
 			return fmt.Errorf("err when execute account block tx %v : %v", tx, err)
 		}
@@ -117,9 +122,41 @@ func (manager *Manager) issue(senderPKBytes []byte, receiver common.Address, val
 	if !manager.db.IsAccountAdmin(pk) && manager.db.SetAccountAdmin(pk) != nil {
 		return fmt.Errorf("issue authentication failed: %v", err)
 	}
-	receiverAccount, err := manager.db.GetAccount(receiver)
+	if value == 0 {
+		return nil
+	}
+	receiverAccount, err := manager.db.GetOrCreateAccount(receiver)
 	if err != nil {
 		return nil
 	}
-	return receiverAccount.AddBalance(value)
+	err = receiverAccount.AddBalance(value)
+	if err != nil {
+		return nil
+	}
+	return manager.db.UpdateAccounts(receiverAccount)
+}
+
+func (manager *Manager) transfer(sender, receiver common.Address, value uint64) error {
+	if value == 0 {
+		return nil
+	}
+	senderAccount, err := manager.db.GetOrCreateAccount(sender)
+	if err != nil {
+		return err
+	}
+
+	if err = senderAccount.SubBalance(value); err != nil {
+		return err
+	}
+
+	receiverAccount, err := manager.db.GetOrCreateAccount(receiver)
+	if err != nil {
+		return err
+	}
+
+	if err = receiverAccount.AddBalance(value); err != nil {
+		return err
+	}
+
+	return manager.db.UpdateAccounts(senderAccount, receiverAccount)
 }

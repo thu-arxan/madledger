@@ -260,9 +260,9 @@ func (db *LevelDB) IsAccountAdmin(pk crypto.PublicKey) bool {
 //SetAccountAdmin only succeed at the first time it is called
 func(db *LevelDB) SetAccountAdmin(pk crypto.PublicKey) error {
 	var key = []byte("_account_admin")
-	_, err := db.connect.Get(key, nil)
-	if err != leveldb.ErrNotFound {
-		return err
+	exists, _ := db.connect.Has(key, nil)
+	if exists {
+		return fmt.Errorf("account admin already set")
 	}
 	pkBytes, err := pk.Bytes()
 	if err != nil {
@@ -271,69 +271,34 @@ func(db *LevelDB) SetAccountAdmin(pk crypto.PublicKey) error {
 	return db.connect.Put(key, pkBytes, nil)
 }
 
-// UpdateAccountIssue is the implementation of DB
-func (db *LevelDB) UpdateAccountIssue(id string, sender common.Address, value uint64) error {
-	var key = []byte("_account")
-	var adminKey = []byte("admin")
-	if !db.HasChannel(id) {
-		err := db.addChannel(id)
-		if err != nil {
-			return err
-		}
-
-		err = db.connect.Put(adminKey, sender.Bytes(), nil)
-		if err != nil {
-			return err
-		}
+func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, error) {
+	key := getAccountKey(address)
+	var account common.Account
+	data, err := db.connect.Get(key, nil)
+	if err != errors.ErrNotFound {
+		return nil, err
 	}
-	adminAddrByte, err := db.connect.Get(adminKey, nil)
-	var adminAddr common.Address
-	adminAddr.SetBytes(adminAddrByte)
-	if adminAddr != sender {
-		return errors.New("Not admin of _account channel")
+	if data == nil {
+		account = common.NewDefaultAccount(address)
+	} else {
+		json.Unmarshal(data, &account)
 	}
-
-	err = db.updateAmount(key, value)
-	if err != nil {
-		return err
-	}
-	db.hub.Done(id, nil)
-	return nil
+	return account, nil
 }
 
-// UpdateAccountIssue is the implementation of DB
-func (db *LevelDB) UpdateAccountTransfer(id string, sender common.Address, receiver common.Address, value uint64) error {
-
-	if !db.HasChannel(id) {
-		err := db.addChannel(id)
+func (db *LevelDB) UpdateAccounts(accounts ...common.Account) error {
+	wb := &leveldb.Batch{}
+	for _, acc := range accounts {
+		key := getAccountKey(acc.GetAddress())
+		data, err := json.Marshal(acc)
 		if err != nil {
 			return err
 		}
+		wb.Put(key, data)
 	}
-	senderKey := sender.Bytes()
-	receiverKey := receiver.Bytes()
-
-	err := db.updateAmount(senderKey, -value)
-	if err != nil {
-		return err
-	}
-	err = db.updateAmount(receiverKey, value)
-	if err != nil {
-		return err
-	}
-	db.hub.Done(id, nil)
-	return nil
+	return db.connect.Write(wb, nil)
 }
 
-func (db *LevelDB) updateAmount(key []byte, value uint64) error {
-	v, err := db.connect.Get(key, nil)
-	var buf = make([]byte, 8)
-
-	if err == errors.ErrNotFound {
-		binary.BigEndian.PutUint64(buf, value)
-		db.connect.Put(key, buf, nil)
-	}
-	value = value + binary.BigEndian.Uint64(v)
-	binary.BigEndian.PutUint64(buf, value)
-	return db.connect.Put(key, buf, nil)
+func getAccountKey(address common.Address) []byte {
+	return []byte(fmt.Sprintf("%s@%s", core.ACCOUNTCHANNELID, address.String()))
 }
