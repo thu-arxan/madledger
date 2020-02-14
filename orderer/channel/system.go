@@ -2,6 +2,8 @@ package channel
 
 import (
 	"encoding/json"
+	"fmt"
+	"errors"
 	ac "madledger/blockchain/account"
 	cc "madledger/blockchain/config"
 	"madledger/consensus"
@@ -70,28 +72,33 @@ func (manager *Manager) AddAccountBlock(block *core.Block) error {
 		return nil
 	}
 
+	var err error
+
 	for _, tx := range block.Transactions {
 		var payload ac.Payload
-		json.Unmarshal(tx.Data.Payload, &payload)
-		var channelID= tx.Data.ChannelID
-		var action= payload.Action
-		var value= tx.Data.Value
-		var err error
-		sender, _ := tx.GetSender()
+		err = json.Unmarshal(tx.Data.Payload, &payload)
+		if err != nil {
+			fmt.Errorf("wrong tx format: %v", err)
+		}
+		sender, err := tx.GetSender()
+		if err != nil {
+			return fmt.Errorf("wrong sender address %v", sender);
+		}
 		receiver := tx.GetReceiver()
-		switch action {
+
+		switch payload.Action {
 		case "issue":
+
+
 			err = manager.db.UpdateAccountIssue(channelID, sender.Bytes(), receiver.Bytes(), value)
 		case "transfer":
-			err = manager.db.UpdateAccountTransfer(channelID, sender.Bytes(), receiver.Bytes(), value)
-		case "transferToChannel":
-			err = manager.db.UpdateAccountTransfer(channelID, sender.Bytes(), []byte("_account@account"), value)
+			err = manager.db.UpdateAccount(nil)
+
 		}
 
 		if err != nil {
-			return err
+			return fmt.Errorf("err when execute account block: %v", err)
 		}
-
 	}
 
 	return nil

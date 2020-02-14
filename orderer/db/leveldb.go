@@ -1,8 +1,6 @@
 package db
 
 import (
-	"bytes"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"github.com/syndtr/goleveldb/leveldb/errors"
@@ -87,70 +85,6 @@ func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
 	}
 	db.hub.Done(id, nil)
 	return nil
-}
-
-// UpdateAccountIssue is the implementation of DB
-func (db *LevelDB) UpdateAccountIssue(id string, sender []byte, receiver []byte, value uint64) error {
-
-	var adminKey = []byte("admin")
-	if !db.HasChannel(id) {
-		err := db.addChannel(id)
-		if err != nil {
-			return err
-		}
-
-		err = db.connect.Put(adminKey, sender, nil)
-		if err != nil {
-			return err
-		}
-	}
-	adminAddrByte, err := db.connect.Get(adminKey, nil)
-
-	if !bytes.Equal(adminAddrByte, sender) {
-		return errors.New("Not admin of _account channel")
-	}
-
-	err = db.updateAmount(receiver, value)
-	if err != nil {
-		return err
-	}
-	db.hub.Done(id, nil)
-	return nil
-}
-
-// UpdateAccountIssue is the implementation of DB
-func (db *LevelDB) UpdateAccountTransfer(id string, sender []byte, receiver []byte, value uint64) error {
-
-	if !db.HasChannel(id) {
-		err := db.addChannel(id)
-		if err != nil {
-			return err
-		}
-	}
-
-	err := db.updateAmount(sender, -value)
-	if err != nil {
-		return err
-	}
-	err = db.updateAmount(receiver, value)
-	if err != nil {
-		return err
-	}
-	db.hub.Done(id, nil)
-	return nil
-}
-
-func (db *LevelDB) updateAmount(key []byte, value uint64) error {
-	v, err := db.connect.Get(key, nil)
-	var buf = make([]byte, 8)
-
-	if err == errors.ErrNotFound {
-		binary.BigEndian.PutUint64(buf, value)
-		db.connect.Put(key, buf, nil)
-	}
-	value = value + binary.BigEndian.Uint64(v)
-	binary.BigEndian.PutUint64(buf, value)
-	return db.connect.Put(key, buf, nil)
 }
 
 // AddBlock will records all txs in the block to get rid of duplicated txs
@@ -304,4 +238,71 @@ func getChannelProfileKey(id string) []byte {
 
 func getSystemAdminKey() []byte {
 	return []byte(fmt.Sprintf("%s$admin", core.CONFIGCHANNELID))
+}
+
+// UpdateAccountIssue is the implementation of DB
+func (db *LevelDB) UpdateAccountIssue(id string, sender common.Address, value uint64) error {
+	var key = []byte("_account")
+	var adminKey = []byte("admin")
+	if !db.HasChannel(id) {
+		err := db.addChannel(id)
+		if err != nil {
+			return err
+		}
+
+		err = db.connect.Put(adminKey, sender.Bytes(), nil)
+		if err != nil {
+			return err
+		}
+	}
+	adminAddrByte, err := db.connect.Get(adminKey, nil)
+	var adminAddr common.Address
+	adminAddr.SetBytes(adminAddrByte)
+	if adminAddr != sender {
+		return errors.New("Not admin of _account channel")
+	}
+
+	err = db.updateAmount(key, value)
+	if err != nil {
+		return err
+	}
+	db.hub.Done(id, nil)
+	return nil
+}
+
+// UpdateAccountIssue is the implementation of DB
+func (db *LevelDB) UpdateAccountTransfer(id string, sender common.Address, receiver common.Address, value uint64) error {
+
+	if !db.HasChannel(id) {
+		err := db.addChannel(id)
+		if err != nil {
+			return err
+		}
+	}
+	senderKey := sender.Bytes()
+	receiverKey := receiver.Bytes()
+
+	err := db.updateAmount(senderKey, -value)
+	if err != nil {
+		return err
+	}
+	err = db.updateAmount(receiverKey, value)
+	if err != nil {
+		return err
+	}
+	db.hub.Done(id, nil)
+	return nil
+}
+
+func (db *LevelDB) updateAmount(key []byte, value uint64) error {
+	v, err := db.connect.Get(key, nil)
+	var buf = make([]byte, 8)
+
+	if err == errors.ErrNotFound {
+		binary.BigEndian.PutUint64(buf, value)
+		db.connect.Put(key, buf, nil)
+	}
+	value = value + binary.BigEndian.Uint64(v)
+	binary.BigEndian.PutUint64(buf, value)
+	return db.connect.Put(key, buf, nil)
 }

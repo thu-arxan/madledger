@@ -337,15 +337,9 @@ func (c *Coordinator)loadAccountChannel() error {
 	}
 	if !c.AM.HasGenesisBlock() {
 		log.Infof("Creating genesis block of channel _account")
-		// cgb: config channel genesis block
-		cgb, err := c.CM.GetBlock(0)
-		if err != nil {
-			return err
-		}
-		// todo: add account payload
+		// todo: ab empty payload in account genesis block?
 		// agb: account channel genesis block
 		agb, err := ac.CreateGenesisBlock([]*ac.Payload{&ac.Payload{
-			ChannelID: core.ACCOUNTCHANNELID,
 		}})
 		if err != nil {
 			return err

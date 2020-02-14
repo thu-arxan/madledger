@@ -50,7 +50,7 @@ func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
 	defer manager.lock.Unlock()
 
 	if num >= manager.expect {
-		return nil, errors.New("The block is not exist")
+		return nil, errors.New("The block does not exist")
 	}
 	return manager.loadBlock(num)
 }

@@ -2,6 +2,7 @@ package db
 
 import (
 	cc "madledger/blockchain/config"
+	"madledger/common"
 	"madledger/core"
 )
 
@@ -22,6 +23,6 @@ type DB interface {
 	UpdateSystemAdmin(profile *cc.Profile) error
 	IsSystemAdmin(member *core.Member) bool
 
-	UpdateAccountIssue(id string, sender []byte, receiver []byte, value uint64) error
-	UpdateAccountTransfer(id string, sender []byte, receiver []byte, value uint64) error
+	GetAccount(address common.Address) error
+	UpdateAccount(account common.Account) error
 }
