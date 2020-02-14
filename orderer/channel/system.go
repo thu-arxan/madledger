@@ -6,6 +6,8 @@ import (
 	"errors"
 	ac "madledger/blockchain/account"
 	cc "madledger/blockchain/config"
+	"madledger/common"
+	"madledger/common/crypto"
 	"madledger/consensus"
 	"madledger/core"
 )
@@ -85,21 +87,39 @@ func (manager *Manager) AddAccountBlock(block *core.Block) error {
 			return fmt.Errorf("wrong sender address %v", sender);
 		}
 		receiver := tx.GetReceiver()
+		//if receiver is not set, issue or transfer money to a channel
+		if receiver == common.ZeroAddress {
+			receiver = common.BytesToAddress([]byte(tx.Data.ChannelID))
+		}
 
 		switch payload.Action {
 		case "issue":
-
-
-			err = manager.db.UpdateAccountIssue(channelID, sender.Bytes(), receiver.Bytes(), value)
+			// avoid overflow
+			issueValue := tx.Data.Value
+			if issueValue < 0 {
+				issueValue = 0
+			}
+			err = manager.issue(tx.Data.Sig.PK, receiver, uint64(issueValue))
 		case "transfer":
 			err = manager.db.UpdateAccount(nil)
 
 		}
-
 		if err != nil {
-			return fmt.Errorf("err when execute account block: %v", err)
+			return fmt.Errorf("err when execute account block tx %v : %v", tx, err)
 		}
 	}
 
 	return nil
+}
+
+func (manager *Manager) issue(senderPKBytes []byte, receiver common.Address, value uint64) error {
+	pk, err := crypto.NewPublicKey(senderPKBytes)
+	if !manager.db.IsAccountAdmin(pk) && manager.db.SetAccountAdmin(pk) != nil {
+		return fmt.Errorf("issue authentication failed: %v", err)
+	}
+	receiverAccount, err := manager.db.GetAccount(receiver)
+	if err != nil {
+		return nil
+	}
+	return receiverAccount.AddBalance(value)
 }

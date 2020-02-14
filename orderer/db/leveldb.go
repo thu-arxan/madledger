@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	cc "madledger/blockchain/config"
+	"madledger/common"
+	"madledger/common/crypto"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/core"
+	"reflect"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -238,6 +241,34 @@ func getChannelProfileKey(id string) []byte {
 
 func getSystemAdminKey() []byte {
 	return []byte(fmt.Sprintf("%s$admin", core.CONFIGCHANNELID))
+}
+
+//todo: ab can the setting of admin of account channel different from other channels(through config channel)
+func (db *LevelDB) IsAccountAdmin(pk crypto.PublicKey) bool {
+	var key = []byte("_account_admin")
+	admin, err := db.connect.Get(key, nil)
+	if err != nil {
+		return false;
+	}
+	pkBytes, err := pk.Bytes()
+	if err != nil {
+		return false
+	}
+	return reflect.DeepEqual(admin, pkBytes)
+}
+
+//SetAccountAdmin only succeed at the first time it is called
+func(db *LevelDB) SetAccountAdmin(pk crypto.PublicKey) error {
+	var key = []byte("_account_admin")
+	_, err := db.connect.Get(key, nil)
+	if err != leveldb.ErrNotFound {
+		return err
+	}
+	pkBytes, err := pk.Bytes()
+	if err != nil {
+		return err
+	}
+	return db.connect.Put(key, pkBytes, nil)
 }
 
 // UpdateAccountIssue is the implementation of DB

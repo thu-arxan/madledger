@@ -3,6 +3,7 @@ package db
 import (
 	cc "madledger/blockchain/config"
 	"madledger/common"
+	"madledger/common/crypto"
 	"madledger/core"
 )
 
@@ -23,6 +24,8 @@ type DB interface {
 	UpdateSystemAdmin(profile *cc.Profile) error
 	IsSystemAdmin(member *core.Member) bool
 
-	GetAccount(address common.Address) error
+    IsAccountAdmin(pk crypto.PublicKey) bool
+	SetAccountAdmin(pk crypto.PublicKey) error
+	GetAccount(address common.Address) (common.Account, error)
 	UpdateAccount(account common.Account) error
 }
