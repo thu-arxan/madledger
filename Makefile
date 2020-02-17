@@ -77,6 +77,7 @@ test:
 
 	@$(GO_TEST_UNIT) madledger/consensus/solo
 	@$(GO_TEST_UNIT) madledger/consensus/raft
+	@$(GO_TEST_UNIT) madledger/consensus/raft/eraft
 	@$(GO_TEST_UNIT) madledger/consensus/tendermint
 
 	@$(GO_TEST_UNIT) madledger/orderer/config
@@ -106,3 +107,6 @@ clean:
 syncevm:
 	@rm -rf vendor/evm
 	@cd ../evm && zip evm.zip $$(git ls-files) && unzip -d ../madledger/vendor/evm evm.zip && rm evm.zip
+
+raft:
+	@$(GO_TEST_UNIT) madledger/consensus/raft -race

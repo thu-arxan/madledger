@@ -36,6 +36,7 @@ func (c *Client) newConn() error {
 		c.RUnlock()
 		return nil
 	}
+	c.RUnlock()
 
 	c.Lock()
 	defer c.Unlock()
@@ -74,6 +75,7 @@ func (c *Client) addTx(channelID string, tx []byte, caller uint64) error {
 		Caller:  caller,
 		Channel: channelID,
 	})
+	log.Infof("after call %s, %v", c.addr, err)
 	return err
 }
 

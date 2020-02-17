@@ -9,12 +9,9 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
-type dbBlocks struct {
-	Blocks []*Block
-}
-
 // DB is the database of raft
 type DB struct {
+	// todo: rwLock?
 	dir     string
 	connect *leveldb.DB
 }
@@ -38,125 +35,91 @@ func (db *DB) Close() {
 	db.connect.Close()
 }
 
-// PutBlock put a block into db
-func (db *DB) PutBlock(block *Block) {
-	var key = util.Uint64ToBytes(block.GetNumber())
-	log.Infof("Put Block %d into raft.db", block.GetNumber())
-	db.connect.Put(key, block.Bytes(), nil)
-}
+// GetMinBlock return min block number of channelID for restore
+func (db *DB) GetMinBlock(channelID string) uint64 {
+	var key = []byte("minBlock_" + channelID)
 
-// // GetHybridBlock return the hybrid block which Num is num
-// // Return nil, errors.New("Not exist") if not exist
-// func (db *DB) GetHybridBlock(num uint64) (*HybridBlock, error) {
-// 	var key = util.Uint64ToBytes(num)
-// 	has, err := db.connect.Has(key, nil)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	if has {
-// 		value, err := db.connect.Get(key, nil)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		return UnmarshalHybridBlock(value), nil
-// 	}
-
-// 	return nil, errors.New("Not exist")
-// }
-
-// GetMinBlock return min block number for restore
-func (db *DB) GetMinBlock() uint64 {
-	var key = []byte("minBlock")
-	var num uint64
-	if exist, _ := db.connect.Has(key, nil); exist {
-		data, _ := db.connect.Get(key, nil)
-		json.Unmarshal(data, &num)
+	data, err := db.connect.Get(key, nil)
+	if err != nil {
+		if err != leveldb.ErrNotFound {
+			log.Errorf("get minblock of channel %s failed: %v", channelID, err)
+		}
+		return 0
 	}
-	log.Infof("GetMinBlock: get minBlock %d", num)
+
+	num, err := util.BytesToUint64(data)
+	if err != nil {
+		log.Errorf("bytes to uint64 failed: %v", err)
+		return 0
+	}
 	return num
 }
 
 // SetMinBlock set min block number
-func (db *DB) SetMinBlock(num uint64) {
-	var key = []byte("minBlock")
-	data, _ := json.Marshal(num)
-	log.Infof("SetMinBlock: set minBlock %d", num)
-	db.connect.Put(key, data, nil)
+func (db *DB) SetMinBlock(channelID string, num uint64) {
+	var key = []byte("minBlock_" + channelID)
+	db.connect.Put(key, util.Uint64ToBytes(num), nil)
 }
 
-// GetPrevBlockNum return the prev block num of channel
-func (db *DB) GetPrevBlockNum(channelID string) uint64 {
-	var key = []byte(channelID)
-	var num uint64
-	if exist, _ := db.connect.Has(key, nil); exist {
-		data, _ := db.connect.Get(key, nil)
-		json.Unmarshal(data, &num)
+// GetChainNum return the block num(height) of channel
+func (db *DB) GetChainNum(channelID string) uint64 {
+	var key = []byte("chainNum_" + channelID)
+
+	data, err := db.connect.Get(key, nil)
+	if err != nil {
+		if err != leveldb.ErrNotFound {
+			log.Errorf("get chainNum of channel %s failed: %v", channelID, err)
+		}
+		return 0
 	}
-	log.Infof("GetPrevBlockNum: get prevBlockNum %d in channel %s", num, channelID)
+
+	num, err := util.BytesToUint64(data)
+	if err != nil {
+		log.Errorf("bytes to uint64 failed: %v", err)
+		return 0
+	}
 	return num
 }
 
-// SetPrevBlockNum set the prev block num of channel
-func (db *DB) SetPrevBlockNum(channelID string, num uint64) {
-	var key = []byte(channelID)
-	data, _ := json.Marshal(num)
-	log.Infof("SetPrevBlockNum: set prevBlockNum %d in channel %s", num, channelID)
-	db.connect.Put(key, data, nil)
-}
-
-// SetChainNum set chain number
-func (db *DB) SetChainNum(num uint64) {
-	var key = []byte("chainNum")
-	data, _ := json.Marshal(num)
-	log.Infof("SetChainNum: set chainNum %d", num)
-	db.connect.Put(key, data, nil)
-}
-
-// GetChainNum return chain number
-func (db *DB) GetChainNum() uint64 {
-	var key = []byte("chainNum")
-	var num uint64
-	if exist, _ := db.connect.Has(key, nil); exist {
-		data, _ := db.connect.Get(key, nil)
-		json.Unmarshal(data, &num)
-	}
-	log.Infof("GetChainNum: get chainNum %d", num)
-	return num
+// SetChainNum set the block num(height) of channel
+func (db *DB) SetChainNum(channelID string, num uint64) {
+	var key = []byte("chainNum_" + channelID)
+	db.connect.Put(key, util.Uint64ToBytes(num), nil)
 }
 
 // AddBlock add block
 func (db *DB) AddBlock(block *Block) {
-	var key = []byte(fmt.Sprintf("%s:%d", block.ChannelID, block.Num))
+	var key = []byte(fmt.Sprintf("block_%s:%d", block.ChannelID, block.Num))
 	log.Infof("Add block into raft.db: %s, %d", block.ChannelID, block.Num)
 	db.connect.Put(key, block.Bytes(), nil)
 }
 
 // GetBlock return the block of channel, return nil if not exist
 func (db *DB) GetBlock(channelID string, num uint64, async bool) *Block {
-	block := db.getBlock(channelID, num)
-	if !async || (block != nil) {
-		log.Infof("Get block %d of channel %s from raft.db", num, channelID)
-		return block
-	}
 	for {
-		time.Sleep(10 * time.Millisecond)
-		block = db.getBlock(channelID, num)
+		block := db.getBlock(channelID, num)
 		if block != nil {
-			log.Infof("Get block %d of channel %s from raft.db asynchronously", num, channelID)
 			return block
 		}
+		if !async {
+			return nil
+		}
+		time.Sleep(30 * time.Millisecond)
 	}
 }
 
 // getBlock return the block of channel, return nil if not exist
 func (db *DB) getBlock(channelID string, num uint64) *Block {
-	var key = []byte(fmt.Sprintf("%s:%d", channelID, num))
-	if exist, _ := db.connect.Has(key, nil); exist {
-		var block Block
-		data, _ := db.connect.Get(key, nil)
-		json.Unmarshal(data, &block)
-		return &block
+	var key = []byte(fmt.Sprintf("block_%s:%d", channelID, num))
+	data, err := db.connect.Get(key, nil)
+	if err != nil {
+		if err != leveldb.ErrNotFound {
+			log.Errorf("get block from db failed: %v", err)
+		}
+		return nil
 	}
 
-	return nil
+	var block Block
+	json.Unmarshal(data, &block)
+	return &block
 }

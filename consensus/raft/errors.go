@@ -20,12 +20,12 @@ const (
 const (
 	NotLeaderMsg   = "Please send to leader"
 	RemovedNodeMsg = "I've been removed from cluster"
-	TxInPoolMsg    = "Transaction is aleardy in the pool"
+	TxInPoolMsg    = "Transaction is already in the pool"
 )
 
 // GetError returns error type of raft error
 func GetError(err error) Error {
-	if err != nil {
+	if err == nil {
 		return Unknown
 	}
 	e := err.Error()

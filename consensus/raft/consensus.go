@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"madledger/common/crypto"
 	"madledger/common/util"
 )
 
@@ -49,10 +50,9 @@ func (c *Consensus) Start() error {
 		c.clients[id] = client
 		c.ids = append(c.ids, id)
 	}
-	// todo: is it necessary to select a leader randomly
-	c.setLeader(c.ids[util.RandNum(len(c.ids))])
 
 	if err := c.chain.Start(); err != nil {
+		log.Errorf("chain[%d] start failed: %v", c.cfg.id, err)
 		return err
 	}
 
@@ -75,20 +75,21 @@ func (c *Consensus) AddTx(tx *core.Tx) error {
 	var err error
 
 	bytes, _ := tx.Bytes()
+	hash := util.Hex(crypto.Hash(bytes))
 	channelID := tx.Data.ChannelID
 
 	// todo: we should parse the leader address other than random choose a leader
 	// todo: modify the upper bounds of attempt times
 	for i := 0; i < 100; i++ {
 		leader := c.getLeader()
-		log.Infof("Raft[%d] try %d times to add tx %s to node[%d]", c.cfg.id, i, tx.ID, leader)
+		log.Infof("Raft[%d] try %d times to add tx %s (hash: %s) to node[%d]", c.cfg.id, i, tx.ID, hash, leader)
 		err = c.clients[leader].addTx(channelID, bytes, c.cfg.id)
 		if err == nil {
-			log.Debugf("Node[%d] succeed to add tx to leader[%d]", c.cfg.id, c.leader)
+			log.Infof("Node[%d] succeed to add tx %s to leader[%d]", c.cfg.id, hash, c.leader)
 			return nil
 		}
 
-		log.Debugf("add tx failed: %v", err)
+		log.Infof("add tx %s failed: %v", hash, err)
 		switch GetError(err) {
 		case TxInPool:
 			return err
@@ -103,8 +104,8 @@ func (c *Consensus) AddTx(tx *core.Tx) error {
 		default:
 			log.Infof("Add tx %s Unknown error: %v", tx.ID, err)
 			c.setLeader(c.ids[util.RandNum(len(c.ids))])
-			time.Sleep(100 * time.Millisecond)
 		}
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	log.Infof("Add tx %s failed: %v", tx.ID, err)
@@ -131,5 +132,13 @@ func (c *Consensus) setLeader(leader uint64) {
 
 func (c *Consensus) getLeader() uint64 {
 	leader := atomic.LoadUint64(&c.leader)
+
+	if leader == 0 {
+		leader = c.chain.raft.GetLeader()
+		if leader == 0 {
+			leader = c.ids[util.RandNum(len(c.ids))]
+		}
+		atomic.StoreUint64(&c.leader, leader)
+	}
 	return leader
 }

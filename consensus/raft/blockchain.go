@@ -95,7 +95,9 @@ func (chain *BlockChain) Stop() {
 	chain.Lock()
 	defer chain.Unlock()
 	// todo: change Stop to GracefulStop?
-	chain.rpcServer.Stop()
+	if chain.rpcServer != nil {
+		chain.rpcServer.Stop()
+	}
 
 	for _, channel := range chain.channels {
 		channel.Stop()
@@ -106,7 +108,10 @@ func (chain *BlockChain) Stop() {
 
 // AddTx will try to add a tx
 func (chain *BlockChain) AddTx(ctx context.Context, in *pb.RaftTX) (*pb.None, error) {
-	// todo: check leader, add to channedl
+	if chain.raft.Removed(in.Caller) {
+		log.Infof("[%d]I've been removed from cluster.", in.Caller)
+		return &pb.None{}, fmt.Errorf("[%d]I've been removed from cluster", in.Caller)
+	}
 	if !chain.raft.IsLeader() {
 		// get leader and return
 		return &pb.None{}, fmt.Errorf("%s %d", NotLeaderMsg, chain.raft.GetLeader())
@@ -127,7 +132,7 @@ func (chain *BlockChain) addChannels(channelID string, cfg consensus.Config) err
 		return fmt.Errorf("channel %s exits", channelID)
 	}
 
-	channel := newChannel(channelID, cfg, chain.raft)
+	channel := newChannel(chain.cfg.id, channelID, cfg, chain.raft)
 	chain.channels[channelID] = channel
 	log.Infof("add channel %s succeed", channelID)
 	return nil

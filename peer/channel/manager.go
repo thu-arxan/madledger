@@ -5,6 +5,7 @@ import (
 	"madledger/blockchain"
 	"madledger/common"
 	"madledger/core"
+	"time"
 
 	"madledger/executor/evm"
 	"madledger/peer/db"
@@ -64,6 +65,8 @@ func (m *Manager) Start() {
 			m.stopCh <- true
 			return
 		}
+		// todo: orderer notify peer?
+		time.Sleep(50 * time.Millisecond)
 	}
 }
 

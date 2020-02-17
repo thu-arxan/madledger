@@ -41,7 +41,7 @@ func newChannel(id string, config consensus.Config) *channel {
 
 func (c *channel) start() error {
 	if c.initialized() {
-		return fmt.Errorf("Consensus of channel %s is aleardy start", c.id)
+		return fmt.Errorf("Consensus of channel %s is already start", c.id)
 	}
 	c.setInit(1)
 	ticker := time.NewTicker(time.Duration(c.config.Timeout) * time.Millisecond)

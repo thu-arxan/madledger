@@ -28,7 +28,7 @@ func (pool *txPool) addTx(tx *core.Tx) error {
 	// check if the tx is duplicated
 	var id = tx.ID
 	if util.Contain(pool.ids, id) {
-		return errors.New("Transaction is aleardy in the pool")
+		return errors.New("Transaction is already in the pool")
 	}
 
 	// add tx into the record

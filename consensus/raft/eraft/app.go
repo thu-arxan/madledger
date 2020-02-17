@@ -3,36 +3,28 @@ package eraft
 import (
 	"encoding/json"
 	"errors"
-	"madledger/common/crypto"
-	"madledger/common/event"
-	"madledger/common/util"
-	"sort"
 	"sync"
-	"sync/atomic"
 )
 
 // App is the application
 type App struct {
-	lock   sync.Mutex
-	cfg    *EraftConfig
-	status int32 // only Running and Stopped
+	lock sync.RWMutex
 
-	blocks  map[uint64]*Block
-	blockCh chan *Block
-	hub     *event.Hub
-	// minBlock is the min block number that the blockchain system needed
-	minBlock uint64
-	db       *DB
+	cfg    *EraftConfig
+	status int32 // only Running or Stopped
+
+	channelsLock sync.RWMutex
+	channels     map[string]*channel // channelID => channel storage
+
+	db *DB
 }
 
 // NewApp is the constructor of App
 func NewApp(cfg *EraftConfig) (*App, error) {
 	return &App{
-		cfg:     cfg,
-		blocks:  make(map[uint64]*Block),
-		blockCh: make(chan *Block, 2048),
-		hub:     event.NewHub(),
-		status:  Stopped,
+		cfg:      cfg,
+		channels: make(map[string]*channel),
+		status:   Stopped,
 	}, nil
 }
 
@@ -50,16 +42,6 @@ func (a *App) Start() error {
 		return err
 	}
 	a.db = db
-	// to avoid add replicated Block when raft is not leader before closed
-	// minBlock should be zero or chainNum + 1
-	num := db.GetChainNum()
-	if num != 0 {
-		atomic.StoreUint64(&(a.minBlock), num+1)
-	} else {
-		atomic.StoreUint64(&(a.minBlock), 0)
-	}
-	//atomic.StoreUint64(&(a.minBlock), db.GetMinBlock())
-
 	a.status = Running
 
 	return nil
@@ -80,29 +62,12 @@ func (a *App) Stop() {
 
 // Commit will commit something
 func (a *App) Commit(data []byte) {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
-	if block := UnmarshalBlock(data); block != nil {
-		hash := string(crypto.Hash(block.Bytes()))
-		if !util.Contain(a.blocks, block.GetNumber()) {
-			a.blocks[block.GetNumber()] = block
-			if block.GetNumber() < a.getMinBlock() {
-				// don't put Block thing because it's already in raft.db
-				a.hub.Done(hash, nil)
-				a.blockCh <- block
-			} else if block.GetNumber() >= a.getMinBlock() {
-				// Put Block into raft.db and tell raft it's done
-				a.db.PutBlock(block)
-				a.hub.Done(hash, nil)
-				a.blockCh <- block
-			}
-		} else {
-			a.hub.Done(hash, &event.Result{
-				Err: errors.New("Duplicated block"),
-			})
-		}
+	block := UnmarshalBlock(data)
+	if block == nil {
+		return
 	}
+	channel := a.getChannel(block.ChannelID)
+	channel.addBlock(block)
 }
 
 // Marshal is used in snapshot to get the bytes of data
@@ -110,80 +75,90 @@ func (a *App) Marshal() ([]byte, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	if len(a.blocks) != 0 {
-		return json.Marshal(a.blocks)
-	}
-
-	return nil, nil
+	return a.marshalChannelBlocks()
 }
 
 // UnMarshal recover from snapshot
+// todo: is it necessary to do this
 func (a *App) UnMarshal(data []byte) error {
-	var blocks map[uint64]*Block
-	if err := json.Unmarshal(data, &blocks); err != nil {
-		return err
-	}
-
 	a.lock.Lock()
 	defer a.lock.Unlock()
-
-	for num, block := range blocks {
-		if num >= a.getMinBlock() && !util.Contain(a.blocks, num) {
-			a.blocks[num] = block
-		}
-	}
-
-	// Clone the a.blocks to blocks
-	data, err := json.Marshal(a.blocks)
-	if err != nil {
-		return err
-	}
-	if err := json.Unmarshal(data, &blocks); err != nil {
-		return err
-	}
-	// send the clone blocks
-	go func() {
-		var nums = make([]uint64, 0)
-		for num := range blocks {
-			nums = append(nums, num)
-		}
-		sort.Slice(nums, func(i, j int) bool {
-			return nums[i] < nums[j]
-		})
-
-		for _, num := range nums {
-			block := blocks[num]
-			if block.GetNumber() >= a.getMinBlock() {
-				a.blockCh <- block
-			}
-		}
-
-	}()
-
-	return nil
+	return a.unmarshalChannelBlocks(data)
 }
 
 func (a *App) watch(block *Block) error {
-	hash := string(crypto.Hash(block.Bytes()))
-	res := a.hub.Watch(hash, nil)
-	return res.Err
+	channel := a.getChannel(block.ChannelID)
+	return channel.watch(block)
+}
+
+func (a *App) blockCh(channelID string) chan *Block {
+	channel := a.getChannel(channelID)
+	return channel.BlockCh()
 }
 
 // notifyLater provide a mechanism for blockchain system to deal with the block which is too advanced
 func (a *App) notifyLater(block *Block) {
-	a.blockCh <- block
+	channel := a.getChannel(block.ChannelID)
+	channel.notifyLater(block)
 }
 
-func (a *App) fetchBlockDone(num uint64) {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
-	atomic.StoreUint64(&(a.minBlock), num+1)
-	delete(a.blocks, num)
-	log.Infof("fetchBlockDone: set minBlock %d + 1", num)
-	a.db.SetMinBlock(num + 1)
+func (a *App) fetchBlockDone(channelID string, num uint64) {
+	channel := a.getChannel(channelID)
+	channel.fetchBlockDone(num)
 }
 
-func (a *App) getMinBlock() uint64 {
-	return atomic.LoadUint64(&(a.minBlock))
+func (a *App) getChannel(channelID string) *channel {
+	a.channelsLock.RLock()
+	channel := a.channels[channelID]
+	a.channelsLock.RUnlock()
+
+	if channel == nil {
+		channel = newChannel(a.cfg.id, channelID, a.db)
+		a.channelsLock.Lock()
+		a.channels[channelID] = channel
+		a.channelsLock.Unlock()
+	}
+	return channel
+}
+
+func (a *App) marshalChannelBlocks() ([]byte, error) {
+	a.channelsLock.RLock()
+	defer a.channelsLock.RUnlock()
+
+	var err error
+
+	channelBlocks := make(map[string][]byte)
+
+	for channelID, channel := range a.channels {
+		channelBlocks[channelID], err = channel.marshal()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	data, err := json.Marshal(channelBlocks)
+	return data, err
+}
+
+func (a *App) unmarshalChannelBlocks(data []byte) error {
+	channelBlocks := make(map[string][]byte)
+	if err := json.Unmarshal(data, &channelBlocks); err != nil {
+		return err
+	}
+
+	for channelID, blockData := range channelBlocks {
+		channel := a.getChannel(channelID)
+		if err := channel.unmarshal(blockData); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (a *App) setChainNum(channelID string, num uint64) {
+	a.db.SetChainNum(channelID, num)
+}
+
+func (a *App) getChainNum(channelID string) uint64 {
+	return a.db.GetChainNum(channelID)
 }

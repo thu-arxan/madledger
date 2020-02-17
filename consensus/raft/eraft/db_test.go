@@ -1,52 +1,57 @@
 package eraft
 
-// import (
-// 	"madledger/common/util"
-// 	"os"
-// 	"testing"
+import (
+	"madledger/common/util"
+	"os"
+	"testing"
 
-// 	"github.com/stretchr/testify/require"
-// )
+	"github.com/stretchr/testify/require"
+)
 
-// func TestDB(t *testing.T) {
-// 	os.RemoveAll(getDBPath())
+var (
+	testChannel = "_db_test"
+)
 
-// 	db, err := NewDB(getDBPath())
-// 	require.NoError(t, err)
+func TestDB(t *testing.T) {
+	os.RemoveAll(getDBPath())
 
-// 	_, err = NewDB(getDBPath())
-// 	require.Errorf(t, err, "resource temporarily unavailable")
-// 	db.Close()
-// }
+	db, err := NewDB(getDBPath())
+	require.NoError(t, err)
 
-// func TestBlock(t *testing.T) {
-// 	db, err := NewDB(getDBPath())
-// 	require.NoError(t, err)
+	_, err = NewDB(getDBPath())
+	require.Errorf(t, err, "resource temporarily unavailable")
+	db.Close()
+}
 
-// 	require.Equal(t, uint64(0), db.GetMinBlock())
-// 	blockSize := 100
-// 	blocks := make([]*HybridBlock, blockSize)
-// 	for i := range blocks {
-// 		blocks[i] = &HybridBlock{
-// 			Num: uint64(i),
-// 		}
-// 	}
+func TestBlock(t *testing.T) {
+	db, err := NewDB(getDBPath())
+	require.NoError(t, err)
 
-// 	for i := range blocks {
-// 		db.PutBlock(blocks[i])
-// 		db.SetMinBlock(uint64(i))
-// 	}
-// 	require.Equal(t, uint64(blockSize-1), db.GetMinBlock())
+	require.Equal(t, uint64(0), db.GetMinBlock(testChannel))
+	blockSize := 100
+	blocks := make([]*Block, blockSize)
+	for i := range blocks {
+		blocks[i] = &Block{
+			ChannelID: testChannel,
+			Num:       uint64(i),
+		}
+	}
 
-// 	db.Close()
-// }
+	for i := range blocks {
+		db.AddBlock(blocks[i])
+		db.SetMinBlock(testChannel, uint64(i))
+	}
+	require.Equal(t, uint64(blockSize-1), db.GetMinBlock(testChannel))
 
-// func TestEnd(t *testing.T) {
-// 	require.NoError(t, os.RemoveAll(getDBPath()))
-// }
+	db.Close()
+}
 
-// func getDBPath() string {
-// 	gopath := os.Getenv("GOPATH")
-// 	storePath, _ := util.MakeFileAbs("src/madledger/blockchain/chain/raft/.db", gopath)
-// 	return storePath
-// }
+func TestEnd(t *testing.T) {
+	require.NoError(t, os.RemoveAll(getDBPath()))
+}
+
+func getDBPath() string {
+	gopath := os.Getenv("GOPATH")
+	storePath, _ := util.MakeFileAbs("src/madledger/blockchain/chain/raft/eraft/.db", gopath)
+	return storePath
+}

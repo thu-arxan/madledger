@@ -108,7 +108,7 @@ func BytesToUint32(b []byte) uint32 {
 // BytesToUint64 turn b[0:4] to uint64
 func BytesToUint64(b []byte) (uint64, error) {
 	if len(b) != 8 {
-		return 0, errors.New("Wrong lengtg")
+		return 0, errors.New("Wrong length")
 	}
 	return binary.BigEndian.Uint64(b), nil
 }

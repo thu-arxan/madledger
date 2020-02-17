@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
+
+	"go.etcd.io/etcd/pkg/types"
+	"go.etcd.io/etcd/raft/raftpb"
 )
 
 // Raft wrap etcd raft and other things to provide a interface for using
@@ -79,11 +82,11 @@ func (r *Raft) Stop() {
 	r.setStatus(Stopped)
 }
 
-// AddBlock try to add a block, only leader is recommend to add block, however the etcd raft can not
+// ProposeBlock try to add a block, only leader is recommend to add block, however the etcd raft can not
 // gurantee this, so we are trying our best to forbid follower or candidate adding block, but the fact is
 // the first one trying to add block which num is except can succeed, but it maybe leader very possible.
 // And this function should gurantee that return nil if the block is really added(works in the app)
-func (r *Raft) AddBlock(block *Block) error {
+func (r *Raft) ProposeBlock(block *Block) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -104,8 +107,8 @@ func (r *Raft) AddBlock(block *Block) error {
 }
 
 // BlockCh provide a channel to fetch blocks
-func (r *Raft) BlockCh() chan *Block {
-	return r.app.blockCh
+func (r *Raft) BlockCh(channelID string) chan *Block {
+	return r.app.blockCh(channelID)
 }
 
 // IsLeader return if the node is leader of the cluster
@@ -125,9 +128,9 @@ func (r *Raft) NotifyLater(block *Block) {
 
 // FetchBlockDone is used for blockchain notify raft the block is stored on the disk
 // and there is no need to store the blocks before to release the pressure of db
-func (r *Raft) FetchBlockDone(num uint64) {
+func (r *Raft) FetchBlockDone(channelID string, num uint64) {
 	if r.IsLeader() {
-		r.app.fetchBlockDone(num)
+		r.app.fetchBlockDone(channelID, num)
 	}
 }
 
@@ -142,4 +145,35 @@ func (r *Raft) getStatus() int32 {
 // GetID ...
 func (r *Raft) GetID() uint64 {
 	return r.cfg.id
+}
+
+// SetChainNum set block height of channel
+func (r *Raft) SetChainNum(channelID string, num uint64) {
+	r.app.setChainNum(channelID, num)
+}
+
+// GetChainNum get block height of channel
+func (r *Raft) GetChainNum(channelID string) uint64 {
+	return r.app.getChainNum(channelID)
+}
+
+// GetBlock return the block of channel, return nil if not exist
+func (r *Raft) GetBlock(channelID string, num uint64, async bool) *Block {
+	return r.app.db.GetBlock(channelID, num, async)
+}
+
+// PutBlock stores block into db
+func (r *Raft) PutBlock(block *Block) {
+	r.app.db.AddBlock(block)
+}
+
+// ProposeConfChange propose a config change
+func (r *Raft) ProposeConfChange(change *raftpb.ConfChange) error {
+	// todo: check leader
+	return r.eraft.proposeConfChange(*change)
+}
+
+// Removed ...
+func (r *Raft) Removed(caller uint64) bool {
+	return r.eraft.removed[types.ID(caller)]
 }
