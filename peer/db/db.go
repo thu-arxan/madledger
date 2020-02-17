@@ -37,16 +37,11 @@ type DB interface {
 	SetAccount(account common.Account) error
 	// GetStorage returns the key of an address if exist, else returns an error
 	GetStorage(address common.Address, key common.Word256) (common.Word256, error)
-	// SetStorage sets the value of a key belongs to an address
-	// TODO: This function is not necessary now?
-	// SetStorage(address common.Address, key common.Word256, value common.Word256) error
 	// However, the peer also should provide some functions to help the client to
 	// know the result of the tx
 	// GetStatus return the status of the tx
 	GetTxStatus(channelID, txID string) (*TxStatus, error)
 	GetTxStatusAsync(channelID, txID string) (*TxStatus, error)
-	// TODO: This function is not necessary now?
-	SetTxStatus(tx *core.Tx, status *TxStatus) error
 	BelongChannel(channelID string) bool
 	AddChannel(channelID string)
 	// TODO: This function should in WriteBatch?

@@ -11,6 +11,7 @@ import (
 // AddConfigBlock add a config block
 func (m *Manager) AddConfigBlock(block *core.Block) error {
 	nums := make(map[string]uint64)
+	wb := m.db.NewWriteBatch()
 	for i, tx := range block.Transactions {
 		status := &db.TxStatus{
 			Err:         "",
@@ -40,8 +41,9 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 		} else {
 			status.Err = err.Error()
 		}
-		m.db.SetTxStatus(tx, status)
+		wb.SetTxStatus(tx, status)
 	}
+	wb.Sync()
 	m.coordinator.Unlocks(nums)
 	return nil
 }

@@ -15,6 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TODO: This test shoule be redone.
+
 var (
 	secp256k1String      = "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"
 	rawSecp256k1Bytes, _ = hex.DecodeString(secp256k1String)
@@ -117,8 +119,9 @@ func TestStorage(t *testing.T) {
 }
 
 func TestSetTxStatus(t *testing.T) {
-	err := db.SetTxStatus(tx1, tx1Status)
-	require.NoError(t, err)
+	wb := db.NewWriteBatch()
+	require.NoError(t, wb.SetTxStatus(tx1, tx1Status))
+	require.NoError(t, wb.Sync())
 }
 
 func TestGetTxStatus(t *testing.T) {
@@ -148,11 +151,13 @@ func TestGetTxStatusAsync(t *testing.T) {
 		}
 	}()
 	time.Sleep(100 * time.Millisecond)
+	wb := db.NewWriteBatch()
 	go func() {
-		err := db.SetTxStatus(tx2, tx2Status)
+		err := wb.SetTxStatus(tx2, tx2Status)
 		require.NoError(t, err)
 	}()
 	<-endChan
+	require.NoError(t, wb.Sync())
 }
 
 func TestListTxHistory(t *testing.T) {
