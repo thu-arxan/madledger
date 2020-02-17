@@ -13,12 +13,6 @@ import (
 	"github.com/tecbot/gorocksdb"
 )
 
-/*
-* Here defines some key rules.
-* 1. Account: key = []bytes("account:") + address.Bytes()
-* 2. Storage: key = address.Bytes()
- */
-
 // RocksDB is the implementation of DB on rocksdb
 type RocksDB struct {
 	// the dir of data
@@ -27,9 +21,11 @@ type RocksDB struct {
 	lock sync.Mutex
 	hub  *Hub
 
-	connect *gorocksdb.DB
-	ro      *gorocksdb.ReadOptions
-	wo      *gorocksdb.WriteOptions
+	connect      *gorocksdb.DB
+	ro           *gorocksdb.ReadOptions
+	wo           *gorocksdb.WriteOptions
+	accountCFHdl *gorocksdb.ColumnFamilyHandle
+	storageCFHdl *gorocksdb.ColumnFamilyHandle
 }
 
 // NewRocksDB is the constructor of RocksDB
@@ -44,10 +40,18 @@ func NewRocksDB(dir string) (DB, error) {
 	opts.SetBlockBasedTableFactory(gorocksdb.NewDefaultBlockBasedTableOptions())
 	opts.SetCreateIfMissing(true)
 	opts.SetCreateIfMissingColumnFamilies(true)
-	connect, err := gorocksdb.OpenDb(opts, dir)
+
+	var cfNames = []string{"default", "account", "storage"}
+	var cfOpts = make([]*gorocksdb.Options, len(cfNames))
+	for i := range cfOpts {
+		cfOpts[i] = opts
+	}
+	connect, cfHandles, err := gorocksdb.OpenDbColumnFamilies(opts, dir, cfNames, cfOpts)
 	if err != nil {
 		return nil, err
 	}
+	db.accountCFHdl = cfHandles[1]
+	db.storageCFHdl = cfHandles[2]
 
 	ro := gorocksdb.NewDefaultReadOptions()
 	wo := gorocksdb.NewDefaultWriteOptions()
@@ -64,8 +68,8 @@ func NewRocksDB(dir string) (DB, error) {
 // AccountExist is the implementation of the interface
 // TODO: We may use column family to speed up
 func (db *RocksDB) AccountExist(address common.Address) bool {
-	var key = util.BytesCombine([]byte("account:"), address.Bytes())
-	data, err := db.connect.Get(db.ro, key)
+	var key = address.Bytes()
+	data, err := db.connect.GetCF(db.ro, db.accountCFHdl, key)
 	if err != nil {
 		return false
 	}
@@ -78,8 +82,8 @@ func (db *RocksDB) AccountExist(address common.Address) bool {
 
 // GetAccount returns an account of an address
 func (db *RocksDB) GetAccount(address common.Address) (common.Account, error) {
-	var key = util.BytesCombine([]byte("account:"), address.Bytes())
-	data, err := db.connect.Get(db.ro, key)
+	var key = address.Bytes()
+	data, err := db.connect.GetCF(db.ro, db.accountCFHdl, key)
 	if err != nil {
 		return common.NewDefaultAccount(address), nil
 	}
@@ -98,27 +102,20 @@ func (db *RocksDB) GetAccount(address common.Address) (common.Account, error) {
 
 // SetAccount updates an account or add an account
 func (db *RocksDB) SetAccount(account common.Account) error {
-	var key = util.BytesCombine([]byte("account:"), account.GetAddress().Bytes())
-	value, err := account.Bytes()
-	if err != nil {
-		return err
-	}
-	// value := MarshalAccount(account)
-	err = db.connect.Put(db.wo, key, value)
-	return err
+	return errors.New("no need to implement")
 }
 
 // RemoveAccount removes an account if exist
 // TODO: find out what error if delete something which is not exist
 func (db *RocksDB) RemoveAccount(address common.Address) error {
-	var key = util.BytesCombine([]byte("account:"), address.Bytes())
-	return db.connect.Delete(db.wo, key)
+	var key = address.Bytes()
+	return db.connect.DeleteCF(db.wo, db.accountCFHdl, key)
 }
 
 // GetStorage returns the key of an address if exist, else returns an error
 func (db *RocksDB) GetStorage(address common.Address, key common.Word256) (common.Word256, error) {
 	storageKey := util.BytesCombine(address.Bytes(), key.Bytes())
-	data, err := db.connect.Get(db.ro, storageKey)
+	data, err := db.connect.GetCF(db.ro, db.storageCFHdl, storageKey)
 	if err != nil {
 		return common.ZeroWord256, err
 	}
@@ -131,9 +128,7 @@ func (db *RocksDB) GetStorage(address common.Address, key common.Word256) (commo
 
 // SetStorage sets the value of a key belongs to an address
 func (db *RocksDB) SetStorage(address common.Address, key common.Word256, value common.Word256) error {
-	storageKey := util.BytesCombine(address.Bytes(), key.Bytes())
-	db.connect.Put(db.wo, storageKey, value.Bytes())
-	return nil
+	return errors.New("no need to implement")
 }
 
 // GetTxStatus is the implementation of interface
@@ -179,6 +174,7 @@ func (db *RocksDB) GetTxStatusAsync(channelID, txID string) (*TxStatus, error) {
 }
 
 // SetTxStatus is the implementation of interface
+// TODO: Why should we need this?
 func (db *RocksDB) SetTxStatus(tx *core.Tx, status *TxStatus) error {
 	value, err := json.Marshal(status)
 	if err != nil {
@@ -265,7 +261,9 @@ func (db *RocksDB) addHistory(address []byte, channelID, txID string) {
 			if !util.Contain(txs, channelID) {
 				txs[channelID] = []string{txID}
 			} else {
-				txs[channelID] = append(txs[channelID], txID)
+				if !util.Contain(txs[channelID], txID) {
+					txs[channelID] = append(txs[channelID], txID)
+				}
 			}
 		}
 		value, _ := json.Marshal(txs)
@@ -323,42 +321,42 @@ type RocksDBWriteBatchWrapper struct {
 
 // SetAccount is the implementation of interface
 func (wb *RocksDBWriteBatchWrapper) SetAccount(account common.Account) error {
-	var key = util.BytesCombine([]byte("account:"), account.GetAddress().Bytes())
+	var key = account.GetAddress().Bytes()
 	value, err := account.Bytes()
 	if err != nil {
 		return err
 	}
 	// value := MarshalAccount(account)
-	wb.batch.Put(key, value)
+	wb.batch.PutCF(wb.db.accountCFHdl, key, value)
 	return nil
 
 }
 
 // RemoveAccount is the implementation of interface
 func (wb *RocksDBWriteBatchWrapper) RemoveAccount(address common.Address) error {
-	var key = util.BytesCombine([]byte("account:"), address.Bytes())
-	wb.batch.Delete(key)
+	var key = address.Bytes()
+	wb.batch.DeleteCF(wb.db.accountCFHdl, key)
 	return nil
 }
 
 // RemoveAccountStorage delete all data associated with address
-// TODO: not implementation yet
 func (wb *RocksDBWriteBatchWrapper) RemoveAccountStorage(address common.Address) {
 	// delete all associated data
-	// iter := wb.db.connect.NewIterator(nil, nil)
-	// defer iter.Release()
-	// addr := address.Bytes()
-	// iter.Seek(addr)
-	// for ; iter.Valid(); iter.Next() {
-	// 	key := iter.Key()
-	// 	wb.batch.Delete(key)
-	// }
+	iter := wb.db.connect.NewIteratorCF(wb.db.ro, wb.db.storageCFHdl)
+	defer iter.Close()
+	prefix := address.Bytes()
+	iter.Seek(prefix)
+	for ; iter.Valid() && iter.ValidForPrefix(prefix); iter.Next() {
+		key := iter.Key().Data()
+		wb.batch.DeleteCF(wb.db.storageCFHdl, key)
+		iter.Key().Free()
+	}
 }
 
 // SetStorage is the implementation of interface
 func (wb *RocksDBWriteBatchWrapper) SetStorage(address common.Address, key common.Word256, value common.Word256) error {
 	storageKey := util.BytesCombine(address.Bytes(), key.Bytes())
-	wb.batch.Put(storageKey, value.Bytes())
+	wb.batch.PutCF(wb.db.storageCFHdl, storageKey, value.Bytes())
 	return nil
 }
 
@@ -369,13 +367,11 @@ func (wb *RocksDBWriteBatchWrapper) SetTxStatus(tx *core.Tx, status *TxStatus) e
 		return err
 	}
 	var key = util.BytesCombine([]byte(tx.Data.ChannelID), []byte(tx.ID))
-	log.Infof("set (%x->%x)", key, value)
 	wb.batch.Put(key, value)
 	sender, err := tx.GetSender()
 	if err != nil {
 		return err
 	}
-	//db.addHistory(sender.Bytes(), tx.Data.ChannelID, tx.ID)
 	wb.addHistory(sender.Bytes(), tx.Data.ChannelID, tx.ID)
 	wb.db.hub.Done(tx.ID, status)
 	return nil
@@ -394,7 +390,9 @@ func (wb *RocksDBWriteBatchWrapper) addHistory(address []byte, channelID, txID s
 		if !util.Contain(txs, channelID) {
 			txs[channelID] = []string{txID}
 		} else {
-			txs[channelID] = append(txs[channelID], txID)
+			if !util.Contain(txs[channelID], txID) {
+				txs[channelID] = append(txs[channelID], txID)
+			}
 		}
 		value, _ := json.Marshal(txs)
 		wb.batch.Put(address, value)

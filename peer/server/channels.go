@@ -41,7 +41,7 @@ func NewChannelManager(dbDir string, identity *core.Member, chainCfg *config.Blo
 	m.identity = identity
 	// set db
 	// Note: We can set this to RocksDB, however rocksdb is more slow because the poor implementation
-	db, err := db.NewLevelDB(dbDir)
+	db, err := db.NewRocksDB(dbDir)
 	if err != nil {
 		return nil, err
 	}
