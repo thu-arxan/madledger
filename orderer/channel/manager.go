@@ -7,6 +7,7 @@ import (
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
+	"madledger/consensus/raft"
 	"madledger/core"
 	"madledger/orderer/db"
 	"time"
@@ -81,7 +82,7 @@ func (manager *Manager) Start() {
 
 					if err := manager.coordinator.GM.AddTx(tx); err != nil {
 						// todo: This is temporary fix
-						if err.Error() != "The tx exist in the blockchain aleardy" {
+						if err.Error() != "The tx exist in the blockchain aleardy" && raft.GetError(err) != raft.TxInPool {
 							log.Fatalf("Channel %s failed to add tx into global channel because %s", manager.ID, err)
 							return
 						}
