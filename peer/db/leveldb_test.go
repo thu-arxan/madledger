@@ -61,6 +61,7 @@ func TestNewLevelDB(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// TODO: This test should be reconstructed
 func TestAccount(t *testing.T) {
 	address, err := privKey.PubKey().Address()
 	require.NoError(t, err)
@@ -87,8 +88,9 @@ func TestAccount(t *testing.T) {
 	require.Equal(t, code, account.GetCode())
 	require.True(t, db.AccountExist(account.GetAddress()))
 	// then remove account
-	err = db.RemoveAccount(account.GetAddress())
-	require.NoError(t, err)
+	wb := db.NewWriteBatch()
+	require.NoError(t, wb.RemoveAccount(account.GetAddress()))
+	require.NoError(t, wb.Sync())
 	require.False(t, db.AccountExist(account.GetAddress()))
 }
 

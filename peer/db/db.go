@@ -35,9 +35,6 @@ type DB interface {
 	// SetAccount updates an account or add an account
 	// TODO: This function is not necessary now?
 	SetAccount(account common.Account) error
-	// RemoveAccount removes an account if exist
-	// TODO: This function is not necessary now?
-	RemoveAccount(address common.Address) error
 	// GetStorage returns the key of an address if exist, else returns an error
 	GetStorage(address common.Address, key common.Word256) (common.Word256, error)
 	// SetStorage sets the value of a key belongs to an address
@@ -57,7 +54,6 @@ type DB interface {
 	GetChannels() []string
 	ListTxHistory(address []byte) map[string][]string
 	NewWriteBatch() WriteBatch
-
 	// PutBlock stores block into db
 	// TODO: Maybe write batch?
 	PutBlock(block *core.Block) error
