@@ -216,22 +216,6 @@ func (db *LevelDB) NewWriteBatch() WriteBatch {
 	}
 }
 
-// SyncWriteBatch sync write batch into db
-// func (db *LevelDB) SyncWriteBatch(batch *leveldb.Batch) error {
-// 	err := db.connect.Write(batch, nil)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
-
-// PutBlock stores block into db
-func (db *LevelDB) PutBlock(block *core.Block) error {
-	data := block.Bytes()
-	key := fmt.Sprintf("bc_data_%d", block.GetNumber())
-	return db.connect.Put([]byte(key), data, nil)
-}
-
 // GetBlock gets block by block.num from db
 func (db *LevelDB) GetBlock(num uint64) (*core.Block, error) {
 	key := fmt.Sprintf("bc_data_%d", num)
@@ -332,6 +316,14 @@ func (wb *WriteBatchWrapper) addHistory(address []byte, channelID, txID string) 
 // Put stores (key, value) into batch, the caller is responsible to avoid duplicate key
 func (wb *WriteBatchWrapper) Put(key, value []byte) {
 	wb.batch.Put(key, value)
+}
+
+// PutBlock stores block into db
+func (wb *WriteBatchWrapper) PutBlock(block *core.Block) error {
+	data := block.Bytes()
+	key := fmt.Sprintf("bc_data_%d", block.GetNumber())
+	wb.batch.Put([]byte(key), data)
+	return nil
 }
 
 // Sync sync batch to database

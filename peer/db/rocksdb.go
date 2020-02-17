@@ -248,13 +248,6 @@ func (db *RocksDB) SyncWriteBatch(batch *gorocksdb.WriteBatch) error {
 	return nil
 }
 
-// PutBlock stores block into db
-func (db *RocksDB) PutBlock(block *core.Block) error {
-	data := block.Bytes()
-	key := fmt.Sprintf("bc_data_%d", block.GetNumber())
-	return db.connect.Put(db.wo, []byte(key), data)
-}
-
 // GetBlock gets block by block.num from db
 func (db *RocksDB) GetBlock(num uint64) (*core.Block, error) {
 	key := fmt.Sprintf("bc_data_%d", num)
@@ -364,6 +357,14 @@ func (wb *RocksDBWriteBatchWrapper) addHistory(address []byte, channelID, txID s
 // Put stores (key, value) into batch, the caller is responsible to avoid duplicate key
 func (wb *RocksDBWriteBatchWrapper) Put(key, value []byte) {
 	wb.batch.Put(key, value)
+}
+
+// PutBlock stores block into db
+func (wb *RocksDBWriteBatchWrapper) PutBlock(block *core.Block) error {
+	data := block.Bytes()
+	key := fmt.Sprintf("bc_data_%d", block.GetNumber())
+	wb.batch.Put([]byte(key), data)
+	return nil
 }
 
 // Sync sync change to db

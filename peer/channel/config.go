@@ -43,6 +43,7 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 		}
 		wb.SetTxStatus(tx, status)
 	}
+	wb.PutBlock(block)
 	wb.Sync()
 	m.coordinator.Unlocks(nums)
 	return nil
