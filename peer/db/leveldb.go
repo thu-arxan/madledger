@@ -72,18 +72,6 @@ func (db *LevelDB) GetAccount(address common.Address) (common.Account, error) {
 	// return UnmarshalAccount(value)
 }
 
-// SetAccount updates an account or add an account
-func (db *LevelDB) SetAccount(account common.Account) error {
-	var key = util.BytesCombine([]byte("account:"), account.GetAddress().Bytes())
-	value, err := account.Bytes()
-	if err != nil {
-		return err
-	}
-	// value := MarshalAccount(account)
-	err = db.connect.Put(key, value, nil)
-	return err
-}
-
 // GetStorage returns the key of an address if exist, else returns an error
 func (db *LevelDB) GetStorage(address common.Address, key common.Word256) (common.Word256, error) {
 	// return common.ZeroWord256, nil
@@ -134,26 +122,6 @@ func (db *LevelDB) GetTxStatusAsync(channelID, txID string) (*TxStatus, error) {
 	}
 	status := db.hub.Watch(txID, func() { db.lock.Unlock() })
 	return status, nil
-}
-
-// SetTxStatus is the implementation of interface
-func (db *LevelDB) SetTxStatus(tx *core.Tx, status *TxStatus) error {
-	value, err := json.Marshal(status)
-	if err != nil {
-		return err
-	}
-	var key = util.BytesCombine([]byte(tx.Data.ChannelID), []byte(tx.ID))
-	err = db.connect.Put(key, value, nil)
-	if err != nil {
-		return err
-	}
-	sender, err := tx.GetSender()
-	if err != nil {
-		return err
-	}
-	db.addHistory(sender.Bytes(), tx.Data.ChannelID, tx.ID)
-	db.hub.Done(tx.ID, status)
-	return nil
 }
 
 // BelongChannel is the implementation of interface

@@ -100,11 +100,6 @@ func (db *RocksDB) GetAccount(address common.Address) (common.Account, error) {
 	// return UnmarshalAccount(value)
 }
 
-// SetAccount updates an account or add an account
-func (db *RocksDB) SetAccount(account common.Account) error {
-	return errors.New("no need to implement")
-}
-
 // GetStorage returns the key of an address if exist, else returns an error
 func (db *RocksDB) GetStorage(address common.Address, key common.Word256) (common.Word256, error) {
 	storageKey := util.BytesCombine(address.Bytes(), key.Bytes())
@@ -159,27 +154,6 @@ func (db *RocksDB) GetTxStatusAsync(channelID, txID string) (*TxStatus, error) {
 		return status, nil
 	}
 	return nil, err
-}
-
-// SetTxStatus is the implementation of interface
-// TODO: Why should we need this?
-func (db *RocksDB) SetTxStatus(tx *core.Tx, status *TxStatus) error {
-	value, err := json.Marshal(status)
-	if err != nil {
-		return err
-	}
-	var key = util.BytesCombine([]byte(tx.Data.ChannelID), []byte(tx.ID))
-	err = db.connect.Put(db.wo, key, value)
-	if err != nil {
-		return err
-	}
-	sender, err := tx.GetSender()
-	if err != nil {
-		return err
-	}
-	db.addHistory(sender.Bytes(), tx.Data.ChannelID, tx.ID)
-	db.hub.Done(tx.ID, status)
-	return nil
 }
 
 // BelongChannel is the implementation of interface
