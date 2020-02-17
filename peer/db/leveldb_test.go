@@ -81,8 +81,9 @@ func TestAccount(t *testing.T) {
 	account.SetCode(code)
 	require.Equal(t, code, account.GetCode())
 	// the set the account
-	err = db.SetAccount(account)
-	require.NoError(t, err)
+	wb := db.NewWriteBatch()
+	require.NoError(t, wb.SetAccount(account))
+	require.NoError(t, wb.Sync())
 	account, err = db.GetAccount(address)
 	require.NoError(t, err)
 	require.True(t, reflect.DeepEqual(account.GetAddress().Bytes(), address.Bytes()))
@@ -90,7 +91,7 @@ func TestAccount(t *testing.T) {
 	require.Equal(t, code, account.GetCode())
 	require.True(t, db.AccountExist(account.GetAddress()))
 	// then remove account
-	wb := db.NewWriteBatch()
+	wb = db.NewWriteBatch()
 	require.NoError(t, wb.RemoveAccount(account.GetAddress()))
 	require.NoError(t, wb.Sync())
 	require.False(t, db.AccountExist(account.GetAddress()))
@@ -100,7 +101,9 @@ func TestStorage(t *testing.T) {
 	// first set an account
 	address, _ := privKey.PubKey().Address()
 	account, _ := db.GetAccount(address)
-	db.SetAccount(account)
+	wb := db.NewWriteBatch()
+	require.NoError(t, wb.SetAccount(account))
+	require.NoError(t, wb.Sync())
 	// then get key and value
 	key, err := common.BytesToWord256([]byte("I want a key which length is 32."))
 	require.NoError(t, err)
@@ -109,7 +112,7 @@ func TestStorage(t *testing.T) {
 	// then test the storage
 	_, err = db.GetStorage(address, key)
 	require.Error(t, err, "not found")
-	wb := db.NewWriteBatch()
+	wb = db.NewWriteBatch()
 	err = wb.SetStorage(address, key, value)
 	require.NoError(t, err)
 	require.NoError(t, wb.Sync())
@@ -205,11 +208,6 @@ func TestBenchmark(t *testing.T) {
 		UnmarshalAccount(bytes)
 	}
 	fmt.Printf("fast unmarshal %d accounts cost %v\n", size, time.Since(begin))
-	begin = time.Now()
-	for i := 0; i < size; i++ {
-		db.SetAccount(accounts[i])
-	}
-	fmt.Printf("add %d accounts cost %v\n", size, time.Since(begin))
 	begin = time.Now()
 	for i := 0; i < size; i++ {
 		db.GetAccount(accounts[i].GetAddress())

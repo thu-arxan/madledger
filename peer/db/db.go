@@ -32,9 +32,6 @@ type DB interface {
 	AccountExist(address common.Address) bool
 	// GetAccount returns an account of an address
 	GetAccount(address common.Address) (common.Account, error)
-	// SetAccount updates an account or add an account
-	// TODO: This function is not necessary now?
-	SetAccount(account common.Account) error
 	// GetStorage returns the key of an address if exist, else returns an error
 	GetStorage(address common.Address, key common.Word256) (common.Word256, error)
 	// However, the peer also should provide some functions to help the client to
