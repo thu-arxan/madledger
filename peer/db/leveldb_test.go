@@ -107,8 +107,10 @@ func TestStorage(t *testing.T) {
 	// then test the storage
 	_, err = db.GetStorage(address, key)
 	require.Error(t, err, "not found")
-	err = db.SetStorage(address, key, value)
+	wb := db.NewWriteBatch()
+	err = wb.SetStorage(address, key, value)
 	require.NoError(t, err)
+	require.NoError(t, wb.Sync())
 	v, err := db.GetStorage(address, key)
 	require.NoError(t, err)
 	require.Equal(t, value, v)

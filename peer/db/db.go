@@ -39,7 +39,7 @@ type DB interface {
 	GetStorage(address common.Address, key common.Word256) (common.Word256, error)
 	// SetStorage sets the value of a key belongs to an address
 	// TODO: This function is not necessary now?
-	SetStorage(address common.Address, key common.Word256, value common.Word256) error
+	// SetStorage(address common.Address, key common.Word256, value common.Word256) error
 	// However, the peer also should provide some functions to help the client to
 	// know the result of the tx
 	// GetStatus return the status of the tx

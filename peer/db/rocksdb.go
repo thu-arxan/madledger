@@ -105,13 +105,6 @@ func (db *RocksDB) SetAccount(account common.Account) error {
 	return errors.New("no need to implement")
 }
 
-// RemoveAccount removes an account if exist
-// TODO: find out what error if delete something which is not exist
-func (db *RocksDB) RemoveAccount(address common.Address) error {
-	var key = address.Bytes()
-	return db.connect.DeleteCF(db.wo, db.accountCFHdl, key)
-}
-
 // GetStorage returns the key of an address if exist, else returns an error
 func (db *RocksDB) GetStorage(address common.Address, key common.Word256) (common.Word256, error) {
 	storageKey := util.BytesCombine(address.Bytes(), key.Bytes())
@@ -124,11 +117,6 @@ func (db *RocksDB) GetStorage(address common.Address, key common.Word256) (commo
 		return common.ZeroWord256, nil
 	}
 	return common.BytesToWord256(data.Data())
-}
-
-// SetStorage sets the value of a key belongs to an address
-func (db *RocksDB) SetStorage(address common.Address, key common.Word256, value common.Word256) error {
-	return errors.New("no need to implement")
 }
 
 // GetTxStatus is the implementation of interface

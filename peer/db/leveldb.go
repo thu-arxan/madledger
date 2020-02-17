@@ -84,16 +84,6 @@ func (db *LevelDB) SetAccount(account common.Account) error {
 	return err
 }
 
-// RemoveAccount removes an account if exist
-func (db *LevelDB) RemoveAccount(address common.Address) error {
-	var key = util.BytesCombine([]byte("account:"), address.Bytes())
-	if ok, _ := db.connect.Has(key, nil); !ok {
-		return nil
-	}
-
-	return db.connect.Delete(key, nil)
-}
-
 // GetStorage returns the key of an address if exist, else returns an error
 func (db *LevelDB) GetStorage(address common.Address, key common.Word256) (common.Word256, error) {
 	// return common.ZeroWord256, nil
@@ -103,13 +93,6 @@ func (db *LevelDB) GetStorage(address common.Address, key common.Word256) (commo
 		return common.ZeroWord256, err
 	}
 	return common.BytesToWord256(value)
-}
-
-// SetStorage sets the value of a key belongs to an address
-func (db *LevelDB) SetStorage(address common.Address, key common.Word256, value common.Word256) error {
-	storageKey := util.BytesCombine(address.Bytes(), key.Bytes())
-	db.connect.Put(storageKey, value.Bytes(), nil)
-	return nil
 }
 
 // GetTxStatus is the implementation of interface
