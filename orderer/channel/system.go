@@ -3,7 +3,6 @@ package channel
 import (
 	"encoding/json"
 	"fmt"
-	"errors"
 	ac "madledger/blockchain/account"
 	cc "madledger/blockchain/config"
 	"madledger/common"
