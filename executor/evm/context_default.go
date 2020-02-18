@@ -115,7 +115,7 @@ func bytesToCommonAddress(addr []byte) common.Address {
 func bytesToCommomWord256(data []byte) common.Word256 {
 	word256, err := common.BytesToWord256(data)
 	if err != nil {
-		log.Errorf("Fatal error! Failed to convert bytes(%d) to word256, %s", len(data), hex.EncodeToString(data))
+		log.Errorf("Fatal error! Failed to convert bytes(%d) to word256, %s, err: %v", len(data), hex.EncodeToString(data), err)
 	}
 	return word256
 }
@@ -175,7 +175,7 @@ func (ctx *DefaultContext) getStorage(addr, key []byte) []byte {
 	// query from db
 	value, err := ctx.queryEngine.GetStorage(bytesToCommonAddress(addr), bytesToCommomWord256(key))
 	if err != nil {
-		log.Errorf("Fatal error! Failed to query value to %s for addr(%s)", string(key), string(addr))
+		log.Errorf("Fatal error! Failed to query value to %s for addr(%s), err: %v", hex.EncodeToString(key), hex.EncodeToString(addr), err)
 	}
 
 	accInfo.storage[string(key)] = &storageData{

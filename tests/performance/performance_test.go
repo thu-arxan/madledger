@@ -97,10 +97,16 @@ func TestPerformance(t *testing.T) {
 }
 
 func TestEnd(t *testing.T) {
+	time.Sleep(1 * time.Second)
+	fmt.Println(time.Now(), "end")
 	switch consensus {
 	case "solo":
+		solo.StopOrderers()
+		solo.StopPeers()
 		solo.Clean()
 	case "raft":
+		raft.StopOrderers()
+		raft.StopPeers()
 		raft.Clean()
 	case "bft":
 		bft.Clean()
