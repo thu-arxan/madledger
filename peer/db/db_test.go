@@ -163,6 +163,19 @@ func testTxStatus(t *testing.T) {
 }
 
 func testHistory(t *testing.T) {
+	wb := db.NewWriteBatch()
+	var txs = make([]string, 10)
+	for i := range txs {
+		tx, _ := core.NewTx("test", common.ZeroAddress, []byte("2"), 0, "", privKey)
+		txs[i] = tx.ID
+		wb.SetTxStatus(tx, &TxStatus{
+			Err:             "",
+			BlockNumber:     4,
+			BlockIndex:      i,
+			Output:          []byte("tx2"),
+			ContractAddress: ""})
+	}
+	require.NoError(t, wb.Sync())
 	address, err := privKey.PubKey().Address()
 	if err != nil {
 		t.Fatal(err)
@@ -170,9 +183,9 @@ func testHistory(t *testing.T) {
 	history := db.ListTxHistory(address.Bytes())
 	exceptHistory := make(map[string][]string)
 	exceptHistory["test"] = []string{tx1.ID, tx2.ID}
+	exceptHistory["test"] = append(exceptHistory["test"], txs...)
 	if !reflect.DeepEqual(history, exceptHistory) {
-		fmt.Printf("history is %v\n", history)
-		fmt.Printf("excepty is %v\n", exceptHistory)
+		fmt.Printf("except %v while get %v", exceptHistory, history)
 		t.Fatal()
 	}
 }

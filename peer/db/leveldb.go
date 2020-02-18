@@ -78,7 +78,6 @@ func (db *LevelDB) GetStorage(address common.Address, key common.Word256) (commo
 	storageKey := util.BytesCombine(address.Bytes(), key.Bytes())
 	value, err := db.connect.Get(storageKey, nil)
 	if err != nil {
-		log.Infof("leveldb failed to get key %v", err)
 		return common.ZeroWord256, err
 	}
 	return common.BytesToWord256(value)
@@ -181,27 +180,6 @@ func (db *LevelDB) ListTxHistory(address []byte) map[string][]string {
 	return txs
 }
 
-func (db *LevelDB) addHistory(address []byte, channelID, txID string) {
-	var txs = make(map[string][]string)
-	if ok, _ := db.connect.Has(address, nil); !ok {
-		txs[channelID] = []string{txID}
-		value, _ := json.Marshal(txs)
-		db.connect.Put(address, value, nil)
-	} else {
-		value, err := db.connect.Get(address, nil)
-		if err == nil {
-			json.Unmarshal(value, &txs)
-			if !util.Contain(txs, channelID) {
-				txs[channelID] = []string{txID}
-			} else {
-				txs[channelID] = append(txs[channelID], txID)
-			}
-			value, _ := json.Marshal(txs)
-			db.connect.Put(address, value, nil)
-		}
-	}
-}
-
 func (db *LevelDB) setChannels(channels []string) {
 	var key = []byte("channels")
 	value, _ := json.Marshal(channels)
@@ -212,8 +190,9 @@ func (db *LevelDB) setChannels(channels []string) {
 func (db *LevelDB) NewWriteBatch() WriteBatch {
 	batch := new(leveldb.Batch)
 	return &WriteBatchWrapper{
-		batch: batch,
-		db:    db,
+		batch:     batch,
+		db:        db,
+		histories: make(map[string]map[string][]string),
 	}
 }
 
@@ -238,6 +217,8 @@ func (db *LevelDB) Close() {
 type WriteBatchWrapper struct {
 	batch *leveldb.Batch
 	db    *LevelDB
+
+	histories map[string]map[string][]string
 }
 
 // SetAccount is the implementation of interface
@@ -300,25 +281,32 @@ func (wb *WriteBatchWrapper) SetTxStatus(tx *core.Tx, status *TxStatus) error {
 
 func (wb *WriteBatchWrapper) addHistory(address []byte, channelID, txID string) {
 	var txs = make(map[string][]string)
-	if ok, _ := wb.db.connect.Has(address, nil); !ok {
-		txs[channelID] = []string{txID}
-		value, _ := json.Marshal(txs)
-		//db.connect.Put(address, value, nil)
-		wb.batch.Put(address, value)
-	} else {
-		value, err := wb.db.connect.Get(address, nil)
-		if err == nil {
-			json.Unmarshal(value, &txs)
-			if !util.Contain(txs, channelID) {
-				txs[channelID] = []string{txID}
-			} else {
-				txs[channelID] = append(txs[channelID], txID)
-			}
-			value, _ := json.Marshal(txs)
-			//db.connect.Put(address, value, nil)
-			wb.batch.Put(address, value)
+	if util.Contain(wb.histories, string(address)) {
+		txs = wb.histories[string(address)]
+		if !util.Contain(txs, channelID) {
+			txs[channelID] = []string{txID}
+		} else {
+			txs[channelID] = append(txs[channelID], txID)
 		}
+	} else {
+		if ok, _ := wb.db.connect.Has(address, nil); !ok {
+			txs[channelID] = []string{txID}
+		} else {
+			value, err := wb.db.connect.Get(address, nil)
+			if err == nil {
+				json.Unmarshal(value, &txs)
+				if !util.Contain(txs, channelID) {
+					txs[channelID] = []string{txID}
+				} else {
+					txs[channelID] = append(txs[channelID], txID)
+				}
+			}
+		}
+		wb.histories[string(address)] = txs
 	}
+	value, _ := json.Marshal(txs)
+	//db.connect.Put(address, value, nil)
+	wb.batch.Put(address, value)
 }
 
 // Put stores (key, value) into batch, the caller is responsible to avoid duplicate key
