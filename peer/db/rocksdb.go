@@ -26,6 +26,7 @@ type RocksDB struct {
 	wo           *gorocksdb.WriteOptions
 	accountCFHdl *gorocksdb.ColumnFamilyHandle
 	storageCFHdl *gorocksdb.ColumnFamilyHandle
+	historyCFHdl *gorocksdb.ColumnFamilyHandle
 }
 
 // NewRocksDB is the constructor of RocksDB
@@ -41,7 +42,7 @@ func NewRocksDB(dir string) (DB, error) {
 	opts.SetCreateIfMissing(true)
 	opts.SetCreateIfMissingColumnFamilies(true)
 
-	var cfNames = []string{"default", "account", "storage"}
+	var cfNames = []string{"default", "account", "storage", "history"}
 	var cfOpts = make([]*gorocksdb.Options, len(cfNames))
 	for i := range cfOpts {
 		cfOpts[i] = opts
@@ -52,6 +53,7 @@ func NewRocksDB(dir string) (DB, error) {
 	}
 	db.accountCFHdl = cfHandles[1]
 	db.storageCFHdl = cfHandles[2]
+	db.historyCFHdl = cfHandles[3]
 
 	ro := gorocksdb.NewDefaultReadOptions()
 	wo := gorocksdb.NewDefaultWriteOptions()
@@ -66,7 +68,6 @@ func NewRocksDB(dir string) (DB, error) {
 }
 
 // AccountExist is the implementation of the interface
-// TODO: We may use column family to speed up
 func (db *RocksDB) AccountExist(address common.Address) bool {
 	var key = address.Bytes()
 	data, err := db.connect.GetCF(db.ro, db.accountCFHdl, key)
@@ -109,7 +110,7 @@ func (db *RocksDB) GetStorage(address common.Address, key common.Word256) (commo
 	}
 	defer data.Free()
 	if data.Size() == 0 {
-		return common.ZeroWord256, nil
+		return common.ZeroWord256, errors.New("not found")
 	}
 	return common.BytesToWord256(data.Data())
 }
@@ -123,7 +124,7 @@ func (db *RocksDB) GetTxStatus(channelID, txID string) (*TxStatus, error) {
 	}
 	defer data.Free()
 	if data.Size() == 0 {
-		return nil, errors.New("Not exist")
+		return nil, errors.New("not exist")
 	}
 	var status TxStatus
 	err = json.Unmarshal(data.Data(), &status)
@@ -201,51 +202,33 @@ func (db *RocksDB) GetChannels() []string {
 
 // ListTxHistory is the implementation of interface
 func (db *RocksDB) ListTxHistory(address []byte) map[string][]string {
-	var txs = make(map[string][]string)
-	data, err := db.connect.Get(db.ro, address)
-	if err != nil {
-		return txs
-	}
-	defer data.Free()
-	json.Unmarshal(data.Data(), &txs)
-	return txs
-}
-
-func (db *RocksDB) addHistory(address []byte, channelID, txID string) {
-	var txs = make(map[string][]string)
-	data, err := db.connect.Get(db.ro, address)
-	if err == nil {
-		defer data.Free()
-		if data.Size() == 0 {
-			txs[channelID] = []string{txID}
+	var result = make(map[string][]string)
+	iter := db.connect.NewIteratorCF(db.ro, db.historyCFHdl)
+	defer iter.Close()
+	prefix := address
+	iter.Seek(prefix)
+	for ; iter.Valid() && iter.ValidForPrefix(prefix); iter.Next() {
+		key := iter.Key().Data()
+		if len(key) <= len(address) {
+			log.Warnf("history key length is %d, which is short than address", len(key))
 		} else {
-			json.Unmarshal(data.Data(), &txs)
-			if !util.Contain(txs, channelID) {
-				txs[channelID] = []string{txID}
-			} else {
-				if !util.Contain(txs[channelID], txID) {
-					txs[channelID] = append(txs[channelID], txID)
-				}
+			channelID := string(key[len(address):])
+			var txs []string
+			json.Unmarshal(iter.Value().Data(), &txs)
+			if len(txs) != 0 {
+				result[channelID] = txs
 			}
+			iter.Value().Free()
 		}
-		value, _ := json.Marshal(txs)
-		db.connect.Put(db.wo, address, value)
+		iter.Key().Free()
 	}
+	return result
 }
 
 func (db *RocksDB) setChannels(channels []string) {
 	var key = []byte("channels")
 	value, _ := json.Marshal(channels)
 	db.connect.Put(db.wo, key, value)
-}
-
-// SyncWriteBatch sync write batch into db
-func (db *RocksDB) SyncWriteBatch(batch *gorocksdb.WriteBatch) error {
-	err := db.connect.Write(db.wo, batch)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // GetBlock gets block by block.num from db
@@ -259,12 +242,20 @@ func (db *RocksDB) GetBlock(num uint64) (*core.Block, error) {
 	return core.UnmarshalBlock(data.Data())
 }
 
+// Close close the rocksdb
+func (db *RocksDB) Close() {
+	if db.connect != nil {
+		db.connect.Close()
+	}
+}
+
 // NewWriteBatch implement the interface, WriteBatch is a wrapper of gorocks.WriteBatch
 func (db *RocksDB) NewWriteBatch() WriteBatch {
 	batch := gorocksdb.NewWriteBatch()
 	return &RocksDBWriteBatchWrapper{
-		batch: batch,
-		db:    db,
+		batch:     batch,
+		db:        db,
+		histories: make(map[string][]string),
 	}
 }
 
@@ -272,6 +263,8 @@ func (db *RocksDB) NewWriteBatch() WriteBatch {
 type RocksDBWriteBatchWrapper struct {
 	batch *gorocksdb.WriteBatch
 	db    *RocksDB
+
+	histories map[string][]string
 }
 
 // SetAccount is the implementation of interface
@@ -332,26 +325,29 @@ func (wb *RocksDBWriteBatchWrapper) SetTxStatus(tx *core.Tx, status *TxStatus) e
 	return nil
 }
 
+// history key: address+channelID, value->[]{tx...}
 func (wb *RocksDBWriteBatchWrapper) addHistory(address []byte, channelID, txID string) {
-	var txs = make(map[string][]string)
-	data, err := wb.db.connect.Get(wb.db.ro, address)
-	if err == nil {
+	var dbKey = util.BytesCombine(address, []byte(channelID))
+	var historyKey = string(address)
+	if util.Contain(wb.histories, historyKey) {
+		wb.histories[historyKey] = append(wb.histories[historyKey], txID)
+	} else {
+		data, err := wb.db.connect.GetCF(wb.db.ro, wb.db.historyCFHdl, dbKey)
+		if err != nil {
+			wb.histories[historyKey] = []string{txID}
+		}
 		defer data.Free()
 		if data.Size() == 0 {
-			txs[channelID] = []string{txID}
+			wb.histories[historyKey] = []string{txID}
 		} else {
+			var txs []string
 			json.Unmarshal(data.Data(), &txs)
+			txs = append(txs, txID)
+			wb.histories[historyKey] = txs
 		}
-		if !util.Contain(txs, channelID) {
-			txs[channelID] = []string{txID}
-		} else {
-			if !util.Contain(txs[channelID], txID) {
-				txs[channelID] = append(txs[channelID], txID)
-			}
-		}
-		value, _ := json.Marshal(txs)
-		wb.batch.Put(address, value)
 	}
+	bytes, _ := json.Marshal(wb.histories[historyKey])
+	wb.batch.PutCF(wb.db.historyCFHdl, dbKey, bytes)
 }
 
 // Put stores (key, value) into batch, the caller is responsible to avoid duplicate key

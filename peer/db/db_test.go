@@ -15,19 +15,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO: This test shoule be redone.
-
 var (
 	secp256k1String      = "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"
 	rawSecp256k1Bytes, _ = hex.DecodeString(secp256k1String)
 	rawPrivKey           = rawSecp256k1Bytes
 	privKey, _           = crypto.NewPrivateKey(rawPrivKey)
-	benckmark            = true
+	benckmark            = false
 )
 
 var (
-	dir = ".leveldb"
+	dir = ".db"
 	db  DB
+)
+
+var (
+	dbConstructFunc = []func(dir string) (DB, error){NewLevelDB, NewRocksDB}
 )
 
 var (
@@ -49,22 +51,27 @@ var (
 	}
 )
 
-func TestInit(t *testing.T) {
-	err := os.RemoveAll(dir)
-	require.NoError(t, err)
-
-	err = os.MkdirAll(dir, 0777)
-	require.NoError(t, err)
+func TestDB(t *testing.T) {
+	for i := range dbConstructFunc {
+		initDB(t, dbConstructFunc[i])
+		testAccount(t)
+		testStorage(t)
+		testTxStatus(t)
+		testHistory(t)
+		db.Close()
+		os.RemoveAll(dir)
+	}
 }
 
-func TestNewLevelDB(t *testing.T) {
+func initDB(t *testing.T, constructFunc func(dir string) (DB, error)) {
+	require.NoError(t, os.RemoveAll(dir))
+	require.NoError(t, os.MkdirAll(dir, 0777))
 	var err error
-	db, err = NewLevelDB(dir)
+	db, err = constructFunc(dir)
 	require.NoError(t, err)
 }
 
-// TODO: This test should be reconstructed
-func TestAccount(t *testing.T) {
+func testAccount(t *testing.T) {
 	address, err := privKey.PubKey().Address()
 	require.NoError(t, err)
 	// The address should not exist
@@ -97,7 +104,7 @@ func TestAccount(t *testing.T) {
 	require.False(t, db.AccountExist(account.GetAddress()))
 }
 
-func TestStorage(t *testing.T) {
+func testStorage(t *testing.T) {
 	// first set an account
 	address, _ := privKey.PubKey().Address()
 	account, _ := db.GetAccount(address)
@@ -121,26 +128,18 @@ func TestStorage(t *testing.T) {
 	require.Equal(t, value, v)
 }
 
-func TestSetTxStatus(t *testing.T) {
+func testTxStatus(t *testing.T) {
 	wb := db.NewWriteBatch()
 	require.NoError(t, wb.SetTxStatus(tx1, tx1Status))
 	require.NoError(t, wb.Sync())
-}
-
-func TestGetTxStatus(t *testing.T) {
 	status, err := db.GetTxStatus(tx1.Data.ChannelID, tx1.ID)
 	require.NoError(t, err)
 	require.Equal(t, status, tx1Status)
-
 	_, err = db.GetTxStatus(tx2.Data.ChannelID, tx2.ID)
-	require.Error(t, err, "Not exist")
-}
-
-func TestGetTxStatusAsync(t *testing.T) {
-	_, err := db.GetTxStatusAsync(tx1.Data.ChannelID, tx1.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Error(t, err, "not exist")
+	// async test
+	_, err = db.GetTxStatusAsync(tx1.Data.ChannelID, tx1.ID)
+	require.NoError(t, err)
 	// then try to get tx2 status async
 	var endChan = make(chan bool)
 	go func() {
@@ -154,7 +153,7 @@ func TestGetTxStatusAsync(t *testing.T) {
 		}
 	}()
 	time.Sleep(100 * time.Millisecond)
-	wb := db.NewWriteBatch()
+	wb = db.NewWriteBatch()
 	go func() {
 		err := wb.SetTxStatus(tx2, tx2Status)
 		require.NoError(t, err)
@@ -163,7 +162,7 @@ func TestGetTxStatusAsync(t *testing.T) {
 	require.NoError(t, wb.Sync())
 }
 
-func TestListTxHistory(t *testing.T) {
+func testHistory(t *testing.T) {
 	address, err := privKey.PubKey().Address()
 	if err != nil {
 		t.Fatal(err)
@@ -172,11 +171,13 @@ func TestListTxHistory(t *testing.T) {
 	exceptHistory := make(map[string][]string)
 	exceptHistory["test"] = []string{tx1.ID, tx2.ID}
 	if !reflect.DeepEqual(history, exceptHistory) {
+		fmt.Printf("history is %v\n", history)
+		fmt.Printf("excepty is %v\n", exceptHistory)
 		t.Fatal()
 	}
 }
 
-func TestBenchmark(t *testing.T) {
+func testBenchmark(t *testing.T) {
 	if !benckmark {
 		return
 	}
@@ -213,10 +214,6 @@ func TestBenchmark(t *testing.T) {
 		db.GetAccount(accounts[i].GetAddress())
 	}
 	fmt.Printf("get %d accounts cost %v\n", size, time.Since(begin))
-}
-
-func TestEnd(t *testing.T) {
-	os.RemoveAll(dir)
 }
 
 func newAccount() common.Account {

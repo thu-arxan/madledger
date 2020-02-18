@@ -78,6 +78,7 @@ func (db *LevelDB) GetStorage(address common.Address, key common.Word256) (commo
 	storageKey := util.BytesCombine(address.Bytes(), key.Bytes())
 	value, err := db.connect.Get(storageKey, nil)
 	if err != nil {
+		log.Infof("leveldb failed to get key %v", err)
 		return common.ZeroWord256, err
 	}
 	return common.BytesToWord256(value)
@@ -88,7 +89,7 @@ func (db *LevelDB) GetTxStatus(channelID, txID string) (*TxStatus, error) {
 	var key = util.BytesCombine([]byte(channelID), []byte(txID))
 	// TODO: Read twice is not necessary
 	if ok, _ := db.connect.Has(key, nil); !ok {
-		return nil, errors.New("Not exist")
+		return nil, errors.New("not exist")
 	}
 	value, err := db.connect.Get(key, nil)
 	if err != nil {
@@ -224,6 +225,13 @@ func (db *LevelDB) GetBlock(num uint64) (*core.Block, error) {
 		return nil, err
 	}
 	return core.UnmarshalBlock(data)
+}
+
+// Close close the leveldb
+func (db *LevelDB) Close() {
+	if db.connect != nil {
+		db.connect.Close()
+	}
 }
 
 // WriteBatchWrapper is a wrapper of level.Batch

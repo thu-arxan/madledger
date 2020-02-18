@@ -36,8 +36,6 @@ type DB interface {
 	GetAccount(address common.Address) (common.Account, error)
 	// GetStorage returns the key of an address if exist, else returns an error
 	GetStorage(address common.Address, key common.Word256) (common.Word256, error)
-	// However, the peer also should provide some functions to help the client to
-	// know the result of the tx
 	// GetStatus return the status of the tx
 	GetTxStatus(channelID, txID string) (*TxStatus, error)
 	GetTxStatusAsync(channelID, txID string) (*TxStatus, error)
@@ -50,4 +48,5 @@ type DB interface {
 	NewWriteBatch() WriteBatch
 	// GetBlock gets block by block.num from db
 	GetBlock(num uint64) (*core.Block, error)
+	Close()
 }
