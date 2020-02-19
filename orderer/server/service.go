@@ -70,3 +70,7 @@ func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus,
 	err = s.cc.AddTx(tx)
 	return &status, err
 }
+
+func (s *Server) GetBalance(ctx context.Context, req *pb.) {
+
+}

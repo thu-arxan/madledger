@@ -2,6 +2,8 @@ package db
 
 import (
 	cc "madledger/blockchain/config"
+	"madledger/common"
+	"madledger/common/crypto"
 	"madledger/core"
 )
 
@@ -21,4 +23,12 @@ type DB interface {
 	Close() error
 	UpdateSystemAdmin(profile *cc.Profile) error
 	IsSystemAdmin(member *core.Member) bool
+
+	//IsAccountAdmin return true if pk is the public key of account channel admin
+    IsAccountAdmin(pk crypto.PublicKey) bool
+	//SetAccountAdmin only succeed at the first time it is called
+	SetAccountAdmin(pk crypto.PublicKey) error
+	//GetOrCreateAccount return default account if not exist
+	GetOrCreateAccount(address common.Address) (common.Account, error)
+	UpdateAccounts(accounts ...common.Account) error
 }

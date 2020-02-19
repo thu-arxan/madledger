@@ -3,10 +3,14 @@ package db
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/syndtr/goleveldb/leveldb/errors"
 	cc "madledger/blockchain/config"
+	"madledger/common"
+	"madledger/common/crypto"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/core"
+	"reflect"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -237,4 +241,64 @@ func getChannelProfileKey(id string) []byte {
 
 func getSystemAdminKey() []byte {
 	return []byte(fmt.Sprintf("%s$admin", core.CONFIGCHANNELID))
+}
+
+//todo: ab can the setting of admin of account channel different from other channels(through config channel)
+func (db *LevelDB) IsAccountAdmin(pk crypto.PublicKey) bool {
+	var key = []byte("_account_admin")
+	admin, err := db.connect.Get(key, nil)
+	if err != nil {
+		return false;
+	}
+	pkBytes, err := pk.Bytes()
+	if err != nil {
+		return false
+	}
+	return reflect.DeepEqual(admin, pkBytes)
+}
+
+//SetAccountAdmin only succeed at the first time it is called
+func(db *LevelDB) SetAccountAdmin(pk crypto.PublicKey) error {
+	var key = []byte("_account_admin")
+	exists, _ := db.connect.Has(key, nil)
+	if exists {
+		return fmt.Errorf("account admin already set")
+	}
+	pkBytes, err := pk.Bytes()
+	if err != nil {
+		return err
+	}
+	return db.connect.Put(key, pkBytes, nil)
+}
+
+func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, error) {
+	key := getAccountKey(address)
+	var account common.Account
+	data, err := db.connect.Get(key, nil)
+	if err != errors.ErrNotFound {
+		return nil, err
+	}
+	if data == nil {
+		account = common.NewDefaultAccount(address)
+	} else {
+		json.Unmarshal(data, &account)
+	}
+	return account, nil
+}
+
+func (db *LevelDB) UpdateAccounts(accounts ...common.Account) error {
+	wb := &leveldb.Batch{}
+	for _, acc := range accounts {
+		key := getAccountKey(acc.GetAddress())
+		data, err := json.Marshal(acc)
+		if err != nil {
+			return err
+		}
+		wb.Put(key, data)
+	}
+	return db.connect.Write(wb, nil)
+}
+
+func getAccountKey(address common.Address) []byte {
+	return []byte(fmt.Sprintf("%s@%s", core.ACCOUNTCHANNELID, address.String()))
 }

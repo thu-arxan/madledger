@@ -2,7 +2,11 @@ package channel
 
 import (
 	"encoding/json"
+	"fmt"
+	ac "madledger/blockchain/account"
 	cc "madledger/blockchain/config"
+	"madledger/common"
+	"madledger/common/crypto"
 	"madledger/consensus"
 	"madledger/core"
 )
@@ -60,4 +64,98 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 // TODO: update something in the db
 func (manager *Manager) AddGlobalBlock(block *core.Block) error {
 	return nil
+}
+
+// AddAccountBlock add an account block
+// TODO: ab
+func (manager *Manager) AddAccountBlock(block *core.Block) error {
+	if block.Header.Number == 0 {
+		return nil
+	}
+
+	var err error
+
+	for _, tx := range block.Transactions {
+		var payload ac.Payload
+		err = json.Unmarshal(tx.Data.Payload, &payload)
+		if err != nil {
+			fmt.Errorf("wrong tx format: %v", err)
+		}
+		sender, err := tx.GetSender()
+		if err != nil {
+			return fmt.Errorf("wrong sender address %v", sender);
+		}
+		receiver := tx.GetReceiver()
+		//if receiver is not set, issue or transfer money to a channel
+		if receiver == common.ZeroAddress {
+			receiver = common.BytesToAddress([]byte(tx.Data.ChannelID))
+		}
+
+		switch payload.Action {
+		case "issue":
+			// avoid overflow
+			issueValue := tx.Data.Value
+			if issueValue < 0 {
+				issueValue = 0
+			}
+			err = manager.issue(tx.Data.Sig.PK, receiver, issueValue)
+		case "transfer":
+			// if value < 0, sender get money from receiver ??
+			transferValue := tx.Data.Value
+			if transferValue < 0 {
+				transferValue = 0
+			}
+			err = manager.transfer(sender, receiver, transferValue)
+		}
+
+		if err != nil {
+			return fmt.Errorf("err when execute account block tx %v : %v", tx, err)
+		}
+	}
+
+	return nil
+}
+
+func (manager *Manager) issue(senderPKBytes []byte, receiver common.Address, value uint64) error {
+	pk, err := crypto.NewPublicKey(senderPKBytes)
+	if !manager.db.IsAccountAdmin(pk) && manager.db.SetAccountAdmin(pk) != nil {
+		return fmt.Errorf("issue authentication failed: %v", err)
+	}
+	if value == 0 {
+		return nil
+	}
+	receiverAccount, err := manager.db.GetOrCreateAccount(receiver)
+	if err != nil {
+		return nil
+	}
+	err = receiverAccount.AddBalance(value)
+	if err != nil {
+		return nil
+	}
+	return manager.db.UpdateAccounts(receiverAccount)
+}
+
+func (manager *Manager) transfer(sender, receiver common.Address, value uint64) error {
+	if value == 0 {
+		return nil
+	}
+	senderAccount, err := manager.db.GetOrCreateAccount(sender)
+	if err != nil {
+		return err
+	}
+
+	if err = senderAccount.SubBalance(value); err != nil {
+		return err
+	}
+
+	receiverAccount, err := manager.db.GetOrCreateAccount(receiver)
+	if err != nil {
+		return err
+	}
+
+	if err = receiverAccount.AddBalance(value); err != nil {
+		return err
+	}
+
+	return manager.db.UpdateAccounts(senderAccount, receiverAccount)
 }

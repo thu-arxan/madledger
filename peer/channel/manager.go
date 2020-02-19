@@ -90,6 +90,9 @@ func (m *Manager) AddBlock(block *core.Block) error {
 	case core.CONFIGCHANNELID:
 		m.AddConfigBlock(block)
 		log.Infof("Add config block %d", block.Header.Number)
+	case core.ACCOUNTCHANNELID:
+		m.AddAccountBlock(block)
+		log.Infof("Add account block %d", block.Header.Number)
 	default:
 		if !m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
 			m.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
@@ -216,10 +219,10 @@ func (m *Manager) fetchBlock() (*core.Block, error) {
 	var errs = make([]error, len(m.clients))
 	var blocks = make([]*core.Block, len(m.clients))
 	id := m.id
-	except := m.cm.GetExcept()
+	expect := m.cm.GetExpect()
 	for i := range m.clients {
 		go func(i int) {
-			block, err := m.clients[i].FetchBlock(id, except, true)
+			block, err := m.clients[i].FetchBlock(id, expect, true)
 			if err != nil {
 				errs[i] = err
 				lock.Lock()

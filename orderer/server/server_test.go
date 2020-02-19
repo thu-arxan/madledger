@@ -257,14 +257,14 @@ func TestFetchBlockAsync(t *testing.T) {
 		case "test":
 			require.Equal(t, channelInfo.Identity, pb.Identity_ADMIN)
 		default:
-			t.Fatalf("Unexcepted channel:%s", channelInfo.ChannelID)
+			t.Fatalf("Unexpected channel:%s", channelInfo.ChannelID)
 		}
 	}
-	exceptNum := globalInfo.BlockSize
+	expectNum := globalInfo.BlockSize
 	// try to fecth the block sync which is not exist
 	_, err = client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
 		ChannelID: core.GLOBALCHANNELID,
-		Number:    exceptNum,
+		Number:    expectNum,
 		Behavior:  pb.Behavior_FAIL_IF_NOT_READY,
 	})
 	require.Error(t, err)
@@ -277,7 +277,7 @@ func TestFetchBlockAsync(t *testing.T) {
 		Behavior:  pb.Behavior_RETURN_UNTIL_READY,
 	})
 	require.NoError(t, err)
-	// then fetch the except block
+	// then fetch the expect block
 	var wg sync.WaitGroup
 	wg.Add(1)
 	// fetch a block, of course this can not be done until a new block is generated.
@@ -285,12 +285,12 @@ func TestFetchBlockAsync(t *testing.T) {
 		defer wg.Done()
 		block, err := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
 			ChannelID: core.GLOBALCHANNELID,
-			Number:    exceptNum,
+			Number:    expectNum,
 			Behavior:  pb.Behavior_RETURN_UNTIL_READY,
 		})
 		require.NoError(t, err)
 		require.Equal(t, block.Header.ChannelID, core.GLOBALCHANNELID)
-		require.Equal(t, block.Header.Number, exceptNum)
+		require.Equal(t, block.Header.Number, expectNum)
 	}()
 	wg.Add(1)
 	// add a new channel, which will create a new global block
