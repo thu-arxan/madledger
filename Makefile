@@ -3,18 +3,21 @@ GOCMD		= go
 DOCKER_CMD	= docker
 
 # MadLedger versions used in Makefile
-MADLEDGER_VERSION		:= v0.0.1
+MADLEDGER_VERSION		:=v0.0.1
+
+# Test flags
+CONSENSUS	=solo
 
 # Build flags (overridable)
 GO_LDFLAGS				?= -X madledger/version.GitCommit=`git rev-parse --short=8 HEAD` -X madledger/version.Version=$(MADLEDGER_VERSION)
-GO_TEST_FLAGS			?= $(GO_LDFLAGS)
+GO_TEST_FLAGS			?= $(GO_LDFLAGS) -X madledger/tests/performance.consensus=$(CONSENSUS)
 GO_TEST_COUNT			?= 1
 GO_TEST_TIMEOUT			?= 20m
 GO_SYMBOL				?= 					# eg:GO_SYMBOL="-v -race"
 
 # Go tools
-GO_TEST 		= $(GOCMD) test -parallel=1 -count=$(GO_TEST_COUNT) -timeout=$(GO_TEST_TIMEOUT) $(GO_SYMBOL)
-GO_TEST_UNIT	= $(GO_TEST) -cover
+GO_TEST 		= $(GOCMD) test -parallel=1 -count=$(GO_TEST_COUNT) -timeout=$(GO_TEST_TIMEOUT) $(GO_SYMBOL) -ldflags "$(GO_TEST_FLAGS)"
+GO_TEST_UNIT	= $(GO_TEST) -cover -race
 GO_BUILD		= $(GOCMD) build
 
 # Local variables used by makefile
@@ -109,4 +112,4 @@ syncevm:
 	@cd ../evm && zip evm.zip $$(git ls-files) && unzip -d ../madledger/vendor/evm evm.zip && rm evm.zip
 
 raft:
-	@$(GO_TEST_UNIT) madledger/consensus/raft -race
+	@$(GO_TEST_UNIT) madledger/consensus/raft

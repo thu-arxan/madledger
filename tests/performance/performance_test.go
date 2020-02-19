@@ -30,7 +30,7 @@ var (
 
 func init() {
 	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
+		log.Println(http.ListenAndServe("127.0.0.1:6666", nil))
 	}()
 }
 

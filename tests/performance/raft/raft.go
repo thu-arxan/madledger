@@ -53,8 +53,8 @@ func StartOrderers() error {
 				panic("order start failed: " + err.Error())
 			}
 		}()
-		time.Sleep(300 * time.Millisecond)
 	}
+	time.Sleep(500 * time.Millisecond)
 	return nil
 }
 
@@ -79,8 +79,8 @@ func StartPeers(num int) error {
 				panic("peer start failed: " + err.Error())
 			}
 		}()
-		time.Sleep(300 * time.Millisecond)
 	}
+	time.Sleep(500 * time.Millisecond)
 	return nil
 }
 

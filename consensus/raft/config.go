@@ -8,12 +8,10 @@ import (
 // Config is the config of consensus
 type Config struct {
 	id    uint64
-	dir   string            // root dir for raft storage
-	peers map[uint64]string // id => grpc addr
-	// consensus config
-	cc consensus.Config
-	// eraft config
-	ec *eraft.EraftConfig
+	dir   string             // root dir for raft storage
+	peers map[uint64]string  // id => grpc addr
+	cc    consensus.Config   // consensus config
+	ec    *eraft.EraftConfig // eraft config
 }
 
 // NewConfig is the constructor of Config

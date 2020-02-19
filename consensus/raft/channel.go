@@ -58,6 +58,7 @@ func (c *channel) start() error {
 	c.blockCh = c.raft.BlockCh(c.channelID)
 
 	atomic.StoreUint64(&(c.num), c.raft.GetChainNum(c.channelID))
+	log.Infof("Node[%d] start channel %s succeed, chainNum: %d", c.id, c.channelID, c.num)
 	c.setInit(1)
 	go func() {
 		ticker := time.NewTicker(time.Duration(c.config.Timeout) * time.Millisecond)

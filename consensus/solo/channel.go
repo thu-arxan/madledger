@@ -13,7 +13,7 @@ import (
 
 type channel struct {
 	id     string
-	lock   sync.Mutex
+	lock   sync.RWMutex
 	config consensus.Config
 	txs    chan bool
 	pool   *txPool
@@ -109,7 +109,9 @@ func (c *channel) createBlock(txs []*core.Tx) error {
 		num:       c.num,
 		txs:       txs,
 	}
+	c.lock.Lock()
 	c.blocks[block.num] = block
+	c.lock.Unlock()
 	c.num++
 	for _, tx := range block.txs {
 		c.hub.Done(tx.ID, nil)
@@ -120,16 +122,16 @@ func (c *channel) createBlock(txs []*core.Tx) error {
 }
 
 func (c *channel) getBlock(num uint64, async bool) (*Block, error) {
-	c.lock.Lock()
+	c.lock.RLock()
 	if util.Contain(c.blocks, num) {
-		defer c.lock.Unlock()
+		defer c.lock.RUnlock()
 		return c.blocks[num], nil
 	}
-	c.lock.Unlock()
+	c.lock.RUnlock()
 	if async {
 		c.hub.Watch(string(num), nil)
-		c.lock.Lock()
-		defer c.lock.Unlock()
+		c.lock.RLock()
+		defer c.lock.RUnlock()
 		return c.blocks[num], nil
 	}
 

@@ -219,43 +219,51 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 
 // todo: here we should support evil orderer
 func (m *Manager) fetchBlock() (*core.Block, error) {
-	var lock sync.Mutex
-	var ch = make(chan bool, 1)
-	var errs = make([]error, len(m.clients))
-	var blocks = make([]*core.Block, len(m.clients))
+	var lock sync.RWMutex
+	var errs = make(chan error, len(m.clients))
+	var blocks = make(chan *core.Block, len(m.clients))
+	closed := false
 	id := m.id
 	except := m.cm.GetExcept()
 	for i := range m.clients {
 		go func(i int) {
 			block, err := m.clients[i].FetchBlock(id, except, true)
+			lock.RLock()
+			defer lock.RUnlock()
+			if closed {
+				return
+			}
 			if err != nil {
-				errs[i] = err
-				lock.Lock()
-				defer lock.Unlock()
-				for i := range errs {
-					if errs[i] == nil {
-						return
-					}
-				}
-				ch <- false
+				errs <- err
 			} else {
-				blocks[i] = block
-				ch <- true
+				blocks <- block
 			}
 		}(i)
 	}
 
-	select {
-	case ok := <-ch:
-		if ok {
-			for i := range blocks {
-				if blocks[i] != nil {
-					return blocks[i], nil
-				}
+	fails := 0
+
+	for {
+		defer func() {
+			lock.Lock()
+			if !closed {
+				close(errs)
+				close(blocks)
+				closed = true
 			}
+			lock.Unlock()
+		}()
+		// log.Infof("get %s %d, closed: %t, fail: %d, %d", id, except, closed, fails, len(m.clients))
+		select {
+		case block := <-blocks:
+			return block, nil
+		case err := <-errs:
+			fails++
+			if fails == len(m.clients) {
+				return nil, err
+			}
+		case <-m.signalCh:
+			return nil, errors.New("Stop")
 		}
-		return nil, errs[0]
-	case <-m.signalCh:
-		return nil, errors.New("Stop")
 	}
 }

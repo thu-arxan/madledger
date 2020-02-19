@@ -85,6 +85,7 @@ func TestBFTLoadClients(t *testing.T) {
 
 func TestBFTCreateChannels(t *testing.T) {
 	var wg sync.WaitGroup
+	var lock sync.RWMutex
 	var channels []string
 	for i := range bftClients {
 		// each client will create 5 channels
@@ -94,7 +95,9 @@ func TestBFTCreateChannels(t *testing.T) {
 				defer wg.Done()
 				client := bftClients[i]
 				channel := strings.ToLower(util.RandomString(16))
+				lock.Lock()
 				channels = append(channels, channel)
+				lock.Unlock()
 				err := client.CreateChannel(channel, true, nil, nil)
 				require.NoError(t, err)
 			}(t, i)
@@ -110,10 +113,12 @@ func TestBFTCreateChannels(t *testing.T) {
 			client := bftClients[i]
 			infos, err := client.ListChannel(false)
 			require.NoError(t, err)
+			lock.RLock()
 			require.Len(t, infos, len(channels))
 			for i := range infos {
 				require.True(t, util.Contain(channels, infos[i].Name))
 			}
+			lock.RUnlock()
 		}(t, i)
 	}
 	wg.Wait()

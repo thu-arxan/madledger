@@ -113,8 +113,8 @@ func (db *DB) getBlock(channelID string, num uint64) *Block {
 	var key = []byte(fmt.Sprintf("block_%s:%d", channelID, num))
 	data, err := db.connect.Get(key, nil)
 	if err != nil {
-		if err != leveldb.ErrNotFound {
-			log.Errorf("get block from db failed: %v", err)
+		if err != leveldb.ErrNotFound && err != leveldb.ErrClosed {
+			log.Errorf("get block %s:%d from db failed: %v", channelID, num, err)
 		}
 		return nil
 	}

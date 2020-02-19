@@ -16,7 +16,7 @@ type Consensus struct {
 	cfg     *Config            // raft config
 	chain   *BlockChain        // grpc service, manage channels
 	clients map[uint64]*Client // grpc clients
-	ids     []uint64           // peer id
+	ids     []uint64           // orderer id
 	leader  uint64             // leader id
 }
 
@@ -80,16 +80,15 @@ func (c *Consensus) AddTx(tx *core.Tx) error {
 
 	// todo: we should parse the leader address other than random choose a leader
 	// todo: modify the upper bounds of attempt times
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10; i++ {
 		leader := c.getLeader()
-		log.Infof("Raft[%d] try %d times to add tx %s (hash: %s) to node[%d]", c.cfg.id, i, tx.ID, hash, leader)
+		log.Infof("Raft[%d] try %d times to add tx %s to node[%d]", c.cfg.id, i, hash, leader)
 		err = c.clients[leader].addTx(channelID, bytes, c.cfg.id)
 		if err == nil {
 			log.Infof("Node[%d] succeed to add tx %s to leader[%d]", c.cfg.id, hash, c.leader)
 			return nil
 		}
 
-		log.Infof("add tx %s failed: %v", hash, err)
 		switch GetError(err) {
 		case TxInPool:
 			return err
@@ -102,13 +101,13 @@ func (c *Consensus) AddTx(tx *core.Tx) error {
 			}
 			c.setLeader(id)
 		default:
-			log.Infof("Add tx %s Unknown error: %v", tx.ID, err)
+			log.Infof("Node[%d] add tx %s failed: Unknown error: %v", c.cfg.id, tx.ID, err)
 			c.setLeader(c.ids[util.RandNum(len(c.ids))])
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	log.Infof("Add tx %s failed: %v", tx.ID, err)
+	log.Infof("Node[%d] add tx %s failed: %v", c.cfg.id, hash, err)
 	return err
 }
 

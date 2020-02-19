@@ -3,12 +3,14 @@ package server
 import (
 	"crypto/tls"
 	"fmt"
-	"google.golang.org/grpc/credentials"
 	"madledger/orderer/channel"
 	"madledger/orderer/config"
 	pb "madledger/protos"
 	"net"
+	"sync"
 	"time"
+
+	"google.golang.org/grpc/credentials"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -20,6 +22,7 @@ var (
 
 // Server provide the serve of orderer
 type Server struct {
+	sync.RWMutex
 	config    *config.ServerConfig
 	rpcServer *grpc.Server
 	cc        *channel.Coordinator
@@ -60,6 +63,7 @@ func NewServer(cfg *config.Config) (*Server, error) {
 
 // Start starts the server
 func (s *Server) Start() error {
+	s.Lock()
 	addr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port)
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -82,6 +86,9 @@ func (s *Server) Start() error {
 	}
 	s.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterOrdererServer(s.rpcServer, s)
+
+	s.Unlock()
+
 	err = s.rpcServer.Serve(lis)
 	if err != nil {
 		return err
@@ -92,6 +99,8 @@ func (s *Server) Start() error {
 
 // Stop will stop the rpc service and the consensus service
 func (s *Server) Stop() {
+	s.Lock()
+	defer s.Unlock()
 	// if s.rpcServer != nil {
 	s.rpcServer.Stop()
 	// }
