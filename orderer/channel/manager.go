@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"madledger/blockchain"
+	"madledger/common"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
@@ -196,6 +197,11 @@ func (manager *Manager) IsAdmin(member *core.Member) bool {
 // IsSystemAdmin return if the member is the system admin
 func (manager *Manager) IsSystemAdmin(member *core.Member) bool {
 	return manager.db.IsSystemAdmin(member)
+}
+
+// GetAccount return requested account
+func (manager *Manager) GetAccount(address common.Address) (common.Account, error) {
+	return manager.db .GetOrCreateAccount(address)
 }
 
 // FetchBlockAsync will fetch book async.
