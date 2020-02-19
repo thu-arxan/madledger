@@ -4,6 +4,7 @@ import (
 	"madledger/core"
 )
 
+//todo: ab
 // AddAccountBlock add an account block
 func (m *Manager) AddAccountBlock(block *core.Block) error {
 	nums := make(map[string]uint64)

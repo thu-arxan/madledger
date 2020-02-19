@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"madledger/common"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/credentials"
@@ -315,4 +316,8 @@ func membersContain(members []*core.Member, member *core.Member) bool {
 // GetPrivKey return the private key
 func (c *Client) GetPrivKey() crypto.PrivateKey {
 	return c.privKey
+}
+
+func (c *Client) GetAccountBalance(address common.Address) uint64 {
+
 }
