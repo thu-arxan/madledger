@@ -20,10 +20,10 @@ type EVM interface {
 			Bytes() []byte
 		}
 	*/
-	Call(caller, callee common.Account, code []byte) ([]byte, error)
+	Call(caller, callee *common.Account, code []byte) ([]byte, error)
 	// Create create a contract.
 	// MadEVM.Create(caller Address) ([]byte, Address, error)
-	Create(caller common.Account) ([]byte, common.Address, error)
+	Create(caller *common.Account) ([]byte, common.Address, error)
 }
 
 // DefaultEVM ...
@@ -52,12 +52,12 @@ func NewEVM(ctx Context, caller common.Address, payload []byte, value uint64, ga
 }
 
 // Call ...
-func (evm *DefaultEVM) Call(caller, callee common.Account, code []byte) ([]byte, error) {
+func (evm *DefaultEVM) Call(caller, callee *common.Account, code []byte) ([]byte, error) {
 	return evm.runner.Call(caller.GetAddress(), callee.GetAddress(), code)
 }
 
 // Create ...
-func (evm *DefaultEVM) Create(caller common.Account) ([]byte, common.Address, error) {
+func (evm *DefaultEVM) Create(caller *common.Account) ([]byte, common.Address, error) {
 	v, addr, err := evm.runner.Create(caller.GetAddress())
 	if addr == nil {
 		return v, common.ZeroAddress, err

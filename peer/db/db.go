@@ -19,7 +19,7 @@ type TxStatus struct {
 // WriteBatch define a write batch interface
 type WriteBatch interface {
 	RemoveAccount(address common.Address) error
-	SetAccount(account common.Account) error
+	SetAccount(account *common.Account) error
 	SetStorage(address common.Address, key common.Word256, value common.Word256) error
 	SetTxStatus(tx *core.Tx, status *TxStatus) error
 	GetBatch() *leveldb.Batch
@@ -33,10 +33,10 @@ type WriteBatch interface {
 type DB interface {
 	AccountExist(address common.Address) bool
 	// GetAccount returns an account of an address
-	GetAccount(address common.Address) (common.Account, error)
+	GetAccount(address common.Address) (*common.Account, error)
 	// SetAccount updates an account or add an account
 	// TODO: This function is not necessary now?
-	SetAccount(account common.Account) error
+	SetAccount(account *common.Account) error
 	// RemoveAccount removes an account if exist
 	// TODO: This function is not necessary now?
 	RemoveAccount(address common.Address) error

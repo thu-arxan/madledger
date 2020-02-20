@@ -57,13 +57,13 @@ func (db *LevelDB) AccountExist(address common.Address) bool {
 }
 
 // GetAccount returns an account of an address
-func (db *LevelDB) GetAccount(address common.Address) (common.Account, error) {
+func (db *LevelDB) GetAccount(address common.Address) (*common.Account, error) {
 	var key = util.BytesCombine([]byte("account:"), address.Bytes())
 	value, err := db.connect.Get(key, nil)
 	if err != nil {
-		return common.NewDefaultAccount(address), nil
+		return common.NewAccount(address), nil
 	}
-	var account common.DefaultAccount
+	var account common.Account
 	err = json.Unmarshal(value, &account)
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (db *LevelDB) GetAccount(address common.Address) (common.Account, error) {
 }
 
 // SetAccount updates an account or add an account
-func (db *LevelDB) SetAccount(account common.Account) error {
+func (db *LevelDB) SetAccount(account *common.Account) error {
 	var key = util.BytesCombine([]byte("account:"), account.GetAddress().Bytes())
 	value, err := account.Bytes()
 	if err != nil {
@@ -298,7 +298,7 @@ type WriteBatchWrapper struct {
 }
 
 // SetAccount is the implementation of interface
-func (wb *WriteBatchWrapper) SetAccount(account common.Account) error {
+func (wb *WriteBatchWrapper) SetAccount(account *common.Account) error {
 	var key = util.BytesCombine([]byte("account:"), account.GetAddress().Bytes())
 	value, err := account.Bytes()
 	if err != nil {
@@ -392,7 +392,7 @@ func (wb *WriteBatchWrapper) GetBatch() *leveldb.Batch {
 }
 
 // MarshalAccount provide a fast marshal implementaion of marshal account
-func MarshalAccount(account common.Account) []byte {
+func MarshalAccount(account *common.Account) []byte {
 	var bytes = make([]byte, 0)
 	bytes = util.BytesCombine(bytes, account.GetAddress().Bytes())
 	bytes = util.BytesCombine(bytes, util.Uint64ToBytes(account.GetBalance()))
@@ -405,8 +405,8 @@ func MarshalAccount(account common.Account) []byte {
 }
 
 // UnmarshalAccount provide a fast unmarshal implementation of unmarshal account
-func UnmarshalAccount(bytes []byte) (*common.DefaultAccount, error) {
-	var account = new(common.DefaultAccount)
+func UnmarshalAccount(bytes []byte) (*common.Account, error) {
+	var account = new(common.Account)
 	if len(bytes) < 37 {
 		return nil, errors.New("wrong length")
 	}
