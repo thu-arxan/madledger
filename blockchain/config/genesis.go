@@ -23,6 +23,7 @@ func CreateGenesisBlock(admins []*core.Member) (*core.Block, error) {
 		},
 		Version: 1,
 	}, Payload{ // this payload is used to record the info of  system admin
+		// todo: modify here, choose a better way to record it, the nil channelID will confuse the peer/orderer
 		Profile: &Profile{
 			Public: true,
 			Admins: admins,

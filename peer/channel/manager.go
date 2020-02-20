@@ -5,7 +5,6 @@ import (
 	"madledger/blockchain"
 	"madledger/common"
 	"madledger/core"
-	"time"
 
 	"madledger/executor/evm"
 	"madledger/peer/db"
@@ -64,9 +63,9 @@ func (m *Manager) Start() {
 		} else if err.Error() == "Stop" {
 			m.stopCh <- true
 			return
+		} else {
+			log.Infof("failed to fetch block: %d, err: %v", m.cm.GetExcept(), err)
 		}
-		// todo: orderer notify peer?
-		time.Sleep(50 * time.Millisecond)
 	}
 }
 
