@@ -29,10 +29,6 @@ var (
 )
 
 var (
-	dbConstructFunc = []func(dir string) (DB, error){NewLevelDB, NewRocksDB}
-)
-
-var (
 	tx1, _    = core.NewTx("test", common.ZeroAddress, []byte("1"), 0, "", privKey)
 	tx1Status = &TxStatus{
 		Err:             "",

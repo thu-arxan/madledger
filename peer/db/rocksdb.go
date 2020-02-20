@@ -1,3 +1,5 @@
+// +build rocksdb
+
 package db
 
 import (
@@ -86,7 +88,7 @@ func (db *RocksDB) GetAccount(address common.Address) (common.Account, error) {
 	var key = address.Bytes()
 	data, err := db.connect.GetCF(db.ro, db.accountCFHdl, key)
 	if err != nil {
-		return common.NewDefaultAccount(address), nil
+		return nil, err
 	}
 	defer data.Free()
 	if data.Size() == 0 {

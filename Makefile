@@ -11,10 +11,23 @@ GO_TEST_FLAGS			?= $(GO_LDFLAGS)
 GO_TEST_COUNT			?= 1
 GO_TEST_TIMEOUT			?= 20m
 GO_SYMBOL				?= 					# eg:GO_SYMBOL="-v -race"
+# database build tag, use rocksdb or leveldb
+DB_TAG					?=leveldb
+BUILD_TAGS				=
+
+# check db tag
+ifeq ($(DB_TAG), rocksdb)
+BUILD_TAGS+=rocksdb
+else ifeq ($(DB_TAG), leveldb)
+BUILD_TAGS+=leveldb
+else
+$(error "invalid DB_TAG: {DB_TAG=rocksdb|leveldb}")
+endif
 
 # Go tools
-GO_TEST 		= $(GOCMD) test -parallel=1 -count=$(GO_TEST_COUNT) -timeout=$(GO_TEST_TIMEOUT) $(GO_SYMBOL)
-GO_BUILD		= $(GOCMD) build
+GO_TEST 		= $(GOCMD) test -tags "$(BUILD_TAGS)" -parallel=1 -count=$(GO_TEST_COUNT) -timeout=$(GO_TEST_TIMEOUT) $(GO_SYMBOL)
+GO_BUILD		= $(GOCMD) build -tags "$(BUILD_TAGS)"
+GO_INSTALL		= $(GOCMD) install -tags "$(BUILD_TAGS)"
 
 # Local variables used by makefile
 PROJECT_NAME           := madledger
@@ -38,7 +51,7 @@ all: vet install
 
 # go vet:format check, bug check
 vet:
-	@$(GOCMD) vet `go list ./...`
+	@go vet `go list ./...`
 
 # The below include contains tests(quick start, setup, client tx, etc)
 # include tests.mk
@@ -48,13 +61,13 @@ unittest:
 
 install:
 	@echo "install orderer..."
-	@$(GOCMD) install madledger/orderer
+	@$(GO_INSTALL) madledger/orderer
 
 	@echo "install peer..."
-	@$(GOCMD) install madledger/peer
+	@$(GO_INSTALL) madledger/peer
 
 	@echo "install client..."
-	@$(GOCMD) install madledger/client
+	@$(GO_INSTALL) madledger/client
 
 proto:
 	@ cd protos && protoc --go_out=plugins=grpc:. *.proto
