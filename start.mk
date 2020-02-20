@@ -39,5 +39,8 @@ setup:
 clean:
 	@rm -rf $(SAMPLE_DIR)
 
+cleanLog:
+	@rm -rf $(SAMPLE_DIR)/*.log
+
 test:
 	@cd $(SAMPLE_DIR) && bash test.sh

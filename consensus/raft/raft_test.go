@@ -4,10 +4,15 @@ import (
 	"fmt"
 	"madledger/common/util"
 	"madledger/consensus"
+	"madledger/core"
 	"os"
 	"sync"
 	"testing"
-	"time"
+
+	"net/http"
+	_ "net/http/pprof"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/otiai10/copy"
 	"github.com/stretchr/testify/require"
@@ -17,7 +22,7 @@ import (
 
 var (
 	// raft nodes
-	rns   [3]consensus.Consensus
+	nodes [3]consensus.Consensus
 	peers = map[uint64]string{
 		1: "127.0.0.1:12345",
 		2: "127.0.0.1:12347",
@@ -27,6 +32,12 @@ var (
 	txSize int
 )
 
+func init() {
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+}
+
 func TestInitEnv(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	require.NoError(t, os.RemoveAll(getTestPath()))
@@ -35,56 +46,52 @@ func TestInitEnv(t *testing.T) {
 }
 
 func TestStart(t *testing.T) {
-	for i := range rns {
+	var wg sync.WaitGroup
+	for i := range nodes {
 		cfg, err := getConfig(i)
 		require.NoError(t, err)
-		node, err := NewConseneus(cfg)
+		node, err := NewConsensus(map[string]consensus.Config{
+			"_global": cfg.cc,
+		}, cfg)
 		require.NoError(t, err)
-		rns[i] = node
+		nodes[i] = node
 		go func() {
+			wg.Add(1)
+			defer wg.Done()
 			require.NoError(t, node.Start())
 		}()
 	}
-	time.Sleep(2 * time.Second)
+	wg.Wait()
 }
 
 func TestAddTx(t *testing.T) {
 	txSize = 128
-	var txs [][]byte
-	var success = make(map[string]int)
-	var lock sync.Mutex
+	var txs []*core.Tx
 
 	for i := 0; i < txSize; i++ {
 		tx := randomTx()
-		success[string(tx)] = 0
 		txs = append(txs, tx)
 	}
 
-	var wg sync.WaitGroup
+	var g errgroup.Group
 	for i := range txs {
-		wg.Add(1)
 		tx := txs[i]
-		go func() {
-			defer wg.Done()
-			n := util.RandNum(len(rns))
-			if err := rns[n].AddTx("test", tx); err == nil {
-				lock.Lock()
-				success[string(tx)]++
-				lock.Unlock()
+		g.Go(func() error {
+			n := util.RandNum(len(nodes))
+			if err := nodes[n].AddTx(tx); err != nil {
+				return err
 			}
-		}()
-	}
-	wg.Wait()
+			return nil
+		})
 
-	for i := range success {
-		require.Equal(t, 1, success[i])
 	}
+	require.NoError(t, g.Wait())
 }
 
 func TestStop(t *testing.T) {
-	for i := range rns {
+	for i := range nodes {
 		fmt.Printf("Stop raft %d\n", i)
-		rns[i].Stop()
+		require.NoError(t, nodes[i].Stop())
 	}
 	os.RemoveAll(getTestPath())
 }
@@ -97,26 +104,29 @@ func TestReinitEnv(t *testing.T) {
 }
 
 func TestRestart(t *testing.T) {
-	for i := range rns {
+	var g errgroup.Group
+
+	for i := range nodes {
 		cfg, err := getConfig(i)
 		require.NoError(t, err)
-		node, err := NewConseneus(cfg)
+		node, err := NewConsensus(nil, cfg)
 		require.NoError(t, err)
-		rns[i] = node
-		go func() {
-			require.NoError(t, node.Start())
-		}()
+		nodes[i] = node
+		g.Go(func() error {
+			return node.Start()
+		})
 	}
-	time.Sleep(2 * time.Second)
+	require.NoError(t, g.Wait())
 }
 
 func TestReStop(t *testing.T) {
-	for i := range rns {
+	for i := range nodes {
 		fmt.Printf("Stop raft %d\n", i)
-		rns[i].Stop()
+		require.NoError(t, nodes[i].Stop())
 	}
 	os.RemoveAll(getTestPath())
 }
+
 func getTestPath() string {
 	gopath := os.Getenv("GOPATH")
 	testPath, _ := util.MakeFileAbs("src/madledger/consensus/raft/.test", gopath)
@@ -127,8 +137,13 @@ func getNodePath(node int) string {
 	return fmt.Sprintf("%s/orderers/%d", getTestPath(), node)
 }
 
-func randomTx() []byte {
-	return []byte(util.RandomString(32))
+func randomTx() *core.Tx {
+	return &core.Tx{
+		ID: util.RandomString(32),
+		Data: core.TxData{
+			ChannelID: "_global",
+		},
+	}
 }
 
 func getConfig(node int) (*Config, error) {

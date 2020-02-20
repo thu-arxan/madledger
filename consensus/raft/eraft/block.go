@@ -1,8 +1,11 @@
-package tendermint
+package eraft
 
-import "madledger/core"
+import (
+	"encoding/json"
+	"madledger/core"
+)
 
-// Block is the implementaion of tendermint Block
+// Block is the implementation of raft Block
 type Block struct {
 	ChannelID string
 	Num       uint64
@@ -16,7 +19,6 @@ func (block *Block) GetNumber() uint64 {
 
 // GetTxs is the implementation of block
 func (block *Block) GetTxs() []*core.Tx {
-	// return block.
 	var txs []*core.Tx
 	for _, txBytes := range block.Txs {
 		tx, err := core.BytesToTx(txBytes)
@@ -27,4 +29,17 @@ func (block *Block) GetTxs() []*core.Tx {
 		}
 	}
 	return txs
+}
+
+// Bytes return bytes of block
+func (block *Block) Bytes() []byte {
+	bytes, _ := json.Marshal(block)
+	return bytes
+}
+
+// UnmarshalBlock convert bytes to Block
+func UnmarshalBlock(bytes []byte) *Block {
+	var block Block
+	json.Unmarshal(bytes, &block)
+	return &block
 }

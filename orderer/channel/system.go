@@ -44,7 +44,7 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 				channel.Start()
 			}()
 			// 更新coordinator.Managers(map类型)
-			manager.coordinator.Managers[channelID] = channel
+			manager.coordinator.setChannel(channelID, channel)
 		}
 		// 更新leveldb
 		err := manager.db.UpdateChannel(channelID, payload.Profile)
