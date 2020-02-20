@@ -8,6 +8,7 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"time"
 
 	"net/http"
 	_ "net/http/pprof"
@@ -61,6 +62,7 @@ func TestStart(t *testing.T) {
 			require.NoError(t, node.Start())
 		}()
 	}
+	time.Sleep(200 * time.Millisecond)
 	wg.Wait()
 }
 

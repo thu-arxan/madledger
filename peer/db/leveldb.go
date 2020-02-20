@@ -72,28 +72,6 @@ func (db *LevelDB) GetAccount(address common.Address) (*common.Account, error) {
 	// return UnmarshalAccount(value)
 }
 
-// SetAccount updates an account or add an account
-func (db *LevelDB) SetAccount(account *common.Account) error {
-	var key = util.BytesCombine([]byte("account:"), account.GetAddress().Bytes())
-	value, err := account.Bytes()
-	if err != nil {
-		return err
-	}
-	// value := MarshalAccount(account)
-	err = db.connect.Put(key, value, nil)
-	return err
-}
-
-// RemoveAccount removes an account if exist
-func (db *LevelDB) RemoveAccount(address common.Address) error {
-	var key = util.BytesCombine([]byte("account:"), address.Bytes())
-	if ok, _ := db.connect.Has(key, nil); !ok {
-		return nil
-	}
-
-	return db.connect.Delete(key, nil)
-}
-
 // GetStorage returns the key of an address if exist, else returns an error
 func (db *LevelDB) GetStorage(address common.Address, key common.Word256) (common.Word256, error) {
 	// return common.ZeroWord256, nil
@@ -105,19 +83,12 @@ func (db *LevelDB) GetStorage(address common.Address, key common.Word256) (commo
 	return common.BytesToWord256(value)
 }
 
-// SetStorage sets the value of a key belongs to an address
-func (db *LevelDB) SetStorage(address common.Address, key common.Word256, value common.Word256) error {
-	storageKey := util.BytesCombine(address.Bytes(), key.Bytes())
-	db.connect.Put(storageKey, value.Bytes(), nil)
-	return nil
-}
-
 // GetTxStatus is the implementation of interface
 func (db *LevelDB) GetTxStatus(channelID, txID string) (*TxStatus, error) {
 	var key = util.BytesCombine([]byte(channelID), []byte(txID))
 	// TODO: Read twice is not necessary
 	if ok, _ := db.connect.Has(key, nil); !ok {
-		return nil, errors.New("Not exist")
+		return nil, errors.New("not exist")
 	}
 	value, err := db.connect.Get(key, nil)
 	if err != nil {
@@ -151,26 +122,6 @@ func (db *LevelDB) GetTxStatusAsync(channelID, txID string) (*TxStatus, error) {
 	}
 	status := db.hub.Watch(txID, func() { db.lock.Unlock() })
 	return status, nil
-}
-
-// SetTxStatus is the implementation of interface
-func (db *LevelDB) SetTxStatus(tx *core.Tx, status *TxStatus) error {
-	value, err := json.Marshal(status)
-	if err != nil {
-		return err
-	}
-	var key = util.BytesCombine([]byte(tx.Data.ChannelID), []byte(tx.ID))
-	err = db.connect.Put(key, value, nil)
-	if err != nil {
-		return err
-	}
-	sender, err := tx.GetSender()
-	if err != nil {
-		return err
-	}
-	db.addHistory(sender.Bytes(), tx.Data.ChannelID, tx.ID)
-	db.hub.Done(tx.ID, status)
-	return nil
 }
 
 // BelongChannel is the implementation of interface
@@ -229,27 +180,6 @@ func (db *LevelDB) ListTxHistory(address []byte) map[string][]string {
 	return txs
 }
 
-func (db *LevelDB) addHistory(address []byte, channelID, txID string) {
-	var txs = make(map[string][]string)
-	if ok, _ := db.connect.Has(address, nil); !ok {
-		txs[channelID] = []string{txID}
-		value, _ := json.Marshal(txs)
-		db.connect.Put(address, value, nil)
-	} else {
-		value, err := db.connect.Get(address, nil)
-		if err == nil {
-			json.Unmarshal(value, &txs)
-			if !util.Contain(txs, channelID) {
-				txs[channelID] = []string{txID}
-			} else {
-				txs[channelID] = append(txs[channelID], txID)
-			}
-			value, _ := json.Marshal(txs)
-			db.connect.Put(address, value, nil)
-		}
-	}
-}
-
 func (db *LevelDB) setChannels(channels []string) {
 	var key = []byte("channels")
 	value, _ := json.Marshal(channels)
@@ -260,25 +190,10 @@ func (db *LevelDB) setChannels(channels []string) {
 func (db *LevelDB) NewWriteBatch() WriteBatch {
 	batch := new(leveldb.Batch)
 	return &WriteBatchWrapper{
-		batch: batch,
-		db:    db,
+		batch:     batch,
+		db:        db,
+		histories: make(map[string]map[string][]string),
 	}
-}
-
-// SyncWriteBatch sync write batch into db
-func (db *LevelDB) SyncWriteBatch(batch *leveldb.Batch) error {
-	err := db.connect.Write(batch, nil)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// PutBlock stores block into db
-func (db *LevelDB) PutBlock(block *core.Block) error {
-	data := block.Bytes()
-	key := fmt.Sprintf("bc_data_%d", block.GetNumber())
-	return db.connect.Put([]byte(key), data, nil)
 }
 
 // GetBlock gets block by block.num from db
@@ -291,10 +206,19 @@ func (db *LevelDB) GetBlock(num uint64) (*core.Block, error) {
 	return core.UnmarshalBlock(data)
 }
 
+// Close close the leveldb
+func (db *LevelDB) Close() {
+	if db.connect != nil {
+		db.connect.Close()
+	}
+}
+
 // WriteBatchWrapper is a wrapper of level.Batch
 type WriteBatchWrapper struct {
 	batch *leveldb.Batch
 	db    *LevelDB
+
+	histories map[string]map[string][]string
 }
 
 // SetAccount is the implementation of interface
@@ -357,25 +281,32 @@ func (wb *WriteBatchWrapper) SetTxStatus(tx *core.Tx, status *TxStatus) error {
 
 func (wb *WriteBatchWrapper) addHistory(address []byte, channelID, txID string) {
 	var txs = make(map[string][]string)
-	if ok, _ := wb.db.connect.Has(address, nil); !ok {
-		txs[channelID] = []string{txID}
-		value, _ := json.Marshal(txs)
-		//db.connect.Put(address, value, nil)
-		wb.batch.Put(address, value)
-	} else {
-		value, err := wb.db.connect.Get(address, nil)
-		if err == nil {
-			json.Unmarshal(value, &txs)
-			if !util.Contain(txs, channelID) {
-				txs[channelID] = []string{txID}
-			} else {
-				txs[channelID] = append(txs[channelID], txID)
-			}
-			value, _ := json.Marshal(txs)
-			//db.connect.Put(address, value, nil)
-			wb.batch.Put(address, value)
+	if util.Contain(wb.histories, string(address)) {
+		txs = wb.histories[string(address)]
+		if !util.Contain(txs, channelID) {
+			txs[channelID] = []string{txID}
+		} else {
+			txs[channelID] = append(txs[channelID], txID)
 		}
+	} else {
+		if ok, _ := wb.db.connect.Has(address, nil); !ok {
+			txs[channelID] = []string{txID}
+		} else {
+			value, err := wb.db.connect.Get(address, nil)
+			if err == nil {
+				json.Unmarshal(value, &txs)
+				if !util.Contain(txs, channelID) {
+					txs[channelID] = []string{txID}
+				} else {
+					txs[channelID] = append(txs[channelID], txID)
+				}
+			}
+		}
+		wb.histories[string(address)] = txs
 	}
+	value, _ := json.Marshal(txs)
+	//db.connect.Put(address, value, nil)
+	wb.batch.Put(address, value)
 }
 
 // Put stores (key, value) into batch, the caller is responsible to avoid duplicate key
@@ -383,55 +314,15 @@ func (wb *WriteBatchWrapper) Put(key, value []byte) {
 	wb.batch.Put(key, value)
 }
 
-// GetBatch return the level.Batch
-func (wb *WriteBatchWrapper) GetBatch() *leveldb.Batch {
-	if wb == nil {
-		return nil
-	}
-	return wb.batch
+// PutBlock stores block into db
+func (wb *WriteBatchWrapper) PutBlock(block *core.Block) error {
+	data := block.Bytes()
+	key := fmt.Sprintf("bc_data_%d", block.GetNumber())
+	wb.batch.Put([]byte(key), data)
+	return nil
 }
 
-// MarshalAccount provide a fast marshal implementaion of marshal account
-func MarshalAccount(account *common.Account) []byte {
-	var bytes = make([]byte, 0)
-	bytes = util.BytesCombine(bytes, account.GetAddress().Bytes())
-	bytes = util.BytesCombine(bytes, util.Uint64ToBytes(account.GetBalance()))
-	bytes = util.BytesCombine(bytes, util.Uint64ToBytes(account.GetNonce()))
-	bytes = util.BytesCombine(bytes, util.BoolToBytes(account.HasSuicide()))
-	if len(account.GetCode()) != 0 {
-		bytes = util.BytesCombine(bytes, account.GetCode())
-	}
-	return bytes
-}
-
-// UnmarshalAccount provide a fast unmarshal implementation of unmarshal account
-func UnmarshalAccount(bytes []byte) (*common.Account, error) {
-	var account = new(common.Account)
-	if len(bytes) < 37 {
-		return nil, errors.New("wrong length")
-	}
-	addr, err := common.AddressFromBytes(bytes[:20])
-	if err != nil {
-		return nil, err
-	}
-	balance, err := util.BytesToUint64(bytes[20:28])
-	if err != nil {
-		return nil, err
-	}
-	nonce, err := util.BytesToUint64(bytes[28:36])
-	if err != nil {
-		return nil, err
-	}
-	var suicide = false
-	if bytes[36] == 1 {
-		suicide = true
-	}
-	if len(bytes) > 37 {
-		account.Code = bytes[37:]
-	}
-	account.Address = addr
-	account.Balance = balance
-	account.Nonce = nonce
-	account.SuicideMark = suicide
-	return account, nil
+// Sync sync batch to database
+func (wb *WriteBatchWrapper) Sync() error {
+	return wb.db.connect.Write(wb.batch, nil)
 }
