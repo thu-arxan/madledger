@@ -318,7 +318,7 @@ func (c *Client) GetPrivKey() crypto.PrivateKey {
 	return c.privKey
 }
 
-func (c *Client) GetAccountBalance(address common.Address) uint64 {
+func (c *Client) GetAccountBalance(address common.Address) (uint64, error) {
 	var times int
 	for i, ordererClient := range c.ordererClients {
 		acc = ordererClient.GetAccountInfo(context.Background(), &pb.GetAccountInfoRequest{
@@ -328,11 +328,11 @@ func (c *Client) GetAccountBalance(address common.Address) uint64 {
 		if err != nil {
 			// try to use other ordererClients until the last one still returns an error
 			if times == len(c.ordererClients) {
-				return err
+				return 0, err
 			}
 		} else {
 			break
 		}
 	}
-	return acc.GetBalance()
+	return acc.GetBalance(), nil
 }

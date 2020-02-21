@@ -64,7 +64,7 @@ func runIssue(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	tx, err := coreTypes.NewTx(coreTypes.ASSETCHANNELID, recipient, payload, value, "", client.GetPrivKey())
+	tx, err := coreTypes.NewTx(coreTypes.ASSETCHANNELID, recipient, payload, uint64(value), "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}
