@@ -59,9 +59,9 @@ client account list
 
 会看到类似于如下所示的结果。
 
-Address |
- ----   |
-0xb65127172831e8e66a3f8310ea83d2eda1fcefc5|
+Address |balance|
+| ----   |---|
+0xb65127172831e8e66a3f8310ea83d2eda1fcefc5|0|
 
 ### 1.4 Tx
 
