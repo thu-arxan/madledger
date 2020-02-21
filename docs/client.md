@@ -122,6 +122,13 @@ Channel | TxID
  test   | d5e35a0c850b3b6ef2ff028614ce49d6748b1d50e0b0dabad44f89f3d548c5e6
  _config| a77f2fca39eadf40d19dd9f13246b70b30c28e65d3726f4c15261bc512edcb70
  _config| a77f2fca39eadf40d19dd9f13246b70b30c28e65d3726f4c15261bc512edcb70
+ 
+### 1.5 Asset
+
+#### 1.5.1 issue
+
+#### 1.5.2 transfer
+
 
 ## 2 分布式
 

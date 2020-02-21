@@ -15,6 +15,7 @@ var (
 
 // Cmd return the account command
 func Cmd() *cobra.Command {
-	assetCmd.AddCommand(listCmd)
+	assetCmd.AddCommand(issueCmd)
+	assetCmd.AddCommand(transferCmd)
 	return assetCmd
 }
