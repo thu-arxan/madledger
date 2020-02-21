@@ -320,15 +320,18 @@ func (c *Client) GetPrivKey() crypto.PrivateKey {
 
 func (c *Client) GetAccountBalance(address common.Address) uint64 {
 	var times int
+	var acc *pb.AccountInfo
+	var err error
 	for i, ordererClient := range c.ordererClients {
-		acc = ordererClient.GetAccountInfo(context.Background(), &pb.GetAccountInfoRequest{
+		acc, err = ordererClient.GetAccountInfo(context.Background(), &pb.GetAccountInfoRequest{
 			Address: address.Bytes(),
 		})
 		times = i + 1
 		if err != nil {
 			// try to use other ordererClients until the last one still returns an error
 			if times == len(c.ordererClients) {
-				return err
+				panic(err.Error())
+				return 0
 			}
 		} else {
 			break
