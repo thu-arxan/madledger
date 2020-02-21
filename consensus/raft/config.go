@@ -15,8 +15,8 @@ type Config struct {
 }
 
 // NewConfig is the constructor of Config
-func NewConfig(dir, address string, id uint64, nodes map[uint64]string, join bool, cc consensus.Config) (*Config, error) {
-	ec, err := eraft.NewEraftConfig(dir, address, id, nodes, join)
+func NewConfig(dir string, id uint64, nodes map[uint64]string, join bool, cc consensus.Config) (*Config, error) {
+	ec, err := eraft.NewEraftConfig(dir, id, nodes, join)
 	if err != nil {
 		return nil, err
 	}

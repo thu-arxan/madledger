@@ -60,7 +60,7 @@ func (chain *BlockChain) Start() error {
 
 	// start grpc service
 	addr := chain.cfg.peers[chain.cfg.id]
-	ln, err := net.Listen("tcp", chain.cfg.peers[chain.cfg.id])
+	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("listen failed: %v", err)
 	}
