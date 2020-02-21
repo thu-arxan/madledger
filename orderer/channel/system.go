@@ -79,7 +79,7 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		var payload ac.Payload
 		err = json.Unmarshal(tx.Data.Payload, &payload)
 		if err != nil {
-			fmt.Errorf("wrong tx format: %v", err)
+			return fmt.Errorf("wrong tx format: %v", err)
 		}
 		sender, err := tx.GetSender()
 		if err != nil {

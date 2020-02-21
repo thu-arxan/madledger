@@ -91,7 +91,7 @@ func (m *Manager) AddBlock(block *core.Block) error {
 		m.AddConfigBlock(block)
 		log.Infof("Add config block %d", block.Header.Number)
 	case core.ASSETCHANNELID:
-		m.AddAccountBlock(block)
+		m.AddAssetBlock(block)
 		log.Infof("Add account block %d", block.Header.Number)
 	default:
 		if !m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
