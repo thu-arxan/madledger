@@ -28,7 +28,7 @@ func init() {
 		"value to be issued")
 	issueViper.BindPFlag("value", issueCmd.Flags().Lookup("value"))
 	issueCmd.Flags().StringP("address", "a", "0",
-		"hex address of the account issued")
+		"receiver's hex address to be issued in asset channel")
 	issueViper.BindPFlag("address", issueCmd.Flags().Lookup("address"))
 }
 
@@ -64,7 +64,7 @@ func runIssue(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	tx, err := coreTypes.NewTx(coreTypes.ASSETCHANNELID, recipient, payload, value, "", client.GetPrivKey())
+	tx, err := coreTypes.NewTx(coreTypes.ASSETCHANNELID, recipient, payload, uint64(value), "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}
