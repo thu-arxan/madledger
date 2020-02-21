@@ -365,7 +365,7 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 		}
 		c.Consensus = consensus
 	case config.RAFT:
-		raftConfig, err := getConfig(cfg.Raft.Path, cfg.Raft.ID, cfg.Raft.Nodes, cfg.Raft.Join, cfg.Raft.TLS, c.chainCfg.BatchTimeout, c.chainCfg.BatchSize)
+		raftConfig, err := getConfig(cfg.Raft, c.chainCfg)
 		if err != nil {
 			return err
 		}
@@ -396,18 +396,18 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 	return nil
 }
 
-func getConfig(path string, id uint64, peers map[uint64]string, join bool, tlsConfig config.TLSConfig, timeout, maxSize int) (*raft.Config, error) {
+func getConfig(cRaft config.RaftConfig, cChain *config.BlockChainConfig) (*raft.Config, error) {
 	tlsCfg := consensus.TLSConfig{
-		Enable:  tlsConfig.Enable,
-		CA:      tlsConfig.CA,
-		RawCert: tlsConfig.RawCert,
-		Key:     tlsConfig.Key,
-		Pool:    tlsConfig.Pool,
-		Cert:    tlsConfig.Cert,
+		Enable:  cRaft.TLS.Enable,
+		CA:      cRaft.TLS.CA,
+		RawCert: cRaft.TLS.RawCert,
+		Key:     cRaft.TLS.Key,
+		Pool:    cRaft.TLS.Pool,
+		Cert:    cRaft.TLS.Cert,
 	}
-	return raft.NewConfig(path, "localhost", id, peers, join, consensus.Config{
-		Timeout: timeout,
-		MaxSize: maxSize,
+	return raft.NewConfig(cRaft.Path, cRaft.ID, cRaft.Nodes, cRaft.Join, consensus.Config{
+		Timeout: cChain.BatchTimeout,
+		MaxSize: cChain.BatchSize,
 		Resume:  false,
 		Number:  1,
 		TLS:     tlsCfg,
