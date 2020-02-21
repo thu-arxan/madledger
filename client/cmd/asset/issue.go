@@ -28,7 +28,7 @@ func init() {
 		"value to be issued")
 	issueViper.BindPFlag("value", issueCmd.Flags().Lookup("value"))
 	issueCmd.Flags().StringP("address", "a", "0",
-		"hex address of the account issued")
+		"receiver's hex address to be issued in asset channel")
 	issueViper.BindPFlag("address", issueCmd.Flags().Lookup("address"))
 }
 
