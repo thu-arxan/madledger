@@ -3,7 +3,7 @@ package channel
 import (
 	"encoding/json"
 	"fmt"
-	ac "madledger/blockchain/account"
+	ac "madledger/blockchain/asset"
 	cc "madledger/blockchain/config"
 	"madledger/common"
 	"madledger/common/crypto"
@@ -68,7 +68,7 @@ func (manager *Manager) AddGlobalBlock(block *core.Block) error {
 
 // AddAccountBlock add an account block
 // TODO: ab
-func (manager *Manager) AddAccountBlock(block *core.Block) error {
+func (manager *Manager) AddAssetBlock(block *core.Block) error {
 	if block.Header.Number == 0 {
 		return nil
 	}
@@ -88,23 +88,17 @@ func (manager *Manager) AddAccountBlock(block *core.Block) error {
 		receiver := tx.GetReceiver()
 		//if receiver is not set, issue or transfer money to a channel
 		if receiver == common.ZeroAddress {
-			receiver = common.BytesToAddress([]byte(tx.Data.ChannelID))
+			receiver = common.BytesToAddress([]byte(payload.ChannelID))
 		}
 
 		switch payload.Action {
 		case "issue":
 			// avoid overflow
 			issueValue := tx.Data.Value
-			if issueValue < 0 {
-				issueValue = 0
-			}
 			err = manager.issue(tx.Data.Sig.PK, receiver, issueValue)
 		case "transfer":
 			// if value < 0, sender get money from receiver ??
 			transferValue := tx.Data.Value
-			if transferValue < 0 {
-				transferValue = 0
-			}
 			err = manager.transfer(sender, receiver, transferValue)
 		}
 

@@ -1,4 +1,4 @@
-package account
+package asset
 
 import (
 	"madledger/core"
@@ -13,9 +13,9 @@ func CreateGenesisBlock(payloads []*Payload) (*core.Block, error) {
 			return nil, err
 		}
 		// all zero
-		tx := core.NewTxWithoutSig(core.ACCOUNTCHANNELID, payloadBytes, 0)
+		tx := core.NewTxWithoutSig(core.ASSETCHANNELID, payloadBytes, 0)
 		txs = append(txs, tx)
 	}
 
-	return core.NewBlock(core.ACCOUNTCHANNELID, 0, core.GenesisBlockPrevHash, txs), nil
+	return core.NewBlock(core.ASSETCHANNELID, 0, core.GenesisBlockPrevHash, txs), nil
 }

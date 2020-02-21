@@ -60,7 +60,7 @@ func NewChannelManager(dbDir string, identity *core.Member, chainCfg *config.Blo
 	if err != nil {
 		return nil, err
 	}
-	accountManager, err := channel.NewManager(core.ACCOUNTCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, core.ACCOUNTCHANNELID), identity, m.db, ordererClients, m.coordinator)
+	accountManager, err := channel.NewManager(core.ASSETCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, core.ASSETCHANNELID), identity, m.db, ordererClients, m.coordinator)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (m *ChannelManager) start() error {
 				channels := m.db.GetChannels()
 				for _, channel := range channels {
 					switch channel {
-					case core.GLOBALCHANNELID, core.CONFIGCHANNELID, core.ACCOUNTCHANNELID:
+					case core.GLOBALCHANNELID, core.CONFIGCHANNELID, core.ASSETCHANNELID:
 					default:
 						if !m.hasChannel(channel) {
 							manager, err := m.loadChannel(channel)

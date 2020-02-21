@@ -23,7 +23,7 @@ func CreateGenesisBlock(admins []*core.Member) (*core.Block, error) {
 		},
 		Version: 1,
 	}, Payload{
-		ChannelID: core.ACCOUNTCHANNELID,
+		ChannelID: core.ASSETCHANNELID,
 		Profile: &Profile {
 			Public: true,
 		},

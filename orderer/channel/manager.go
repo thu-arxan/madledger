@@ -144,8 +144,8 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		return manager.AddConfigBlock(block)
 	case core.GLOBALCHANNELID:
 		return manager.AddGlobalBlock(block)
-	case core.ACCOUNTCHANNELID:
-		return manager.AddAccountBlock(block)
+	case core.ASSETCHANNELID:
+		return manager.AddAssetBlock(block)
 	default:
 		return nil
 	}

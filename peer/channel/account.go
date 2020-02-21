@@ -6,7 +6,7 @@ import (
 
 //todo: ab
 // AddAccountBlock add an account block
-func (m *Manager) AddAccountBlock(block *core.Block) error {
+func (m *Manager) AddAssetBlock(block *core.Block) error {
 	nums := make(map[string]uint64)
 	for _, tx := range block.Transactions {
 		payload, err := tx.GetAccountTxPayload()

@@ -300,5 +300,5 @@ func (db *LevelDB) UpdateAccounts(accounts ...common.Account) error {
 }
 
 func getAccountKey(address common.Address) []byte {
-	return []byte(fmt.Sprintf("%s@%s", core.ACCOUNTCHANNELID, address.String()))
+	return []byte(fmt.Sprintf("%s@%s", core.ASSETCHANNELID, address.String()))
 }
