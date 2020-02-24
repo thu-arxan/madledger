@@ -7,6 +7,11 @@ import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
 
+import (
+	context "golang.org/x/net/context"
+	grpc "google.golang.org/grpc"
+)
+
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
@@ -41,7 +46,7 @@ func (x Behavior) String() string {
 	return proto.EnumName(Behavior_name, int32(x))
 }
 func (Behavior) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_service_893e9bf64adcf742, []int{0}
+	return fileDescriptor_service_8671f003a64f2e43, []int{0}
 }
 
 // Identity defines the identity in the channel
@@ -68,7 +73,7 @@ func (x Identity) String() string {
 	return proto.EnumName(Identity_name, int32(x))
 }
 func (Identity) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_service_893e9bf64adcf742, []int{1}
+	return fileDescriptor_service_8671f003a64f2e43, []int{1}
 }
 
 // However, this is not contains sig now, but this is necessary
@@ -87,7 +92,7 @@ func (m *FetchBlockRequest) Reset()         { *m = FetchBlockRequest{} }
 func (m *FetchBlockRequest) String() string { return proto.CompactTextString(m) }
 func (*FetchBlockRequest) ProtoMessage()    {}
 func (*FetchBlockRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_893e9bf64adcf742, []int{0}
+	return fileDescriptor_service_8671f003a64f2e43, []int{0}
 }
 func (m *FetchBlockRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FetchBlockRequest.Unmarshal(m, b)
@@ -142,7 +147,7 @@ func (m *ListChannelsRequest) Reset()         { *m = ListChannelsRequest{} }
 func (m *ListChannelsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListChannelsRequest) ProtoMessage()    {}
 func (*ListChannelsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_893e9bf64adcf742, []int{1}
+	return fileDescriptor_service_8671f003a64f2e43, []int{1}
 }
 func (m *ListChannelsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListChannelsRequest.Unmarshal(m, b)
@@ -188,7 +193,7 @@ func (m *ChannelInfos) Reset()         { *m = ChannelInfos{} }
 func (m *ChannelInfos) String() string { return proto.CompactTextString(m) }
 func (*ChannelInfos) ProtoMessage()    {}
 func (*ChannelInfos) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_893e9bf64adcf742, []int{2}
+	return fileDescriptor_service_8671f003a64f2e43, []int{2}
 }
 func (m *ChannelInfos) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ChannelInfos.Unmarshal(m, b)
@@ -229,7 +234,7 @@ func (m *ChannelInfo) Reset()         { *m = ChannelInfo{} }
 func (m *ChannelInfo) String() string { return proto.CompactTextString(m) }
 func (*ChannelInfo) ProtoMessage()    {}
 func (*ChannelInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_893e9bf64adcf742, []int{3}
+	return fileDescriptor_service_8671f003a64f2e43, []int{3}
 }
 func (m *ChannelInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ChannelInfo.Unmarshal(m, b)
@@ -282,7 +287,7 @@ func (m *CreateChannelRequest) Reset()         { *m = CreateChannelRequest{} }
 func (m *CreateChannelRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateChannelRequest) ProtoMessage()    {}
 func (*CreateChannelRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_893e9bf64adcf742, []int{4}
+	return fileDescriptor_service_8671f003a64f2e43, []int{4}
 }
 func (m *CreateChannelRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateChannelRequest.Unmarshal(m, b)
@@ -321,7 +326,7 @@ func (m *CreateChannelTxPayload) Reset()         { *m = CreateChannelTxPayload{}
 func (m *CreateChannelTxPayload) String() string { return proto.CompactTextString(m) }
 func (*CreateChannelTxPayload) ProtoMessage()    {}
 func (*CreateChannelTxPayload) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_893e9bf64adcf742, []int{5}
+	return fileDescriptor_service_8671f003a64f2e43, []int{5}
 }
 func (m *CreateChannelTxPayload) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateChannelTxPayload.Unmarshal(m, b)
@@ -359,7 +364,7 @@ func (m *AddTxRequest) Reset()         { *m = AddTxRequest{} }
 func (m *AddTxRequest) String() string { return proto.CompactTextString(m) }
 func (*AddTxRequest) ProtoMessage()    {}
 func (*AddTxRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_893e9bf64adcf742, []int{6}
+	return fileDescriptor_service_8671f003a64f2e43, []int{6}
 }
 func (m *AddTxRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AddTxRequest.Unmarshal(m, b)
@@ -402,7 +407,7 @@ func (m *TxStatus) Reset()         { *m = TxStatus{} }
 func (m *TxStatus) String() string { return proto.CompactTextString(m) }
 func (*TxStatus) ProtoMessage()    {}
 func (*TxStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_893e9bf64adcf742, []int{7}
+	return fileDescriptor_service_8671f003a64f2e43, []int{7}
 }
 func (m *TxStatus) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TxStatus.Unmarshal(m, b)
@@ -470,7 +475,7 @@ func (m *GetTxStatusRequest) Reset()         { *m = GetTxStatusRequest{} }
 func (m *GetTxStatusRequest) String() string { return proto.CompactTextString(m) }
 func (*GetTxStatusRequest) ProtoMessage()    {}
 func (*GetTxStatusRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_893e9bf64adcf742, []int{8}
+	return fileDescriptor_service_8671f003a64f2e43, []int{8}
 }
 func (m *GetTxStatusRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetTxStatusRequest.Unmarshal(m, b)
@@ -522,7 +527,7 @@ func (m *ListTxHistoryRequest) Reset()         { *m = ListTxHistoryRequest{} }
 func (m *ListTxHistoryRequest) String() string { return proto.CompactTextString(m) }
 func (*ListTxHistoryRequest) ProtoMessage()    {}
 func (*ListTxHistoryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_893e9bf64adcf742, []int{9}
+	return fileDescriptor_service_8671f003a64f2e43, []int{9}
 }
 func (m *ListTxHistoryRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListTxHistoryRequest.Unmarshal(m, b)
@@ -562,7 +567,7 @@ func (m *TxHistory) Reset()         { *m = TxHistory{} }
 func (m *TxHistory) String() string { return proto.CompactTextString(m) }
 func (*TxHistory) ProtoMessage()    {}
 func (*TxHistory) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_893e9bf64adcf742, []int{10}
+	return fileDescriptor_service_8671f003a64f2e43, []int{10}
 }
 func (m *TxHistory) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TxHistory.Unmarshal(m, b)
@@ -600,7 +605,7 @@ func (m *GetAccountInfoRequest) Reset()         { *m = GetAccountInfoRequest{} }
 func (m *GetAccountInfoRequest) String() string { return proto.CompactTextString(m) }
 func (*GetAccountInfoRequest) ProtoMessage()    {}
 func (*GetAccountInfoRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_893e9bf64adcf742, []int{11}
+	return fileDescriptor_service_8671f003a64f2e43, []int{11}
 }
 func (m *GetAccountInfoRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetAccountInfoRequest.Unmarshal(m, b)
@@ -638,7 +643,7 @@ func (m *AccountInfo) Reset()         { *m = AccountInfo{} }
 func (m *AccountInfo) String() string { return proto.CompactTextString(m) }
 func (*AccountInfo) ProtoMessage()    {}
 func (*AccountInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_893e9bf64adcf742, []int{12}
+	return fileDescriptor_service_8671f003a64f2e43, []int{12}
 }
 func (m *AccountInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AccountInfo.Unmarshal(m, b)
@@ -684,9 +689,310 @@ func init() {
 	proto.RegisterEnum("protos.Identity", Identity_name, Identity_value)
 }
 
-func init() { proto.RegisterFile("service.proto", fileDescriptor_service_893e9bf64adcf742) }
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConn
 
-var fileDescriptor_service_893e9bf64adcf742 = []byte{
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion4
+
+// OrdererClient is the client API for Orderer service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type OrdererClient interface {
+	FetchBlock(ctx context.Context, in *FetchBlockRequest, opts ...grpc.CallOption) (*Block, error)
+	ListChannels(ctx context.Context, in *ListChannelsRequest, opts ...grpc.CallOption) (*ChannelInfos, error)
+	CreateChannel(ctx context.Context, in *CreateChannelRequest, opts ...grpc.CallOption) (*ChannelInfo, error)
+	AddTx(ctx context.Context, in *AddTxRequest, opts ...grpc.CallOption) (*TxStatus, error)
+	GetAccountInfo(ctx context.Context, in *GetAccountInfoRequest, opts ...grpc.CallOption) (*AccountInfo, error)
+}
+
+type ordererClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewOrdererClient(cc *grpc.ClientConn) OrdererClient {
+	return &ordererClient{cc}
+}
+
+func (c *ordererClient) FetchBlock(ctx context.Context, in *FetchBlockRequest, opts ...grpc.CallOption) (*Block, error) {
+	out := new(Block)
+	err := c.cc.Invoke(ctx, "/protos.Orderer/FetchBlock", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ordererClient) ListChannels(ctx context.Context, in *ListChannelsRequest, opts ...grpc.CallOption) (*ChannelInfos, error) {
+	out := new(ChannelInfos)
+	err := c.cc.Invoke(ctx, "/protos.Orderer/ListChannels", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ordererClient) CreateChannel(ctx context.Context, in *CreateChannelRequest, opts ...grpc.CallOption) (*ChannelInfo, error) {
+	out := new(ChannelInfo)
+	err := c.cc.Invoke(ctx, "/protos.Orderer/CreateChannel", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ordererClient) AddTx(ctx context.Context, in *AddTxRequest, opts ...grpc.CallOption) (*TxStatus, error) {
+	out := new(TxStatus)
+	err := c.cc.Invoke(ctx, "/protos.Orderer/AddTx", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ordererClient) GetAccountInfo(ctx context.Context, in *GetAccountInfoRequest, opts ...grpc.CallOption) (*AccountInfo, error) {
+	out := new(AccountInfo)
+	err := c.cc.Invoke(ctx, "/protos.Orderer/GetAccountInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// OrdererServer is the server API for Orderer service.
+type OrdererServer interface {
+	FetchBlock(context.Context, *FetchBlockRequest) (*Block, error)
+	ListChannels(context.Context, *ListChannelsRequest) (*ChannelInfos, error)
+	CreateChannel(context.Context, *CreateChannelRequest) (*ChannelInfo, error)
+	AddTx(context.Context, *AddTxRequest) (*TxStatus, error)
+	GetAccountInfo(context.Context, *GetAccountInfoRequest) (*AccountInfo, error)
+}
+
+func RegisterOrdererServer(s *grpc.Server, srv OrdererServer) {
+	s.RegisterService(&_Orderer_serviceDesc, srv)
+}
+
+func _Orderer_FetchBlock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FetchBlockRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdererServer).FetchBlock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protos.Orderer/FetchBlock",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdererServer).FetchBlock(ctx, req.(*FetchBlockRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Orderer_ListChannels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListChannelsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdererServer).ListChannels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protos.Orderer/ListChannels",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdererServer).ListChannels(ctx, req.(*ListChannelsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Orderer_CreateChannel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateChannelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdererServer).CreateChannel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protos.Orderer/CreateChannel",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdererServer).CreateChannel(ctx, req.(*CreateChannelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Orderer_AddTx_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddTxRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdererServer).AddTx(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protos.Orderer/AddTx",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdererServer).AddTx(ctx, req.(*AddTxRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Orderer_GetAccountInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAccountInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdererServer).GetAccountInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protos.Orderer/GetAccountInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdererServer).GetAccountInfo(ctx, req.(*GetAccountInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _Orderer_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "protos.Orderer",
+	HandlerType: (*OrdererServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "FetchBlock",
+			Handler:    _Orderer_FetchBlock_Handler,
+		},
+		{
+			MethodName: "ListChannels",
+			Handler:    _Orderer_ListChannels_Handler,
+		},
+		{
+			MethodName: "CreateChannel",
+			Handler:    _Orderer_CreateChannel_Handler,
+		},
+		{
+			MethodName: "AddTx",
+			Handler:    _Orderer_AddTx_Handler,
+		},
+		{
+			MethodName: "GetAccountInfo",
+			Handler:    _Orderer_GetAccountInfo_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "service.proto",
+}
+
+// PeerClient is the client API for Peer service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type PeerClient interface {
+	GetTxStatus(ctx context.Context, in *GetTxStatusRequest, opts ...grpc.CallOption) (*TxStatus, error)
+	ListTxHistory(ctx context.Context, in *ListTxHistoryRequest, opts ...grpc.CallOption) (*TxHistory, error)
+}
+
+type peerClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewPeerClient(cc *grpc.ClientConn) PeerClient {
+	return &peerClient{cc}
+}
+
+func (c *peerClient) GetTxStatus(ctx context.Context, in *GetTxStatusRequest, opts ...grpc.CallOption) (*TxStatus, error) {
+	out := new(TxStatus)
+	err := c.cc.Invoke(ctx, "/protos.Peer/GetTxStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *peerClient) ListTxHistory(ctx context.Context, in *ListTxHistoryRequest, opts ...grpc.CallOption) (*TxHistory, error) {
+	out := new(TxHistory)
+	err := c.cc.Invoke(ctx, "/protos.Peer/ListTxHistory", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// PeerServer is the server API for Peer service.
+type PeerServer interface {
+	GetTxStatus(context.Context, *GetTxStatusRequest) (*TxStatus, error)
+	ListTxHistory(context.Context, *ListTxHistoryRequest) (*TxHistory, error)
+}
+
+func RegisterPeerServer(s *grpc.Server, srv PeerServer) {
+	s.RegisterService(&_Peer_serviceDesc, srv)
+}
+
+func _Peer_GetTxStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTxStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PeerServer).GetTxStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protos.Peer/GetTxStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PeerServer).GetTxStatus(ctx, req.(*GetTxStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Peer_ListTxHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTxHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PeerServer).ListTxHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protos.Peer/ListTxHistory",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PeerServer).ListTxHistory(ctx, req.(*ListTxHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _Peer_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "protos.Peer",
+	HandlerType: (*PeerServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetTxStatus",
+			Handler:    _Peer_GetTxStatus_Handler,
+		},
+		{
+			MethodName: "ListTxHistory",
+			Handler:    _Peer_ListTxHistory_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "service.proto",
+}
+
+func init() { proto.RegisterFile("service.proto", fileDescriptor_service_8671f003a64f2e43) }
+
+var fileDescriptor_service_8671f003a64f2e43 = []byte{
 	// 767 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x55, 0x5f, 0x6f, 0xda, 0x56,
 	0x14, 0xb7, 0x1d, 0x48, 0xe1, 0x18, 0x32, 0x72, 0x9a, 0x22, 0xe6, 0x65, 0x13, 0xba, 0x2f, 0x43,
