@@ -3,7 +3,6 @@ package db
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/syndtr/goleveldb/leveldb/errors"
 	cc "madledger/blockchain/config"
 	"madledger/common"
 	"madledger/common/crypto"
@@ -273,17 +272,16 @@ func(db *LevelDB) SetAccountAdmin(pk crypto.PublicKey) error {
 
 func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, error) {
 	key := getAccountKey(address)
-	var account common.Account
+	var account common.DefaultAccount
 	data, err := db.connect.Get(key, nil)
-	if err != errors.ErrNotFound {
-		return nil, err
+	if err != nil {
+		if err != leveldb.ErrNotFound {
+			return nil, err
+		}
+		return common.NewDefaultAccount(address), nil
 	}
-	if data == nil {
-		account = common.NewDefaultAccount(address)
-	} else {
-		json.Unmarshal(data, &account)
-	}
-	return account, nil
+	err = json.Unmarshal(data, &account)
+	return &account, err
 }
 
 func (db *LevelDB) UpdateAccounts(accounts ...common.Account) error {
@@ -297,6 +295,23 @@ func (db *LevelDB) UpdateAccounts(accounts ...common.Account) error {
 		wb.Put(key, data)
 	}
 	return db.connect.Write(wb, nil)
+}
+
+func (db *LevelDB) IsTxExecute(txid string) bool {
+	key := []byte(txid)
+	data, err := db.connect.Get(key, nil)
+	if err != nil {
+		return false
+	}
+	if string(data[:]) != "ok" {
+		return false
+	}
+	return true
+}
+
+func (db *LevelDB) SetTxExecute(txid string) error {
+	key := []byte(txid)
+	return db.connect.Put(key, []byte("ok"), nil)
 }
 
 func getAccountKey(address common.Address) []byte {

@@ -176,7 +176,14 @@ func (manager *Manager) AddTx(tx *core.Tx) error {
 	// However, we may find a better way to do this if we allow there are more interactive between the consensus and orderer.
 	result := manager.hub.Watch(util.Hex(tx.Hash()), nil)
 
-	return result.Err
+	if result.Err != nil {
+		return result.Err
+	}
+
+	if tx.Data.ChannelID == "_asset" && !manager.db.IsTxExecute(tx.ID) {
+		return errors.New("tx failed to execute due to overflow")
+	}
+	return nil
 }
 
 // FetchBlock return the block if exist

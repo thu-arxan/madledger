@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/viper"
 	"madledger/blockchain/asset"
 	"madledger/client/lib"
+	"madledger/client/util"
 	"madledger/common"
 	coreTypes "madledger/core"
 )
@@ -69,7 +70,14 @@ func runTransfer(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	_, err = client.AddTx(tx)
+	status, err := client.AddTxInOrderer(tx)
+	table := util.NewTable()
+	table.SetHeader("Status", "Error")
+
+	table.AddRow(status, err)
+
+	table.Render()
+
 
 	return err
 }

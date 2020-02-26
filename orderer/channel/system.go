@@ -79,17 +79,21 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		var payload ac.Payload
 		err = json.Unmarshal(tx.Data.Payload, &payload)
 		if err != nil {
-			return fmt.Errorf("wrong tx format: %v", err)
+			log.Errorf("wrong tx format: %v", err)
+			continue
 		}
 		sender, err := tx.GetSender()
 		if err != nil {
-			return fmt.Errorf("wrong sender address %v", sender);
+			log.Errorf("wrong sender address %v", sender)
+			continue
 		}
 		receiver := tx.GetReceiver()
 		//if receiver is not set, issue or transfer money to a channel
 		if receiver == common.ZeroAddress {
 			receiver = common.BytesToAddress([]byte(payload.ChannelID))
 		}
+
+		log.Infof("receiver is %v", receiver)
 
 		switch payload.Action {
 		case "issue":
@@ -103,8 +107,13 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		}
 
 		if err != nil {
-			return fmt.Errorf("err when execute account block tx %v : %v", tx, err)
+			// 如果有错误，那么应该在db里加一条key为txid的错误，如果正确，那么key为txid为ok
+			log.Infof("shit happened to tx %v : %v", tx, err)
+			log.Errorf("err when execute account block tx %v : %v", tx, err)
+			continue
 		}
+		log.Infof("tx %v good", tx)
+		manager.db.SetTxExecute(tx.ID)
 	}
 
 	return nil
@@ -112,41 +121,49 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 
 func (manager *Manager) issue(senderPKBytes []byte, receiver common.Address, value uint64) error {
 	pk, err := crypto.NewPublicKey(senderPKBytes)
+	log.Infof("PK is %v", pk)
 	if !manager.db.IsAccountAdmin(pk) && manager.db.SetAccountAdmin(pk) != nil {
 		return fmt.Errorf("issue authentication failed: %v", err)
 	}
+	log.Infof("val is %v", value)
 	if value == 0 {
 		return nil
 	}
+	log.Infof("rec is %v", receiver)
 	receiverAccount, err := manager.db.GetOrCreateAccount(receiver)
 	if err != nil {
 		return nil
 	}
+	log.Infof("1rec acc is %v", receiverAccount)
 	err = receiverAccount.AddBalance(value)
 	if err != nil {
 		return nil
 	}
+	log.Infof("2rec acc is %v", receiverAccount)
 	return manager.db.UpdateAccounts(receiverAccount)
 }
 
 func (manager *Manager) transfer(sender, receiver common.Address, value uint64) error {
+	log.Infof("val is %v", value)
+
 	if value == 0 {
 		return nil
 	}
+	log.Infof("sender is %v", sender)
 	senderAccount, err := manager.db.GetOrCreateAccount(sender)
 	if err != nil {
 		return err
 	}
-
+	log.Infof("sender acc is %v", senderAccount)
 	if err = senderAccount.SubBalance(value); err != nil {
 		return err
 	}
-
+	log.Infof("rec is %v", receiver)
 	receiverAccount, err := manager.db.GetOrCreateAccount(receiver)
 	if err != nil {
 		return err
 	}
-
+	log.Infof("rec acc is %v", receiverAccount)
 	if err = receiverAccount.AddBalance(value); err != nil {
 		return err
 	}

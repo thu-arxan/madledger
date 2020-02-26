@@ -31,4 +31,6 @@ type DB interface {
 	//GetOrCreateAccount return default account if not exist
 	GetOrCreateAccount(address common.Address) (common.Account, error)
 	UpdateAccounts(accounts ...common.Account) error
+	IsTxExecute(txid string) bool
+	SetTxExecute(txid string) error
 }
