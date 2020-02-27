@@ -21,7 +21,7 @@ type RocksDB struct {
 	dir string
 
 	lock sync.Mutex
-	hub  *util.Hub
+	hub  *event.Hub
 
 	connect      *gorocksdb.DB
 	ro           *gorocksdb.ReadOptions
@@ -65,7 +65,7 @@ func NewRocksDB(dir string) (DB, error) {
 	db.ro = ro
 	db.wo = wo
 
-	db.hub = util.NewHub()
+	db.hub = event.NewHub()
 	return db, nil
 }
 

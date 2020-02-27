@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"madledger/common"
+	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/core"
 	"sync"
@@ -26,7 +27,7 @@ type LevelDB struct {
 	dir     string
 	connect *leveldb.DB
 	lock    sync.Mutex
-	hub     *util.Hub
+	hub     *event.Hub
 }
 
 var (
@@ -42,7 +43,7 @@ func NewLevelDB(dir string) (DB, error) {
 		return nil, err
 	}
 	db.connect = connect
-	db.hub = util.NewHub()
+	db.hub = event.NewHub()
 	return db, nil
 }
 

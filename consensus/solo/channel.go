@@ -86,7 +86,10 @@ func (c *channel) AddTx(tx *core.Tx) error {
 	}()
 
 	result := c.hub.Watch(tx.ID, nil)
-	return result.Err
+	if result == nil {
+		return nil
+	}
+	return result.(*event.Result).Err
 }
 
 func (c *channel) addTx(tx *core.Tx) error {
