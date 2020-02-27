@@ -242,8 +242,7 @@ func getSystemAdminKey() []byte {
 	return []byte(fmt.Sprintf("%s$admin", core.CONFIGCHANNELID))
 }
 
-// todo: @zhq, format check is not passed, also GetOrCreateAccount&UpdateAccounts&... functions.
-//todo: ab can the setting of admin of account channel different from other channels(through config channel)
+// IsAssetAdmin determines whether input pk belonged to account that has the right to issue
 func (db *LevelDB) IsAccountAdmin(pk crypto.PublicKey) bool {
 	var key = []byte("_account_admin")
 	admin, err := db.connect.Get(key, nil)
@@ -257,7 +256,7 @@ func (db *LevelDB) IsAccountAdmin(pk crypto.PublicKey) bool {
 	return reflect.DeepEqual(admin, pkBytes)
 }
 
-//SetAccountAdmin only succeed at the first time it is called
+// SetAccountAdmin only succeed at the first time it is called
 func (db *LevelDB) SetAccountAdmin(pk crypto.PublicKey) error {
 	var key = []byte("_account_admin")
 	exists, _ := db.connect.Has(key, nil)
@@ -271,6 +270,7 @@ func (db *LevelDB) SetAccountAdmin(pk crypto.PublicKey) error {
 	return db.connect.Put(key, pkBytes, nil)
 }
 
+// GetOrCreateAccount return default account if account does not exist in leveldb
 func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, error) {
 	key := getAccountKey(address)
 	var account common.DefaultAccount
@@ -315,7 +315,6 @@ func (db *LevelDB) SetTxExecute(txid string) error {
 	return db.connect.Put(key, []byte("ok"), nil)
 }
 
-// todo:@zhq, should be getAssetKey because channle is _asset other than _account?
 func getAccountKey(address common.Address) []byte {
 	return []byte(fmt.Sprintf("%s@%s", core.ASSETCHANNELID, address.String()))
 }

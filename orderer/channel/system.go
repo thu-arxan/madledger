@@ -122,7 +122,7 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 func (manager *Manager) issue(senderPKBytes []byte, receiver common.Address, value uint64) error {
 	pk, err := crypto.NewPublicKey(senderPKBytes)
 	log.Infof("PK is %v", pk)
-	if !manager.db.IsAccountAdmin(pk) && manager.db.SetAccountAdmin(pk) != nil {
+	if !manager.db.IsAssetAdmin(pk) && manager.db.SetAssetAdmin(pk) != nil {
 		return fmt.Errorf("issue authentication failed: %v", err)
 	}
 	log.Infof("val is %v", value)
