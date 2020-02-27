@@ -8,7 +8,7 @@ import (
 
 var (
 	homeDir, _ = os.Getwd()
-	assetCmd = &cobra.Command{
+	assetCmd   = &cobra.Command{
 		Use: "asset",
 	}
 )
@@ -17,5 +17,6 @@ var (
 func Cmd() *cobra.Command {
 	assetCmd.AddCommand(issueCmd)
 	assetCmd.AddCommand(transferCmd)
+	// todo:@zhq, i have no instruction to know how many assets that i have.
 	return assetCmd
 }

@@ -3,18 +3,19 @@ package asset
 import (
 	"encoding/json"
 	"errors"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"madledger/blockchain/asset"
 	"madledger/client/lib"
 	"madledger/client/util"
 	"madledger/common"
 	coreTypes "madledger/core"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
 	transferCmd = &cobra.Command{
-		Use:"transfer",
+		Use: "transfer",
 	}
 	transferViper = viper.New()
 )
@@ -23,6 +24,7 @@ func init() {
 	transferCmd.RunE = runTransfer
 	transferCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
 	transferViper.BindPFlag("config", transferCmd.Flags().Lookup("config"))
+	// todo:@zhq, same with issus.
 	transferCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
 	transferViper.BindPFlag("channelID", transferCmd.Flags().Lookup("channelID"))
 	transferCmd.Flags().StringP("value", "v", "0",
@@ -58,7 +60,7 @@ func runTransfer(cmd *cobra.Command, args []string) error {
 	}
 
 	payload, err := json.Marshal(asset.Payload{
-		Action: "transfer",
+		Action:    "transfer",
 		ChannelID: channelID,
 	})
 	if err != nil {
@@ -77,7 +79,6 @@ func runTransfer(cmd *cobra.Command, args []string) error {
 	table.AddRow(status, err)
 
 	table.Render()
-
 
 	return err
 }
