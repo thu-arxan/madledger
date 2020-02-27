@@ -24,8 +24,6 @@ func init() {
 	issueCmd.RunE = runIssue
 	issueCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
 	issueViper.BindPFlag("config", issueCmd.Flags().Lookup("config"))
-	// TODO:@zhq
-	// why we still need channelid because channelID should be _asset?
 	issueCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
 	issueViper.BindPFlag("channelID", issueCmd.Flags().Lookup("channelID"))
 	issueCmd.Flags().StringP("value", "v", "0",
@@ -41,7 +39,6 @@ func runIssue(cmd *cobra.Command, args []string) error {
 	if cfgFile == "" {
 		return errors.New("The config file of client can not be nil")
 	}
-	// TODO: @zhq, if channelID is _asset, we can remove this code
 	channelID := issueViper.GetString("channelID")
 	if channelID == "" {
 		return errors.New("The channelID of tx can not be nil")
