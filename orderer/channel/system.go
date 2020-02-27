@@ -129,6 +129,7 @@ func (manager *Manager) issue(senderPKBytes []byte, receiver common.Address, val
 	if value == 0 {
 		return nil
 	}
+	// todo:@zhq, should be log.Debugf or remove this when finished.
 	log.Infof("rec is %v", receiver)
 	receiverAccount, err := manager.db.GetOrCreateAccount(receiver)
 	if err != nil {
