@@ -25,12 +25,16 @@ type DB interface {
 	IsSystemAdmin(member *core.Member) bool
 
 	//IsAccountAdmin return true if pk is the public key of account channel admin
-    IsAccountAdmin(pk crypto.PublicKey) bool
+	IsAccountAdmin(pk crypto.PublicKey) bool
 	//SetAccountAdmin only succeed at the first time it is called
 	SetAccountAdmin(pk crypto.PublicKey) error
 	//GetOrCreateAccount return default account if not exist
 	GetOrCreateAccount(address common.Address) (common.Account, error)
 	UpdateAccounts(accounts ...common.Account) error
+	// todo:@zhq, i see these two functions want to support _asset?
+	// But we can not know tx result from these two functions.
+	// So you can change these two functions to GetTxStatus and SetTxStatus as peer db.
+	// What's more, you should conside if your operatation if atomic? I think it is not atomic.
 	IsTxExecute(txid string) bool
 	SetTxExecute(txid string) error
 }

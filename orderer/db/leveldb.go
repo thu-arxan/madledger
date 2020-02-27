@@ -242,12 +242,13 @@ func getSystemAdminKey() []byte {
 	return []byte(fmt.Sprintf("%s$admin", core.CONFIGCHANNELID))
 }
 
+// todo: @zhq, format check is not passed, also GetOrCreateAccount&UpdateAccounts&... functions.
 //todo: ab can the setting of admin of account channel different from other channels(through config channel)
 func (db *LevelDB) IsAccountAdmin(pk crypto.PublicKey) bool {
 	var key = []byte("_account_admin")
 	admin, err := db.connect.Get(key, nil)
 	if err != nil {
-		return false;
+		return false
 	}
 	pkBytes, err := pk.Bytes()
 	if err != nil {
@@ -257,7 +258,7 @@ func (db *LevelDB) IsAccountAdmin(pk crypto.PublicKey) bool {
 }
 
 //SetAccountAdmin only succeed at the first time it is called
-func(db *LevelDB) SetAccountAdmin(pk crypto.PublicKey) error {
+func (db *LevelDB) SetAccountAdmin(pk crypto.PublicKey) error {
 	var key = []byte("_account_admin")
 	exists, _ := db.connect.Has(key, nil)
 	if exists {

@@ -67,7 +67,7 @@ func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus,
 			return &status, errors.New("The client is not system admin and can't config the cluster")
 		}
 	}
-	// todo:@zhq, where did you support _asset?
+
 	err = s.cc.AddTx(tx)
 	return &status, err
 }

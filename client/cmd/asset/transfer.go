@@ -24,7 +24,7 @@ func init() {
 	transferCmd.RunE = runTransfer
 	transferCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
 	transferViper.BindPFlag("config", transferCmd.Flags().Lookup("config"))
-	// todo:@zhq, same with issus.
+	// todo:@zhq, same with issue.
 	transferCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
 	transferViper.BindPFlag("channelID", transferCmd.Flags().Lookup("channelID"))
 	transferCmd.Flags().StringP("value", "v", "0",
