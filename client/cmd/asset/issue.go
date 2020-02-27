@@ -39,10 +39,9 @@ func runIssue(cmd *cobra.Command, args []string) error {
 	if cfgFile == "" {
 		return errors.New("The config file of client can not be nil")
 	}
+
+	//channelID can be empty
 	channelID := issueViper.GetString("channelID")
-	if channelID == "" {
-		return errors.New("The channelID of tx can not be nil")
-	}
 
 	value := issueViper.GetInt("value")
 	if value < 0 {

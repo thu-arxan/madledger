@@ -243,7 +243,7 @@ func getSystemAdminKey() []byte {
 }
 
 // IsAssetAdmin determines whether input pk belonged to account that has the right to issue
-func (db *LevelDB) IsAccountAdmin(pk crypto.PublicKey) bool {
+func (db *LevelDB) IsAssetAdmin(pk crypto.PublicKey) bool {
 	var key = []byte("_account_admin")
 	admin, err := db.connect.Get(key, nil)
 	if err != nil {
@@ -257,7 +257,7 @@ func (db *LevelDB) IsAccountAdmin(pk crypto.PublicKey) bool {
 }
 
 // SetAccountAdmin only succeed at the first time it is called
-func (db *LevelDB) SetAccountAdmin(pk crypto.PublicKey) error {
+func (db *LevelDB) SetAssetAdmin(pk crypto.PublicKey) error {
 	var key = []byte("_account_admin")
 	exists, _ := db.connect.Has(key, nil)
 	if exists {

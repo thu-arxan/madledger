@@ -40,10 +40,8 @@ func runTransfer(cmd *cobra.Command, args []string) error {
 		return errors.New("The config file of client can not be nil")
 	}
 
+	//channelID can be empty
 	channelID := transferViper.GetString("channelID")
-	if channelID == "" {
-		return errors.New("The channelID of tx can not be nil")
-	}
 
 	value := transferViper.GetInt("value")
 	if value < 0 {
