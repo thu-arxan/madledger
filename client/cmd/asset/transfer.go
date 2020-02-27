@@ -26,11 +26,9 @@ func init() {
 	transferViper.BindPFlag("config", transferCmd.Flags().Lookup("config"))
 	transferCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
 	transferViper.BindPFlag("channelID", transferCmd.Flags().Lookup("channelID"))
-	transferCmd.Flags().StringP("value", "v", "0",
-		"value to be transfered")
+	transferCmd.Flags().StringP("value", "v", "0", "value to be transfered")
 	transferViper.BindPFlag("value", transferCmd.Flags().Lookup("value"))
-	transferCmd.Flags().StringP("address", "a", "0",
-		"receiver's hex address to be transfered")
+	transferCmd.Flags().StringP("address", "a", "0", "receiver's hex address to be transfered")
 	transferViper.BindPFlag("address", transferCmd.Flags().Lookup("address"))
 }
 
