@@ -26,7 +26,7 @@ type LevelDB struct {
 	dir     string
 	connect *leveldb.DB
 	lock    sync.Mutex
-	hub     *Hub
+	hub     *util.Hub
 }
 
 var (
@@ -42,7 +42,7 @@ func NewLevelDB(dir string) (DB, error) {
 		return nil, err
 	}
 	db.connect = connect
-	db.hub = NewHub()
+	db.hub = util.NewHub()
 	return db, nil
 }
 
@@ -120,7 +120,7 @@ func (db *LevelDB) GetTxStatusAsync(channelID, txID string) (*TxStatus, error) {
 		}
 		return &status, nil
 	}
-	status := db.hub.Watch(txID, func() { db.lock.Unlock() })
+	status := db.hub.Watch(txID, func() { db.lock.Unlock() }).(*TxStatus)
 	return status, nil
 }
 

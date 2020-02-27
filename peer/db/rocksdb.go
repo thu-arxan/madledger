@@ -21,7 +21,7 @@ type RocksDB struct {
 	dir string
 
 	lock sync.Mutex
-	hub  *Hub
+	hub  *util.Hub
 
 	connect      *gorocksdb.DB
 	ro           *gorocksdb.ReadOptions
@@ -65,7 +65,7 @@ func NewRocksDB(dir string) (DB, error) {
 	db.ro = ro
 	db.wo = wo
 
-	db.hub = NewHub()
+	db.hub = util.NewHub()
 	return db, nil
 }
 
@@ -153,7 +153,7 @@ func (db *RocksDB) GetTxStatusAsync(channelID, txID string) (*TxStatus, error) {
 			}
 			return &status, nil
 		}
-		status := db.hub.Watch(txID, func() {})
+		status := db.hub.Watch(txID, func() {}).(*TxStatus)
 		return status, nil
 	}
 	return nil, err
