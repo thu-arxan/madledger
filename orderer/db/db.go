@@ -7,6 +7,17 @@ import (
 	"madledger/core"
 )
 
+// TxStatus ...
+type TxStatus struct {
+	Executed bool
+}
+
+// WriteBatch ...
+type WriteBatch interface {
+	SetTxStatus(tx *core.Tx, status *TxStatus) error
+	Sync() error
+}
+
 // DB is the interface of db, and it is the implementation of DB on orderer/.tendermint/.glue
 type DB interface {
 	ListChannel() []string
@@ -31,10 +42,7 @@ type DB interface {
 	//GetOrCreateAccount return default account if not exist
 	GetOrCreateAccount(address common.Address) (common.Account, error)
 	UpdateAccounts(accounts ...common.Account) error
-	// todo:@zhq, i see these two functions want to support _asset?
-	// But we can not know tx result from these two functions.
-	// So you can change these two functions to GetTxStatus and SetTxStatus as peer db.
-	// What's more, you should conside if your operatation if atomic? I think it is not atomic.
-	IsTxExecute(txid string) bool
-	SetTxExecute(txid string) error
+
+	NewWriteBatch() WriteBatch
+	GetTxStatus(channelID, txID string) (*TxStatus, error)
 }

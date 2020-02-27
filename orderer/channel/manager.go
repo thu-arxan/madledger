@@ -171,7 +171,7 @@ func (manager *Manager) AddTx(tx *core.Tx) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// Note: The reason why we must do this is because we must make sure we return the result after we store the block
 	// However, we may find a better way to do this if we allow there are more interactive between the consensus and orderer.
 	result := manager.hub.Watch(util.Hex(tx.Hash()), nil)
@@ -180,8 +180,14 @@ func (manager *Manager) AddTx(tx *core.Tx) error {
 		return result.Err
 	}
 
-	if tx.Data.ChannelID == "_asset" && !manager.db.IsTxExecute(tx.ID) {
-		return errors.New("tx failed to execute due to overflow")
+	if tx.Data.ChannelID == "_asset" {
+		status, err := manager.db.GetTxStatus(tx.Data.ChannelID, tx.ID)
+		if err != nil {
+			return err
+		}
+		if !status.Executed {
+			return errors.New("tx failed to execute due to overflow")
+		}
 	}
 	return nil
 }
@@ -208,7 +214,7 @@ func (manager *Manager) IsSystemAdmin(member *core.Member) bool {
 
 // GetAccount return requested account
 func (manager *Manager) GetAccount(address common.Address) (common.Account, error) {
-	return manager.db .GetOrCreateAccount(address)
+	return manager.db.GetOrCreateAccount(address)
 }
 
 // FetchBlockAsync will fetch book async.
