@@ -315,6 +315,7 @@ func (db *LevelDB) SetTxExecute(txid string) error {
 	return db.connect.Put(key, []byte("ok"), nil)
 }
 
+// todo:@zhq, should be getAssetKey because channle is _asset other than _account?
 func getAccountKey(address common.Address) []byte {
 	return []byte(fmt.Sprintf("%s@%s", core.ASSETCHANNELID, address.String()))
 }
