@@ -76,22 +76,34 @@ func (m *ChannelManager) GetTxHistory(address []byte) map[string][]string {
 }
 
 func (m *ChannelManager) start() error {
+	updateCh := m.coordinator.RegisterUpdate()
 	go m.GlobalChannel.Start()
 	go m.ConfigChannel.Start()
 	go func() {
-		// todo: set by channel
-		ticker := time.NewTicker(500 * time.Millisecond)
-		defer ticker.Stop()
+		channels := m.db.GetChannels()
+		for _, channel := range channels {
+			switch channel {
+			case core.GLOBALCHANNELID, core.CONFIGCHANNELID:
+			default:
+				if !m.hasChannel(channel) {
+					manager, err := m.loadChannel(channel)
+					if err == nil {
+						go manager.Start()
+					}
+				}
+			}
+		}
 		for {
 			select {
-			case <-ticker.C:
-				channels := m.db.GetChannels()
-				for _, channel := range channels {
-					switch channel {
+			case msg := <-updateCh:
+				// todo: support channel remove.
+				update := msg.(channel.Update)
+				if !update.Remove {
+					switch update.ID {
 					case core.GLOBALCHANNELID, core.CONFIGCHANNELID:
 					default:
-						if !m.hasChannel(channel) {
-							manager, err := m.loadChannel(channel)
+						if !m.hasChannel(update.ID) {
+							manager, err := m.loadChannel(update.ID)
 							if err == nil {
 								go manager.Start()
 							}

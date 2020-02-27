@@ -99,3 +99,15 @@ func (c *Coordinator) Unlocks(nums map[string]uint64) {
 		c.hub.Done(fmt.Sprintf("%s:%d", channel, num), nil)
 	}
 }
+
+// Update is the channel update info
+type Update struct {
+	ID     string
+	Remove bool
+}
+
+// RegisterUpdate register channel update
+func (c *Coordinator) RegisterUpdate() chan interface{} {
+	ch, _ := c.hub.Register("update")
+	return ch
+}
