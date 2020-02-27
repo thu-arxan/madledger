@@ -4,10 +4,11 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"google.golang.org/grpc/credentials"
 	"madledger/peer/config"
 	"madledger/peer/orderer"
 	"net"
+
+	"google.golang.org/grpc/credentials"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -69,7 +70,6 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	return server, nil
 }
 
-// 获取ordererClient数组
 func getOrdererClients(cfg *config.Config) ([]*orderer.Client, error) {
 	// load orderer config
 	ordererCfg, err := cfg.GetOrdererConfig()

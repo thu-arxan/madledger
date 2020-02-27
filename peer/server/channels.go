@@ -17,7 +17,6 @@ type ChannelManager struct {
 	db       db.DB
 	identity *core.Member
 	// Channels manager all user channels
-	// maybe can use sync.Map, but the advantage is not significant
 	Channels map[string]*channel.Manager
 	lock     sync.RWMutex
 	// signalCh receive stop signal
@@ -40,7 +39,6 @@ func NewChannelManager(dbDir string, identity *core.Member, chainCfg *config.Blo
 	m.Channels = make(map[string]*channel.Manager)
 	m.identity = identity
 	// set db
-	// Note: We can set this to RocksDB, however rocksdb is more slow because the poor implementation
 	db, err := newDB(dbDir)
 	if err != nil {
 		return nil, err
@@ -72,9 +70,9 @@ func (m *ChannelManager) GetTxStatus(channelID, txID string, async bool) (*db.Tx
 	return m.db.GetTxStatus(channelID, txID)
 }
 
-// ListTxHistory return all txs of the address
-func (m *ChannelManager) ListTxHistory(address []byte) map[string][]string {
-	return m.db.ListTxHistory(address)
+// GetTxHistory return all txs of the address
+func (m *ChannelManager) GetTxHistory(address []byte) map[string][]string {
+	return m.db.GetTxHistory(address)
 }
 
 func (m *ChannelManager) start() error {

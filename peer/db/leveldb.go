@@ -169,8 +169,8 @@ func (db *LevelDB) GetChannels() []string {
 	return channels
 }
 
-// ListTxHistory is the implementation of interface
-func (db *LevelDB) ListTxHistory(address []byte) map[string][]string {
+// GetTxHistory is the implementation of interface
+func (db *LevelDB) GetTxHistory(address []byte) map[string][]string {
 	var txs = make(map[string][]string)
 	if ok, _ := db.connect.Has(address, nil); ok {
 		value, _ := db.connect.Get(address, nil)

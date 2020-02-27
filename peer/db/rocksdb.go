@@ -202,8 +202,8 @@ func (db *RocksDB) GetChannels() []string {
 	return channels
 }
 
-// ListTxHistory is the implementation of interface
-func (db *RocksDB) ListTxHistory(address []byte) map[string][]string {
+// GetTxHistory is the implementation of interface
+func (db *RocksDB) GetTxHistory(address []byte) map[string][]string {
 	var result = make(map[string][]string)
 	iter := db.connect.NewIteratorCF(db.ro, db.historyCFHdl)
 	defer iter.Close()

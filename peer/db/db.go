@@ -44,7 +44,7 @@ type DB interface {
 	// TODO: This function should in WriteBatch?
 	DeleteChannel(channelID string)
 	GetChannels() []string
-	ListTxHistory(address []byte) map[string][]string
+	GetTxHistory(address []byte) map[string][]string
 	NewWriteBatch() WriteBatch
 	// GetBlock gets block by block.num from db
 	GetBlock(num uint64) (*core.Block, error)
