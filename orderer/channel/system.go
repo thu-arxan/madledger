@@ -2,6 +2,7 @@ package channel
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	ac "madledger/blockchain/asset"
 	cc "madledger/blockchain/config"
@@ -97,6 +98,9 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		//if receiver is not set, issue or transfer money to a channel
 		if receiver == common.ZeroAddress {
 			receiver = common.BytesToAddress([]byte(payload.ChannelID))
+			if receiver == common.ZeroAddress {
+				return errors.New("No specified receiver")
+			}
 		}
 
 		switch payload.Action {
