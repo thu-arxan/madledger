@@ -342,11 +342,11 @@ func TestGetPayload(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, payload, "60fe47b10000000000000000000000000000000000000000000000000000000000000522")
 	_, err = GetPayload("Balance.abi", "set", []string{"1314", "2345"})
-	require.EqualError(t, err, "Except 1 inputs other than 2 inputs")
+	require.EqualError(t, err, "Expect 1 inputs other than 2 inputs")
 	_, err = GetPayload("Balance.abi", "set", []string{})
-	require.EqualError(t, err, "Except 1 inputs other than 0 inputs")
+	require.EqualError(t, err, "Expect 1 inputs other than 0 inputs")
 	_, err = GetPayload("Balance.abi", "set", nil)
-	require.EqualError(t, err, "Except 1 inputs other than 0 inputs")
+	require.EqualError(t, err, "Expect 1 inputs other than 0 inputs")
 	payload, err = GetPayload("Balance.abi", "get", nil)
 	require.NoError(t, err)
 	require.Equal(t, payload, "6d4ce63c")
@@ -354,7 +354,7 @@ func TestGetPayload(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, payload, "6d4ce63c")
 	_, err = GetPayload("Balance.abi", "get", []string{"1"})
-	require.EqualError(t, err, "Except 0 inputs other than 1 inputs")
+	require.EqualError(t, err, "Expect 0 inputs other than 1 inputs")
 }
 
 func hexToBytes(t testing.TB, hexString string) []byte {

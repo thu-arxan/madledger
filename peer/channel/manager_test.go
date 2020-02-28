@@ -203,6 +203,10 @@ func (o *fakeOrderer) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxSt
 	return nil, nil
 }
 
+func (o *fakeOrderer) GetAccountInfo(ctx context.Context, req *pb.GetAccountInfoRequest) (*pb.AccountInfo, error) {
+	return nil, nil
+}
+
 func generateBlocks() {
 	// first generate test blocks
 	testGenesisBlock := core.NewBlock("test", 0, core.GenesisBlockPrevHash, nil)

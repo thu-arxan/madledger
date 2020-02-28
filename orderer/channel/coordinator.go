@@ -18,6 +18,7 @@ import (
 
 	bc "madledger/blockchain/config"
 	gc "madledger/blockchain/global"
+	ac "madledger/blockchain/asset"
 	ct "madledger/consensus/tendermint"
 	pb "madledger/protos"
 )
@@ -35,6 +36,8 @@ type Coordinator struct {
 	GM *Manager
 	// CM is the config channel manager
 	CM *Manager
+	// AM is the asset channel manager
+	AM  *Manager
 
 	Consensus consensus.Consensus
 }
@@ -81,6 +84,8 @@ func (c *Coordinator) Start() error {
 	go c.GM.Start()
 	time.Sleep(100 * time.Millisecond)
 	go c.CM.Start()
+	time.Sleep(100 * time.Millisecond)
+	go c.AM.Start()
 	time.Sleep(100 * time.Millisecond)
 	for _, channelManager := range c.Managers {
 		// 开启manager之前，应该判断manager的init是否为true
@@ -135,6 +140,13 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 				ChannelID: core.CONFIGCHANNELID,
 				BlockSize: c.CM.GetBlockSize(),
 				Identity:  pb.Identity_MEMBER,
+			})
+		}
+		if c.AM != nil {
+			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
+				ChannelID:            core.ASSETCHANNELID,
+				BlockSize:            c.AM.GetBlockSize(),
+				Identity:             pb.Identity_MEMBER,
 			})
 		}
 	}
@@ -201,9 +213,11 @@ func (c *Coordinator) createChannel(tx *core.Tx) error {
 	log.Infof("Create channel %s", channelID)
 	switch channelID {
 	case core.GLOBALCHANNELID:
-		return fmt.Errorf("Channel %s is aleardy exist", channelID)
+		return fmt.Errorf("Channel %s is already exist", channelID)
 	case core.CONFIGCHANNELID:
-		return fmt.Errorf("Channel %s is aleardy exist", channelID)
+		return fmt.Errorf("Channel %s is already exist", channelID)
+	case core.ASSETCHANNELID:
+		return fmt.Errorf("Channel %s is already exist", channelID)
 	default:
 		if !util.IsLegalChannelName(channelID) {
 			return fmt.Errorf("%s is not a legal channel name", channelID)
@@ -233,6 +247,8 @@ func (c *Coordinator) getChannelManager(channelID string) (*Manager, error) {
 		return c.GM, nil
 	case core.CONFIGCHANNELID:
 		return c.CM, nil
+	case core.ASSETCHANNELID:
+		return c.AM, nil
 	default:
 		c.managerLock.RLock()
 		defer c.managerLock.RUnlock()
@@ -252,6 +268,11 @@ func (c *Coordinator) loadSystemChannel() error {
 	if err := c.loadGlobalChannel(); err != nil {
 		return err
 	}
+
+	if err := c.loadAssetChannel(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -321,6 +342,28 @@ func (c *Coordinator) loadGlobalChannel() error {
 	return nil
 }
 
+func (c *Coordinator)loadAssetChannel() error {
+	var err error
+	c.AM, err = NewManager(core.ASSETCHANNELID, c)
+	if err != nil {
+		return err
+	}
+	if !c.AM.HasGenesisBlock() {
+		log.Infof("Creating genesis block of channel _asset")
+		// todo: ab empty payload in asset genesis block?
+		// agb: asset channel genesis block
+		agb, err := ac.CreateGenesisBlock([]*ac.Payload{&ac.Payload{
+		}})
+		if err != nil {
+			return err
+		}
+		err = c.AM.AddBlock(agb)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 // loadUserChannel load all user channels
 func (c *Coordinator) loadUserChannel() error {
 	channels := c.db.ListChannel()
@@ -351,6 +394,7 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 	}
 	channels[core.GLOBALCHANNELID] = defaultCfg
 	channels[core.CONFIGCHANNELID] = defaultCfg
+	channels[core.ASSETCHANNELID] = defaultCfg
 	// set consensus of user channels
 	c.managerLock.RLock()
 	for channelID := range c.Managers {

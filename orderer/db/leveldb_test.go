@@ -107,6 +107,11 @@ func TestIsAdmin(t *testing.T) {
 	require.False(t, db.IsAdmin(core.GLOBALCHANNELID, member))
 }
 
+//todo: ab
+func TestAccountAdmin(t *testing.T) {
+
+}
+
 func TestEnd(t *testing.T) {
 	os.RemoveAll(dir)
 }

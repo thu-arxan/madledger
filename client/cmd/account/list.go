@@ -38,9 +38,14 @@ func runList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	//todo: ab can get other info?
+	info, err := client.GetAccountBalance(address)
+	if err != nil {
+		return err
+	}
 	table := util.NewTable()
-	table.SetHeader("Address")
-	table.AddRow(address.String())
+	table.SetHeader("Address", "balance")
+	table.AddRow(address.String(), info)
 	table.Render()
 
 	return nil

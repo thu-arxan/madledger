@@ -27,6 +27,7 @@ service Orderer{
     rpc ListChannels(ListChannelsRequest) returns(ChannelInfos) {}
     rpc CreateChannel(CreateChannelRequest) returns (ChannelInfo){}
     rpc AddTx(AddTxRequest) returns(TxStatus){}
+    rpc GetAccountInfo(GetAccountInfoRequest) returns (AccountInfo) {}
 }
 
 // However, this is not contains sig now, but this is necessary
@@ -102,3 +103,10 @@ message TxHistory {
     map<string, StringList> Txs = 1;
 }
 
+message GetAccountInfoRequest {
+    bytes Address = 1;
+}
+
+message AccountInfo {
+    uint64 Balance = 1;
+}
