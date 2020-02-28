@@ -83,8 +83,6 @@ func (m *Manager) AddBlock(block *core.Block) error {
 	if err != nil {
 		return err
 	}
-	// Note: PutBlock in writebatch
-	// TODO: Review @zsh
 	switch block.Header.ChannelID {
 	case core.GLOBALCHANNELID:
 		m.AddGlobalBlock(block)

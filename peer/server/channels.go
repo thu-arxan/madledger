@@ -58,25 +58,8 @@ func NewChannelManager(cfg *config.Config) (*ChannelManager, error) {
 		return nil, err
 	}
 	m.coordinator = channel.NewCoordinator()
-	// set global channel manager
-	globalManager, err := channel.NewManager(core.GLOBALCHANNELID, fmt.Sprintf("%s/%s", m.path, core.GLOBALCHANNELID), m.identity, m.db, m.ordererClients, m.coordinator)
-	if err != nil {
+	if err := m.loadChannels(); err != nil {
 		return nil, err
-	}
-	configManager, err := channel.NewManager(core.CONFIGCHANNELID, fmt.Sprintf("%s/%s", m.path, core.CONFIGCHANNELID), m.identity, m.db, m.ordererClients, m.coordinator)
-	if err != nil {
-		return nil, err
-	}
-	m.GlobalChannel = globalManager
-	m.ConfigChannel = configManager
-	for _, channel := range m.db.GetChannels() {
-		switch channel {
-		case core.GLOBALCHANNELID, core.CONFIGCHANNELID:
-		default:
-			if !m.hasChannel(channel) {
-				m.loadChannel(channel)
-			}
-		}
 	}
 	return m, nil
 }
@@ -153,6 +136,29 @@ func (m *ChannelManager) hasChannel(channelID string) bool {
 		return true
 	}
 	return false
+}
+
+// load system channels and user channels
+func (m *ChannelManager) loadChannels() error {
+	// set global channel manager
+	globalManager, err := channel.NewManager(core.GLOBALCHANNELID, fmt.Sprintf("%s/%s", m.path, core.GLOBALCHANNELID), m.identity, m.db, m.ordererClients, m.coordinator)
+	if err != nil {
+		return err
+	}
+	configManager, err := channel.NewManager(core.CONFIGCHANNELID, fmt.Sprintf("%s/%s", m.path, core.CONFIGCHANNELID), m.identity, m.db, m.ordererClients, m.coordinator)
+	if err != nil {
+		return err
+	}
+	m.GlobalChannel = globalManager
+	m.ConfigChannel = configManager
+	for _, channel := range m.db.GetChannels() {
+		switch channel {
+		case core.GLOBALCHANNELID, core.CONFIGCHANNELID:
+		default:
+			m.loadChannel(channel)
+		}
+	}
+	return nil
 }
 
 // loadChannel load a channel
