@@ -23,6 +23,7 @@ var (
 type Manager struct {
 	signalCh chan bool
 	stopCh   chan bool
+
 	identity *core.Member
 	// id is the id of channel
 	id string
@@ -54,7 +55,7 @@ func NewManager(id, dir string, identity *core.Member, db db.DB, clients []*orde
 
 // Start start the manager.
 func (m *Manager) Start() {
-	log.Infof("%s is starting...", m.id)
+	log.Infof("channel %s is starting...", m.id)
 	for {
 		block, err := m.fetchBlock()
 		// fmt.Println("Succeed to fetch block", m.id, ":", block.Header.Number)
@@ -64,7 +65,7 @@ func (m *Manager) Start() {
 			m.stopCh <- true
 			return
 		} else {
-			log.Infof("failed to fetch block: %d, err: %v", m.cm.GetExcept(), err)
+			log.Warnf("failed to fetch block: %d, err: %v", m.cm.GetExcept(), err)
 		}
 	}
 }
