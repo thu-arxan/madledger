@@ -274,16 +274,16 @@ func (db *LevelDB) SetAssetAdmin(pk crypto.PublicKey) error {
 // GetOrCreateAccount return default account if account does not exist in leveldb
 func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, error) {
 	key := getAccountKey(address)
-	var account common.DefaultAccount
+	var account common.Account
 	data, err := db.connect.Get(key, nil)
 	if err != nil {
 		if err != leveldb.ErrNotFound {
-			return nil, err
+			return account, err
 		}
-		return common.NewDefaultAccount(address), nil
+		return *common.NewAccount(address), nil
 	}
 	err = json.Unmarshal(data, &account)
-	return &account, err
+	return account, err
 }
 
 // UpdateAccounts update asset

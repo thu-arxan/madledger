@@ -64,7 +64,7 @@ func (m *Manager) Start() {
 			m.stopCh <- true
 			return
 		} else {
-			log.Infof("failed to fetch block: %d, err: %v", m.cm.GetExcept(), err)
+			log.Infof("failed to fetch block: %d, err: %v", m.cm.GetExpect(), err)
 		}
 	}
 }
@@ -224,7 +224,7 @@ func (m *Manager) fetchBlock() (*core.Block, error) {
 	expect := m.cm.GetExpect()
 	for i := range m.clients {
 		go func(i int) {
-			block, err := m.clients[i].FetchBlock(id, except, true)
+			block, err := m.clients[i].FetchBlock(id, expect, true)
 			lock.RLock()
 			defer lock.RUnlock()
 			if closed {

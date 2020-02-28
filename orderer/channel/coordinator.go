@@ -16,9 +16,9 @@ import (
 	"sync"
 	"time"
 
+	ac "madledger/blockchain/asset"
 	bc "madledger/blockchain/config"
 	gc "madledger/blockchain/global"
-	ac "madledger/blockchain/asset"
 	ct "madledger/consensus/tendermint"
 	pb "madledger/protos"
 )
@@ -37,7 +37,7 @@ type Coordinator struct {
 	// CM is the config channel manager
 	CM *Manager
 	// AM is the asset channel manager
-	AM  *Manager
+	AM *Manager
 
 	Consensus consensus.Consensus
 }
@@ -144,9 +144,9 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 		}
 		if c.AM != nil {
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
-				ChannelID:            core.ASSETCHANNELID,
-				BlockSize:            c.AM.GetBlockSize(),
-				Identity:             pb.Identity_MEMBER,
+				ChannelID: core.ASSETCHANNELID,
+				BlockSize: c.AM.GetBlockSize(),
+				Identity:  pb.Identity_MEMBER,
 			})
 		}
 	}
@@ -342,7 +342,7 @@ func (c *Coordinator) loadGlobalChannel() error {
 	return nil
 }
 
-func (c *Coordinator)loadAssetChannel() error {
+func (c *Coordinator) loadAssetChannel() error {
 	var err error
 	c.AM, err = NewManager(core.ASSETCHANNELID, c)
 	if err != nil {
@@ -352,8 +352,7 @@ func (c *Coordinator)loadAssetChannel() error {
 		log.Infof("Creating genesis block of channel _asset")
 		// todo: ab empty payload in asset genesis block?
 		// agb: asset channel genesis block
-		agb, err := ac.CreateGenesisBlock([]*ac.Payload{&ac.Payload{
-		}})
+		agb, err := ac.CreateGenesisBlock([]*ac.Payload{&ac.Payload{}})
 		if err != nil {
 			return err
 		}
@@ -364,6 +363,7 @@ func (c *Coordinator)loadAssetChannel() error {
 	}
 	return nil
 }
+
 // loadUserChannel load all user channels
 func (c *Coordinator) loadUserChannel() error {
 	channels := c.db.ListChannel()
