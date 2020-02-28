@@ -127,8 +127,8 @@ Channel | TxID
 
 ### 2.1 Orderer
 
-目前，尚不支持分布式的排序节点。  
-但是，通过继承consensus中一致的过程接口，可以实现对Tendermint、PBFT、Bosco、Raft等的支持。
+目前，已经支持了Raft和Tendermint共识算法，分别适用于无拜占庭容错和拜占庭容错的场景。
+为了提高性能和稳定性，代码还在不断的修改中。
 
 ### 2.2 Peer
 
