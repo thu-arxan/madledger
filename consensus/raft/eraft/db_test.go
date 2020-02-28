@@ -1,4 +1,4 @@
-package raft
+package eraft
 
 import (
 	"madledger/common/util"
@@ -6,6 +6,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	testChannel = "_db_test"
 )
 
 func TestDB(t *testing.T) {
@@ -23,20 +27,21 @@ func TestBlock(t *testing.T) {
 	db, err := NewDB(getDBPath())
 	require.NoError(t, err)
 
-	require.Equal(t, uint64(0), db.GetMinBlock())
+	require.Equal(t, uint64(0), db.GetMinBlock(testChannel))
 	blockSize := 100
-	blocks := make([]*HybridBlock, blockSize)
+	blocks := make([]*Block, blockSize)
 	for i := range blocks {
-		blocks[i] = &HybridBlock{
-			Num: uint64(i),
+		blocks[i] = &Block{
+			ChannelID: testChannel,
+			Num:       uint64(i),
 		}
 	}
 
 	for i := range blocks {
-		db.PutBlock(blocks[i])
-		db.SetMinBlock(uint64(i))
+		db.AddBlock(blocks[i])
+		db.SetMinBlock(testChannel, uint64(i))
 	}
-	require.Equal(t, uint64(blockSize-1), db.GetMinBlock())
+	require.Equal(t, uint64(blockSize-1), db.GetMinBlock(testChannel))
 
 	db.Close()
 }
@@ -47,6 +52,6 @@ func TestEnd(t *testing.T) {
 
 func getDBPath() string {
 	gopath := os.Getenv("GOPATH")
-	storePath, _ := util.MakeFileAbs("src/madledger/blockchain/chain/raft/.db", gopath)
+	storePath, _ := util.MakeFileAbs("src/madledger/blockchain/chain/raft/eraft/.db", gopath)
 	return storePath
 }

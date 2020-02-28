@@ -43,7 +43,7 @@ func NewChannelManager(dbDir string, identity *core.Member, chainCfg *config.Blo
 	m.identity = identity
 	// set db
 	// Note: We can set this to RocksDB, however rocksdb is more slow because the poor implementation
-	db, err := db.NewLevelDB(dbDir)
+	db, err := newDB(dbDir)
 	if err != nil {
 		return nil, err
 	}
@@ -89,6 +89,7 @@ func (m *ChannelManager) start() error {
 	go m.ConfigChannel.Start()
 	go m.AccountChannel.Start()
 	go func() {
+		// todo: set by channel
 		ticker := time.NewTicker(500 * time.Millisecond)
 		defer ticker.Stop()
 		for {

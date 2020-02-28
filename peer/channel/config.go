@@ -21,23 +21,28 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 		}
 		payload, err := getConfigPayload(tx)
 		if err == nil {
-			channelID := payload.ChannelID
-			if payload.Profile.Public {
-				m.db.AddChannel(channelID)
-			} else {
-				var remove = true
-				for _, member := range payload.Profile.Members {
-					if member.Equal(m.identity) {
-						m.db.AddChannel(channelID)
-						remove = false
-						break
+			switch len(payload.ChannelID) {
+			case 0:
+				log.Warnf("Fatal error! Nil channel id in config block, num: %d, index: %d", block.GetNumber(), i)
+			default:
+				channelID := payload.ChannelID
+				if payload.Profile.Public {
+					m.db.AddChannel(channelID)
+				} else {
+					var remove = true
+					for _, member := range payload.Profile.Members {
+						if member.Equal(m.identity) {
+							m.db.AddChannel(channelID)
+							remove = false
+							break
+						}
+					}
+					if remove && m.db.BelongChannel(channelID) {
+						m.db.DeleteChannel(channelID)
 					}
 				}
-				if remove && m.db.BelongChannel(channelID) {
-					m.db.DeleteChannel(channelID)
-				}
+				nums[payload.ChannelID] = 0
 			}
-			nums[payload.ChannelID] = 0
 		} else {
 			status.Err = err.Error()
 		}

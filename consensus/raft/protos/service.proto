@@ -6,6 +6,7 @@ package protos;
 message RaftTX {
     bytes Tx = 1;
     uint64 Caller = 2;
+    string Channel = 3;
 }
 
 message None {

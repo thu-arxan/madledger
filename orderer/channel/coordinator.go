@@ -30,7 +30,8 @@ type Coordinator struct {
 
 	lock sync.RWMutex
 	// Channels manager all user channels
-	Managers map[string]*Manager
+	managerLock sync.RWMutex
+	Managers    map[string]*Manager
 	// GM is the global channel manager
 	GM *Manager
 	// CM is the config channel manager
@@ -153,6 +154,9 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
+	c.managerLock.RLock()
+	defer c.managerLock.RUnlock()
+
 	for channel, channelManager := range c.Managers {
 		if channelManager.IsMember(member) {
 			identity := pb.Identity_MEMBER
@@ -187,6 +191,12 @@ func (c *Coordinator) AddTx(tx *core.Tx) error {
 	return channel.AddTx(tx)
 }
 
+func (c *Coordinator) setChannel(channelID string, manager *Manager) {
+	c.managerLock.Lock()
+	defer c.managerLock.Unlock()
+	c.Managers[channelID] = manager
+}
+
 // createChannel try to create a channel
 // However, this should check if the channel exist and should be thread safety.
 func (c *Coordinator) createChannel(tx *core.Tx) error {
@@ -212,9 +222,12 @@ func (c *Coordinator) createChannel(tx *core.Tx) error {
 		if !util.IsLegalChannelName(channelID) {
 			return fmt.Errorf("%s is not a legal channel name", channelID)
 		}
+		c.managerLock.RLock()
 		if util.Contain(c.Managers, channelID) {
-			return fmt.Errorf("Channel %s is already exist", channelID)
+			c.managerLock.RUnlock()
+			return fmt.Errorf("Channel %s is aleardy exist", channelID)
 		}
+		c.managerLock.RUnlock()
 	}
 
 	err = c.CM.AddTx(tx)
@@ -237,8 +250,8 @@ func (c *Coordinator) getChannelManager(channelID string) (*Manager, error) {
 	case core.ASSETCHANNELID:
 		return c.AM, nil
 	default:
-		c.lock.RLock()
-		defer c.lock.RUnlock()
+		c.managerLock.RLock()
+		defer c.managerLock.RUnlock()
 		if util.Contain(c.Managers, channelID) {
 			return c.Managers[channelID], nil
 		}
@@ -360,7 +373,9 @@ func (c *Coordinator) loadUserChannel() error {
 			if err != nil {
 				return err
 			}
+			c.managerLock.Lock()
 			c.Managers[channelID] = manager
+			c.managerLock.Unlock()
 			log.Infof("loadUserChannel: load channel %s from leveldb", channelID)
 		}
 	}
@@ -381,9 +396,11 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 	channels[core.CONFIGCHANNELID] = defaultCfg
 	channels[core.ASSETCHANNELID] = defaultCfg
 	// set consensus of user channels
+	c.managerLock.RLock()
 	for channelID := range c.Managers {
 		channels[channelID] = defaultCfg
 	}
+	c.managerLock.RUnlock()
 	switch cfg.Type {
 	case config.SOLO:
 		consensus, err := solo.NewConsensus(channels)
@@ -392,12 +409,12 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 		}
 		c.Consensus = consensus
 	case config.RAFT:
-		raftConfig, err := getConfig(cfg.Raft.Path, cfg.Raft.ID, cfg.Raft.Nodes, cfg.Raft.Join, cfg.Raft.TLS, c.chainCfg.BatchTimeout, c.chainCfg.BatchSize)
+		raftConfig, err := getConfig(cfg.Raft, c.chainCfg)
 		if err != nil {
 			return err
 		}
 
-		consensus, err := raft.NewConseneus(raftConfig)
+		consensus, err := raft.NewConsensus(channels, raftConfig)
 		if err != nil {
 			return nil
 		}
@@ -423,18 +440,18 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 	return nil
 }
 
-func getConfig(path string, id uint64, peers map[uint64]string, join bool, tlsConfig config.TLSConfig, timeout, maxSize int) (*raft.Config, error) {
+func getConfig(cRaft config.RaftConfig, cChain *config.BlockChainConfig) (*raft.Config, error) {
 	tlsCfg := consensus.TLSConfig{
-		Enable:  tlsConfig.Enable,
-		CA:      tlsConfig.CA,
-		RawCert: tlsConfig.RawCert,
-		Key:     tlsConfig.Key,
-		Pool:    tlsConfig.Pool,
-		Cert:    tlsConfig.Cert,
+		Enable:  cRaft.TLS.Enable,
+		CA:      cRaft.TLS.CA,
+		RawCert: cRaft.TLS.RawCert,
+		Key:     cRaft.TLS.Key,
+		Pool:    cRaft.TLS.Pool,
+		Cert:    cRaft.TLS.Cert,
 	}
-	return raft.NewConfig(path, "localhost", id, peers, join, consensus.Config{
-		Timeout: timeout,
-		MaxSize: maxSize,
+	return raft.NewConfig(cRaft.Path, cRaft.ID, cRaft.Nodes, cRaft.Join, consensus.Config{
+		Timeout: cChain.BatchTimeout,
+		MaxSize: cChain.BatchSize,
 		Resume:  false,
 		Number:  1,
 		TLS:     tlsCfg,

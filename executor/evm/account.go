@@ -7,26 +7,26 @@ import (
 
 // Account is the implemantation of evm.Account, wraps common.Account.
 type Account struct {
-	account common.Account
+	account *common.Account
 }
 
 // NewAccount is the constructor of Account
 // create a default account
 func NewAccount(addr *Address) *Account {
 	return &Account{
-		account: common.NewDefaultAccount(common.BytesToAddress(addr.Bytes())),
+		account: common.NewAccount(common.BytesToAddress(addr.Bytes())),
 	}
 }
 
 // NewAccountFromCommon ...
-func NewAccountFromCommon(acc common.Account) *Account {
+func NewAccountFromCommon(acc *common.Account) *Account {
 	return &Account{
 		account: acc,
 	}
 }
 
 // CommonAccount ...
-func (a *Account) CommonAccount() common.Account {
+func (a *Account) CommonAccount() *common.Account {
 	return a.account
 }
 

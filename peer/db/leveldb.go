@@ -57,13 +57,13 @@ func (db *LevelDB) AccountExist(address common.Address) bool {
 }
 
 // GetAccount returns an account of an address
-func (db *LevelDB) GetAccount(address common.Address) (common.Account, error) {
+func (db *LevelDB) GetAccount(address common.Address) (*common.Account, error) {
 	var key = util.BytesCombine([]byte("account:"), address.Bytes())
 	value, err := db.connect.Get(key, nil)
 	if err != nil {
-		return common.NewDefaultAccount(address), nil
+		return common.NewAccount(address), nil
 	}
-	var account common.DefaultAccount
+	var account common.Account
 	err = json.Unmarshal(value, &account)
 	if err != nil {
 		return nil, err
@@ -222,7 +222,7 @@ type WriteBatchWrapper struct {
 }
 
 // SetAccount is the implementation of interface
-func (wb *WriteBatchWrapper) SetAccount(account common.Account) error {
+func (wb *WriteBatchWrapper) SetAccount(account *common.Account) error {
 	var key = util.BytesCombine([]byte("account:"), account.GetAddress().Bytes())
 	value, err := account.Bytes()
 	if err != nil {

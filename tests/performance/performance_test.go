@@ -2,6 +2,7 @@ package performance
 
 import (
 	"fmt"
+	"log"
 	"madledger/core"
 	"madledger/tests/performance/bft"
 	"os"
@@ -14,6 +15,9 @@ import (
 
 	cutil "madledger/client/util"
 
+	"net/http"
+	_ "net/http/pprof"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,6 +27,12 @@ var (
 	channelSize = 10
 	clientSize  = 200
 )
+
+func init() {
+	go func() {
+		log.Println(http.ListenAndServe("127.0.0.1:6666", nil))
+	}()
+}
 
 func TestInit(t *testing.T) {
 	os.Remove(logPath)
@@ -87,14 +97,20 @@ func TestPerformance(t *testing.T) {
 }
 
 func TestEnd(t *testing.T) {
+	time.Sleep(1 * time.Second)
+	fmt.Println(time.Now(), "end")
 	switch consensus {
 	case "solo":
+		solo.StopOrderers()
+		solo.StopPeers()
 		solo.Clean()
 	case "raft":
+		raft.StopOrderers()
+		raft.StopPeers()
 		raft.Clean()
 	case "bft":
 		bft.Clean()
 	default:
-		panic("Unsupport consensus")
+		panic("Unsupported consensus")
 	}
 }

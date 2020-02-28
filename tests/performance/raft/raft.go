@@ -49,10 +49,12 @@ func StartOrderers() error {
 		}
 		ordererServers = append(ordererServers, ordererServer)
 		go func() {
-			ordererServer.Start()
+			if err := ordererServer.Start(); err != nil {
+				panic("order start failed: " + err.Error())
+			}
 		}()
-		time.Sleep(300 * time.Millisecond)
 	}
+	time.Sleep(500 * time.Millisecond)
 	return nil
 }
 
@@ -73,10 +75,12 @@ func StartPeers(num int) error {
 		}
 		peerServers = append(peerServers, peerServer)
 		go func() {
-			peerServer.Start()
+			if err := peerServer.Start(); err != nil {
+				panic("peer start failed: " + err.Error())
+			}
 		}()
-		time.Sleep(300 * time.Millisecond)
 	}
+	time.Sleep(500 * time.Millisecond)
 	return nil
 }
 

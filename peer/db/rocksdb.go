@@ -1,3 +1,5 @@
+// +build rocksdb
+
 package db
 
 import (
@@ -82,11 +84,11 @@ func (db *RocksDB) AccountExist(address common.Address) bool {
 }
 
 // GetAccount returns an account of an address
-func (db *RocksDB) GetAccount(address common.Address) (common.Account, error) {
+func (db *RocksDB) GetAccount(address common.Address) (*common.Account, error) {
 	var key = address.Bytes()
 	data, err := db.connect.GetCF(db.ro, db.accountCFHdl, key)
 	if err != nil {
-		return common.NewDefaultAccount(address), nil
+		return nil, err
 	}
 	defer data.Free()
 	if data.Size() == 0 {
@@ -268,7 +270,7 @@ type RocksDBWriteBatchWrapper struct {
 }
 
 // SetAccount is the implementation of interface
-func (wb *RocksDBWriteBatchWrapper) SetAccount(account common.Account) error {
+func (wb *RocksDBWriteBatchWrapper) SetAccount(account *common.Account) error {
 	var key = account.GetAddress().Bytes()
 	value, err := account.Bytes()
 	if err != nil {

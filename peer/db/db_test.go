@@ -29,10 +29,6 @@ var (
 )
 
 var (
-	dbConstructFunc = []func(dir string) (DB, error){NewLevelDB, NewRocksDB}
-)
-
-var (
 	tx1, _    = core.NewTx("test", common.ZeroAddress, []byte("1"), 0, "", privKey)
 	tx1Status = &TxStatus{
 		Err:             "",
@@ -79,7 +75,7 @@ func testAccount(t *testing.T) {
 	// But if we GetAccount, we can get the default account
 	account, err := db.GetAccount(address)
 	require.NoError(t, err)
-	defaultAccount := common.NewDefaultAccount(address)
+	defaultAccount := common.NewAccount(address)
 	require.Equal(t, defaultAccount, account)
 	// then set balance and code
 	account.AddBalance(100)
@@ -195,7 +191,7 @@ func testBenchmark(t *testing.T) {
 		return
 	}
 	var size = 10000
-	var accounts = make([]common.Account, size)
+	var accounts = make([]*common.Account, size)
 	for i := 0; i < size; i++ {
 		accounts[i] = newAccount()
 	}
@@ -212,7 +208,7 @@ func testBenchmark(t *testing.T) {
 	begin = time.Now()
 	bytes, _ := accounts[0].Bytes()
 	for i := 0; i < size; i++ {
-		var account common.DefaultAccount
+		var account common.Account
 		json.Unmarshal(bytes, &account)
 	}
 	fmt.Printf("unmarshal %d accounts cost %v\n", size, time.Since(begin))
@@ -229,8 +225,8 @@ func testBenchmark(t *testing.T) {
 	fmt.Printf("get %d accounts cost %v\n", size, time.Since(begin))
 }
 
-func newAccount() common.Account {
+func newAccount() *common.Account {
 	priv, _ := crypto.GeneratePrivateKey()
 	addr, _ := priv.PubKey().Address()
-	return common.NewDefaultAccount(addr)
+	return common.NewAccount(addr)
 }

@@ -3,6 +3,7 @@ package solo
 import (
 	"madledger/common/util"
 	"madledger/consensus"
+	"madledger/core"
 	"sync"
 	"testing"
 
@@ -24,13 +25,13 @@ func TestStart(t *testing.T) {
 
 func TestAddTx(t *testing.T) {
 	var txSize = 1024
-	var txs [][]byte
+	var txs []*core.Tx
 	var success = make(map[string]int)
 	var lock sync.Mutex
 
 	for i := 0; i < txSize; i++ {
 		tx := randomTx()
-		success[string(tx)] = 0
+		success[tx.ID] = 0
 		txs = append(txs, tx)
 	}
 
@@ -42,9 +43,9 @@ func TestAddTx(t *testing.T) {
 			tx := txs[i]
 			go func() {
 				defer wg.Done()
-				if err := sc.AddTx("test", tx); err == nil {
+				if err := sc.AddTx(tx); err == nil {
 					lock.Lock()
-					success[string(tx)]++
+					success[tx.ID]++
 					lock.Unlock()
 				}
 			}()
@@ -62,6 +63,11 @@ func TestEnd(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func randomTx() []byte {
-	return []byte(util.RandomString(32))
+func randomTx() *core.Tx {
+	return &core.Tx{
+		ID: util.RandomString(32),
+		Data: core.TxData{
+			ChannelID: "test",
+		},
+	}
 }
