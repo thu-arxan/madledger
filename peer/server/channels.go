@@ -35,27 +35,39 @@ type ChannelManager struct {
 }
 
 // NewChannelManager is the constructor of ChannelManager
-func NewChannelManager(dbDir string, identity *core.Member, chainCfg *config.BlockChainConfig, ordererClients []*orderer.Client) (*ChannelManager, error) {
+func NewChannelManager(cfg *config.Config) (*ChannelManager, error) {
 	m := new(ChannelManager)
+	var err error
 	m.signalCh = make(chan bool, 1)
 	m.stopCh = make(chan bool, 1)
 	m.Channels = make(map[string]*channel.Manager)
-	m.identity = identity
+	// set identity
+	if m.identity, err = cfg.GetIdentity(); err != nil {
+		return nil, err
+	}
 	// set db
-	db, err := newDB(dbDir)
+	dbCfg, err := cfg.GetDBConfig()
+	if err != nil {
+		return nil, err
+	}
+	db, err := newDB(dbCfg.LevelDB.Dir)
 	if err != nil {
 		return nil, err
 	}
 	m.db = db
-	m.ordererClients = ordererClients
-	m.chainCfg = chainCfg
+	if m.ordererClients, err = getOrdererClients(cfg); err != nil {
+		return nil, err
+	}
+	if m.chainCfg, err = cfg.GetBlockChainConfig(); err != nil {
+		return nil, err
+	}
 	m.coordinator = channel.NewCoordinator()
 	// set global channel manager
-	globalManager, err := channel.NewManager(core.GLOBALCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, core.GLOBALCHANNELID), identity, m.db, ordererClients, m.coordinator)
+	globalManager, err := channel.NewManager(core.GLOBALCHANNELID, fmt.Sprintf("%s/%s", m.chainCfg.Path, core.GLOBALCHANNELID), m.identity, m.db, m.ordererClients, m.coordinator)
 	if err != nil {
 		return nil, err
 	}
-	configManager, err := channel.NewManager(core.CONFIGCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, core.CONFIGCHANNELID), identity, m.db, ordererClients, m.coordinator)
+	configManager, err := channel.NewManager(core.CONFIGCHANNELID, fmt.Sprintf("%s/%s", m.chainCfg.Path, core.CONFIGCHANNELID), m.identity, m.db, m.ordererClients, m.coordinator)
 	if err != nil {
 		return nil, err
 	}

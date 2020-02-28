@@ -7,7 +7,7 @@ import (
 
 // GetTxStatus is the implementation of protos
 func (s *Server) GetTxStatus(ctx context.Context, req *pb.GetTxStatusRequest) (*pb.TxStatus, error) {
-	status, err := s.ChannelManager.GetTxStatus(req.ChannelID, req.TxID, true)
+	status, err := s.cm.GetTxStatus(req.ChannelID, req.TxID, true)
 	log.Debugf("get tx %s status of channel %s", req.TxID, req.ChannelID)
 	if err != nil {
 		return &pb.TxStatus{}, err
@@ -25,7 +25,7 @@ func (s *Server) GetTxStatus(ctx context.Context, req *pb.GetTxStatusRequest) (*
 // ListTxHistory is the implementation of protos
 // TODO: make sure the address is right and with signature
 func (s *Server) ListTxHistory(ctx context.Context, req *pb.ListTxHistoryRequest) (*pb.TxHistory, error) {
-	history := s.ChannelManager.GetTxHistory(req.Address)
+	history := s.cm.GetTxHistory(req.Address)
 	var pbHistory = make(map[string]*pb.StringList)
 	for channelID, ids := range history {
 		value := new(pb.StringList)
