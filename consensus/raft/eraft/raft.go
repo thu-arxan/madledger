@@ -84,7 +84,7 @@ func (r *Raft) Stop() {
 
 // ProposeBlock try to add a block, only leader is recommend to add block, however the etcd raft can not
 // gurantee this, so we are trying our best to forbid follower or candidate adding block, but the fact is
-// the first one trying to add block which num is except can succeed, but it maybe leader very possible.
+// the first one trying to add block which num is expect can succeed, but it maybe leader very possible.
 // And this function should gurantee that return nil if the block is really added(works in the app)
 func (r *Raft) ProposeBlock(block *Block) error {
 	r.lock.Lock()

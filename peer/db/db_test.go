@@ -182,7 +182,7 @@ func testHistory(t *testing.T) {
 	exceptHistory["test"] = append(exceptHistory["test"], txs...)
 	if !reflect.DeepEqual(history, exceptHistory) {
 		fmt.Printf("except %v while get %v", exceptHistory, history)
-		t.Fatal()
+		t.Fatal(err)
 	}
 }
 

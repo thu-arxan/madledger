@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/core"
 	"sort"
@@ -224,6 +225,7 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 	}
 
 	for i, ordererClient := range c.ordererClients {
+		log.Info("add tx begin")
 		_, err = ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
 			Tx: pbTx,
 		})
@@ -240,6 +242,7 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 			}
 		} else {
 			// add tx successfully and exit the loop
+			log.Info("add tx success")
 			break
 		}
 	}
@@ -261,10 +264,44 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 	}
 
 	result, err := collector.Wait()
+
 	if err != nil {
 		return nil, err
 	}
 	return result.(*pb.TxStatus), nil
+}
+
+// AddTx try to add a tx
+// TODO: Support bft
+func (c *Client) AddTxInOrderer(tx *core.Tx) (*pb.TxStatus, error) {
+	pbTx, err := pb.NewTx(tx)
+	if err != nil {
+		return nil, err
+	}
+	var result *pb.TxStatus
+	for i, ordererClient := range c.ordererClients {
+		log.Info("add tx begin")
+		result, err = ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
+			Tx: pbTx,
+		})
+
+		times := i + 1
+		if err != nil {
+			// if the client is not system admin, just exit the loop
+			if strings.Contains(err.Error(), "the client is not system admin and can not update validator") {
+				return nil, err
+			}
+			// try to use other ordererClients until the last one still returns an error
+			if times == len(c.ordererClients) {
+				return nil, err
+			}
+		} else {
+			// add tx successfully and exit the loop
+			log.Info("add tx success")
+			break
+		}
+	}
+	return result, nil
 }
 
 // GetHistory return the history of address
@@ -315,4 +352,25 @@ func membersContain(members []*core.Member, member *core.Member) bool {
 // GetPrivKey return the private key
 func (c *Client) GetPrivKey() crypto.PrivateKey {
 	return c.privKey
+}
+
+func (c *Client) GetAccountBalance(address common.Address) (uint64, error) {
+	var times int
+	var acc *pb.AccountInfo
+	var err error
+	for i, ordererClient := range c.ordererClients {
+		acc, err = ordererClient.GetAccountInfo(context.Background(), &pb.GetAccountInfoRequest{
+			Address: address.Bytes(),
+		})
+		times = i + 1
+		if err != nil {
+			// try to use other ordererClients until the last one still returns an error
+			if times == len(c.ordererClients) {
+				return 0, err
+			}
+		} else {
+			break
+		}
+	}
+	return acc.GetBalance(), nil
 }

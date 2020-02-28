@@ -67,6 +67,19 @@ func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus,
 			return &status, errors.New("The client is not system admin and can't config the cluster")
 		}
 	}
+
 	err = s.cc.AddTx(tx)
 	return &status, err
+}
+
+// GetAccountInfo is the implementation of protos
+func (s *Server) GetAccountInfo(ctx context.Context, req *pb.GetAccountInfoRequest) (*pb.AccountInfo, error) {
+	var info pb.AccountInfo
+	address := common.BytesToAddress(req.Address)
+	account, err := s.cc.AM.GetAccount(address)
+	if err != nil {
+		return &info, err
+	}
+	info.Balance = account.GetBalance()
+	return &info, err
 }

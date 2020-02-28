@@ -110,7 +110,7 @@ func GetPayload(abiFile, funcName string, inputs []string) (string, error) {
 	if _, ok := abiSpec.Functions[funcName]; ok {
 		args := abiSpec.Functions[funcName].Inputs
 		if len(args) != len(inputs) {
-			return "", fmt.Errorf("Except %d inputs other than %d inputs", len(args), len(inputs))
+			return "", fmt.Errorf("Expect %d inputs other than %d inputs", len(args), len(inputs))
 		}
 		var input = funcName + "("
 		var payload []byte
