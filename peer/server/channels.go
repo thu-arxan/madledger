@@ -17,6 +17,7 @@ type ChannelManager struct {
 	lock     sync.RWMutex
 	db       db.DB
 	identity *core.Member
+	path     string
 
 	// signalCh receive stop signal
 	signalCh chan bool
@@ -31,7 +32,6 @@ type ChannelManager struct {
 
 	coordinator    *channel.Coordinator
 	ordererClients []*orderer.Client
-	chainCfg       *config.BlockChainConfig
 }
 
 // NewChannelManager is the constructor of ChannelManager
@@ -46,28 +46,24 @@ func NewChannelManager(cfg *config.Config) (*ChannelManager, error) {
 		return nil, err
 	}
 	// set db
-	dbCfg, err := cfg.GetDBConfig()
-	if err != nil {
-		return nil, err
-	}
-	db, err := newDB(dbCfg.LevelDB.Dir)
+	db, err := newDB(cfg.DB.LevelDB.Dir)
 	if err != nil {
 		return nil, err
 	}
 	m.db = db
+	// set path
+	m.path = cfg.BlockChain.Path
+	// set order clients
 	if m.ordererClients, err = getOrdererClients(cfg); err != nil {
-		return nil, err
-	}
-	if m.chainCfg, err = cfg.GetBlockChainConfig(); err != nil {
 		return nil, err
 	}
 	m.coordinator = channel.NewCoordinator()
 	// set global channel manager
-	globalManager, err := channel.NewManager(core.GLOBALCHANNELID, fmt.Sprintf("%s/%s", m.chainCfg.Path, core.GLOBALCHANNELID), m.identity, m.db, m.ordererClients, m.coordinator)
+	globalManager, err := channel.NewManager(core.GLOBALCHANNELID, fmt.Sprintf("%s/%s", m.path, core.GLOBALCHANNELID), m.identity, m.db, m.ordererClients, m.coordinator)
 	if err != nil {
 		return nil, err
 	}
-	configManager, err := channel.NewManager(core.CONFIGCHANNELID, fmt.Sprintf("%s/%s", m.chainCfg.Path, core.CONFIGCHANNELID), m.identity, m.db, m.ordererClients, m.coordinator)
+	configManager, err := channel.NewManager(core.CONFIGCHANNELID, fmt.Sprintf("%s/%s", m.path, core.CONFIGCHANNELID), m.identity, m.db, m.ordererClients, m.coordinator)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +162,7 @@ func (m *ChannelManager) loadChannel(channelID string) (*channel.Manager, error)
 	if util.Contain(m.Channels, channelID) {
 		return m.Channels[channelID], nil
 	}
-	manager, err := channel.NewManager(channelID, fmt.Sprintf("%s/%s", m.chainCfg.Path, channelID), m.identity, m.db, m.ordererClients, m.coordinator)
+	manager, err := channel.NewManager(channelID, fmt.Sprintf("%s/%s", m.path, channelID), m.identity, m.db, m.ordererClients, m.coordinator)
 	if err != nil {
 		return nil, err
 	}

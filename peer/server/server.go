@@ -22,7 +22,7 @@ var (
 
 // Server provide the serve of peer
 type Server struct {
-	cfg       *config.ServerConfig
+	cfg       *config.Config
 	rpcServer *grpc.Server
 	cm        *ChannelManager
 }
@@ -30,12 +30,8 @@ type Server struct {
 // NewServer is the constructor of server
 func NewServer(cfg *config.Config) (*Server, error) {
 	server := new(Server)
+	server.cfg = cfg
 	var err error
-	// set config of server
-	server.cfg, err = cfg.GetServerConfig()
-	if err != nil {
-		return nil, err
-	}
 	// set channel manager
 	server.cm, err = NewChannelManager(cfg)
 	if err != nil {
@@ -46,14 +42,10 @@ func NewServer(cfg *config.Config) (*Server, error) {
 }
 
 func getOrdererClients(cfg *config.Config) ([]*orderer.Client, error) {
-	// load orderer config
-	ordererCfg, err := cfg.GetOrdererConfig()
-	if err != nil {
-		return nil, err
-	}
-	var clients = make([]*orderer.Client, len(ordererCfg.Address))
-	for i := range ordererCfg.Address {
-		clients[i], err = orderer.NewClient(ordererCfg.Address[i], cfg)
+	var clients = make([]*orderer.Client, len(cfg.Orderer.Address))
+	var err error
+	for i := range cfg.Orderer.Address {
+		clients[i], err = orderer.NewClient(cfg.Orderer.Address[i], cfg)
 		if err != nil {
 			return nil, err
 		}
