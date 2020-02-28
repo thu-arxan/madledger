@@ -69,7 +69,7 @@ func (a *Account) AddBalance(balance uint64) error {
 
 // SubBalance is the implementation of Account
 func (a *Account) SubBalance(balance uint64) error {
-	if _, overflow := math.SafeSub(a.Balance, balance); !overflow {
+	if _, overflow := math.SafeSub(a.Balance, balance); overflow {
 		return errors.New("Overflow")
 	}
 	a.Balance -= balance
