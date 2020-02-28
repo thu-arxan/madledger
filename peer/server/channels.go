@@ -14,18 +14,21 @@ import (
 
 // ChannelManager manages all the channels
 type ChannelManager struct {
+	lock     sync.RWMutex
 	db       db.DB
 	identity *core.Member
-	// Channels manager all user channels
-	Channels map[string]*channel.Manager
-	lock     sync.RWMutex
+
 	// signalCh receive stop signal
 	signalCh chan bool
 	stopCh   chan bool
+
 	// GlobalChannel is the global channel manager
 	GlobalChannel *channel.Manager
 	// ConfigChannel is the config channel manager
-	ConfigChannel  *channel.Manager
+	ConfigChannel *channel.Manager
+	// Channels manager all user channels
+	Channels map[string]*channel.Manager
+
 	coordinator    *channel.Coordinator
 	ordererClients []*orderer.Client
 	chainCfg       *config.BlockChainConfig
@@ -58,7 +61,15 @@ func NewChannelManager(dbDir string, identity *core.Member, chainCfg *config.Blo
 	}
 	m.GlobalChannel = globalManager
 	m.ConfigChannel = configManager
-
+	for _, channel := range m.db.GetChannels() {
+		switch channel {
+		case core.GLOBALCHANNELID, core.CONFIGCHANNELID:
+		default:
+			if !m.hasChannel(channel) {
+				m.loadChannel(channel)
+			}
+		}
+	}
 	return m, nil
 }
 
@@ -79,20 +90,10 @@ func (m *ChannelManager) start() error {
 	updateCh := m.coordinator.RegisterUpdate()
 	go m.GlobalChannel.Start()
 	go m.ConfigChannel.Start()
+	for _, manage := range m.Channels {
+		go manage.Start()
+	}
 	go func() {
-		channels := m.db.GetChannels()
-		for _, channel := range channels {
-			switch channel {
-			case core.GLOBALCHANNELID, core.CONFIGCHANNELID:
-			default:
-				if !m.hasChannel(channel) {
-					manager, err := m.loadChannel(channel)
-					if err == nil {
-						go manager.Start()
-					}
-				}
-			}
-		}
 		for {
 			select {
 			case msg := <-updateCh:
