@@ -27,7 +27,7 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 			default:
 				channelID := payload.ChannelID
 				if payload.Profile.Public {
-					m.db.AddChannel(channelID)
+					wb.AddChannel(channelID)
 					m.coordinator.hub.Broadcast("update", Update{
 						ID:     channelID,
 						Remove: false,
@@ -36,7 +36,7 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 					var remove = true
 					for _, member := range payload.Profile.Members {
 						if member.Equal(m.identity) {
-							m.db.AddChannel(channelID)
+							wb.AddChannel(channelID)
 							m.coordinator.hub.Broadcast("update", Update{
 								ID:     channelID,
 								Remove: false,
@@ -46,7 +46,7 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 						}
 					}
 					if remove && m.db.BelongChannel(channelID) {
-						m.db.DeleteChannel(channelID)
+						wb.DeleteChannel(channelID)
 						m.coordinator.hub.Broadcast("update", Update{
 							ID:     channelID,
 							Remove: true,

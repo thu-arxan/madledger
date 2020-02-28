@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"madledger/common"
+	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/core"
 	"os"
@@ -92,9 +93,9 @@ func (db *RocksDB) GetAccount(address common.Address) (*common.Account, error) {
 	}
 	defer data.Free()
 	if data.Size() == 0 {
-		return common.NewDefaultAccount(address), nil
+		return common.NewAccount(address), nil
 	}
-	var account common.DefaultAccount
+	var account common.Account
 	err = json.Unmarshal(data.Data(), &account)
 	if err != nil {
 		return nil, err
@@ -168,27 +169,6 @@ func (db *RocksDB) BelongChannel(channelID string) bool {
 	return false
 }
 
-// AddChannel is the implementation of interface
-func (db *RocksDB) AddChannel(channelID string) {
-	channels := db.GetChannels()
-	if !util.Contain(channels, channelID) {
-		channels = append(channels, channelID)
-	}
-	db.setChannels(channels)
-}
-
-// DeleteChannel is the implementation of interface
-func (db *RocksDB) DeleteChannel(channelID string) {
-	oldChannels := db.GetChannels()
-	var newChannels []string
-	for i := range oldChannels {
-		if channelID != oldChannels[i] {
-			newChannels = append(newChannels, oldChannels[i])
-		}
-	}
-	db.setChannels(newChannels)
-}
-
 // GetChannels is the implementation of interface
 func (db *RocksDB) GetChannels() []string {
 	var channels []string
@@ -227,12 +207,6 @@ func (db *RocksDB) GetTxHistory(address []byte) map[string][]string {
 	return result
 }
 
-func (db *RocksDB) setChannels(channels []string) {
-	var key = []byte("channels")
-	value, _ := json.Marshal(channels)
-	db.connect.Put(db.wo, key, value)
-}
-
 // GetBlock gets block by block.num from db
 func (db *RocksDB) GetBlock(num uint64) (*core.Block, error) {
 	key := fmt.Sprintf("bc_data_%d", num)
@@ -267,6 +241,7 @@ type RocksDBWriteBatchWrapper struct {
 	db    *RocksDB
 
 	histories map[string][]string
+	channels  []string
 }
 
 // SetAccount is the implementation of interface
@@ -365,7 +340,40 @@ func (wb *RocksDBWriteBatchWrapper) PutBlock(block *core.Block) error {
 	return nil
 }
 
+// AddChannel is the implementation of interface
+func (wb *RocksDBWriteBatchWrapper) AddChannel(channelID string) {
+	if wb.channels == nil {
+		wb.channels = wb.db.GetChannels()
+	}
+
+	if !util.Contain(wb.channels, channelID) {
+		wb.channels = append(wb.channels, channelID)
+	}
+	wb.updateChannels()
+}
+
+// DeleteChannel is the implementation of interface
+func (wb *RocksDBWriteBatchWrapper) DeleteChannel(channelID string) {
+	if wb.channels == nil {
+		wb.channels = wb.db.GetChannels()
+	}
+	var channels = make([]string, 0)
+	for _, channel := range wb.channels {
+		if channelID != channel {
+			channels = append(channels, channel)
+		}
+	}
+	wb.channels = channels
+	wb.updateChannels()
+}
+
 // Sync sync change to db
 func (wb *RocksDBWriteBatchWrapper) Sync() error {
 	return wb.db.connect.Write(wb.db.wo, wb.batch)
+}
+
+func (wb *RocksDBWriteBatchWrapper) updateChannels() {
+	var key = []byte("channels")
+	value, _ := json.Marshal(wb.channels)
+	wb.batch.Put(key, value)
 }
