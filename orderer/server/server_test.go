@@ -62,11 +62,11 @@ func TestListChannelsAtNil(t *testing.T) {
 		PK:     pubKeyBytes,
 	})
 	require.NoError(t, err)
-	require.Len(t, infos.Channels, 2)
+	require.Len(t, infos.Channels, 3)
 
 	for _, channel := range infos.Channels {
 		switch channel.ChannelID {
-		case core.GLOBALCHANNELID, core.CONFIGCHANNELID:
+		case core.GLOBALCHANNELID, core.CONFIGCHANNELID, core.ASSETCHANNELID:
 			require.Equal(t, channel.BlockSize, uint64(1))
 		default:
 			t.Fatal(fmt.Errorf("Unknown channel %s", channel.ChannelID))
@@ -241,7 +241,7 @@ func TestFetchBlockAsync(t *testing.T) {
 		System: true,
 		PK:     pubKeyBytes,
 	})
-	require.Len(t, channelInfos.Channels, 3)
+	require.Len(t, channelInfos.Channels, 4)
 	var globalInfo *pb.ChannelInfo
 	for _, channelInfo := range channelInfos.Channels {
 		if channelInfo.ChannelID == core.GLOBALCHANNELID {
