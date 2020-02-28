@@ -25,7 +25,6 @@ type Server struct {
 	config         *config.ServerConfig
 	rpcServer      *grpc.Server
 	ChannelManager *ChannelManager
-	ordererClients []*orderer.Client
 }
 
 // NewServer is the constructor of server
@@ -62,7 +61,6 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 	server.ChannelManager = channelManager
-	server.ordererClients = ordererClients
 	if err != nil {
 		return nil, err
 	}
