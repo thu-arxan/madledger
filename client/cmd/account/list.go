@@ -38,7 +38,6 @@ func runList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	//todo: ab can get other info?
 	info, err := client.GetAccountBalance(address)
 	if err != nil {
 		return err

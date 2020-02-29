@@ -95,7 +95,6 @@ func (m *ChannelManager) start() error {
 		for {
 			select {
 			case <-ticker.C:
-				//todo: ab add account channel in db
 				channels := m.db.GetChannels()
 				for _, channel := range channels {
 					switch channel {

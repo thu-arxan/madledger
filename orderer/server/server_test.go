@@ -125,6 +125,19 @@ func TestFetchBlockAtNil(t *testing.T) {
 	require.NoError(t, err)
 
 	genesisBlocksHash[core.CONFIGCHANNELID] = typesConfigGenesisBlock.Hash()
+
+	// get genesis block of asset
+	assetGenesisBlock, err := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
+		ChannelID: core.ASSETCHANNELID,
+		Number:    0,
+	})
+	require.NoError(t, err)
+	require.Equal(t, assetGenesisBlock.Header.Number, uint64(0))
+	// set asset genesis block hash
+	typesAssetGenesisBlock, err := configGenesisBlock.ToCore()
+	require.NoError(t, err)
+
+	genesisBlocksHash[core.ASSETCHANNELID] = typesAssetGenesisBlock.Hash()
 	server.Stop()
 }
 
