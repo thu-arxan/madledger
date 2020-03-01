@@ -193,7 +193,7 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 		ChannelID: core.ASSETCHANNELID,
 		Number:    0,
 	})
-	typesAssetGenesisBlock, _ := configGenesisBlock.ToCore()
+	typesAssetGenesisBlock, _ := assetGenesisBlock.ToCore()
 	if !reflect.DeepEqual(typesAssetGenesisBlock.Hash().Bytes(), genesisBlocksHash[core.ASSETCHANNELID].Bytes()) {
 		t.Fatal()
 	}
