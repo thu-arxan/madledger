@@ -350,7 +350,6 @@ func (c *Coordinator) loadAssetChannel() error {
 	}
 	if !c.AM.HasGenesisBlock() {
 		log.Infof("Creating genesis block of channel _asset")
-		// todo: ab empty payload in asset genesis block?
 		// agb: asset channel genesis block
 		agb, err := ac.CreateGenesisBlock([]*ac.Payload{&ac.Payload{}})
 		if err != nil {
