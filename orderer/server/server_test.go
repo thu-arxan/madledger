@@ -188,6 +188,15 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 	if !reflect.DeepEqual(typesConfigGenesisBlock.Hash().Bytes(), genesisBlocksHash[core.CONFIGCHANNELID].Bytes()) {
 		t.Fatal()
 	}
+	// compare asset genesis block
+	assetGenesisBlock, _ := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
+		ChannelID: core.ASSETCHANNELID,
+		Number:    0,
+	})
+	typesAssetGenesisBlock, _ := configGenesisBlock.ToCore()
+	if !reflect.DeepEqual(typesAssetGenesisBlock.Hash().Bytes(), genesisBlocksHash[core.ASSETCHANNELID].Bytes()) {
+		t.Fatal()
+	}
 	server.Stop()
 	// initTestEnvironment(".data1")
 }
@@ -266,6 +275,8 @@ func TestFetchBlockAsync(t *testing.T) {
 			globalInfo = channelInfo
 			require.Equal(t, globalInfo.Identity, pb.Identity_MEMBER)
 		case core.CONFIGCHANNELID:
+			require.Equal(t, channelInfo.Identity, pb.Identity_MEMBER)
+		case core.ASSETCHANNELID:
 			require.Equal(t, channelInfo.Identity, pb.Identity_MEMBER)
 		case "test":
 			require.Equal(t, channelInfo.Identity, pb.Identity_ADMIN)
