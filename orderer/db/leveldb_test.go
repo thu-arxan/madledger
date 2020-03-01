@@ -127,8 +127,7 @@ func TestAssetAdmin(t *testing.T) {
 }
 
 func TestAccount(t *testing.T) {
-	address, err := common.AddressFromHexString("12345678")
-	require.NoError(t, err)
+	address := common.BytesToAddress([]byte("12345678"))
 	account, err := db.GetOrCreateAccount(address)
 	require.NoError(t, err)
 	require.Equal(t, account.GetBalance(), 0)
