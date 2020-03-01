@@ -134,7 +134,7 @@ func TestFetchBlockAtNil(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, assetGenesisBlock.Header.Number, uint64(0))
 	// set asset genesis block hash
-	typesAssetGenesisBlock, err := configGenesisBlock.ToCore()
+	typesAssetGenesisBlock, err := assetGenesisBlock.ToCore()
 	require.NoError(t, err)
 
 	genesisBlocksHash[core.ASSETCHANNELID] = typesAssetGenesisBlock.Hash()
