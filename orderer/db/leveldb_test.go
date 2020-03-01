@@ -77,6 +77,18 @@ func TestUpdateChannel(t *testing.T) {
 	if !util.Contain(channels, "test") {
 		t.Fatal(errors.New("Channel test is not contained"))
 	}
+
+	// add _asset
+	err = db.UpdateChannel("_asset", &cc.Profile{
+		Public: true,
+	})
+	require.NoError(t, err)
+
+	channels = db.ListChannel()
+	require.Len(t, channels, 4)
+	if !util.Contain(channels, "_asset") {
+		t.Fatal(errors.New("Channel _global is not contained"))
+	}
 }
 
 func TestAddBlock(t *testing.T) {
@@ -107,8 +119,24 @@ func TestIsAdmin(t *testing.T) {
 	require.False(t, db.IsAdmin(core.GLOBALCHANNELID, member))
 }
 
-//todo: ab
-func TestAccountAdmin(t *testing.T) {
+func TestAssetAdmin(t *testing.T) {
+	require.False(t, db.IsAssetAdmin(privKey.PubKey()))
+	err := db.SetAssetAdmin(privKey.PubKey())
+	require.NoError(t, err)
+	require.True(t, db.IsAssetAdmin(privKey.PubKey()))
+}
+
+func TestAccount(t *testing.T) {
+	address, err := common.AddressFromHexString("12345678")
+	require.NoError(t, err)
+	account, err := db.GetOrCreateAccount(address)
+	require.NoError(t, err)
+	require.Equal(t, account.GetBalance(), 0)
+	require.NoError(t, account.AddBalance(10))
+	require.NoError(t, db.UpdateAccounts(account))
+	account, err = db.GetOrCreateAccount(address)
+	require.NoError(t, err)
+	require.Equal(t, account.GetBalance(), 10)
 
 }
 
