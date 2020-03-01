@@ -127,8 +127,39 @@ Channel | TxID
 
 #### 1.5.1 issue
 
+对某账户发行一定货币
+client asset issue -c [client配置文件] -n [channelID] -v [发行金额] -a [发行地址]
+
+```bash
+client asset issue -c client.yaml -n _asset -v 100 -a 0xb65127172831e8e66a3f8310ea83d2eda1fcefc5
+```
+
+得到的结果可能如下
+status |error|
+| ----   |---|
+ok|nil|
+或者
+status |error|
+| ----   |---|
+err|具体的问题描述|
+
 #### 1.5.2 transfer
 
+向某账户转账
+client asset transfer -c [client配置文件] -n [channelID] -v [转账金额] -a [转账地址]
+
+```bash
+client asset transfer -c client.yaml -n _asset -v 100 -a 0xb65127172831e8e66a3f8310ea83d2eda1fcefc5
+```
+
+得到的结果可能如下
+status |error|
+| ----   |---|
+ok|nil|
+或者
+status |error|
+| ----   |---|
+err|具体的问题描述|
 
 ## 2 分布式
 
