@@ -130,12 +130,12 @@ func TestAccount(t *testing.T) {
 	address := common.BytesToAddress([]byte("12345678"))
 	account, err := db.GetOrCreateAccount(address)
 	require.NoError(t, err)
-	require.Equal(t, account.GetBalance(), 0)
+	require.Equal(t, account.GetBalance(), uint64(0))
 	require.NoError(t, account.AddBalance(10))
 	require.NoError(t, db.UpdateAccounts(account))
 	account, err = db.GetOrCreateAccount(address)
 	require.NoError(t, err)
-	require.Equal(t, account.GetBalance(), 10)
+	require.Equal(t, account.GetBalance(), uint64(10))
 
 }
 
