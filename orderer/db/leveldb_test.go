@@ -120,19 +120,23 @@ func TestIsAdmin(t *testing.T) {
 }
 
 func TestAssetAdmin(t *testing.T) {
+	wb := db.NewWriteBatch()
 	require.False(t, db.IsAssetAdmin(privKey.PubKey()))
-	err := db.SetAssetAdmin(privKey.PubKey())
+	err := wb.SetAssetAdmin(privKey.PubKey())
 	require.NoError(t, err)
+	require.NoError(t, wb.Sync())
 	require.True(t, db.IsAssetAdmin(privKey.PubKey()))
 }
 
 func TestAccount(t *testing.T) {
+	wb := db.NewWriteBatch()
 	address := common.BytesToAddress([]byte("12345678"))
 	account, err := db.GetOrCreateAccount(address)
 	require.NoError(t, err)
 	require.Equal(t, account.GetBalance(), uint64(0))
 	require.NoError(t, account.AddBalance(10))
-	require.NoError(t, db.UpdateAccounts(account))
+	require.NoError(t, wb.UpdateAccounts(account))
+	require.NoError(t, wb.Sync())
 	account, err = db.GetOrCreateAccount(address)
 	require.NoError(t, err)
 	require.Equal(t, account.GetBalance(), uint64(10))

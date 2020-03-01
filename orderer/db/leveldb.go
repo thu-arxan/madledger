@@ -257,20 +257,6 @@ func (db *LevelDB) IsAssetAdmin(pk crypto.PublicKey) bool {
 	return reflect.DeepEqual(admin, pkBytes)
 }
 
-// SetAssetAdmin only succeed at the first time it is called
-func (db *LevelDB) SetAssetAdmin(pk crypto.PublicKey) error {
-	var key = []byte("_account_admin")
-	exists, _ := db.connect.Has(key, nil)
-	if exists {
-		return fmt.Errorf("account admin already set")
-	}
-	pkBytes, err := pk.Bytes()
-	if err != nil {
-		return err
-	}
-	return db.connect.Put(key, pkBytes, nil)
-}
-
 // GetOrCreateAccount return default account if account does not exist in leveldb
 func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, error) {
 	key := getAccountKey(address)
@@ -284,20 +270,6 @@ func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, e
 	}
 	err = json.Unmarshal(data, &account)
 	return account, err
-}
-
-// UpdateAccounts update asset
-func (db *LevelDB) UpdateAccounts(accounts ...common.Account) error {
-	wb := &leveldb.Batch{}
-	for _, acc := range accounts {
-		key := getAccountKey(acc.GetAddress())
-		data, err := json.Marshal(acc)
-		if err != nil {
-			return err
-		}
-		wb.Put(key, data)
-	}
-	return db.connect.Write(wb, nil)
 }
 
 func getAccountKey(address common.Address) []byte {
@@ -327,9 +299,8 @@ func (db *LevelDB) GetTxStatus(channelID, txID string) (*TxStatus, error) {
 func (db *LevelDB) NewWriteBatch() WriteBatch {
 	batch := new(leveldb.Batch)
 	return &WriteBatchWrapper{
-		batch:     batch,
-		db:        db,
-		histories: make(map[string]map[string][]string),
+		batch: batch,
+		db:    db,
 	}
 }
 
@@ -337,8 +308,6 @@ func (db *LevelDB) NewWriteBatch() WriteBatch {
 type WriteBatchWrapper struct {
 	batch *leveldb.Batch
 	db    *LevelDB
-
-	histories map[string]map[string][]string
 }
 
 // Sync sync batch to database
@@ -357,5 +326,38 @@ func (wb *WriteBatchWrapper) SetTxStatus(tx *core.Tx, status *TxStatus) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+// UpdateAccounts update asset
+func (wb *WriteBatchWrapper) UpdateAccounts(accounts ...common.Account) error {
+	for _, acc := range accounts {
+		key := getAccountKey(acc.GetAddress())
+		data, err := json.Marshal(acc)
+		if err != nil {
+			return err
+		}
+		wb.Put(key, data)
+	}
+	return nil
+}
+
+// Put put key and value
+func (wb *WriteBatchWrapper) Put(key, value []byte) {
+	wb.batch.Put(key, value)
+}
+
+// SetAssetAdmin only succeed at the first time it is called
+func (wb *WriteBatchWrapper) SetAssetAdmin(pk crypto.PublicKey) error {
+	var key = []byte("_account_admin")
+	exists, _ := wb.db.connect.Has(key, nil)
+	if exists {
+		return fmt.Errorf("account admin already set")
+	}
+	pkBytes, err := pk.Bytes()
+	if err != nil {
+		return err
+	}
+	wb.Put(key, pkBytes)
 	return nil
 }

@@ -107,11 +107,11 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		case "issue":
 			// avoid overflow
 			issueValue := tx.Data.Value
-			err = manager.issue(tx.Data.Sig.PK, receiver, issueValue)
+			err = manager.issue(wb, tx.Data.Sig.PK, receiver, issueValue)
 		case "transfer":
 			// if value < 0, sender get money from receiver ??
 			transferValue := tx.Data.Value
-			err = manager.transfer(sender, receiver, transferValue)
+			err = manager.transfer(wb, sender, receiver, transferValue)
 		}
 
 		if err != nil {
@@ -127,9 +127,9 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 	return nil
 }
 
-func (manager *Manager) issue(senderPKBytes []byte, receiver common.Address, value uint64) error {
+func (manager *Manager) issue(wb db.WriteBatch, senderPKBytes []byte, receiver common.Address, value uint64) error {
 	pk, err := crypto.NewPublicKey(senderPKBytes)
-	if !manager.db.IsAssetAdmin(pk) && manager.db.SetAssetAdmin(pk) != nil {
+	if !manager.db.IsAssetAdmin(pk) && wb.SetAssetAdmin(pk) != nil {
 		return fmt.Errorf("issue authentication failed: %v", err)
 	}
 	if value == 0 {
@@ -144,10 +144,10 @@ func (manager *Manager) issue(senderPKBytes []byte, receiver common.Address, val
 	if err != nil {
 		return nil
 	}
-	return manager.db.UpdateAccounts(receiverAccount)
+	return wb.UpdateAccounts(receiverAccount)
 }
 
-func (manager *Manager) transfer(sender, receiver common.Address, value uint64) error {
+func (manager *Manager) transfer(wb db.WriteBatch, sender, receiver common.Address, value uint64) error {
 
 	if value == 0 {
 		return nil
@@ -167,5 +167,5 @@ func (manager *Manager) transfer(sender, receiver common.Address, value uint64) 
 		return err
 	}
 
-	return manager.db.UpdateAccounts(senderAccount, receiverAccount)
+	return wb.UpdateAccounts(senderAccount, receiverAccount)
 }
