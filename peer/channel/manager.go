@@ -114,7 +114,6 @@ func (m *Manager) AddBlock(block *core.Block) error {
 // RunBlock will carry out all txs in the block.
 // It will return after the block is runned.
 // In the future, this will contains chains which rely on something or nothing
-// TODO: transfer is not implementation yet
 func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 	wb := m.db.NewWriteBatch()
 	context := evm.NewContext(block, m.db, wb)
