@@ -2,7 +2,6 @@ package channel
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	ac "madledger/blockchain/asset"
 	cc "madledger/blockchain/config"
@@ -73,7 +72,7 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 	if block.Header.Number == 0 {
 		return nil
 	}
-	wb := manager.db.NewWriteBatch()
+	cache := NewCache(manager.db)
 	var err error
 
 	for _, tx := range block.Transactions {
@@ -85,13 +84,13 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		err = json.Unmarshal(tx.Data.Payload, &payload)
 		if err != nil {
 			log.Errorf("wrong tx format: %v", err)
-			wb.SetTxStatus(tx, status)
+			cache.SetTxStatus(tx, status)
 			continue
 		}
 		sender, err := tx.GetSender()
 		if err != nil {
 			log.Errorf("wrong sender address %v", sender)
-			wb.SetTxStatus(tx, status)
+			cache.SetTxStatus(tx, status)
 			continue
 		}
 		receiver := tx.GetReceiver()
@@ -99,7 +98,9 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		if receiver == common.ZeroAddress {
 			receiver = common.BytesToAddress([]byte(payload.ChannelID))
 			if receiver == common.ZeroAddress {
-				return errors.New("No specified receiver")
+				log.Errorf("Not specified receiver")
+				cache.SetTxStatus(tx, status)
+				continue
 			}
 		}
 
@@ -107,36 +108,36 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		case "issue":
 			// avoid overflow
 			issueValue := tx.Data.Value
-			err = manager.issue(wb, tx.Data.Sig.PK, receiver, issueValue)
+			err = manager.issue(cache, tx.Data.Sig.PK, receiver, issueValue)
 		case "transfer":
 			// if value < 0, sender get money from receiver ??
 			transferValue := tx.Data.Value
-			err = manager.transfer(wb, sender, receiver, transferValue)
+			err = manager.transfer(cache, sender, receiver, transferValue)
 		}
 
 		if err != nil {
 			// 如果有错误，那么应该在db里加一条key为txid的错误，如果正确，那么key为txid为ok
 			log.Errorf("err when execute account block tx %v : %v", tx, err)
-			wb.SetTxStatus(tx, status)
+			cache.SetTxStatus(tx, status)
 			continue
 		}
 		status.Executed = true
-		wb.SetTxStatus(tx, status)
+		cache.SetTxStatus(tx, status)
 	}
-	wb.Sync()
+	cache.Sync()
 	return nil
 }
 
-func (manager *Manager) issue(wb db.WriteBatch, senderPKBytes []byte, receiver common.Address, value uint64) error {
+func (manager *Manager) issue(cache Cache, senderPKBytes []byte, receiver common.Address, value uint64) error {
 	pk, err := crypto.NewPublicKey(senderPKBytes)
-	if !manager.db.IsAssetAdmin(pk) && wb.SetAssetAdmin(pk) != nil {
+	if !cache.IsAssetAdmin(pk) && cache.SetAssetAdmin(pk) != nil {
 		return fmt.Errorf("issue authentication failed: %v", err)
 	}
 	if value == 0 {
 		return nil
 	}
 
-	receiverAccount, err := manager.db.GetOrCreateAccount(receiver)
+	receiverAccount, err := cache.GetOrCreateAccount(receiver)
 	if err != nil {
 		return nil
 	}
@@ -144,22 +145,22 @@ func (manager *Manager) issue(wb db.WriteBatch, senderPKBytes []byte, receiver c
 	if err != nil {
 		return nil
 	}
-	return wb.UpdateAccounts(receiverAccount)
+	return cache.UpdateAccounts(receiverAccount)
 }
 
-func (manager *Manager) transfer(wb db.WriteBatch, sender, receiver common.Address, value uint64) error {
+func (manager *Manager) transfer(cache Cache, sender, receiver common.Address, value uint64) error {
 
 	if value == 0 {
 		return nil
 	}
-	senderAccount, err := manager.db.GetOrCreateAccount(sender)
+	senderAccount, err := cache.GetOrCreateAccount(sender)
 	if err != nil {
 		return err
 	}
 	if err = senderAccount.SubBalance(value); err != nil {
 		return err
 	}
-	receiverAccount, err := manager.db.GetOrCreateAccount(receiver)
+	receiverAccount, err := cache.GetOrCreateAccount(receiver)
 	if err != nil {
 		return err
 	}
@@ -167,5 +168,5 @@ func (manager *Manager) transfer(wb db.WriteBatch, sender, receiver common.Addre
 		return err
 	}
 
-	return wb.UpdateAccounts(senderAccount, receiverAccount)
+	return cache.UpdateAccounts(senderAccount, receiverAccount)
 }

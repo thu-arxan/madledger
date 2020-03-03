@@ -27,6 +27,7 @@ func testCreateChannel(t *testing.T, client *client.Client, peers []*core.Member
 	}
 	require.Contains(t, channels, core.GLOBALCHANNELID)
 	require.Contains(t, channels, core.CONFIGCHANNELID)
+	require.Contains(t, channels, core.ASSETCHANNELID)
 	require.NotContains(t, channels, "public")
 
 	// then add a channel

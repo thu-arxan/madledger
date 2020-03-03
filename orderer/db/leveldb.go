@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/syndtr/goleveldb/leveldb/opt"
 	cc "madledger/blockchain/config"
 	"madledger/common"
 	"madledger/common/crypto"
@@ -243,38 +244,45 @@ func getSystemAdminKey() []byte {
 	return []byte(fmt.Sprintf("%s$admin", core.CONFIGCHANNELID))
 }
 
+func (db *LevelDB) Get(key []byte) ([]byte, error) {
+	return db.connect.Get(key, nil)
+}
+
+func (db *LevelDB) GetIgnoreNotFound(key []byte) ([]byte, error) {
+	value, err := db.connect.Get(key, nil)
+	if err == leveldb.ErrNotFound {
+		return value, nil
+	}
+	return value, err
+}
+
 // IsAssetAdmin determines whether input pk belonged to account that has the right to issue
-func (db *LevelDB) IsAssetAdmin(pk crypto.PublicKey) bool {
-	var key = []byte("_account_admin")
+func (db *LevelDB) GetAssetAdminPKBytes() []byte {
+	var key = []byte("_asset_admin")
 	admin, err := db.connect.Get(key, nil)
 	if err != nil {
-		return false
+		return nil
 	}
-	pkBytes, err := pk.Bytes()
-	if err != nil {
-		return false
-	}
-	return reflect.DeepEqual(admin, pkBytes)
+	return admin
 }
 
 // GetOrCreateAccount return default account if account does not exist in leveldb
-func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, error) {
-	key := getAccountKey(address)
+func (db *LevelDB) GetOrCreateAccount(addressKey []byte) (common.Account, error) {
 	var account common.Account
-	data, err := db.connect.Get(key, nil)
+	data, err := db.connect.Get(addressKey, nil)
 	if err != nil {
 		if err != leveldb.ErrNotFound {
 			return account, err
 		}
-		return *common.NewAccount(address), nil
+		return common.Account{}, nil
 	}
 	err = json.Unmarshal(data, &account)
 	return account, err
 }
 
-func getAccountKey(address common.Address) []byte {
-	return []byte(fmt.Sprintf("%s@%s", core.ASSETCHANNELID, address.String()))
-}
+//func getAccountKey(address common.Address) []byte {
+//	return []byte(fmt.Sprintf("%s@%s", core.ASSETCHANNELID, address.String()))
+//}
 
 // GetTxStatus is the implementation of interface
 func (db *LevelDB) GetTxStatus(channelID, txID string) (*TxStatus, error) {
@@ -310,6 +318,10 @@ type WriteBatchWrapper struct {
 	db    *LevelDB
 }
 
+// Put put updated value in writebatch
+func (wb *WriteBatchWrapper) Put(key, value []byte) {
+	wb.batch.Put(key, value)
+}
 // Sync sync batch to database
 func (wb *WriteBatchWrapper) Sync() error {
 	return wb.db.connect.Write(wb.batch, nil)
@@ -323,9 +335,6 @@ func (wb *WriteBatchWrapper) SetTxStatus(tx *core.Tx, status *TxStatus) error {
 	}
 	var key = util.BytesCombine([]byte(tx.Data.ChannelID), []byte(tx.ID))
 	wb.batch.Put(key, value)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -340,11 +349,6 @@ func (wb *WriteBatchWrapper) UpdateAccounts(accounts ...common.Account) error {
 		wb.Put(key, data)
 	}
 	return nil
-}
-
-// Put put key and value
-func (wb *WriteBatchWrapper) Put(key, value []byte) {
-	wb.batch.Put(key, value)
 }
 
 // SetAssetAdmin only succeed at the first time it is called

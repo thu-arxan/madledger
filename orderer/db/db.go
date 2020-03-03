@@ -2,8 +2,6 @@ package db
 
 import (
 	cc "madledger/blockchain/config"
-	"madledger/common"
-	"madledger/common/crypto"
 	"madledger/core"
 )
 
@@ -14,10 +12,11 @@ type TxStatus struct {
 
 // WriteBatch ...
 type WriteBatch interface {
-	SetTxStatus(tx *core.Tx, status *TxStatus) error
-	UpdateAccounts(accounts ...common.Account) error
+	//SetTxStatus(tx *core.Tx, status *TxStatus) error
+	//UpdateAccounts(accounts ...common.Account) error
 	//SetAssetAdmin only succeed at the first time it is called
-	SetAssetAdmin(pk crypto.PublicKey) error
+	//SetAssetAdmin(pk crypto.PublicKey) error
+	Put(key, value []byte)
 	Sync() error
 }
 
@@ -38,11 +37,17 @@ type DB interface {
 	UpdateSystemAdmin(profile *cc.Profile) error
 	IsSystemAdmin(member *core.Member) bool
 
+	//Get gets value of key
+	Get(key []byte) ([]byte, error)
+	//GetIgnoreNotFound ignores ErrNotFound
+	GetIgnoreNotFound(key []byte) ([]byte, error)
+	//GetAssetAdminPKBytes return nil is not exist
+	//GetAssetAdminPKBytes() []byte
 	//IsAssetAdmin return true if pk is the public key of account channel admin
-	IsAssetAdmin(pk crypto.PublicKey) bool
+	//IsAssetAdmin(pk crypto.PublicKey) bool
 
 	//GetOrCreateAccount return default account if not exist
-	GetOrCreateAccount(address common.Address) (common.Account, error)
+	//GetOrCreateAccount(address common.Address) (common.Account, error)
 
 	NewWriteBatch() WriteBatch
 	GetTxStatus(channelID, txID string) (*TxStatus, error)
