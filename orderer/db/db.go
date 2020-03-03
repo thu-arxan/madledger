@@ -2,6 +2,7 @@ package db
 
 import (
 	cc "madledger/blockchain/config"
+	"madledger/common"
 	"madledger/core"
 )
 
@@ -47,7 +48,7 @@ type DB interface {
 	//IsAssetAdmin(pk crypto.PublicKey) bool
 
 	//GetOrCreateAccount return default account if not exist
-	//GetOrCreateAccount(address common.Address) (common.Account, error)
+	GetOrCreateAccount(address common.Address) (common.Account, error)
 
 	NewWriteBatch() WriteBatch
 	GetTxStatus(channelID, txID string) (*TxStatus, error)

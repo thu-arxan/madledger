@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"madledger/common"
+
 	//"github.com/syndtr/goleveldb/leveldb/opt"
 	cc "madledger/blockchain/config"
 	//"madledger/common"
@@ -266,23 +268,23 @@ func (db *LevelDB) GetIgnoreNotFound(key []byte) ([]byte, error) {
 //	return admin
 //}
 
-// GetOrCreateAccount return default account if account does not exist in leveldb
-//func (db *LevelDB) GetOrCreateAccount(addressKey []byte) (common.Account, error) {
-//	var account common.Account
-//	data, err := db.connect.Get(addressKey, nil)
-//	if err != nil {
-//		if err != leveldb.ErrNotFound {
-//			return account, err
-//		}
-//		return common.Account{}, nil
-//	}
-//	err = json.Unmarshal(data, &account)
-//	return account, err
-//}
+//GetOrCreateAccount return default account if account does not exist in leveldb
+func (db *LevelDB) GetOrCreateAccount(addressKey []byte) (common.Account, error) {
+	var account common.Account
+	data, err := db.connect.Get(addressKey, nil)
+	if err != nil {
+		if err != leveldb.ErrNotFound {
+			return account, err
+		}
+		return common.Account{}, nil
+	}
+	err = json.Unmarshal(data, &account)
+	return account, err
+}
 
-//func getAccountKey(address common.Address) []byte {
-//	return []byte(fmt.Sprintf("%s@%s", core.ASSETCHANNELID, address.String()))
-//}
+func getAccountKey(address common.Address) []byte {
+	return []byte(fmt.Sprintf("%s@%s", core.ASSETCHANNELID, address.String()))
+}
 
 // GetTxStatus is the implementation of interface
 func (db *LevelDB) GetTxStatus(channelID, txID string) (*TxStatus, error) {
