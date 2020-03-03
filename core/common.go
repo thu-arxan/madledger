@@ -11,6 +11,8 @@ const (
 	GLOBALCHANNELID = "_global"
 	// CONFIGCHANNELID is the id of config channel
 	CONFIGCHANNELID = "_config"
+	// ASSETCHANNELID is the id of account channel
+	ASSETCHANNELID = "_asset"
 )
 
 var (
@@ -26,6 +28,7 @@ var (
 	CfgTendermintAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffe")
 	// Config the raft cluster
 	CfgRaftAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffd")
+
 )
 
 // GetTxType return tx type

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"madledger/blockchain"
+	"madledger/common"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
@@ -144,6 +145,8 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		return manager.AddConfigBlock(block)
 	case core.GLOBALCHANNELID:
 		return manager.AddGlobalBlock(block)
+	case core.ASSETCHANNELID:
+		return manager.AddAssetBlock(block)
 	default:
 		return nil
 	}
@@ -151,7 +154,7 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 
 // GetBlockSize return the size of blocks
 func (manager *Manager) GetBlockSize() uint64 {
-	return manager.cm.GetExcept()
+	return manager.cm.GetExpect()
 }
 
 // AddTx try to add a tx
@@ -166,10 +169,24 @@ func (manager *Manager) AddTx(tx *core.Tx) error {
 		return err
 	}
 
+	// err = manager.coordinator.Consensus.AddTx(manager.ID, txBytes)
+	// if err != nil {
+	// 	return err
+	// }
+
 	// Note: The reason why we must do this is because we must make sure we return the result after we store the block
 	// However, we may find a better way to do this if we allow there are more interactive between the consensus and orderer.
 	result := manager.hub.Watch(util.Hex(hash), nil)
 	if result == nil {
+		if tx.Data.ChannelID == "_asset" {
+			status, err := manager.db.GetTxStatus(tx.Data.ChannelID, tx.ID)
+			if err != nil {
+				return err
+			}
+			if !status.Executed {
+				return errors.New("tx failed to execute due to overflow")
+			}
+		}
 		return nil
 	}
 	return result.(*event.Result).Err
@@ -195,10 +212,15 @@ func (manager *Manager) IsSystemAdmin(member *core.Member) bool {
 	return manager.db.IsSystemAdmin(member)
 }
 
+// GetAccount return requested account
+func (manager *Manager) GetAccount(address common.Address) (common.Account, error) {
+	return manager.db.GetOrCreateAccount(address)
+}
+
 // FetchBlockAsync will fetch book async.
 // TODO: fix the thread unsafety
 func (manager *Manager) FetchBlockAsync(num uint64) (*core.Block, error) {
-	if manager.cm.GetExcept() <= num {
+	if manager.cm.GetExpect() <= num {
 		manager.hub.Watch(string(num), nil)
 	}
 

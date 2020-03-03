@@ -65,7 +65,7 @@ func (m *Manager) Start() {
 			m.stopCh <- true
 			return
 		} else {
-			log.Warnf("failed to fetch block: %d, err: %v", m.cm.GetExcept(), err)
+			log.Warnf("failed to fetch block: %d, err: %v", m.cm.GetExpect(), err)
 		}
 	}
 }
@@ -91,6 +91,9 @@ func (m *Manager) AddBlock(block *core.Block) error {
 	case core.CONFIGCHANNELID:
 		m.AddConfigBlock(block)
 		log.Infof("Add config block %d", block.Header.Number)
+	case core.ASSETCHANNELID:
+		m.AddAssetBlock(block)
+		log.Infof("Add account block %d", block.Header.Number)
 	default:
 		if !m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
 			m.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
@@ -217,10 +220,10 @@ func (m *Manager) fetchBlock() (*core.Block, error) {
 	var blocks = make(chan *core.Block, len(m.clients))
 	closed := false
 	id := m.id
-	except := m.cm.GetExcept()
+	expect := m.cm.GetExpect()
 	for i := range m.clients {
 		go func(i int) {
-			block, err := m.clients[i].FetchBlock(id, except, true)
+			block, err := m.clients[i].FetchBlock(id, expect, true)
 			lock.RLock()
 			defer lock.RUnlock()
 			if closed {

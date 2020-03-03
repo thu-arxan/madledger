@@ -29,7 +29,8 @@ type ChannelManager struct {
 	ConfigChannel *channel.Manager
 	// Channels manager all user channels
 	Channels map[string]*channel.Manager
-
+	// AssetChannel is the asset channel manager
+	AssetChannel   *channel.Manager
 	coordinator    *channel.Coordinator
 	ordererClients []*orderer.Client
 }
@@ -61,6 +62,7 @@ func NewChannelManager(cfg *config.Config) (*ChannelManager, error) {
 	if err := m.loadChannels(); err != nil {
 		return nil, err
 	}
+
 	return m, nil
 }
 
@@ -81,9 +83,11 @@ func (m *ChannelManager) start() error {
 	updateCh := m.coordinator.RegisterUpdate()
 	go m.GlobalChannel.Start()
 	go m.ConfigChannel.Start()
+	go m.AssetChannel.Start()
 	for _, manage := range m.Channels {
 		go manage.Start()
 	}
+
 	go func() {
 		for {
 			select {
@@ -92,7 +96,7 @@ func (m *ChannelManager) start() error {
 				update := msg.(channel.Update)
 				if !update.Remove {
 					switch update.ID {
-					case core.GLOBALCHANNELID, core.CONFIGCHANNELID:
+					case core.GLOBALCHANNELID, core.CONFIGCHANNELID, core.ASSETCHANNELID:
 					default:
 						if !m.hasChannel(update.ID) {
 							manager, err := m.loadChannel(update.ID)
@@ -120,6 +124,8 @@ func (m *ChannelManager) stop() {
 	log.Info("GlobalChannel stop")
 	m.ConfigChannel.Stop()
 	log.Info("ConfigChannel stop")
+	m.AssetChannel.Stop()
+	log.Info("AccountChannel stop")
 
 	m.signalCh <- true
 	<-m.stopCh
@@ -149,11 +155,16 @@ func (m *ChannelManager) loadChannels() error {
 	if err != nil {
 		return err
 	}
+	assetManager, err := channel.NewManager(core.ASSETCHANNELID, fmt.Sprintf("%s/%s", m.path, core.ASSETCHANNELID), m.identity, m.db, m.ordererClients, m.coordinator)
+	if err != nil {
+		return err
+	}
 	m.GlobalChannel = globalManager
 	m.ConfigChannel = configManager
+	m.AssetChannel = assetManager
 	for _, channel := range m.db.GetChannels() {
 		switch channel {
-		case core.GLOBALCHANNELID, core.CONFIGCHANNELID:
+		case core.GLOBALCHANNELID, core.CONFIGCHANNELID, core.ASSETCHANNELID:
 		default:
 			m.loadChannel(channel)
 		}

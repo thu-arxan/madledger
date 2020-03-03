@@ -2,11 +2,15 @@ package db
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	cc "madledger/blockchain/config"
+	"madledger/common"
+	"madledger/common/crypto"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/core"
+	"reflect"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -237,4 +241,121 @@ func getChannelProfileKey(id string) []byte {
 
 func getSystemAdminKey() []byte {
 	return []byte(fmt.Sprintf("%s$admin", core.CONFIGCHANNELID))
+}
+
+// IsAssetAdmin determines whether input pk belonged to account that has the right to issue
+func (db *LevelDB) IsAssetAdmin(pk crypto.PublicKey) bool {
+	var key = []byte("_account_admin")
+	admin, err := db.connect.Get(key, nil)
+	if err != nil {
+		return false
+	}
+	pkBytes, err := pk.Bytes()
+	if err != nil {
+		return false
+	}
+	return reflect.DeepEqual(admin, pkBytes)
+}
+
+// SetAssetAdmin only succeed at the first time it is called
+func (db *LevelDB) SetAssetAdmin(pk crypto.PublicKey) error {
+	var key = []byte("_account_admin")
+	exists, _ := db.connect.Has(key, nil)
+	if exists {
+		return fmt.Errorf("account admin already set")
+	}
+	pkBytes, err := pk.Bytes()
+	if err != nil {
+		return err
+	}
+	return db.connect.Put(key, pkBytes, nil)
+}
+
+// GetOrCreateAccount return default account if account does not exist in leveldb
+func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, error) {
+	key := getAccountKey(address)
+	var account common.Account
+	data, err := db.connect.Get(key, nil)
+	if err != nil {
+		if err != leveldb.ErrNotFound {
+			return account, err
+		}
+		return *common.NewAccount(address), nil
+	}
+	err = json.Unmarshal(data, &account)
+	return account, err
+}
+
+// UpdateAccounts update asset
+func (db *LevelDB) UpdateAccounts(accounts ...common.Account) error {
+	wb := &leveldb.Batch{}
+	for _, acc := range accounts {
+		key := getAccountKey(acc.GetAddress())
+		data, err := json.Marshal(acc)
+		if err != nil {
+			return err
+		}
+		wb.Put(key, data)
+	}
+	return db.connect.Write(wb, nil)
+}
+
+func getAccountKey(address common.Address) []byte {
+	return []byte(fmt.Sprintf("%s@%s", core.ASSETCHANNELID, address.String()))
+}
+
+// GetTxStatus is the implementation of interface
+func (db *LevelDB) GetTxStatus(channelID, txID string) (*TxStatus, error) {
+	var key = util.BytesCombine([]byte(channelID), []byte(txID))
+	// TODO: Read twice is not necessary
+	if ok, _ := db.connect.Has(key, nil); !ok {
+		return nil, errors.New("not exist")
+	}
+	value, err := db.connect.Get(key, nil)
+	if err != nil {
+		return nil, err
+	}
+	var status TxStatus
+	err = json.Unmarshal(value, &status)
+	if err != nil {
+		return nil, err
+	}
+	return &status, nil
+}
+
+// NewWriteBatch implement the interface, WriteBatch is a wrapper of leveldb.Batch
+func (db *LevelDB) NewWriteBatch() WriteBatch {
+	batch := new(leveldb.Batch)
+	return &WriteBatchWrapper{
+		batch:     batch,
+		db:        db,
+		histories: make(map[string]map[string][]string),
+	}
+}
+
+// WriteBatchWrapper is a wrapper of level.Batch
+type WriteBatchWrapper struct {
+	batch *leveldb.Batch
+	db    *LevelDB
+
+	histories map[string]map[string][]string
+}
+
+// Sync sync batch to database
+func (wb *WriteBatchWrapper) Sync() error {
+	return wb.db.connect.Write(wb.batch, nil)
+}
+
+// SetTxStatus set tx status
+func (wb *WriteBatchWrapper) SetTxStatus(tx *core.Tx, status *TxStatus) error {
+	value, err := json.Marshal(status)
+	if err != nil {
+		return err
+	}
+	var key = util.BytesCombine([]byte(tx.Data.ChannelID), []byte(tx.ID))
+	wb.batch.Put(key, value)
+	if err != nil {
+		return err
+	}
+	return nil
 }
