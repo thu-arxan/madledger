@@ -1,8 +1,10 @@
 package tests
 
 import (
+	"evm/abi"
+	"fmt"
 	"madledger/common"
-	"madledger/common/abi"
+	"madledger/common/util"
 	"madledger/core"
 	"testing"
 
@@ -15,6 +17,14 @@ import (
 var (
 	contractAddress = make(map[string]common.Address)
 )
+
+func init() {
+	abi.SetAddressParser(20, func(bs []byte) string {
+		return "0x" + fmt.Sprintf("%x", bs)
+	}, func(addr string) ([]byte, error) {
+		return util.HexToBytes(addr)
+	})
+}
 
 func testCreateChannel(t *testing.T, client *client.Client, peers []*core.Member) {
 	// first query channels
@@ -89,7 +99,7 @@ func callContract(t *testing.T, channelID string, client *client.Client) {
 	// then call the contract which is created before
 	var payload []byte
 	// 1. get
-	payload, _ = abi.GetPayloadBytes(BalanceAbi, "get", nil)
+	payload, _ = abi.Pack(BalanceAbi, "get")
 	tx, _ := core.NewTx(channelID, contractAddress, payload, 0, "", client.GetPrivKey())
 	status, err := client.AddTx(tx)
 	require.NoError(t, err)
@@ -97,7 +107,7 @@ func callContract(t *testing.T, channelID string, client *client.Client) {
 	require.NoError(t, err)
 	assert.Equal(t, []string{"10"}, txStatus.Output)
 	// 2. set 1314
-	payload, _ = abi.GetPayloadBytes(BalanceAbi, "set", []string{"1314"})
+	payload, _ = abi.Pack(BalanceAbi, "set", "1314")
 	tx, _ = core.NewTx(channelID, contractAddress, payload, 0, "", client.GetPrivKey())
 	status, err = client.AddTx(tx)
 	require.NoError(t, err)
@@ -105,28 +115,28 @@ func callContract(t *testing.T, channelID string, client *client.Client) {
 	require.NoError(t, err)
 	assert.Equal(t, []string{"true"}, txStatus.Output)
 	// 3. get
-	payload, _ = abi.GetPayloadBytes(BalanceAbi, "get", nil)
+	payload, _ = abi.Pack(BalanceAbi, "get")
 	tx, _ = core.NewTx(channelID, contractAddress, payload, 0, "", client.GetPrivKey())
 	status, err = client.AddTx(tx)
 	require.NoError(t, err)
 	txStatus, err = getTxStatus(BalanceAbi, "get", status)
 	assert.Equal(t, []string{"1314"}, txStatus.Output)
 	// 4. sub
-	payload, _ = abi.GetPayloadBytes(BalanceAbi, "sub", []string{"794"})
+	payload, _ = abi.Pack(BalanceAbi, "sub", []string{"794"}...)
 	tx, _ = core.NewTx(channelID, contractAddress, payload, 0, "", client.GetPrivKey())
 	status, err = client.AddTx(tx)
 	require.NoError(t, err)
 	txStatus, err = getTxStatus(BalanceAbi, "sub", status)
 	assert.Equal(t, []string{"520"}, txStatus.Output)
 	// 5. add
-	payload, _ = abi.GetPayloadBytes(BalanceAbi, "add", []string{"794"})
+	payload, _ = abi.Pack(BalanceAbi, "add", []string{"794"}...)
 	tx, _ = core.NewTx(channelID, contractAddress, payload, 0, "", client.GetPrivKey())
 	status, err = client.AddTx(tx)
 	require.NoError(t, err)
 	txStatus, err = getTxStatus(BalanceAbi, "add", status)
 	assert.Equal(t, []string{"1314"}, txStatus.Output)
 	// 6. info
-	payload, _ = abi.GetPayloadBytes(BalanceAbi, "info", []string{})
+	payload, _ = abi.Pack(BalanceAbi, "info")
 	tx, _ = core.NewTx(channelID, contractAddress, payload, 0, "", client.GetPrivKey())
 	status, err = client.AddTx(tx)
 	require.NoError(t, err)

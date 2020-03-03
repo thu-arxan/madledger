@@ -2,11 +2,10 @@ package tx
 
 import (
 	"errors"
-	eabi "evm/abi"
+	"evm/abi"
 	"madledger/client/lib"
 	"madledger/client/util"
 	"madledger/common"
-	"madledger/common/abi"
 	"madledger/core"
 
 	"github.com/spf13/cobra"
@@ -58,7 +57,7 @@ func runCall(cmd *cobra.Command, args []string) error {
 		return errors.New("The address of receiver can not be nil")
 	}
 	inputs := callViper.GetStringSlice("inputs")
-	payloadBytes, err := eabi.Pack(abiPath, funcName, inputs...)
+	payloadBytes, err := abi.Pack(abiPath, funcName, inputs...)
 	if err != nil {
 		return err
 	}
@@ -82,15 +81,11 @@ func runCall(cmd *cobra.Command, args []string) error {
 	if status.Err != "" {
 		table.AddRow(status.BlockNumber, status.BlockIndex, status.Err)
 	} else {
-		values, err := abi.Unpacker(abiPath, funcName, status.Output)
+		values, err := abi.Unpack(abiPath, funcName, status.Output)
 		if err != nil {
 			return err
 		}
-		var output []string
-		for _, value := range values {
-			output = append(output, value.Value)
-		}
-		table.AddRow(status.BlockNumber, status.BlockIndex, output)
+		table.AddRow(status.BlockNumber, status.BlockIndex, values)
 	}
 	table.Render()
 

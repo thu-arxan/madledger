@@ -1,12 +1,12 @@
 package testfor1client_bft
 
 import (
+	"evm/abi"
 	"fmt"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	cliu "madledger/client/util"
 	"madledger/common"
-	"madledger/common/abi"
 	"madledger/core"
 	"os"
 	"regexp"
@@ -122,7 +122,7 @@ func TestBFTCallTxAfterRestart1OB(t *testing.T) {
 	abiPath := fmt.Sprintf(getBFTClientPath(1) + "/MyTest.abi")
 	funcName := "getNum"
 	var inputs = make([]string, 0)
-	payloadBytes, err := abi.GetPayloadBytes(abiPath, funcName, inputs)
+	payloadBytes, err := abi.Pack(abiPath, funcName, inputs...)
 	require.NoError(t, err)
 
 	tx, err := core.NewTx("test4", common.HexToAddress("0x0619e2393802cc99e90cf892b92a113f19af5887"),
