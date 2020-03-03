@@ -5,9 +5,11 @@ import (
 	"madledger/blockchain"
 	"madledger/common"
 	"madledger/core"
+
 	"madledger/executor/evm"
 	"madledger/peer/db"
 	"madledger/peer/orderer"
+	"runtime"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -61,6 +63,8 @@ func (m *Manager) Start() {
 		} else if err.Error() == "Stop" {
 			m.stopCh <- true
 			return
+		} else {
+			log.Infof("failed to fetch block: %d, err: %v", m.cm.GetExpect(), err)
 		}
 	}
 }
@@ -79,6 +83,8 @@ func (m *Manager) AddBlock(block *core.Block) error {
 	if err != nil {
 		return err
 	}
+	// Note: PutBlock in writebatch
+	// TODO: Review @zsh
 	switch block.Header.ChannelID {
 	case core.GLOBALCHANNELID:
 		m.AddGlobalBlock(block)
@@ -86,6 +92,9 @@ func (m *Manager) AddBlock(block *core.Block) error {
 	case core.CONFIGCHANNELID:
 		m.AddConfigBlock(block)
 		log.Infof("Add config block %d", block.Header.Number)
+	case core.ASSETCHANNELID:
+		m.AddAssetBlock(block)
+		log.Infof("Add account block %d", block.Header.Number)
 	default:
 		if !m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
 			m.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
@@ -95,12 +104,9 @@ func (m *Manager) AddBlock(block *core.Block) error {
 		if err != nil {
 			return err
 		}
-		batch := wb.GetBatch()
-		err = m.db.SyncWriteBatch(batch)
-		if err != nil {
-			return err
-		}
-		return nil
+
+		wb.PutBlock(block)
+		return wb.Sync()
 	}
 
 	return nil
@@ -111,8 +117,30 @@ func (m *Manager) AddBlock(block *core.Block) error {
 // In the future, this will contains chains which rely on something or nothing
 // TODO: transfer is not implementation yet
 func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
-	context := evm.NewContext(block)
 	wb := m.db.NewWriteBatch()
+	context := evm.NewContext(block, m.db, wb)
+	defer context.BlockFinalize()
+	// first parallel get sender to speed up
+	threadSize := runtime.NumCPU()
+	if threadSize < 2 {
+		threadSize = 2
+	}
+	var ch = make(chan bool, threadSize)
+	var wg sync.WaitGroup
+	for i := range block.Transactions {
+		wg.Add(1)
+		tx := block.Transactions[i]
+		ch <- true
+		go func() {
+			defer func() {
+				<-ch
+				wg.Done()
+			}()
+			tx.GetSender()
+		}()
+	}
+	wg.Wait()
+
 	for i, tx := range block.Transactions {
 		senderAddress, err := tx.GetSender()
 		status := &db.TxStatus{
@@ -123,12 +151,11 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		}
 		if err != nil {
 			status.Err = err.Error()
-			//m.db.SetTxStatus(tx, status)
 			wb.SetTxStatus(tx, status)
 			continue
 		}
 		receiverAddress := tx.GetReceiver()
-		log.Infof("The address of receiver is %s", receiverAddress.String())
+
 		sender, err := m.db.GetAccount(senderAddress)
 		if err != nil {
 			status.Err = err.Error()
@@ -138,20 +165,18 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		}
 
 		if receiverAddress.String() == core.CfgTendermintAddress.String() {
-			//m.db.SetTxStatus(tx, status)
 			wb.SetTxStatus(tx, status)
 			continue
 		}
 
 		if receiverAddress.String() == core.CfgRaftAddress.String() {
-			//m.db.SetTxStatus(tx, status)
 			wb.SetTxStatus(tx, status)
 			continue
 		}
-
-		evm := evm.NewEVM(*context, senderAddress, m.db, wb)
+		log.Debugf(" %v, %v, %v", sender, context, tx)
+		gas := uint64(10000000)
+		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, gas, m.db, wb)
 		if receiverAddress.String() != common.ZeroAddress.String() {
-			// log.Info("This is a normal call")
 			// if the length of payload is not zero, this is a contract call
 			if len(tx.Data.Payload) != 0 && !m.db.AccountExist(receiverAddress) {
 				status.Err = "Invalid Address"
@@ -167,7 +192,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 				wb.SetTxStatus(tx, status)
 				continue
 			}
-			output, err := evm.Call(sender, receiver, receiver.GetCode(), tx.Data.Payload, 0)
+			output, err := evm.Call(sender, receiver, receiver.GetCode())
 			status.Output = output
 			if err != nil {
 				status.Err = err.Error()
@@ -175,8 +200,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			//m.db.SetTxStatus(tx, status)
 			wb.SetTxStatus(tx, status)
 		} else {
-			log.Info("This is a create call")
-			output, addr, err := evm.Create(sender, tx.Data.Payload, []byte{}, 0)
+			output, addr, err := evm.Create(sender)
 			status.Output = output
 			status.ContractAddress = addr.String()
 			if err != nil {
@@ -186,48 +210,57 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			wb.SetTxStatus(tx, status)
 		}
 	}
+	// wb.PersistLog([]byte(fmt.Sprintf("block_log_%d", block.GetNumber())))
 	return wb, nil
 }
 
 // todo: here we should support evil orderer
 func (m *Manager) fetchBlock() (*core.Block, error) {
-	var lock sync.Mutex
-	var ch = make(chan bool, 1)
-	var errs = make([]error, len(m.clients))
-	var blocks = make([]*core.Block, len(m.clients))
+	var lock sync.RWMutex
+	var errs = make(chan error, len(m.clients))
+	var blocks = make(chan *core.Block, len(m.clients))
+	closed := false
 	id := m.id
-	except := m.cm.GetExcept()
+	expect := m.cm.GetExpect()
 	for i := range m.clients {
 		go func(i int) {
-			block, err := m.clients[i].FetchBlock(id, except, true)
+			block, err := m.clients[i].FetchBlock(id, expect, true)
+			lock.RLock()
+			defer lock.RUnlock()
+			if closed {
+				return
+			}
 			if err != nil {
-				errs[i] = err
-				lock.Lock()
-				defer lock.Unlock()
-				for i := range errs {
-					if errs[i] == nil {
-						return
-					}
-				}
-				ch <- false
+				errs <- err
 			} else {
-				blocks[i] = block
-				ch <- true
+				blocks <- block
 			}
 		}(i)
 	}
 
-	select {
-	case ok := <-ch:
-		if ok {
-			for i := range blocks {
-				if blocks[i] != nil {
-					return blocks[i], nil
-				}
+	fails := 0
+
+	for {
+		defer func() {
+			lock.Lock()
+			if !closed {
+				close(errs)
+				close(blocks)
+				closed = true
 			}
+			lock.Unlock()
+		}()
+		// log.Infof("get %s %d, closed: %t, fail: %d, %d", id, except, closed, fails, len(m.clients))
+		select {
+		case block := <-blocks:
+			return block, nil
+		case err := <-errs:
+			fails++
+			if fails == len(m.clients) {
+				return nil, err
+			}
+		case <-m.signalCh:
+			return nil, errors.New("Stop")
 		}
-		return nil, errs[0]
-	case <-m.signalCh:
-		return nil, errors.New("Stop")
 	}
 }

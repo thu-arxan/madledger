@@ -1,57 +1,113 @@
-# Go parameters
-GOCMD=go
+# Tool commands
+GOCMD		= go
+DOCKER_CMD	= docker
 
-all: vet build
+# MadLedger versions used in Makefile
+MADLEDGER_VERSION		:=v0.0.1
+
+# Test flags
+CONSENSUS	=solo
+
+# Build flags (overridable)
+GO_LDFLAGS				?= -X madledger/version.GitCommit=`git rev-parse --short=8 HEAD` -X madledger/version.Version=$(MADLEDGER_VERSION)
+GO_TEST_FLAGS			?= $(GO_LDFLAGS) -X madledger/tests/performance.consensus=$(CONSENSUS)
+GO_TEST_COUNT			?= 1
+GO_TEST_TIMEOUT			?= 20m
+GO_SYMBOL				?= 					# eg:GO_SYMBOL="-v -race"
+# database build tag, use rocksdb or leveldb
+DB_TAG					?=leveldb
+BUILD_TAGS				=
+
+# check db tag
+ifeq ($(DB_TAG), rocksdb)
+BUILD_TAGS+=rocksdb
+else ifeq ($(DB_TAG), leveldb)
+BUILD_TAGS+=leveldb
+else
+$(error "invalid DB_TAG: {DB_TAG=rocksdb|leveldb}")
+endif
+
+# Go tools
+GO_TEST 		= $(GOCMD) test -tags "$(BUILD_TAGS)" -parallel=1 -count=$(GO_TEST_COUNT) -timeout=$(GO_TEST_TIMEOUT) $(GO_SYMBOL) -ldflags "$(GO_TEST_FLAGS)"
+GO_TEST_UNIT	= $(GO_TEST) -cover -race
+GO_BUILD		= $(GOCMD) build -tags "$(BUILD_TAGS)"
+GO_INSTALL		= $(GOCMD) install -tags "$(BUILD_TAGS)"
+
+# Local variables used by makefile
+PROJECT_NAME           := madledger
+ARCH                   := $(shell uname -m)
+OS_NAME                := $(shell uname -s)
+
+# Test Packages
+# UNIT_PACKAGES	=	madledger/common/util \
+# 					madledger/common/event \
+# 					madledger/common/math \
+# 					madledger/common/hexutil \
+# 					madledger/common/crypto \
+# 					madledger/common/abi \
+# 					madledger/core \
+# 					madledger/protos \
+# 					madledger/blockchain/config \
+
+PACKAGES=$(shell go list ./...)
+
+all: vet install
 
 # go vet:format check, bug check
 vet:
-	@$(GOCMD) vet `go list ./...`
+	@go vet `go list ./...`
 
-build:
-	@echo "building orderer..."
-	@$(GOCMD) install madledger/orderer
+# The below include contains tests(quick start, setup, client tx, etc)
+# include tests.mk
 
-	@echo "building peer..."
-	@$(GOCMD) install madledger/peer
+unittest:
+	@$(GO_TEST) $(PACKAGES)
 
-	@echo "building client..."
-	@$(GOCMD) install madledger/client
+install:
+	@echo "install orderer..."
+	@$(GO_INSTALL) madledger/orderer
+
+	@echo "install peer..."
+	@$(GO_INSTALL) madledger/peer
+
+	@echo "install client..."
+	@$(GO_INSTALL) madledger/client
 
 proto:
 	@ cd protos && protoc --go_out=plugins=grpc:. *.proto
+	@ cd consensus/raft/protos && protoc --go_out=plugins=grpc:. *.proto
 
 # test:
 test:
-	@$(GOCMD) test madledger/common/util -count=1 -cover
-	@$(GOCMD) test madledger/common/event -count=1 -cover
-	@$(GOCMD) test madledger/common/math -count=1 -cover
-	@$(GOCMD) test madledger/common/crypto -count=1 -cover
-	@$(GOCMD) test madledger/common/abi -count=1 -cover
+	@$(GO_TEST_UNIT) madledger/common/util
+	@$(GO_TEST_UNIT) madledger/common/event
+	@$(GO_TEST_UNIT) madledger/common/math
+	@$(GO_TEST_UNIT) madledger/common/crypto
+	@$(GO_TEST_UNIT) madledger/common/abi
 
-	@$(GOCMD) test madledger/core -count=1 -cover
+	@$(GO_TEST_UNIT) madledger/core
 
-	@$(GOCMD) test madledger/protos -count=1 -cover
+	@$(GO_TEST_UNIT) madledger/protos
 
-	@$(GOCMD) test madledger/blockchain/config -count=1 -cover
+	@$(GO_TEST_UNIT) madledger/blockchain/config
 
-	@$(GOCMD) test madledger/executor/evm -count=1 -cover
+	@$(GO_TEST_UNIT) madledger/consensus/solo
+	@$(GO_TEST_UNIT) madledger/consensus/raft
+	@$(GO_TEST_UNIT) madledger/consensus/raft/eraft
+	@$(GO_TEST_UNIT) madledger/consensus/tendermint
 
-	@$(GOCMD) test madledger/consensus/solo -count=1 -cover
-	@$(GOCMD) test madledger/consensus/raft -count=1 -cover
-	@$(GOCMD) test madledger/consensus/tendermint -count=1 -cover
+	@$(GO_TEST_UNIT) madledger/orderer/config
+	@$(GO_TEST_UNIT) madledger/orderer/db
+	@$(GO_TEST_UNIT) madledger/orderer/server
 
-	@$(GOCMD) test madledger/orderer/config -count=1 -cover
-	@$(GOCMD) test madledger/orderer/db -count=1 -cover
-	@$(GOCMD) test madledger/orderer/server -count=1 -cover
-
-	@$(GOCMD) test madledger/peer/db -count=1 -cover
-	@$(GOCMD) test madledger/peer/config -count=1 -cover
+	@$(GO_TEST_UNIT) madledger/peer/db
+	@$(GO_TEST_UNIT) madledger/peer/config
 
 	@echo "Next test may cost 1 minutes ..."
-	@$(GOCMD) test madledger/tests -count=1 -cover
+	@$(GO_TEST_UNIT) madledger/tests
 
 performance:
-	@$(GOCMD) test madledger/tests/performance -count=1
+	@$(GO_TEST) madledger/tests/performance
 	@cat tests/performance/performance.out
 	@rm -rf tests/performance/performance.out
 
@@ -63,3 +119,16 @@ httptest:
 	@-kill -9 `pidof peer`
 	@go test madledger/tests -v -count=1 > log.out
 	@tail log.out
+	
+clean:
+	@rm -rf tests/.bft
+	@cd tests/performance/raft && rm -rf .clients .orderer .peer
+	@cd tests/performance/solo && rm -rf .clients .orderer .peer
+	@cd tests/performance/bft && rm -rf .clients .orderer .peer
+
+syncevm:
+	@rm -rf vendor/evm
+	@cd ../evm && zip evm.zip $$(git ls-files) && unzip -d ../madledger/vendor/evm evm.zip && rm evm.zip
+
+raft:
+	@$(GO_TEST_UNIT) madledger/consensus/raft

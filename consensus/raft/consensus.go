@@ -1,90 +1,35 @@
 package raft
 
 import (
-	"context"
-	"crypto/tls"
 	"madledger/consensus"
-	"strconv"
-	"strings"
+	"madledger/core"
 	"sync/atomic"
 	"time"
 
-	"google.golang.org/grpc/credentials"
-
+	"madledger/common/crypto"
 	"madledger/common/util"
-	pb "madledger/consensus/raft/protos"
-
-	"google.golang.org/grpc"
 )
 
 // Consensus is the implementation of interface
 // Consensus keeps connections to raft services
 type Consensus struct {
-	cfg     *Config
-	chain   *BlockChain
-	clients map[uint64]*Client
-	ids     []uint64
-	leader  uint64
+	cfg     *Config            // raft config
+	chain   *BlockChain        // grpc service, manage channels
+	clients map[uint64]*Client // grpc clients
+	ids     []uint64           // orderer id
+	leader  uint64             // leader id
 }
 
-// Client is the clients keep connections to blockchain
-type Client struct {
-	addr string
-	conn *grpc.ClientConn
-	TLS  consensus.TLSConfig
-}
-
-// NewClient is the constructor of Client
-func NewClient(addr string, tlsConfig consensus.TLSConfig) (*Client, error) {
-	return &Client{
-		addr: addr,
-		TLS:  tlsConfig,
-	}, nil
-}
-
-func (c *Client) newConn() error {
-	var opts []grpc.DialOption
-	var conn *grpc.ClientConn
-	var err error
-	if c.TLS.Enable {
-		creds := credentials.NewTLS(&tls.Config{
-			//ServerName:   "orderer.madledger.com",
-			Certificates: []tls.Certificate{*(c.TLS.Cert)},
-			RootCAs:      c.TLS.Pool,
-		})
-		opts = append(opts, grpc.WithTransportCredentials(creds))
-	} else {
-		opts = append(opts, grpc.WithInsecure())
-	}
-
-	opts = append(opts, grpc.WithTimeout(2000*time.Millisecond))
-	conn, err = grpc.Dial(c.addr, opts...)
-	if err != nil {
-		return err
-	}
-	c.conn = conn
-	return nil
-}
-
-func (c *Client) addTx(channelID string, tx []byte, caller uint64) error {
-	if c.conn == nil {
-		if err := c.newConn(); err != nil {
-			return err
-		}
-	}
-	client := pb.NewBlockChainClient(c.conn)
-	_, err := client.AddTx(context.Background(), &pb.RaftTX{
-		Tx:     NewTx(channelID, tx).Bytes(),
-		Caller: caller,
-	})
-	return err
-}
-
-// NewConseneus is the constructor of Consensus
-func NewConseneus(cfg *Config) (*Consensus, error) {
+// NewConsensus is the constructor of Consensus
+func NewConsensus(channels map[string]consensus.Config, cfg *Config) (*Consensus, error) {
 	chain, err := NewBlockChain(cfg)
 	if err != nil {
 		return nil, err
+	}
+	for id, cc := range channels {
+		if err := chain.addChannels(id, cc); err != nil {
+			return nil, err
+		}
 	}
 	return &Consensus{
 		cfg:   cfg,
@@ -96,7 +41,8 @@ func NewConseneus(cfg *Config) (*Consensus, error) {
 func (c *Consensus) Start() error {
 	c.clients = make(map[uint64]*Client)
 	c.ids = make([]uint64, 0)
-	for id, addr := range c.cfg.ec.peers {
+	// init grpc clients to connect with peers through grpc
+	for id, addr := range c.cfg.peers {
 		client, err := NewClient(addr, c.cfg.cc.TLS)
 		if err != nil {
 			return err
@@ -104,9 +50,9 @@ func (c *Consensus) Start() error {
 		c.clients[id] = client
 		c.ids = append(c.ids, id)
 	}
-	c.setLeader(c.ids[util.RandNum(len(c.ids))])
 
 	if err := c.chain.Start(); err != nil {
+		log.Errorf("chain[%d] start failed: %v", c.cfg.id, err)
 		return err
 	}
 
@@ -116,53 +62,61 @@ func (c *Consensus) Start() error {
 // Stop is the implementation of interface
 func (c *Consensus) Stop() error {
 	c.chain.Stop()
-	c.chain.raft.Stop()
-	c.chain.rpcServer.Stop()
+
+	// close client conn
+	for _, client := range c.clients {
+		client.close()
+	}
 	return nil
-	//return errors.New("Not implementation yet")
 }
 
 // AddTx is the implementation of interface
-func (c *Consensus) AddTx(channelID string, tx []byte) error {
+func (c *Consensus) AddTx(tx *core.Tx) error {
 	var err error
-	log.Infof("Consensus.AddTx: Add tx of channel %s.", channelID)
+
+	bytes, _ := tx.Bytes()
+	hash := util.Hex(crypto.Hash(bytes))
+	channelID := tx.Data.ChannelID
+
 	// todo: we should parse the leader address other than random choose a leader
-	for i := 0; i < 100; i++ {
-		log.Infof("Try to add tx to raft %d, this is %d times' trying.", c.leader, i)
-		err = c.clients[c.getLeader()].addTx(channelID, tx, c.cfg.ec.id)
-		if err == nil || strings.Contains(err.Error(), "Transaction is aleardy in the pool") {
-			log.Infof("Succeed to add tx to raft %d, I'm raft %d", c.leader, c.cfg.ec.id)
+	// todo: modify the upper bounds of attempt times
+	for i := 0; i < 10; i++ {
+		leader := c.getLeader()
+		log.Infof("Raft[%d] try %d times to add tx %s to node[%d]", c.cfg.id, i, hash, leader)
+		err = c.clients[leader].addTx(channelID, bytes, c.cfg.id)
+		if err == nil {
+			log.Infof("Node[%d] succeed to add tx %s to leader[%d]", c.cfg.id, hash, c.leader)
 			return nil
 		}
 
-		log.Debugf("add tx meets error:%v", err)
-		// then parse leader id
-		if strings.Contains(err.Error(), "Please send to leader") {
-			id, err := strconv.ParseUint(strings.Replace(err.Error(), "rpc error: code = Unknown "+
-				"desc = Please send to leader ", "", -1), 10, 64)
-			if err == nil && id != 0 {
-				c.setLeader(id)
-				continue
-			}
-		}
-		if strings.Contains(err.Error(), "I've been removed from cluster") {
+		switch GetError(err) {
+		case TxInPool:
 			return err
+		case RemovedNode:
+			return err
+		case NotLeader:
+			id := GetLeader(err)
+			if id == 0 {
+				id = c.ids[util.RandNum(len(c.ids))]
+			}
+			c.setLeader(id)
+		default:
+			log.Infof("Node[%d] add tx %s failed: Unknown error: %v", c.cfg.id, tx.ID, err)
+			c.setLeader(c.ids[util.RandNum(len(c.ids))])
 		}
-		// error except tx exist and the id is not leader
-		log.Info("Error unknown, set leader randomly.")
-		c.setLeader(c.ids[util.RandNum(len(c.ids))])
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 	}
 
-	log.Infof("Add tx failed because %s", err)
+	log.Infof("Node[%d] add tx %s failed: %v", c.cfg.id, hash, err)
 	return err
 }
 
 // AddChannel is the implementation of interface
-// Note: we can ignore this function now
 func (c *Consensus) AddChannel(channelID string, cfg consensus.Config) error {
-	log.Infof("Add channel %s", channelID)
-	return nil
+	if err := c.chain.addChannels(channelID, cfg); err != nil {
+		return err
+	}
+	return c.chain.startChannel(channelID)
 }
 
 // GetBlock is the implementation of interface
@@ -177,5 +131,13 @@ func (c *Consensus) setLeader(leader uint64) {
 
 func (c *Consensus) getLeader() uint64 {
 	leader := atomic.LoadUint64(&c.leader)
+
+	if leader == 0 {
+		leader = c.chain.raft.GetLeader()
+		if leader == 0 {
+			leader = c.ids[util.RandNum(len(c.ids))]
+		}
+		atomic.StoreUint64(&c.leader, leader)
+	}
 	return leader
 }

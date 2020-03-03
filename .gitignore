@@ -20,3 +20,7 @@ env/raft/peers
 env/raft/clients
 *.log
 .bft
+*.out
+.vscode
+.raft
+samples

@@ -27,6 +27,8 @@ type ChannelManager struct {
 	GlobalChannel *channel.Manager
 	// ConfigChannel is the config channel manager
 	ConfigChannel  *channel.Manager
+	// AccountChannel is the account channel manager
+	AccountChannel *channel.Manager
 	coordinator    *channel.Coordinator
 	ordererClients []*orderer.Client
 	chainCfg       *config.BlockChainConfig
@@ -40,7 +42,8 @@ func NewChannelManager(dbDir string, identity *core.Member, chainCfg *config.Blo
 	m.Channels = make(map[string]*channel.Manager)
 	m.identity = identity
 	// set db
-	db, err := db.NewLevelDB(dbDir)
+	// Note: We can set this to RocksDB, however rocksdb is more slow because the poor implementation
+	db, err := newDB(dbDir)
 	if err != nil {
 		return nil, err
 	}
@@ -57,6 +60,11 @@ func NewChannelManager(dbDir string, identity *core.Member, chainCfg *config.Blo
 	if err != nil {
 		return nil, err
 	}
+	accountManager, err := channel.NewManager(core.ASSETCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, core.ASSETCHANNELID), identity, m.db, ordererClients, m.coordinator)
+	if err != nil {
+		return nil, err
+	}
+	m.AccountChannel = accountManager
 	m.GlobalChannel = globalManager
 	m.ConfigChannel = configManager
 
@@ -79,16 +87,19 @@ func (m *ChannelManager) ListTxHistory(address []byte) map[string][]string {
 func (m *ChannelManager) start() error {
 	go m.GlobalChannel.Start()
 	go m.ConfigChannel.Start()
+	go m.AccountChannel.Start()
 	go func() {
+		// todo: set by channel
 		ticker := time.NewTicker(500 * time.Millisecond)
 		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
+				//todo: ab add account channel in db
 				channels := m.db.GetChannels()
 				for _, channel := range channels {
 					switch channel {
-					case core.GLOBALCHANNELID, core.CONFIGCHANNELID:
+					case core.GLOBALCHANNELID, core.CONFIGCHANNELID, core.ASSETCHANNELID:
 					default:
 						if !m.hasChannel(channel) {
 							manager, err := m.loadChannel(channel)
@@ -116,6 +127,8 @@ func (m *ChannelManager) stop() {
 	log.Info("GlobalChannel stop")
 	m.ConfigChannel.Stop()
 	log.Info("ConfigChannel stop")
+	m.AccountChannel.Stop()
+	log.Info("AccountChannel stop")
 
 	m.signalCh <- true
 	<-m.stopCh

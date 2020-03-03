@@ -33,6 +33,7 @@ func (payload *Payload) Verify() bool {
 	switch payload.ChannelID {
 	case core.GLOBALCHANNELID:
 	case core.CONFIGCHANNELID:
+	case core.ASSETCHANNELID:
 	default:
 		if !util.IsLegalChannelName(payload.ChannelID) {
 			return false

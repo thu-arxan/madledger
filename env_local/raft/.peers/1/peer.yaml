@@ -1,0 +1,51 @@
+#############################################################################
+#############################################################################
+#   This is a configuration file for the MadLedger peer.
+#############################################################################
+
+# Port should be an integer (default: 23456)
+Port: 20501
+
+# Bind address for the server (default: localhost)
+Address: localhost
+
+# Should be false or true (default: true)
+Debug: true
+
+# Configure for the TLS
+TLS:
+  # Should be true of false (default: true)
+  Enable: true
+  # The path of CA cert, it should not be empty if Enable is true
+  CA: cert/ca.cer
+  # Cert of the Blockchain, it should not be empty if Enable is true
+  Cert: cert/peer.pem
+  # Key of the Blockchain, it should not be empty if Enable is true
+  Key: cert/peer.key
+
+# Configure for the BlockChain
+BlockChain:
+  # default: $GOPATH/src/madledger/peer/data/blocks
+  # But in the production environment, you must provide a path
+  Path: data/blocks 
+
+# Address of orderers
+Orderer:
+  Address:
+    - localhost:12345
+    - localhost:23456
+    - localhost:34567
+    - localhost:45678
+
+# DB only support leveldb now
+DB:
+  Type: leveldb
+  # LevelDB
+  LevelDB:
+    # default: $GOPATH/src/madledger/peer/data/leveldb
+    # But in the production environment, you must provide a path
+    Dir: data/leveldb 
+
+# KeyStore manage some private keys
+KeyStore:
+  Key: .keystore/388a1163998dadcd3031c8f18493223c70d9084346f2c6470eb3a99c746718b6

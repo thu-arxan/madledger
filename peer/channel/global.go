@@ -15,5 +15,8 @@ func (m *Manager) AddGlobalBlock(block *core.Block) error {
 		nums[payload.ChannelID] = payload.Num
 	}
 	m.coordinator.Unlocks(nums)
+	wb := m.db.NewWriteBatch()
+	wb.PutBlock(block)
+	wb.Sync()
 	return nil
 }

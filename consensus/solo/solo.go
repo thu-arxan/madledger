@@ -2,6 +2,7 @@ package solo
 
 import (
 	"madledger/consensus"
+	"madledger/core"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -50,8 +51,8 @@ func (c *Consensus) AddChannel(channelID string, cfg consensus.Config) error {
 }
 
 // AddTx is the implementation of interface
-func (c *Consensus) AddTx(channelID string, tx []byte) error {
-	return c.manager.AddTx(channelID, tx)
+func (c *Consensus) AddTx(tx *core.Tx) error {
+	return c.manager.AddTx(tx)
 }
 
 // GetBlock is the implementation of interface

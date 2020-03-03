@@ -9,11 +9,13 @@ import (
 	pb "madledger/protos"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc/credentials"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
@@ -37,6 +39,7 @@ const (
 
 // Server provide the serve of orderer
 type Server struct {
+	sync.RWMutex
 	config    *config.ServerConfig
 	rpcServer *grpc.Server
 	srv       *http.Server
@@ -89,6 +92,7 @@ func (s *Server) initServer(engine *gin.Engine) error {
 
 // Start starts the server
 func (s *Server) Start() error {
+	s.Lock()
 	addr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port)
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -112,14 +116,10 @@ func (s *Server) Start() error {
 	s.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterOrdererServer(s.rpcServer, s)
 
-	go func() {
-		err = s.rpcServer.Serve(lis)
-		if err != nil {
-			log.Error("gRPC Serve error: ", err)
-			return
-		}
-	}()
+	s.Unlock()
 
+	err = s.rpcServer.Serve(lis)
+	
 	// TODO: TLS support not implemented
 	haddr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100)
 	router := gin.Default()
@@ -144,6 +144,8 @@ func (s *Server) Start() error {
 
 // Stop will stop the rpc service and the consensus service
 func (s *Server) Stop() {
+	s.Lock()
+	defer s.Unlock()
 	// if s.rpcServer != nil {
 	s.rpcServer.Stop()
 	// }

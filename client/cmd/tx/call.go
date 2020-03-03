@@ -2,6 +2,7 @@ package tx
 
 import (
 	"errors"
+	eabi "evm/abi"
 	"madledger/client/lib"
 	"madledger/client/util"
 	"madledger/common"
@@ -57,7 +58,7 @@ func runCall(cmd *cobra.Command, args []string) error {
 		return errors.New("The address of receiver can not be nil")
 	}
 	inputs := callViper.GetStringSlice("inputs")
-	payloadBytes, err := abi.GetPayloadBytes(abiPath, funcName, inputs)
+	payloadBytes, err := eabi.Pack(abiPath, funcName, inputs...)
 	if err != nil {
 		return err
 	}

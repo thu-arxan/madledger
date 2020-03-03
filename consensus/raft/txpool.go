@@ -29,7 +29,7 @@ func (pool *txPool) addTx(tx []byte) error {
 	// check if the tx is duplicated
 	var hash = util.Hex(crypto.Hash(tx))
 	if util.Contain(pool.hashes, hash) {
-		return errors.New("Transaction is aleardy in the pool")
+		return errors.New("Transaction is already in the pool")
 	}
 
 	// add tx into the record
@@ -60,7 +60,7 @@ func (pool *txPool) fetchTxs(maxSize int) [][]byte {
 	return result
 }
 
-// gc is not implementation yet
+// todo: gc is not implementation yet
 func (pool *txPool) gc(block *core.Block) error {
 	pool.lock.Lock()
 	defer pool.lock.Unlock()

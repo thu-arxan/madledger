@@ -2,9 +2,15 @@ package channel
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+	ac "madledger/blockchain/asset"
 	cc "madledger/blockchain/config"
+	"madledger/common"
+	"madledger/common/crypto"
 	"madledger/consensus"
 	"madledger/core"
+	"madledger/orderer/db"
 )
 
 // AddConfigBlock add a config block
@@ -44,7 +50,7 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 				channel.Start()
 			}()
 			// 更新coordinator.Managers(map类型)
-			manager.coordinator.Managers[channelID] = channel
+			manager.coordinator.setChannel(channelID, channel)
 		}
 		// 更新leveldb
 		err := manager.db.UpdateChannel(channelID, payload.Profile)
@@ -60,4 +66,106 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 // TODO: update something in the db
 func (manager *Manager) AddGlobalBlock(block *core.Block) error {
 	return nil
+}
+
+// AddAssetBlock add an account block
+func (manager *Manager) AddAssetBlock(block *core.Block) error {
+	if block.Header.Number == 0 {
+		return nil
+	}
+	wb := manager.db.NewWriteBatch()
+	var err error
+
+	for _, tx := range block.Transactions {
+		status := &db.TxStatus{
+			Executed: false,
+		}
+
+		var payload ac.Payload
+		err = json.Unmarshal(tx.Data.Payload, &payload)
+		if err != nil {
+			log.Errorf("wrong tx format: %v", err)
+			wb.SetTxStatus(tx, status)
+			continue
+		}
+		sender, err := tx.GetSender()
+		if err != nil {
+			log.Errorf("wrong sender address %v", sender)
+			wb.SetTxStatus(tx, status)
+			continue
+		}
+		receiver := tx.GetReceiver()
+		//if receiver is not set, issue or transfer money to a channel
+		if receiver == common.ZeroAddress {
+			receiver = common.BytesToAddress([]byte(payload.ChannelID))
+			if receiver == common.ZeroAddress {
+				return errors.New("No specified receiver")
+			}
+		}
+
+		switch payload.Action {
+		case "issue":
+			// avoid overflow
+			issueValue := tx.Data.Value
+			err = manager.issue(tx.Data.Sig.PK, receiver, issueValue)
+		case "transfer":
+			// if value < 0, sender get money from receiver ??
+			transferValue := tx.Data.Value
+			err = manager.transfer(sender, receiver, transferValue)
+		}
+
+		if err != nil {
+			// 如果有错误，那么应该在db里加一条key为txid的错误，如果正确，那么key为txid为ok
+			log.Errorf("err when execute account block tx %v : %v", tx, err)
+			wb.SetTxStatus(tx, status)
+			continue
+		}
+		status.Executed = true
+		wb.SetTxStatus(tx, status)
+	}
+	wb.Sync()
+	return nil
+}
+
+func (manager *Manager) issue(senderPKBytes []byte, receiver common.Address, value uint64) error {
+	pk, err := crypto.NewPublicKey(senderPKBytes)
+	if !manager.db.IsAssetAdmin(pk) && manager.db.SetAssetAdmin(pk) != nil {
+		return fmt.Errorf("issue authentication failed: %v", err)
+	}
+	if value == 0 {
+		return nil
+	}
+
+	receiverAccount, err := manager.db.GetOrCreateAccount(receiver)
+	if err != nil {
+		return nil
+	}
+	err = receiverAccount.AddBalance(value)
+	if err != nil {
+		return nil
+	}
+	return manager.db.UpdateAccounts(receiverAccount)
+}
+
+func (manager *Manager) transfer(sender, receiver common.Address, value uint64) error {
+
+	if value == 0 {
+		return nil
+	}
+	senderAccount, err := manager.db.GetOrCreateAccount(sender)
+	if err != nil {
+		return err
+	}
+	if err = senderAccount.SubBalance(value); err != nil {
+		return err
+	}
+	receiverAccount, err := manager.db.GetOrCreateAccount(receiver)
+	if err != nil {
+		return err
+	}
+	if err = receiverAccount.AddBalance(value); err != nil {
+		return err
+	}
+
+	return manager.db.UpdateAccounts(senderAccount, receiverAccount)
 }

@@ -38,6 +38,7 @@ type Config struct {
 	} `yaml:"KeyStore"`
 }
 
+// TLSConfig ...
 type TLSConfig struct {
 	Enable  bool   `yaml:"Enable"`
 	CA      string `yaml:"CA"`
@@ -96,7 +97,7 @@ func (cfg *Config) GetServerConfig() (*ServerConfig, error) {
 	}, nil
 }
 
-// checkTLSConfig check the tls config and set necessary things
+// GetTLSConfig check the tls config and set necessary things
 func (cfg *Config) GetTLSConfig() error {
 	if cfg.TLS.Enable {
 		if cfg.TLS.CA == "" {

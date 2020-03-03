@@ -1,0 +1,2742 @@
+ok  	madledger/common/util	1.743s	coverage: 38.7% of statements
+ok  	madledger/common/event	10.944s	coverage: 40.0% of statements
+ok  	madledger/common/math	1.013s	coverage: 95.5% of statements
+ok  	madledger/common/crypto	1.535s	coverage: 37.3% of statements
+ok  	madledger/common/abi	1.058s	coverage: 31.9% of statements
+ok  	madledger/core	1.566s	coverage: 43.5% of statements
+ok  	madledger/protos	1.495s	coverage: 12.1% of statements
+ok  	madledger/blockchain/config	1.506s	coverage: 92.5% of statements
+ok  	madledger/consensus/solo	2.502s	coverage: 72.8% of statements
+ok  	madledger/consensus/raft	7.951s	coverage: 67.9% of statements
+ok  	madledger/consensus/raft/eraft	1.596s	coverage: 4.3% of statements
+ok  	madledger/consensus/tendermint	2.197s	coverage: 0.0% of statements
+ok  	madledger/orderer/config	1.027s	coverage: 51.8% of statements
+ok  	madledger/orderer/db	1.599s	coverage: 42.6% of statements
+time="2020-03-03T14:46:10+08:00" level=info msg="Creating genesis block of channel _config" app=orderer package=channel
+time="2020-03-03T14:46:10+08:00" level=info msg="Channel _config add block 0" app=blockchain package=blockchain
+time="2020-03-03T14:46:10+08:00" level=info msg="Creating genesis block of channel _global" app=orderer package=channel
+time="2020-03-03T14:46:10+08:00" level=info msg="Channel _global add block 0" app=blockchain package=blockchain
+time="2020-03-03T14:46:10+08:00" level=info msg="Creating genesis block of channel _asset" app=orderer package=channel
+time="2020-03-03T14:46:10+08:00" level=info msg="Channel _asset add block 0" app=blockchain package=blockchain
+time="2020-03-03T14:46:10+08:00" level=info msg="Start the orderer at localhost:12345" app=orderer package=server
+time="2020-03-03T14:46:10+08:00" level=info msg="Channel _global start" app=consensus package=solo
+time="2020-03-03T14:46:10+08:00" level=info msg="Channel _config start" app=consensus package=solo
+time="2020-03-03T14:46:10+08:00" level=info msg="Channel _asset start" app=consensus package=solo
+time="2020-03-03T14:46:10+08:00" level=info msg="Channel _global is starting" app=orderer package=channel
+time="2020-03-03T14:46:10+08:00" level=info msg="Going to get block 1 of channel _global from consensus" app=orderer package=channel
+time="2020-03-03T14:46:10+08:00" level=info msg="Channel _config is starting" app=orderer package=channel
+time="2020-03-03T14:46:10+08:00" level=info msg="Going to get block 1 of channel _config from consensus" app=orderer package=channel
+time="2020-03-03T14:46:10+08:00" level=info msg="Channel _asset is starting" app=orderer package=channel
+time="2020-03-03T14:46:10+08:00" level=info msg="Going to get block 1 of channel _asset from consensus" app=orderer package=channel
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] POST   /v1/fetchblock            --> madledger/orderer/server.(*Server).FetchBlockByHTTP-fm (3 handlers)
+[GIN-debug] POST   /v1/listchannels          --> madledger/orderer/server.(*Server).ListChannelsByHTTP-fm (3 handlers)
+time="2020-03-03T14:46:10+08:00" level=info msg="Stop channel _global consensus" app=consensus package=solo
+[GIN-debug] POST   /v1/createchannel         --> madledger/orderer/server.(*Server).CreateChannelByHTTP-fm (3 handlers)
+[GIN-debug] POST   /v1/addtx                 --> madledger/orderer/server.(*Server).AddTxByHTTP-fm (3 handlers)
+time="2020-03-03T14:46:10+08:00" level=info msg="Stop channel _asset consensus" app=consensus package=solo
+time="2020-03-03T14:46:10+08:00" level=info msg="Stop channel _config consensus" app=consensus package=solo
+time="2020-03-03T14:46:11+08:00" level=info msg="Succeed to stop the orderer service" app=orderer package=server
+time="2020-03-03T14:46:12+08:00" level=info msg="timeout of 5 seconds." app=orderer package=server
+time="2020-03-03T14:46:12+08:00" level=info msg="Server exiting" app=orderer package=server
+time="2020-03-03T14:46:12+08:00" level=info msg="Start the orderer at localhost:12345" app=orderer package=server
+time="2020-03-03T14:46:12+08:00" level=info msg="Channel _config start" app=consensus package=solo
+time="2020-03-03T14:46:12+08:00" level=info msg="Channel _asset start" app=consensus package=solo
+time="2020-03-03T14:46:12+08:00" level=info msg="Channel _global start" app=consensus package=solo
+time="2020-03-03T14:46:12+08:00" level=info msg="Channel _global is starting" app=orderer package=channel
+time="2020-03-03T14:46:12+08:00" level=info msg="Going to get block 1 of channel _global from consensus" app=orderer package=channel
+time="2020-03-03T14:46:12+08:00" level=info msg="Channel _config is starting" app=orderer package=channel
+time="2020-03-03T14:46:12+08:00" level=info msg="Going to get block 1 of channel _config from consensus" app=orderer package=channel
+time="2020-03-03T14:46:12+08:00" level=info msg="Channel _asset is starting" app=orderer package=channel
+time="2020-03-03T14:46:12+08:00" level=info msg="Going to get block 1 of channel _asset from consensus" app=orderer package=channel
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] POST   /v1/fetchblock            --> madledger/orderer/server.(*Server).FetchBlockByHTTP-fm (3 handlers)
+[GIN-debug] POST   /v1/listchannels          --> madledger/orderer/server.(*Server).ListChannelsByHTTP-fm (3 handlers)
+[GIN-debug] POST   /v1/createchannel         --> madledger/orderer/server.(*Server).CreateChannelByHTTP-fm (3 handlers)
+[GIN-debug] POST   /v1/addtx                 --> madledger/orderer/server.(*Server).AddTxByHTTP-fm (3 handlers)
+time="2020-03-03T14:46:12+08:00" level=info msg="Stop channel _asset consensus" app=consensus package=solo
+time="2020-03-03T14:46:12+08:00" level=info msg="Stop channel _global consensus" app=consensus package=solo
+time="2020-03-03T14:46:12+08:00" level=info msg="Stop channel _config consensus" app=consensus package=solo
+time="2020-03-03T14:46:13+08:00" level=info msg="Succeed to stop the orderer service" app=orderer package=server
+==================
+WARNING: DATA RACE
+Read at 0x00c000ff6328 by goroutine 54:
+  madledger/orderer/server.(*Server).Stop()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:158 +0x1fc
+  madledger/orderer/server.TestServerRestart()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:140 +0x10d
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestServerRestart()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:133 +0x38
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+
+Previous write at 0x00c000ff6328 by goroutine 73:
+  madledger/orderer/server.(*Server).Start()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:131 +0x83a
+  madledger/orderer/server.TestServerRestart.func1()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:137 +0x4e
+
+Goroutine 54 (running) created at:
+  testing.(*T).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:960 +0x651
+  testing.runTests.func1()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1202 +0xa6
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+  testing.runTests()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1200 +0x521
+  testing.(*M).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1117 +0x2ff
+  main.main()
+      _testmain.go:114 +0x337
+
+Goroutine 73 (finished) created at:
+  madledger/orderer/server.TestServerRestart()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:136 +0xe0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestServerRestart()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:133 +0x38
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+==================
+==================
+WARNING: DATA RACE
+Write at 0x00c00104a4dc by goroutine 54:
+  sync/atomic.StoreInt32()
+      /usr/local/Cellar/go/1.13.4/libexec/src/runtime/race_amd64.s:229 +0xb
+  net/http.(*Server).Shutdown()
+      /usr/local/Cellar/go/1.13.4/libexec/src/net/http/server.go:2664 +0x6c
+  madledger/orderer/server.(*Server).Stop()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:158 +0x228
+  madledger/orderer/server.TestServerRestart()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:140 +0x10d
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestServerRestart()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:133 +0x38
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+
+Previous write at 0x00c00104a4d8 by goroutine 73:
+  madledger/orderer/server.(*Server).Start()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:133 +0x778
+  madledger/orderer/server.TestServerRestart.func1()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:137 +0x4e
+
+Goroutine 54 (running) created at:
+  testing.(*T).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:960 +0x651
+  testing.runTests.func1()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1202 +0xa6
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+  testing.runTests()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1200 +0x521
+  testing.(*M).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1117 +0x2ff
+  main.main()
+      _testmain.go:114 +0x337
+
+Goroutine 73 (finished) created at:
+  madledger/orderer/server.TestServerRestart()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:136 +0xe0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestServerRestart()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:133 +0x38
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+==================
+==================
+WARNING: DATA RACE
+Write at 0x00c00104a500 by goroutine 54:
+  sync/atomic.CompareAndSwapInt32()
+      /usr/local/Cellar/go/1.13.4/libexec/src/runtime/race_amd64.s:293 +0xb
+  sync.(*Mutex).Lock()
+      /usr/local/Cellar/go/1.13.4/libexec/src/sync/mutex.go:74 +0x49
+  net/http.(*Server).Shutdown()
+      /usr/local/Cellar/go/1.13.4/libexec/src/net/http/server.go:2666 +0x8c
+  madledger/orderer/server.(*Server).Stop()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:158 +0x228
+  madledger/orderer/server.TestServerRestart()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:140 +0x10d
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestServerRestart()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:133 +0x38
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+
+Previous write at 0x00c00104a500 by goroutine 73:
+  madledger/orderer/server.(*Server).Start()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:133 +0x778
+  madledger/orderer/server.TestServerRestart.func1()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:137 +0x4e
+
+Goroutine 54 (running) created at:
+  testing.(*T).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:960 +0x651
+  testing.runTests.func1()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1202 +0xa6
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+  testing.runTests()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1200 +0x521
+  testing.(*M).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1117 +0x2ff
+  main.main()
+      _testmain.go:114 +0x337
+
+Goroutine 73 (finished) created at:
+  madledger/orderer/server.TestServerRestart()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:136 +0xe0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestServerRestart()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:133 +0x38
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+==================
+time="2020-03-03T14:46:14+08:00" level=info msg="timeout of 5 seconds." app=orderer package=server
+time="2020-03-03T14:46:14+08:00" level=info msg="Server exiting" app=orderer package=server
+--- FAIL: TestServerRestart (2.08s)
+    testing.go:853: race detected during execution of test
+time="2020-03-03T14:46:14+08:00" level=info msg="Creating genesis block of channel _config" app=orderer package=channel
+time="2020-03-03T14:46:14+08:00" level=info msg="Channel _config add block 0" app=blockchain package=blockchain
+time="2020-03-03T14:46:14+08:00" level=info msg="Creating genesis block of channel _global" app=orderer package=channel
+time="2020-03-03T14:46:14+08:00" level=info msg="Channel _global add block 0" app=blockchain package=blockchain
+time="2020-03-03T14:46:14+08:00" level=info msg="Creating genesis block of channel _asset" app=orderer package=channel
+time="2020-03-03T14:46:14+08:00" level=info msg="Channel _asset add block 0" app=blockchain package=blockchain
+time="2020-03-03T14:46:14+08:00" level=info msg="Start the orderer at localhost:12345" app=orderer package=server
+time="2020-03-03T14:46:14+08:00" level=info msg="Channel _global start" app=consensus package=solo
+time="2020-03-03T14:46:14+08:00" level=info msg="Channel _asset start" app=consensus package=solo
+time="2020-03-03T14:46:14+08:00" level=info msg="Channel _config start" app=consensus package=solo
+time="2020-03-03T14:46:14+08:00" level=info msg="Channel _global is starting" app=orderer package=channel
+time="2020-03-03T14:46:14+08:00" level=info msg="Going to get block 1 of channel _global from consensus" app=orderer package=channel
+time="2020-03-03T14:46:14+08:00" level=info msg="Channel _config is starting" app=orderer package=channel
+time="2020-03-03T14:46:14+08:00" level=info msg="Going to get block 1 of channel _config from consensus" app=orderer package=channel
+time="2020-03-03T14:46:14+08:00" level=info msg="Channel _asset is starting" app=orderer package=channel
+time="2020-03-03T14:46:14+08:00" level=info msg="Going to get block 1 of channel _asset from consensus" app=orderer package=channel
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] POST   /v1/fetchblock            --> madledger/orderer/server.(*Server).FetchBlockByHTTP-fm (3 handlers)
+[GIN-debug] POST   /v1/listchannels          --> madledger/orderer/server.(*Server).ListChannelsByHTTP-fm (3 handlers)
+time="2020-03-03T14:46:14+08:00" level=info msg="Stop channel _global consensus" app=consensus package=solo
+[GIN-debug] POST   /v1/createchannel         --> madledger/orderer/server.(*Server).CreateChannelByHTTP-fm (3 handlers)
+[GIN-debug] POST   /v1/addtx                 --> madledger/orderer/server.(*Server).AddTxByHTTP-fm (3 handlers)
+time="2020-03-03T14:46:14+08:00" level=info msg="Stop channel _asset consensus" app=consensus package=solo
+time="2020-03-03T14:46:14+08:00" level=info msg="Stop channel _config consensus" app=consensus package=solo
+time="2020-03-03T14:46:15+08:00" level=info msg="Succeed to stop the orderer service" app=orderer package=server
+time="2020-03-03T14:46:16+08:00" level=info msg="timeout of 5 seconds." app=orderer package=server
+time="2020-03-03T14:46:16+08:00" level=info msg="Server exiting" app=orderer package=server
+time="2020-03-03T14:46:16+08:00" level=info msg="Start the orderer at localhost:12345" app=orderer package=server
+time="2020-03-03T14:46:16+08:00" level=info msg="Channel _asset start" app=consensus package=solo
+time="2020-03-03T14:46:16+08:00" level=info msg="Channel _global start" app=consensus package=solo
+time="2020-03-03T14:46:16+08:00" level=info msg="Channel _config start" app=consensus package=solo
+time="2020-03-03T14:46:16+08:00" level=info msg="Channel _global is starting" app=orderer package=channel
+time="2020-03-03T14:46:16+08:00" level=info msg="Going to get block 1 of channel _global from consensus" app=orderer package=channel
+time="2020-03-03T14:46:16+08:00" level=info msg="Channel _config is starting" app=orderer package=channel
+time="2020-03-03T14:46:16+08:00" level=info msg="Going to get block 1 of channel _config from consensus" app=orderer package=channel
+time="2020-03-03T14:46:16+08:00" level=info msg="Channel _asset is starting" app=orderer package=channel
+time="2020-03-03T14:46:16+08:00" level=info msg="Going to get block 1 of channel _asset from consensus" app=orderer package=channel
+time="2020-03-03T14:46:16+08:00" level=info msg="Create channel test" app=orderer package=channel
+time="2020-03-03T14:46:17+08:00" level=info msg="Get block 1 of channel _config from consensus" app=orderer package=channel
+time="2020-03-03T14:46:17+08:00" level=info msg="Going to get block 2 of channel _config from consensus" app=orderer package=channel
+time="2020-03-03T14:46:17+08:00" level=info msg="getTxsFromConsensusBlock: block 1 in _config add tx 4e6425c71b9855a824ac9bd9025ece6519fb797f77a4bde9232b29aa2d935c55" app=orderer package=channel
+time="2020-03-03T14:46:18+08:00" level=info msg="Get block 1 of channel _global from consensus" app=orderer package=channel
+time="2020-03-03T14:46:18+08:00" level=info msg="Going to get block 2 of channel _global from consensus" app=orderer package=channel
+time="2020-03-03T14:46:18+08:00" level=info msg="getTxsFromConsensusBlock: block 1 in _global add tx 2880eddeae5914b0938f36567a2672ddacf22a4141fa4b26b290f31a7f6d089a" app=orderer package=channel
+time="2020-03-03T14:46:18+08:00" level=info msg="Channel _global add block 1" app=blockchain package=blockchain
+time="2020-03-03T14:46:18+08:00" level=info msg="Channel _config add block 1" app=blockchain package=blockchain
+time="2020-03-03T14:46:18+08:00" level=info msg="Channel test start" app=consensus package=solo
+time="2020-03-03T14:46:18+08:00" level=info msg="Channel test add block 0" app=blockchain package=blockchain
+time="2020-03-03T14:46:18+08:00" level=info msg="system/AddConfigBlock: start channel test" app=orderer package=channel
+time="2020-03-03T14:46:18+08:00" level=info msg="Channel test is starting" app=orderer package=channel
+time="2020-03-03T14:46:18+08:00" level=info msg="Going to get block 1 of channel test from consensus" app=orderer package=channel
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] POST   /v1/fetchblock            --> madledger/orderer/server.(*Server).FetchBlockByHTTP-fm (3 handlers)
+[GIN-debug] POST   /v1/listchannels          --> madledger/orderer/server.(*Server).ListChannelsByHTTP-fm (3 handlers)
+[GIN-debug] POST   /v1/createchannel         --> madledger/orderer/server.(*Server).CreateChannelByHTTP-fm (3 handlers)
+time="2020-03-03T14:46:18+08:00" level=info msg="Stop channel _config consensus" app=consensus package=solo
+[GIN-debug] POST   /v1/addtx                 --> madledger/orderer/server.(*Server).AddTxByHTTP-fm (3 handlers)
+time="2020-03-03T14:46:18+08:00" level=info msg="Stop channel _asset consensus" app=consensus package=solo
+time="2020-03-03T14:46:18+08:00" level=info msg="Stop channel _global consensus" app=consensus package=solo
+time="2020-03-03T14:46:18+08:00" level=info msg="Stop channel test consensus" app=consensus package=solo
+time="2020-03-03T14:46:18+08:00" level=info msg="Succeed to stop the orderer service" app=orderer package=server
+time="2020-03-03T14:46:19+08:00" level=info msg="timeout of 5 seconds." app=orderer package=server
+time="2020-03-03T14:46:19+08:00" level=info msg="Server exiting" app=orderer package=server
+time="2020-03-03T14:46:19+08:00" level=info msg="loadUserChannel: load channel test from leveldb" app=orderer package=channel
+time="2020-03-03T14:46:19+08:00" level=info msg="Start the orderer at localhost:12345" app=orderer package=server
+time="2020-03-03T14:46:19+08:00" level=info msg="Channel _global start" app=consensus package=solo
+time="2020-03-03T14:46:19+08:00" level=info msg="Channel _config start" app=consensus package=solo
+time="2020-03-03T14:46:19+08:00" level=info msg="Channel _asset start" app=consensus package=solo
+time="2020-03-03T14:46:19+08:00" level=info msg="Channel test start" app=consensus package=solo
+time="2020-03-03T14:46:19+08:00" level=info msg="Channel _global is starting" app=orderer package=channel
+time="2020-03-03T14:46:19+08:00" level=info msg="Going to get block 1 of channel _global from consensus" app=orderer package=channel
+time="2020-03-03T14:46:20+08:00" level=info msg="Channel _config is starting" app=orderer package=channel
+time="2020-03-03T14:46:20+08:00" level=info msg="Going to get block 1 of channel _config from consensus" app=orderer package=channel
+time="2020-03-03T14:46:20+08:00" level=info msg="Channel _asset is starting" app=orderer package=channel
+time="2020-03-03T14:46:20+08:00" level=info msg="Going to get block 1 of channel _asset from consensus" app=orderer package=channel
+time="2020-03-03T14:46:20+08:00" level=info msg="coordinator/Start: start channel test" app=orderer package=channel
+time="2020-03-03T14:46:20+08:00" level=info msg="Channel test is starting" app=orderer package=channel
+time="2020-03-03T14:46:20+08:00" level=info msg="Going to get block 1 of channel test from consensus" app=orderer package=channel
+time="2020-03-03T14:46:20+08:00" level=info msg="Get block 1 of channel test from consensus" app=orderer package=channel
+time="2020-03-03T14:46:20+08:00" level=info msg="Going to get block 2 of channel test from consensus" app=orderer package=channel
+time="2020-03-03T14:46:20+08:00" level=info msg="getTxsFromConsensusBlock: block 1 in test add tx 66438139ea48939ce94100b1961b3d882c214d9fc0bd4f50ae946109f5509063" app=orderer package=channel
+time="2020-03-03T14:46:21+08:00" level=info msg="Get block 1 of channel _global from consensus" app=orderer package=channel
+time="2020-03-03T14:46:21+08:00" level=info msg="Going to get block 2 of channel _global from consensus" app=orderer package=channel
+time="2020-03-03T14:46:21+08:00" level=info msg="getTxsFromConsensusBlock: block 1 in _global add tx 8b1d0b6e3369cfd66953d53f0f110752cfacd2533cc74b03e826f8cbe13f3156" app=orderer package=channel
+time="2020-03-03T14:46:21+08:00" level=info msg="Channel _global add block 2" app=blockchain package=blockchain
+time="2020-03-03T14:46:21+08:00" level=info msg="Channel test add block 1" app=blockchain package=blockchain
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] POST   /v1/fetchblock            --> madledger/orderer/server.(*Server).FetchBlockByHTTP-fm (3 handlers)
+[GIN-debug] POST   /v1/listchannels          --> madledger/orderer/server.(*Server).ListChannelsByHTTP-fm (3 handlers)
+[GIN-debug] POST   /v1/createchannel         --> madledger/orderer/server.(*Server).CreateChannelByHTTP-fm (3 handlers)
+[GIN-debug] POST   /v1/addtx                 --> madledger/orderer/server.(*Server).AddTxByHTTP-fm (3 handlers)
+time="2020-03-03T14:46:21+08:00" level=info msg="Stop channel _global consensus" app=consensus package=solo
+time="2020-03-03T14:46:21+08:00" level=info msg="Stop channel _config consensus" app=consensus package=solo
+time="2020-03-03T14:46:21+08:00" level=info msg="Stop channel _asset consensus" app=consensus package=solo
+time="2020-03-03T14:46:21+08:00" level=info msg="Stop channel test consensus" app=consensus package=solo
+time="2020-03-03T14:46:22+08:00" level=info msg="Succeed to stop the orderer service" app=orderer package=server
+==================
+WARNING: DATA RACE
+Read at 0x00c000161fa8 by goroutine 109:
+  madledger/orderer/server.(*Server).Stop()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:158 +0x1fc
+  madledger/orderer/server.TestServerRestartWithUserChannel()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:227 +0x475
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestServerRestartWithUserChannel()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:205 +0x4c
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+
+Previous write at 0x00c000161fa8 by goroutine 72:
+  madledger/orderer/server.(*Server).Start()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:131 +0x83a
+  madledger/orderer/server.TestServerRestartWithUserChannel.func1()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:209 +0x4e
+
+Goroutine 109 (running) created at:
+  testing.(*T).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:960 +0x651
+  testing.runTests.func1()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1202 +0xa6
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+  testing.runTests()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1200 +0x521
+  testing.(*M).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1117 +0x2ff
+  main.main()
+      _testmain.go:114 +0x337
+
+Goroutine 72 (finished) created at:
+  madledger/orderer/server.TestServerRestartWithUserChannel()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:208 +0x10c
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestServerRestartWithUserChannel()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:205 +0x4c
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+==================
+==================
+WARNING: DATA RACE
+Write at 0x00c000f9c3fc by goroutine 109:
+  sync/atomic.StoreInt32()
+      /usr/local/Cellar/go/1.13.4/libexec/src/runtime/race_amd64.s:229 +0xb
+  net/http.(*Server).Shutdown()
+      /usr/local/Cellar/go/1.13.4/libexec/src/net/http/server.go:2664 +0x6c
+  madledger/orderer/server.(*Server).Stop()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:158 +0x228
+  madledger/orderer/server.TestServerRestartWithUserChannel()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:227 +0x475
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestServerRestartWithUserChannel()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:205 +0x4c
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+
+Previous write at 0x00c000f9c3f8 by goroutine 72:
+  madledger/orderer/server.(*Server).Start()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:133 +0x778
+  madledger/orderer/server.TestServerRestartWithUserChannel.func1()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:209 +0x4e
+
+Goroutine 109 (running) created at:
+  testing.(*T).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:960 +0x651
+  testing.runTests.func1()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1202 +0xa6
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+  testing.runTests()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1200 +0x521
+  testing.(*M).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1117 +0x2ff
+  main.main()
+      _testmain.go:114 +0x337
+
+Goroutine 72 (finished) created at:
+  madledger/orderer/server.TestServerRestartWithUserChannel()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:208 +0x10c
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestServerRestartWithUserChannel()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:205 +0x4c
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+==================
+==================
+WARNING: DATA RACE
+Write at 0x00c000f9c420 by goroutine 109:
+  sync/atomic.CompareAndSwapInt32()
+      /usr/local/Cellar/go/1.13.4/libexec/src/runtime/race_amd64.s:293 +0xb
+  sync.(*Mutex).Lock()
+      /usr/local/Cellar/go/1.13.4/libexec/src/sync/mutex.go:74 +0x49
+  net/http.(*Server).Shutdown()
+      /usr/local/Cellar/go/1.13.4/libexec/src/net/http/server.go:2666 +0x8c
+  madledger/orderer/server.(*Server).Stop()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:158 +0x228
+  madledger/orderer/server.TestServerRestartWithUserChannel()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:227 +0x475
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestServerRestartWithUserChannel()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:205 +0x4c
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+
+Previous write at 0x00c000f9c420 by goroutine 72:
+  madledger/orderer/server.(*Server).Start()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:133 +0x778
+  madledger/orderer/server.TestServerRestartWithUserChannel.func1()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:209 +0x4e
+
+Goroutine 109 (running) created at:
+  testing.(*T).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:960 +0x651
+  testing.runTests.func1()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1202 +0xa6
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+  testing.runTests()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1200 +0x521
+  testing.(*M).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1117 +0x2ff
+  main.main()
+      _testmain.go:114 +0x337
+
+Goroutine 72 (finished) created at:
+  madledger/orderer/server.TestServerRestartWithUserChannel()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:208 +0x10c
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestServerRestartWithUserChannel()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:205 +0x4c
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+==================
+time="2020-03-03T14:46:23+08:00" level=info msg="timeout of 5 seconds." app=orderer package=server
+time="2020-03-03T14:46:23+08:00" level=info msg="Server exiting" app=orderer package=server
+--- FAIL: TestServerRestartWithUserChannel (3.57s)
+    testing.go:853: race detected during execution of test
+time="2020-03-03T14:46:23+08:00" level=info msg="loadUserChannel: load channel test from leveldb" app=orderer package=channel
+time="2020-03-03T14:46:23+08:00" level=info msg="Start the orderer at localhost:12345" app=orderer package=server
+time="2020-03-03T14:46:23+08:00" level=info msg="Channel _config start" app=consensus package=solo
+time="2020-03-03T14:46:23+08:00" level=info msg="Channel _asset start" app=consensus package=solo
+time="2020-03-03T14:46:23+08:00" level=info msg="Channel test start" app=consensus package=solo
+time="2020-03-03T14:46:23+08:00" level=info msg="Channel _global start" app=consensus package=solo
+time="2020-03-03T14:46:23+08:00" level=info msg="Channel _global is starting" app=orderer package=channel
+time="2020-03-03T14:46:23+08:00" level=info msg="Going to get block 1 of channel _global from consensus" app=orderer package=channel
+time="2020-03-03T14:46:23+08:00" level=info msg="Channel _config is starting" app=orderer package=channel
+time="2020-03-03T14:46:23+08:00" level=info msg="Going to get block 1 of channel _config from consensus" app=orderer package=channel
+time="2020-03-03T14:46:23+08:00" level=info msg="Channel _asset is starting" app=orderer package=channel
+time="2020-03-03T14:46:23+08:00" level=info msg="Going to get block 1 of channel _asset from consensus" app=orderer package=channel
+time="2020-03-03T14:46:23+08:00" level=info msg="coordinator/Start: start channel test" app=orderer package=channel
+time="2020-03-03T14:46:23+08:00" level=info msg="Channel test is starting" app=orderer package=channel
+time="2020-03-03T14:46:23+08:00" level=info msg="Going to get block 1 of channel test from consensus" app=orderer package=channel
+time="2020-03-03T14:46:24+08:00" level=info msg="Create channel async" app=orderer package=channel
+time="2020-03-03T14:46:25+08:00" level=info msg="Get block 1 of channel _config from consensus" app=orderer package=channel
+time="2020-03-03T14:46:25+08:00" level=info msg="Going to get block 2 of channel _config from consensus" app=orderer package=channel
+time="2020-03-03T14:46:25+08:00" level=info msg="getTxsFromConsensusBlock: block 1 in _config add tx 930100177764763346b70b9942cd26e289561ecda5d1e230a8e01545a06e2595" app=orderer package=channel
+time="2020-03-03T14:46:26+08:00" level=info msg="Get block 1 of channel _global from consensus" app=orderer package=channel
+time="2020-03-03T14:46:26+08:00" level=info msg="Going to get block 2 of channel _global from consensus" app=orderer package=channel
+time="2020-03-03T14:46:26+08:00" level=info msg="getTxsFromConsensusBlock: block 1 in _global add tx f852ee72b543cb6971b8c410e26fef4d2a63abff7846c693b00fccd60885c7f6" app=orderer package=channel
+time="2020-03-03T14:46:26+08:00" level=info msg="Channel _global add block 3" app=blockchain package=blockchain
+time="2020-03-03T14:46:26+08:00" level=info msg="Channel _config add block 2" app=blockchain package=blockchain
+time="2020-03-03T14:46:26+08:00" level=info msg="Channel async start" app=consensus package=solo
+time="2020-03-03T14:46:26+08:00" level=info msg="Channel async add block 0" app=blockchain package=blockchain
+time="2020-03-03T14:46:26+08:00" level=info msg="system/AddConfigBlock: start channel async" app=orderer package=channel
+time="2020-03-03T14:46:26+08:00" level=info msg="Channel async is starting" app=orderer package=channel
+time="2020-03-03T14:46:26+08:00" level=info msg="Going to get block 1 of channel async from consensus" app=orderer package=channel
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] POST   /v1/fetchblock            --> madledger/orderer/server.(*Server).FetchBlockByHTTP-fm (3 handlers)
+time="2020-03-03T14:46:26+08:00" level=info msg="Stop channel test consensus" app=consensus package=solo
+[GIN-debug] POST   /v1/listchannels          --> madledger/orderer/server.(*Server).ListChannelsByHTTP-fm (3 handlers)
+[GIN-debug] POST   /v1/createchannel         --> madledger/orderer/server.(*Server).CreateChannelByHTTP-fm (3 handlers)
+[GIN-debug] POST   /v1/addtx                 --> madledger/orderer/server.(*Server).AddTxByHTTP-fm (3 handlers)
+time="2020-03-03T14:46:26+08:00" level=info msg="Stop channel _global consensus" app=consensus package=solo
+time="2020-03-03T14:46:26+08:00" level=info msg="Stop channel _asset consensus" app=consensus package=solo
+time="2020-03-03T14:46:26+08:00" level=info msg="Stop channel _config consensus" app=consensus package=solo
+time="2020-03-03T14:46:26+08:00" level=info msg="Stop channel async consensus" app=consensus package=solo
+time="2020-03-03T14:46:26+08:00" level=info msg="Succeed to stop the orderer service" app=orderer package=server
+==================
+WARNING: DATA RACE
+Read at 0x00c000042d68 by goroutine 137:
+  madledger/orderer/server.(*Server).Stop()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:158 +0x1fc
+  madledger/orderer/server.TestFetchBlockAsync()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:307 +0xc20
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestFetchBlockAsync()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:232 +0xa2
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+
+Previous write at 0x00c000042d68 by goroutine 78:
+  madledger/orderer/server.(*Server).Start()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:131 +0x83a
+  madledger/orderer/server.TestFetchBlockAsync.func1()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:236 +0x4e
+
+Goroutine 137 (running) created at:
+  testing.(*T).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:960 +0x651
+  testing.runTests.func1()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1202 +0xa6
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+  testing.runTests()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1200 +0x521
+  testing.(*M).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1117 +0x2ff
+  main.main()
+      _testmain.go:114 +0x337
+
+Goroutine 78 (finished) created at:
+  madledger/orderer/server.TestFetchBlockAsync()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:235 +0x1a7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestFetchBlockAsync()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:232 +0xa2
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+==================
+==================
+WARNING: DATA RACE
+Write at 0x00c0001a277c by goroutine 137:
+  sync/atomic.StoreInt32()
+      /usr/local/Cellar/go/1.13.4/libexec/src/runtime/race_amd64.s:229 +0xb
+  net/http.(*Server).Shutdown()
+      /usr/local/Cellar/go/1.13.4/libexec/src/net/http/server.go:2664 +0x6c
+  madledger/orderer/server.(*Server).Stop()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:158 +0x228
+  madledger/orderer/server.TestFetchBlockAsync()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:307 +0xc20
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestFetchBlockAsync()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:232 +0xa2
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+
+Previous write at 0x00c0001a2778 by goroutine 78:
+  madledger/orderer/server.(*Server).Start()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:133 +0x778
+  madledger/orderer/server.TestFetchBlockAsync.func1()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:236 +0x4e
+
+Goroutine 137 (running) created at:
+  testing.(*T).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:960 +0x651
+  testing.runTests.func1()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1202 +0xa6
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+  testing.runTests()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1200 +0x521
+  testing.(*M).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1117 +0x2ff
+  main.main()
+      _testmain.go:114 +0x337
+
+Goroutine 78 (finished) created at:
+  madledger/orderer/server.TestFetchBlockAsync()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:235 +0x1a7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestFetchBlockAsync()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:232 +0xa2
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+==================
+==================
+WARNING: DATA RACE
+Write at 0x00c0001a27a0 by goroutine 137:
+  sync/atomic.CompareAndSwapInt32()
+      /usr/local/Cellar/go/1.13.4/libexec/src/runtime/race_amd64.s:293 +0xb
+  sync.(*Mutex).Lock()
+      /usr/local/Cellar/go/1.13.4/libexec/src/sync/mutex.go:74 +0x49
+  net/http.(*Server).Shutdown()
+      /usr/local/Cellar/go/1.13.4/libexec/src/net/http/server.go:2666 +0x8c
+  madledger/orderer/server.(*Server).Stop()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:158 +0x228
+  madledger/orderer/server.TestFetchBlockAsync()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:307 +0xc20
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestFetchBlockAsync()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:232 +0xa2
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+
+Previous write at 0x00c0001a27a0 by goroutine 78:
+  madledger/orderer/server.(*Server).Start()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:133 +0x778
+  madledger/orderer/server.TestFetchBlockAsync.func1()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:236 +0x4e
+
+Goroutine 137 (running) created at:
+  testing.(*T).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:960 +0x651
+  testing.runTests.func1()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1202 +0xa6
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+  testing.runTests()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1200 +0x521
+  testing.(*M).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1117 +0x2ff
+  main.main()
+      _testmain.go:114 +0x337
+
+Goroutine 78 (finished) created at:
+  madledger/orderer/server.TestFetchBlockAsync()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:235 +0x1a7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestFetchBlockAsync()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:232 +0xa2
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+==================
+time="2020-03-03T14:46:27+08:00" level=info msg="timeout of 5 seconds." app=orderer package=server
+time="2020-03-03T14:46:27+08:00" level=info msg="Server exiting" app=orderer package=server
+--- FAIL: TestFetchBlockAsync (4.60s)
+    testing.go:853: race detected during execution of test
+time="2020-03-03T14:46:27+08:00" level=info msg="loadUserChannel: load channel test from leveldb" app=orderer package=channel
+time="2020-03-03T14:46:27+08:00" level=info msg="loadUserChannel: load channel async from leveldb" app=orderer package=channel
+time="2020-03-03T14:46:28+08:00" level=info msg="Start the orderer at localhost:12345" app=orderer package=server
+time="2020-03-03T14:46:28+08:00" level=info msg="Channel _asset start" app=consensus package=solo
+time="2020-03-03T14:46:28+08:00" level=info msg="Channel async start" app=consensus package=solo
+time="2020-03-03T14:46:28+08:00" level=info msg="Channel _global start" app=consensus package=solo
+time="2020-03-03T14:46:28+08:00" level=info msg="Channel _config start" app=consensus package=solo
+time="2020-03-03T14:46:28+08:00" level=info msg="Channel test start" app=consensus package=solo
+time="2020-03-03T14:46:28+08:00" level=info msg="Channel _global is starting" app=orderer package=channel
+time="2020-03-03T14:46:28+08:00" level=info msg="Going to get block 1 of channel _global from consensus" app=orderer package=channel
+time="2020-03-03T14:46:28+08:00" level=info msg="Channel _config is starting" app=orderer package=channel
+time="2020-03-03T14:46:28+08:00" level=info msg="Going to get block 1 of channel _config from consensus" app=orderer package=channel
+time="2020-03-03T14:46:28+08:00" level=info msg="Channel _asset is starting" app=orderer package=channel
+time="2020-03-03T14:46:28+08:00" level=info msg="Going to get block 1 of channel _asset from consensus" app=orderer package=channel
+time="2020-03-03T14:46:28+08:00" level=info msg="coordinator/Start: start channel test" app=orderer package=channel
+time="2020-03-03T14:46:28+08:00" level=info msg="coordinator/Start: start channel async" app=orderer package=channel
+time="2020-03-03T14:46:28+08:00" level=info msg="Channel test is starting" app=orderer package=channel
+time="2020-03-03T14:46:28+08:00" level=info msg="Channel async is starting" app=orderer package=channel
+time="2020-03-03T14:46:28+08:00" level=info msg="Going to get block 1 of channel test from consensus" app=orderer package=channel
+time="2020-03-03T14:46:28+08:00" level=info msg="Going to get block 1 of channel async from consensus" app=orderer package=channel
+time="2020-03-03T14:46:29+08:00" level=info msg="Get block 1 of channel test from consensus" app=orderer package=channel
+time="2020-03-03T14:46:29+08:00" level=info msg="Going to get block 2 of channel test from consensus" app=orderer package=channel
+time="2020-03-03T14:46:29+08:00" level=info msg="getTxsFromConsensusBlock: block 1 in test add tx bad4a5797ad316231ce3be50527237832355531b1ea681b8b5da92e7417b408f" app=orderer package=channel
+time="2020-03-03T14:46:30+08:00" level=info msg="Get block 1 of channel _global from consensus" app=orderer package=channel
+time="2020-03-03T14:46:30+08:00" level=info msg="Going to get block 2 of channel _global from consensus" app=orderer package=channel
+time="2020-03-03T14:46:30+08:00" level=info msg="getTxsFromConsensusBlock: block 1 in _global add tx 61414c2f3df35ad04462b163cc22743ffc3bb0da0196b941eeff2b3e08bb2c5b" app=orderer package=channel
+time="2020-03-03T14:46:30+08:00" level=info msg="Channel _global add block 4" app=blockchain package=blockchain
+time="2020-03-03T14:46:30+08:00" level=info msg="Channel test add block 2" app=blockchain package=blockchain
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] POST   /v1/fetchblock            --> madledger/orderer/server.(*Server).FetchBlockByHTTP-fm (3 handlers)
+[GIN-debug] POST   /v1/listchannels          --> madledger/orderer/server.(*Server).ListChannelsByHTTP-fm (3 handlers)
+[GIN-debug] POST   /v1/createchannel         --> madledger/orderer/server.(*Server).CreateChannelByHTTP-fm (3 handlers)
+[GIN-debug] POST   /v1/addtx                 --> madledger/orderer/server.(*Server).AddTxByHTTP-fm (3 handlers)
+time="2020-03-03T14:46:30+08:00" level=info msg="Stop channel _config consensus" app=consensus package=solo
+time="2020-03-03T14:46:30+08:00" level=info msg="Stop channel _asset consensus" app=consensus package=solo
+time="2020-03-03T14:46:30+08:00" level=info msg="Stop channel _global consensus" app=consensus package=solo
+time="2020-03-03T14:46:30+08:00" level=info msg="Stop channel test consensus" app=consensus package=solo
+time="2020-03-03T14:46:30+08:00" level=info msg="Stop channel async consensus" app=consensus package=solo
+time="2020-03-03T14:46:30+08:00" level=info msg="Succeed to stop the orderer service" app=orderer package=server
+==================
+WARNING: DATA RACE
+Read at 0x00c000154ea8 by goroutine 105:
+  madledger/orderer/server.(*Server).Stop()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:158 +0x1fc
+  madledger/orderer/server.TestAddDuplicateTxs()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:340 +0x5ab
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestAddDuplicateTxs()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:312 +0x4c
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+
+Previous write at 0x00c000154ea8 by goroutine 89:
+  madledger/orderer/server.(*Server).Start()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:131 +0x83a
+  madledger/orderer/server.TestAddDuplicateTxs.func1()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:316 +0x4e
+
+Goroutine 105 (running) created at:
+  testing.(*T).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:960 +0x651
+  testing.runTests.func1()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1202 +0xa6
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+  testing.runTests()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1200 +0x521
+  testing.(*M).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1117 +0x2ff
+  main.main()
+      _testmain.go:114 +0x337
+
+Goroutine 89 (finished) created at:
+  madledger/orderer/server.TestAddDuplicateTxs()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:315 +0x10c
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestAddDuplicateTxs()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:312 +0x4c
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+==================
+==================
+WARNING: DATA RACE
+Write at 0x00c00029023c by goroutine 105:
+  sync/atomic.StoreInt32()
+      /usr/local/Cellar/go/1.13.4/libexec/src/runtime/race_amd64.s:229 +0xb
+  net/http.(*Server).Shutdown()
+      /usr/local/Cellar/go/1.13.4/libexec/src/net/http/server.go:2664 +0x6c
+  madledger/orderer/server.(*Server).Stop()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:158 +0x228
+  madledger/orderer/server.TestAddDuplicateTxs()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:340 +0x5ab
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestAddDuplicateTxs()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:312 +0x4c
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+
+Previous write at 0x00c000290238 by goroutine 89:
+  madledger/orderer/server.(*Server).Start()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:133 +0x778
+  madledger/orderer/server.TestAddDuplicateTxs.func1()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:316 +0x4e
+
+Goroutine 105 (running) created at:
+  testing.(*T).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:960 +0x651
+  testing.runTests.func1()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1202 +0xa6
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+  testing.runTests()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1200 +0x521
+  testing.(*M).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1117 +0x2ff
+  main.main()
+      _testmain.go:114 +0x337
+
+Goroutine 89 (finished) created at:
+  madledger/orderer/server.TestAddDuplicateTxs()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:315 +0x10c
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestAddDuplicateTxs()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:312 +0x4c
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+==================
+==================
+WARNING: DATA RACE
+Write at 0x00c000290260 by goroutine 105:
+  sync/atomic.CompareAndSwapInt32()
+      /usr/local/Cellar/go/1.13.4/libexec/src/runtime/race_amd64.s:293 +0xb
+  sync.(*Mutex).Lock()
+      /usr/local/Cellar/go/1.13.4/libexec/src/sync/mutex.go:74 +0x49
+  net/http.(*Server).Shutdown()
+      /usr/local/Cellar/go/1.13.4/libexec/src/net/http/server.go:2666 +0x8c
+  madledger/orderer/server.(*Server).Stop()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:158 +0x228
+  madledger/orderer/server.TestAddDuplicateTxs()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:340 +0x5ab
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestAddDuplicateTxs()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:312 +0x4c
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+
+Previous write at 0x00c000290260 by goroutine 89:
+  madledger/orderer/server.(*Server).Start()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:133 +0x778
+  madledger/orderer/server.TestAddDuplicateTxs.func1()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:316 +0x4e
+
+Goroutine 105 (running) created at:
+  testing.(*T).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:960 +0x651
+  testing.runTests.func1()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1202 +0xa6
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+  testing.runTests()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1200 +0x521
+  testing.(*M).Run()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:1117 +0x2ff
+  main.main()
+      _testmain.go:114 +0x337
+
+Goroutine 89 (finished) created at:
+  madledger/orderer/server.TestAddDuplicateTxs()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:315 +0x10c
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).checkAndCleanFiles()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db_util.go:52 +0x2f8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:130 +0x9f0
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x284
+  fmt.(*ss).doScanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:1217 +0x382
+  fmt.Fscanf()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:143 +0xcf
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).List()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:458 +0x2c4
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).recoverJournal()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:476 +0xc5
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.openDB()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:125 +0x9cc
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:197 +0x1c6
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.fsParseName()
+      /usr/local/Cellar/go/1.13.4/libexec/src/fmt/scan.go:114 +0x192
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func1()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:666 +0x791
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta.func2()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:356 +0xca
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage.(*fileStorage).GetMeta()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/storage/file_storage.go:407 +0x6db
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.(*session).recover()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/session.go:119 +0xf7
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.Open()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:183 +0xf8
+  madledger/vendor/github.com/syndtr/goleveldb/leveldb.OpenFile()
+      /Users/hankyz/go/src/madledger/vendor/github.com/syndtr/goleveldb/leveldb/db.go:219 +0xa5
+  madledger/orderer/db.NewLevelDB()
+      /Users/hankyz/go/src/madledger/orderer/db/leveldb.go:38 +0xa2
+  madledger/orderer/channel.NewCoordinator()
+      /Users/hankyz/go/src/madledger/orderer/channel/coordinator.go:53 +0xdd
+  madledger/orderer/server.NewServer()
+      /Users/hankyz/go/src/madledger/orderer/server/server.go:74 +0x201
+  madledger/orderer/server.TestAddDuplicateTxs()
+      /Users/hankyz/go/src/madledger/orderer/server/server_test.go:312 +0x4c
+  testing.tRunner()
+      /usr/local/Cellar/go/1.13.4/libexec/src/testing/testing.go:909 +0x199
+==================
+time="2020-03-03T14:46:31+08:00" level=info msg="timeout of 5 seconds." app=orderer package=server
+time="2020-03-03T14:46:31+08:00" level=info msg="Server exiting" app=orderer package=server
+--- FAIL: TestAddDuplicateTxs (3.56s)
+    testing.go:853: race detected during execution of test
+FAIL
+coverage: 42.2% of statements
+FAIL	madledger/orderer/server	22.568s
+FAIL

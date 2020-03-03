@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	ac "madledger/blockchain/asset"
 	bc "madledger/blockchain/config"
 	gc "madledger/blockchain/global"
 	ct "madledger/consensus/tendermint"
@@ -29,11 +30,14 @@ type Coordinator struct {
 
 	lock sync.RWMutex
 	// Channels manager all user channels
-	Managers map[string]*Manager
+	managerLock sync.RWMutex
+	Managers    map[string]*Manager
 	// GM is the global channel manager
 	GM *Manager
 	// CM is the config channel manager
 	CM *Manager
+	// AM is the asset channel manager
+	AM *Manager
 
 	Consensus consensus.Consensus
 }
@@ -80,6 +84,8 @@ func (c *Coordinator) Start() error {
 	go c.GM.Start()
 	time.Sleep(100 * time.Millisecond)
 	go c.CM.Start()
+	time.Sleep(100 * time.Millisecond)
+	go c.AM.Start()
 	time.Sleep(100 * time.Millisecond)
 	for _, channelManager := range c.Managers {
 		// 开启manager之前，应该判断manager的init是否为true
@@ -136,10 +142,20 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 				Identity:  pb.Identity_MEMBER,
 			})
 		}
+		if c.AM != nil {
+			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
+				ChannelID: core.ASSETCHANNELID,
+				BlockSize: c.AM.GetBlockSize(),
+				Identity:  pb.Identity_MEMBER,
+			})
+		}
 	}
 
 	c.lock.RLock()
 	defer c.lock.RUnlock()
+
+	c.managerLock.RLock()
+	defer c.managerLock.RUnlock()
 
 	for channel, channelManager := range c.Managers {
 		if channelManager.IsMember(member) {
@@ -175,6 +191,12 @@ func (c *Coordinator) AddTx(tx *core.Tx) error {
 	return channel.AddTx(tx)
 }
 
+func (c *Coordinator) setChannel(channelID string, manager *Manager) {
+	c.managerLock.Lock()
+	defer c.managerLock.Unlock()
+	c.Managers[channelID] = manager
+}
+
 // createChannel try to create a channel
 // However, this should check if the channel exist and should be thread safety.
 func (c *Coordinator) createChannel(tx *core.Tx) error {
@@ -191,16 +213,21 @@ func (c *Coordinator) createChannel(tx *core.Tx) error {
 	log.Infof("Create channel %s", channelID)
 	switch channelID {
 	case core.GLOBALCHANNELID:
-		return fmt.Errorf("Channel %s is aleardy exist", channelID)
+		return fmt.Errorf("Channel %s is already exist", channelID)
 	case core.CONFIGCHANNELID:
-		return fmt.Errorf("Channel %s is aleardy exist", channelID)
+		return fmt.Errorf("Channel %s is already exist", channelID)
+	case core.ASSETCHANNELID:
+		return fmt.Errorf("Channel %s is already exist", channelID)
 	default:
 		if !util.IsLegalChannelName(channelID) {
 			return fmt.Errorf("%s is not a legal channel name", channelID)
 		}
+		c.managerLock.RLock()
 		if util.Contain(c.Managers, channelID) {
+			c.managerLock.RUnlock()
 			return fmt.Errorf("Channel %s is aleardy exist", channelID)
 		}
+		c.managerLock.RUnlock()
 	}
 
 	err = c.CM.AddTx(tx)
@@ -220,9 +247,11 @@ func (c *Coordinator) getChannelManager(channelID string) (*Manager, error) {
 		return c.GM, nil
 	case core.CONFIGCHANNELID:
 		return c.CM, nil
+	case core.ASSETCHANNELID:
+		return c.AM, nil
 	default:
-		c.lock.RLock()
-		defer c.lock.RUnlock()
+		c.managerLock.RLock()
+		defer c.managerLock.RUnlock()
 		if util.Contain(c.Managers, channelID) {
 			return c.Managers[channelID], nil
 		}
@@ -239,6 +268,11 @@ func (c *Coordinator) loadSystemChannel() error {
 	if err := c.loadGlobalChannel(); err != nil {
 		return err
 	}
+
+	if err := c.loadAssetChannel(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -308,6 +342,28 @@ func (c *Coordinator) loadGlobalChannel() error {
 	return nil
 }
 
+func (c *Coordinator) loadAssetChannel() error {
+	var err error
+	c.AM, err = NewManager(core.ASSETCHANNELID, c)
+	if err != nil {
+		return err
+	}
+	if !c.AM.HasGenesisBlock() {
+		log.Infof("Creating genesis block of channel _asset")
+		// todo: ab empty payload in asset genesis block?
+		// agb: asset channel genesis block
+		agb, err := ac.CreateGenesisBlock([]*ac.Payload{&ac.Payload{}})
+		if err != nil {
+			return err
+		}
+		err = c.AM.AddBlock(agb)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // loadUserChannel load all user channels
 func (c *Coordinator) loadUserChannel() error {
 	channels := c.db.ListChannel()
@@ -317,7 +373,9 @@ func (c *Coordinator) loadUserChannel() error {
 			if err != nil {
 				return err
 			}
+			c.managerLock.Lock()
 			c.Managers[channelID] = manager
+			c.managerLock.Unlock()
 			log.Infof("loadUserChannel: load channel %s from leveldb", channelID)
 		}
 	}
@@ -336,10 +394,13 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 	}
 	channels[core.GLOBALCHANNELID] = defaultCfg
 	channels[core.CONFIGCHANNELID] = defaultCfg
+	channels[core.ASSETCHANNELID] = defaultCfg
 	// set consensus of user channels
+	c.managerLock.RLock()
 	for channelID := range c.Managers {
 		channels[channelID] = defaultCfg
 	}
+	c.managerLock.RUnlock()
 	switch cfg.Type {
 	case config.SOLO:
 		consensus, err := solo.NewConsensus(channels)
@@ -348,12 +409,12 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 		}
 		c.Consensus = consensus
 	case config.RAFT:
-		raftConfig, err := getConfig(cfg.Raft.Path, cfg.Raft.ID, cfg.Raft.Nodes, cfg.Raft.Join, cfg.Raft.TLS, c.chainCfg.BatchTimeout, c.chainCfg.BatchSize)
+		raftConfig, err := getConfig(cfg.Raft, c.chainCfg)
 		if err != nil {
 			return err
 		}
 
-		consensus, err := raft.NewConseneus(raftConfig)
+		consensus, err := raft.NewConsensus(channels, raftConfig)
 		if err != nil {
 			return nil
 		}
@@ -379,18 +440,18 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 	return nil
 }
 
-func getConfig(path string, id uint64, peers map[uint64]string, join bool, tlsConfig config.TLSConfig, timeout, maxSize int) (*raft.Config, error) {
+func getConfig(cRaft config.RaftConfig, cChain *config.BlockChainConfig) (*raft.Config, error) {
 	tlsCfg := consensus.TLSConfig{
-		Enable:  tlsConfig.Enable,
-		CA:      tlsConfig.CA,
-		RawCert: tlsConfig.RawCert,
-		Key:     tlsConfig.Key,
-		Pool:    tlsConfig.Pool,
-		Cert:    tlsConfig.Cert,
+		Enable:  cRaft.TLS.Enable,
+		CA:      cRaft.TLS.CA,
+		RawCert: cRaft.TLS.RawCert,
+		Key:     cRaft.TLS.Key,
+		Pool:    cRaft.TLS.Pool,
+		Cert:    cRaft.TLS.Cert,
 	}
-	return raft.NewConfig(path, "localhost", id, peers, join, consensus.Config{
-		Timeout: timeout,
-		MaxSize: maxSize,
+	return raft.NewConfig(cRaft.Path, cRaft.ID, cRaft.Nodes, cRaft.Join, consensus.Config{
+		Timeout: cChain.BatchTimeout,
+		MaxSize: cChain.BatchSize,
 		Resume:  false,
 		Number:  1,
 		TLS:     tlsCfg,

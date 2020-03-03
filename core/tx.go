@@ -16,6 +16,8 @@ type Tx struct {
 	ID   string `json:"id,omitempty"`
 	Data TxData `json:"data,omitempty"`
 	Time int64  `json:"time,omitempty"`
+	// Below are some caches
+	sender *common.Address
 }
 
 // TxType is the type of consensus
@@ -127,11 +129,18 @@ func (tx *Tx) Verify() bool {
 
 // GetSender return the sender of the tx
 func (tx *Tx) GetSender() (common.Address, error) {
+	if tx.sender != nil {
+		return *(tx.sender), nil
+	}
 	pk, err := crypto.NewPublicKey(tx.Data.Sig.PK)
 	if err != nil {
 		return common.ZeroAddress, err
 	}
-	return pk.Address()
+	sender, err := pk.Address()
+	if err == nil {
+		tx.sender = &sender
+	}
+	return sender, err
 }
 
 // GetReceiver return the receiver

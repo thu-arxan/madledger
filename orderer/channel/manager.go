@@ -4,9 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"madledger/blockchain"
+	"madledger/common"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
+	"madledger/consensus/raft"
 	"madledger/core"
 	"madledger/orderer/db"
 	"time"
@@ -60,7 +62,7 @@ func (manager *Manager) Start() {
 	for {
 		select {
 		case cb := <-manager.cbc:
-			log.Infof("Receive block %s:%d from consensus", manager.ID, cb.GetNumber())
+			// log.Infof("Receive block %s:%d from consensus", manager.ID, cb.GetNumber())
 			// todo: if a tx is duplicated and it was added into consensus block succeed, then it may never receive response
 			txs, _ := manager.getTxsFromConsensusBlock(cb)
 			if len(txs) != 0 {
@@ -68,20 +70,20 @@ func (manager *Manager) Start() {
 				var block *core.Block
 				if prevBlock == nil {
 					block = core.NewBlock(manager.ID, 0, core.GenesisBlockPrevHash, txs)
-					log.Infof("Channel %s create new block %d, hash is %s", manager.ID, 0, util.Hex(block.Hash().Bytes()))
+					log.Debugf("Channel %s create new block %d, hash is %s", manager.ID, 0, util.Hex(block.Hash().Bytes()))
 				} else {
 					block = core.NewBlock(manager.ID, prevBlock.Header.Number+1, prevBlock.Hash().Bytes(), txs)
-					log.Infof("Channel %s create new block %d, hash is %s", manager.ID, prevBlock.Header.Number+1, util.Hex(block.Hash().Bytes()))
+					log.Debugf("Channel %s create new block %d, hash is %s", manager.ID, prevBlock.Header.Number+1, util.Hex(block.Hash().Bytes()))
 				}
 				// If the channel is not the global channel, it should send a tx to the global channel
 				if manager.ID != core.GLOBALCHANNELID {
 					tx := core.NewGlobalTx(manager.ID, block.Header.Number, block.Hash())
 					// 打印非config通道向global通道中添加的tx信息
-					log.Infof("Channel %s add tx %s to global channel.", manager.ID, tx.ID)
+					log.Debugf("Channel %s add tx %s to global channel.", manager.ID, tx.ID)
 
 					if err := manager.coordinator.GM.AddTx(tx); err != nil {
 						// todo: This is temporary fix
-						if err.Error() != "The tx exist in the blockchain aleardy" {
+						if err.Error() != "The tx exist in the blockchain aleardy" && raft.GetError(err) != raft.TxInPool {
 							log.Fatalf("Channel %s failed to add tx into global channel because %s", manager.ID, err)
 							return
 						}
@@ -91,7 +93,7 @@ func (manager *Manager) Start() {
 					log.Fatalf("Channel %s failed to run because of %s", manager.ID, err)
 					return
 				}
-				log.Infof("Channel %s has %d block now", manager.ID, block.Header.Number+1)
+				log.Debugf("Channel %s has %d block now", manager.ID, block.Header.Number+1)
 				manager.hub.Done(string(block.Header.Number), nil)
 				for _, tx := range block.Transactions {
 					manager.hub.Done(util.Hex(tx.Hash()), nil)
@@ -143,6 +145,8 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		return manager.AddConfigBlock(block)
 	case core.GLOBALCHANNELID:
 		return manager.AddGlobalBlock(block)
+	case core.ASSETCHANNELID:
+		return manager.AddAssetBlock(block)
 	default:
 		return nil
 	}
@@ -150,7 +154,7 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 
 // GetBlockSize return the size of blocks
 func (manager *Manager) GetBlockSize() uint64 {
-	return manager.cm.GetExcept()
+	return manager.cm.GetExpect()
 }
 
 // AddTx try to add a tx
@@ -159,21 +163,35 @@ func (manager *Manager) AddTx(tx *core.Tx) error {
 		return errors.New("The tx exist in the blockchain aleardy")
 	}
 
-	txBytes, err := tx.Bytes()
+	hash := tx.Hash()
+	err := manager.coordinator.Consensus.AddTx(tx)
 	if err != nil {
 		return err
 	}
 
-	err = manager.coordinator.Consensus.AddTx(manager.ID, txBytes)
-	if err != nil {
-		return err
-	}
-	
+	// err = manager.coordinator.Consensus.AddTx(manager.ID, txBytes)
+	// if err != nil {
+	// 	return err
+	// }
+
 	// Note: The reason why we must do this is because we must make sure we return the result after we store the block
 	// However, we may find a better way to do this if we allow there are more interactive between the consensus and orderer.
-	result := manager.hub.Watch(util.Hex(tx.Hash()), nil)
+	result := manager.hub.Watch(util.Hex(hash), nil)
 
-	return result.Err
+	if result.Err != nil {
+		return result.Err
+	}
+
+	if tx.Data.ChannelID == "_asset" {
+		status, err := manager.db.GetTxStatus(tx.Data.ChannelID, tx.ID)
+		if err != nil {
+			return err
+		}
+		if !status.Executed {
+			return errors.New("tx failed to execute due to overflow")
+		}
+	}
+	return nil
 }
 
 // FetchBlock return the block if exist
@@ -196,10 +214,15 @@ func (manager *Manager) IsSystemAdmin(member *core.Member) bool {
 	return manager.db.IsSystemAdmin(member)
 }
 
+// GetAccount return requested account
+func (manager *Manager) GetAccount(address common.Address) (common.Account, error) {
+	return manager.db.GetOrCreateAccount(address)
+}
+
 // FetchBlockAsync will fetch book async.
 // TODO: fix the thread unsafety
 func (manager *Manager) FetchBlockAsync(num uint64) (*core.Block, error) {
-	if manager.cm.GetExcept() <= num {
+	if manager.cm.GetExpect() <= num {
 		manager.hub.Watch(string(num), nil)
 	}
 
