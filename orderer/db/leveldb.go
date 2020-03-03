@@ -269,9 +269,10 @@ func (db *LevelDB) GetIgnoreNotFound(key []byte) ([]byte, error) {
 //}
 
 //GetOrCreateAccount return default account if account does not exist in leveldb
-func (db *LevelDB) GetOrCreateAccount(addressKey []byte) (common.Account, error) {
+func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, error) {
 	var account common.Account
-	data, err := db.connect.Get(addressKey, nil)
+	key := getAccountKey(address)
+	data, err := db.connect.Get(key, nil)
 	if err != nil {
 		if err != leveldb.ErrNotFound {
 			return account, err
