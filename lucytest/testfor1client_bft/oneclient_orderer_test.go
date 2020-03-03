@@ -1,7 +1,7 @@
 package testfor1client_bft
 
 import (
-	"evm/abi"
+	"madledger/common/abi"
 	"fmt"
 	cc "madledger/client/config"
 	client "madledger/client/lib"

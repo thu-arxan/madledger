@@ -3,7 +3,7 @@ package testfor2clients_CfgRaft
 import (
 	"encoding/hex"
 	"encoding/json"
-	"evm/abi"
+	"madledger/common/abi"
 	"fmt"
 	"io/ioutil"
 	cc "madledger/client/config"

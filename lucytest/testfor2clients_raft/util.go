@@ -2,7 +2,7 @@ package testfor2clients_raft
 
 import (
 	"encoding/hex"
-	"evm/abi"
+	"madledger/common/abi"
 	"fmt"
 	"io"
 	"io/ioutil"

@@ -2,7 +2,7 @@ package testfor2clients_bft
 
 import (
 	"encoding/hex"
-	"evm/abi"
+	"madledger/common/abi"
 	"fmt"
 	"io/ioutil"
 	cc "madledger/client/config"

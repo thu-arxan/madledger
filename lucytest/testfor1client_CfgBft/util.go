@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"evm/abi"
+	"madledger/common/abi"
 	"fmt"
 	"io/ioutil"
 	cc "madledger/client/config"

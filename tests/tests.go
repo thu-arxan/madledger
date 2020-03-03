@@ -1,10 +1,8 @@
 package tests
 
 import (
-	"evm/abi"
-	"fmt"
 	"madledger/common"
-	"madledger/common/util"
+	"madledger/common/abi"
 	"madledger/core"
 	"testing"
 
@@ -17,14 +15,6 @@ import (
 var (
 	contractAddress = make(map[string]common.Address)
 )
-
-func init() {
-	abi.SetAddressParser(20, func(bs []byte) string {
-		return "0x" + fmt.Sprintf("%x", bs)
-	}, func(addr string) ([]byte, error) {
-		return util.HexToBytes(addr)
-	})
-}
 
 func testCreateChannel(t *testing.T, client *client.Client, peers []*core.Member) {
 	// first query channels

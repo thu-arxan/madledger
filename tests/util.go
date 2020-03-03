@@ -3,7 +3,7 @@ package tests
 import (
 	"encoding/hex"
 	"errors"
-	"evm/abi"
+	"madledger/common/abi"
 	"io/ioutil"
 	pb "madledger/protos"
 	"os"
