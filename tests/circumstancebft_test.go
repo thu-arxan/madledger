@@ -321,7 +321,7 @@ func startOrderer(node int) string {
 		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("orderer start -c %s", getBFTOrdererConfigPath(node)))
 		_, err := cmd.Output()
 		if err != nil {
-			panic(fmt.Sprintf("Run orderer %d failed", node))
+			panic(fmt.Sprintf("Run orderer %d failed because %v", node, err))
 		}
 	}()
 

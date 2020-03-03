@@ -177,21 +177,19 @@ func (manager *Manager) AddTx(tx *core.Tx) error {
 	// Note: The reason why we must do this is because we must make sure we return the result after we store the block
 	// However, we may find a better way to do this if we allow there are more interactive between the consensus and orderer.
 	result := manager.hub.Watch(util.Hex(hash), nil)
-
-	if result.Err != nil {
-		return result.Err
-	}
-
-	if tx.Data.ChannelID == "_asset" {
-		status, err := manager.db.GetTxStatus(tx.Data.ChannelID, tx.ID)
-		if err != nil {
-			return err
+	if result == nil {
+		if tx.Data.ChannelID == "_asset" {
+			status, err := manager.db.GetTxStatus(tx.Data.ChannelID, tx.ID)
+			if err != nil {
+				return err
+			}
+			if !status.Executed {
+				return errors.New("tx failed to execute due to overflow")
+			}
 		}
-		if !status.Executed {
-			return errors.New("tx failed to execute due to overflow")
-		}
+		return nil
 	}
-	return nil
+	return result.(*event.Result).Err
 }
 
 // FetchBlock return the block if exist

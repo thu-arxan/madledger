@@ -14,59 +14,54 @@ import (
 
 // ChannelManager manages all the channels
 type ChannelManager struct {
+	lock     sync.RWMutex
 	db       db.DB
 	identity *core.Member
-	// Channels manager all user channels
-	// maybe can use sync.Map, but the advantage is not significant
-	Channels map[string]*channel.Manager
-	lock     sync.RWMutex
+	path     string
+
 	// signalCh receive stop signal
 	signalCh chan bool
 	stopCh   chan bool
+
 	// GlobalChannel is the global channel manager
 	GlobalChannel *channel.Manager
 	// ConfigChannel is the config channel manager
-	ConfigChannel  *channel.Manager
-	// AccountChannel is the account channel manager
-	AccountChannel *channel.Manager
+	ConfigChannel *channel.Manager
+	// Channels manager all user channels
+	Channels map[string]*channel.Manager
+	// AssetChannel is the asset channel manager
+	AssetChannel   *channel.Manager
 	coordinator    *channel.Coordinator
 	ordererClients []*orderer.Client
-	chainCfg       *config.BlockChainConfig
 }
 
 // NewChannelManager is the constructor of ChannelManager
-func NewChannelManager(dbDir string, identity *core.Member, chainCfg *config.BlockChainConfig, ordererClients []*orderer.Client) (*ChannelManager, error) {
+func NewChannelManager(cfg *config.Config) (*ChannelManager, error) {
 	m := new(ChannelManager)
+	var err error
 	m.signalCh = make(chan bool, 1)
 	m.stopCh = make(chan bool, 1)
 	m.Channels = make(map[string]*channel.Manager)
-	m.identity = identity
+	// set identity
+	if m.identity, err = cfg.GetIdentity(); err != nil {
+		return nil, err
+	}
 	// set db
-	// Note: We can set this to RocksDB, however rocksdb is more slow because the poor implementation
-	db, err := newDB(dbDir)
+	db, err := newDB(cfg.DB.LevelDB.Dir)
 	if err != nil {
 		return nil, err
 	}
 	m.db = db
-	m.ordererClients = ordererClients
-	m.chainCfg = chainCfg
+	// set path
+	m.path = cfg.BlockChain.Path
+	// set order clients
+	if m.ordererClients, err = getOrdererClients(cfg); err != nil {
+		return nil, err
+	}
 	m.coordinator = channel.NewCoordinator()
-	// set global channel manager
-	globalManager, err := channel.NewManager(core.GLOBALCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, core.GLOBALCHANNELID), identity, m.db, ordererClients, m.coordinator)
-	if err != nil {
+	if err := m.loadChannels(); err != nil {
 		return nil, err
 	}
-	configManager, err := channel.NewManager(core.CONFIGCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, core.CONFIGCHANNELID), identity, m.db, ordererClients, m.coordinator)
-	if err != nil {
-		return nil, err
-	}
-	accountManager, err := channel.NewManager(core.ASSETCHANNELID, fmt.Sprintf("%s/%s", chainCfg.Path, core.ASSETCHANNELID), identity, m.db, ordererClients, m.coordinator)
-	if err != nil {
-		return nil, err
-	}
-	m.AccountChannel = accountManager
-	m.GlobalChannel = globalManager
-	m.ConfigChannel = configManager
 
 	return m, nil
 }
@@ -79,30 +74,32 @@ func (m *ChannelManager) GetTxStatus(channelID, txID string, async bool) (*db.Tx
 	return m.db.GetTxStatus(channelID, txID)
 }
 
-// ListTxHistory return all txs of the address
-func (m *ChannelManager) ListTxHistory(address []byte) map[string][]string {
-	return m.db.ListTxHistory(address)
+// GetTxHistory return all txs of the address
+func (m *ChannelManager) GetTxHistory(address []byte) map[string][]string {
+	return m.db.GetTxHistory(address)
 }
 
 func (m *ChannelManager) start() error {
+	updateCh := m.coordinator.RegisterUpdate()
 	go m.GlobalChannel.Start()
 	go m.ConfigChannel.Start()
-	go m.AccountChannel.Start()
+	go m.AssetChannel.Start()
+	for _, manage := range m.Channels {
+		go manage.Start()
+	}
+
 	go func() {
-		// todo: set by channel
-		ticker := time.NewTicker(500 * time.Millisecond)
-		defer ticker.Stop()
 		for {
 			select {
-			case <-ticker.C:
-				//todo: ab add account channel in db
-				channels := m.db.GetChannels()
-				for _, channel := range channels {
-					switch channel {
+			case msg := <-updateCh:
+				// todo: support channel remove.
+				update := msg.(channel.Update)
+				if !update.Remove {
+					switch update.ID {
 					case core.GLOBALCHANNELID, core.CONFIGCHANNELID, core.ASSETCHANNELID:
 					default:
-						if !m.hasChannel(channel) {
-							manager, err := m.loadChannel(channel)
+						if !m.hasChannel(update.ID) {
+							manager, err := m.loadChannel(update.ID)
 							if err == nil {
 								go manager.Start()
 							}
@@ -127,7 +124,7 @@ func (m *ChannelManager) stop() {
 	log.Info("GlobalChannel stop")
 	m.ConfigChannel.Stop()
 	log.Info("ConfigChannel stop")
-	m.AccountChannel.Stop()
+	m.AssetChannel.Stop()
 	log.Info("AccountChannel stop")
 
 	m.signalCh <- true
@@ -147,6 +144,34 @@ func (m *ChannelManager) hasChannel(channelID string) bool {
 	return false
 }
 
+// load system channels and user channels
+func (m *ChannelManager) loadChannels() error {
+	// set global channel manager
+	globalManager, err := channel.NewManager(core.GLOBALCHANNELID, fmt.Sprintf("%s/%s", m.path, core.GLOBALCHANNELID), m.identity, m.db, m.ordererClients, m.coordinator)
+	if err != nil {
+		return err
+	}
+	configManager, err := channel.NewManager(core.CONFIGCHANNELID, fmt.Sprintf("%s/%s", m.path, core.CONFIGCHANNELID), m.identity, m.db, m.ordererClients, m.coordinator)
+	if err != nil {
+		return err
+	}
+	assetManager, err := channel.NewManager(core.ASSETCHANNELID, fmt.Sprintf("%s/%s", m.path, core.ASSETCHANNELID), m.identity, m.db, m.ordererClients, m.coordinator)
+	if err != nil {
+		return err
+	}
+	m.GlobalChannel = globalManager
+	m.ConfigChannel = configManager
+	m.AssetChannel = assetManager
+	for _, channel := range m.db.GetChannels() {
+		switch channel {
+		case core.GLOBALCHANNELID, core.CONFIGCHANNELID, core.ASSETCHANNELID:
+		default:
+			m.loadChannel(channel)
+		}
+	}
+	return nil
+}
+
 // loadChannel load a channel
 func (m *ChannelManager) loadChannel(channelID string) (*channel.Manager, error) {
 	m.lock.Lock()
@@ -154,7 +179,7 @@ func (m *ChannelManager) loadChannel(channelID string) (*channel.Manager, error)
 	if util.Contain(m.Channels, channelID) {
 		return m.Channels[channelID], nil
 	}
-	manager, err := channel.NewManager(channelID, fmt.Sprintf("%s/%s", m.chainCfg.Path, channelID), m.identity, m.db, m.ordererClients, m.coordinator)
+	manager, err := channel.NewManager(channelID, fmt.Sprintf("%s/%s", m.path, channelID), m.identity, m.db, m.ordererClients, m.coordinator)
 	if err != nil {
 		return nil, err
 	}

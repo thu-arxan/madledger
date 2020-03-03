@@ -1,9 +1,9 @@
 package performance
 
 import (
+	"madledger/common/abi"
 	client "madledger/client/lib"
 	"madledger/common"
-	"madledger/common/abi"
 	"madledger/core"
 	"sync"
 	"testing"
@@ -38,7 +38,7 @@ func CreateContract(t *testing.T, channelID string, client *client.Client) {
 // CreateCallContractTx will create tx
 func CreateCallContractTx(channelID string, client *client.Client, size int) []*core.Tx {
 	var payload []byte
-	payload, _ = abi.GetPayloadBytes(BalanceAbi, "get", nil)
+	payload, _ = abi.Pack(BalanceAbi, "get")
 	var txs []*core.Tx
 	for i := 0; i < size; i++ {
 		tx, _ := core.NewTx(channelID, getContractAddress(channelID), payload, 0, "", client.GetPrivKey())
@@ -51,7 +51,7 @@ func CreateCallContractTx(channelID string, client *client.Client, size int) []*
 // CallContract will call a contract of a channel
 func CallContract(t *testing.T, channelID string, client *client.Client, times int) {
 	var payload []byte
-	payload, _ = abi.GetPayloadBytes(BalanceAbi, "get", nil)
+	payload, _ = abi.Pack(BalanceAbi, "get")
 	var wg sync.WaitGroup
 	for i := 0; i < times; i++ {
 		wg.Add(1)

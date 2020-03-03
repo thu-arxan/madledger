@@ -225,7 +225,7 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 	}
 
 	for i, ordererClient := range c.ordererClients {
-		log.Info("add tx begin")
+		// log.Info("add tx begin")
 		_, err = ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
 			Tx: pbTx,
 		})
@@ -242,7 +242,7 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 			}
 		} else {
 			// add tx successfully and exit the loop
-			log.Info("add tx success")
+			// log.Info("add tx success")
 			break
 		}
 	}
@@ -271,7 +271,7 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 	return result.(*pb.TxStatus), nil
 }
 
-// AddTx try to add a tx
+// AddTxInOrderer try to add a tx into orderer and get tx result in orderer also
 // TODO: Support bft
 func (c *Client) AddTxInOrderer(tx *core.Tx) (*pb.TxStatus, error) {
 	pbTx, err := pb.NewTx(tx)
@@ -280,7 +280,7 @@ func (c *Client) AddTxInOrderer(tx *core.Tx) (*pb.TxStatus, error) {
 	}
 	var result *pb.TxStatus
 	for i, ordererClient := range c.ordererClients {
-		log.Info("add tx begin")
+		// log.Info("add tx begin")
 		result, err = ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
 			Tx: pbTx,
 		})
@@ -297,7 +297,7 @@ func (c *Client) AddTxInOrderer(tx *core.Tx) (*pb.TxStatus, error) {
 			}
 		} else {
 			// add tx successfully and exit the loop
-			log.Info("add tx success")
+			// log.Info("add tx success")
 			break
 		}
 	}
@@ -354,6 +354,7 @@ func (c *Client) GetPrivKey() crypto.PrivateKey {
 	return c.privKey
 }
 
+// GetAccountBalance return balance of account
 func (c *Client) GetAccountBalance(address common.Address) (uint64, error) {
 	var times int
 	var acc *pb.AccountInfo

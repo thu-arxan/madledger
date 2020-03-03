@@ -4,8 +4,8 @@ import (
 	"madledger/core"
 )
 
-//todo: ab
-// AddAccountBlock add an account block
+// AddAssetBlock add an account block
+// todo: ab
 func (m *Manager) AddAssetBlock(block *core.Block) error {
 	//nums := make(map[string]uint64)
 	//for _, tx := range block.Transactions {

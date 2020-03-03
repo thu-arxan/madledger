@@ -25,6 +25,8 @@ type WriteBatch interface {
 	// Put stores (key, value) into batch, the caller is responsible to avoid duplicate key
 	Put(key, value []byte)
 	RemoveAccountStorage(address common.Address)
+	AddChannel(channelID string)
+	DeleteChannel(channelID string)
 	Sync() error
 }
 
@@ -40,11 +42,8 @@ type DB interface {
 	GetTxStatus(channelID, txID string) (*TxStatus, error)
 	GetTxStatusAsync(channelID, txID string) (*TxStatus, error)
 	BelongChannel(channelID string) bool
-	AddChannel(channelID string)
-	// TODO: This function should in WriteBatch?
-	DeleteChannel(channelID string)
 	GetChannels() []string
-	ListTxHistory(address []byte) map[string][]string
+	GetTxHistory(address []byte) map[string][]string
 	NewWriteBatch() WriteBatch
 	// GetBlock gets block by block.num from db
 	GetBlock(num uint64) (*core.Block, error)

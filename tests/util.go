@@ -3,9 +3,8 @@ package tests
 import (
 	"encoding/hex"
 	"errors"
-	"fmt"
-	"io/ioutil"
 	"madledger/common/abi"
+	"io/ioutil"
 	pb "madledger/protos"
 	"os"
 )
@@ -46,9 +45,8 @@ func getTxStatus(abiPath, funcName string, status *pb.TxStatus) (*txStatus, erro
 	if status.Err != "" {
 		return nil, errors.New(status.Err)
 	}
-	values, err := abi.Unpacker(abiPath, funcName, status.Output)
+	values, err := abi.Unpack(abiPath, funcName, status.Output)
 	if err != nil {
-		fmt.Println("here>>>", status.Output)
 		return nil, err
 	}
 	var txStatus = &txStatus{
@@ -57,7 +55,7 @@ func getTxStatus(abiPath, funcName string, status *pb.TxStatus) (*txStatus, erro
 	}
 
 	for _, value := range values {
-		txStatus.Output = append(txStatus.Output, value.Value)
+		txStatus.Output = append(txStatus.Output, value)
 	}
 	return txStatus, nil
 }

@@ -4,13 +4,13 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"madledger/common/abi"
 	"fmt"
 	"io/ioutil"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	cliu "madledger/client/util"
 	"madledger/common"
-	"madledger/common/abi"
 	"madledger/common/util"
 	"madledger/core"
 
@@ -475,7 +475,7 @@ func compareChannels() error {
 func getNumForCallTx(node string, num string) error {
 	abiPath := fmt.Sprintf(getBFTClientPath("0") + "/MyTest.abi")
 	var inputs = make([]string, 0)
-	payloadBytes, err := abi.GetPayloadBytes(abiPath, "getNum", inputs)
+	payloadBytes, err := abi.Pack(abiPath, "getNum", inputs...)
 	if err != nil {
 		return err
 	}
@@ -492,15 +492,11 @@ func getNumForCallTx(node string, num string) error {
 		return err
 	}
 
-	values, err := abi.Unpacker(abiPath, "getNum", status.Output)
+	output, err := abi.Unpack(abiPath, "getNum", status.Output)
 	if err != nil {
 		return err
 	}
 
-	var output []string
-	for _, value := range values {
-		output = append(output, value.Value)
-	}
 	if output[0] != num {
 		return fmt.Errorf("call tx on channel %s: setNum expect %s but receive %s", channel, num, output[0])
 	}
@@ -510,7 +506,7 @@ func getNumForCallTx(node string, num string) error {
 func setNumForCallTx(node string, num string) error {
 	abiPath := fmt.Sprintf(getBFTClientPath("0") + "/MyTest.abi")
 	inputs := []string{num}
-	payloadBytes, err := abi.GetPayloadBytes(abiPath, "setNum", inputs)
+	payloadBytes, err := abi.Pack(abiPath, "setNum", inputs...)
 	if err != nil {
 		return err
 	}

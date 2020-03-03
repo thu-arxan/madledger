@@ -176,7 +176,7 @@ func testHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	history := db.ListTxHistory(address.Bytes())
+	history := db.GetTxHistory(address.Bytes())
 	exceptHistory := make(map[string][]string)
 	exceptHistory["test"] = []string{tx1.ID, tx2.ID}
 	exceptHistory["test"] = append(exceptHistory["test"], txs...)

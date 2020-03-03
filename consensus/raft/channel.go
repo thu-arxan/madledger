@@ -116,8 +116,10 @@ func (c *channel) addTx(tx []byte) error {
 	hash := util.Hex(crypto.Hash(tx))
 	log.Infof("[%d][%s] watch tx: %s", c.id, c.channelID, hash)
 	result := c.hub.Watch(hash, nil)
-
-	return result.Err
+	if result == nil {
+		return nil
+	}
+	return result.(*event.Result).Err
 }
 
 // Stop will block the work of channel
