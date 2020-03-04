@@ -106,7 +106,7 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 				cache.SetTxStatus(tx, status)
 				continue
 			}
-		} else if receiver == core.TransfeContractrAddress { // transfer to channel
+		} else if receiver == core.TransferContractrAddress { // transfer to channel
 			err = manager.transfer(cache, sender, payload.Address, value)
 		} else { // transfer to person
 			err = manager.transfer(cache, sender, receiver, value)
