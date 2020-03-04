@@ -14,6 +14,7 @@ func TestLoadConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	require.True(t, cfg.Debug)
+	require.False(t, cfg.TLS.Enable)
 }
 
 func TestGetIdentity(t *testing.T) {
