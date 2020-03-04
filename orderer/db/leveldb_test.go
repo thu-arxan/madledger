@@ -125,7 +125,9 @@ func TestAssetAdmin(t *testing.T) {
 	err := wb.SetAssetAdmin(privKey.PubKey())
 	require.NoError(t, err)
 	require.NoError(t, wb.Sync())
-	require.Equal(t, db.GetAssetAdminPKBytes(), privKey.PubKey())
+	pk, err := crypto.NewPublicKey(db.GetAssetAdminPKBytes())
+	require.NoError(t, err)
+	require.Equal(t, pk, privKey.PubKey())
 }
 
 func TestAccount(t *testing.T) {
