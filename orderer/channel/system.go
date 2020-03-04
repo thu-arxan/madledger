@@ -95,7 +95,24 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		}
 		receiver := tx.GetReceiver()
 		//if receiver is not set, issue or transfer money to a channel
-		if receiver == common.ZeroAddress {
+		value := tx.Data.Value
+		if receiver == core.IssueContractAddress { // issue to channel or person
+			if payload.Action == "channel" { // issue to channel
+				receiver = common.BytesToAddress([]byte(payload.ChannelID))
+				err = manager.issue(cache, tx.Data.Sig.PK, receiver, value)
+			} else if payload.Action == "person" { // issue to person
+				err = manager.issue(cache, tx.Data.Sig.PK, payload.Address, value)
+			} else { // wrong payload
+				cache.SetTxStatus(tx, status)
+				continue
+			}
+		} else if receiver == core.TransfeContractrAddress { // transfer to channel
+			err = manager.transfer(cache, sender, payload.Address, value)
+		} else { // transfer to person
+			err = manager.transfer(cache, sender, receiver, value)
+		}
+
+		/*if receiver == common.ZeroAddress {
 			receiver = common.BytesToAddress([]byte(payload.ChannelID))
 			if receiver == common.ZeroAddress {
 				log.Errorf("Not specified receiver")
@@ -113,7 +130,7 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 			// if value < 0, sender get money from receiver ??
 			transferValue := tx.Data.Value
 			err = manager.transfer(cache, sender, receiver, transferValue)
-		}
+		}*/
 
 		if err != nil {
 			// 如果有错误，那么应该在db里加一条key为txid的错误，如果正确，那么key为txid为ok
