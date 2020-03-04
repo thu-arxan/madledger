@@ -255,17 +255,17 @@ func (db *LevelDB) GetAssetAdminPKBytes() []byte {
 
 //GetOrCreateAccount return default account if not existx in leveldb
 func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, error) {
-	account := common.Account{}
+	account := common.NewAccount(address)
 	key := getAccountKey(address)
 	data, err := db.connect.Get(key, nil)
 	if err != nil {
 		if err == leveldb.ErrNotFound {
 			err = nil
 		}
-		return account, err
+		return *account, err
 	}
 	err = json.Unmarshal(data, &account)
-	return account, err
+	return *account, err
 }
 
 // GetTxStatus is the implementation of interface
