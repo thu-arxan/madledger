@@ -119,29 +119,29 @@ func TestIsAdmin(t *testing.T) {
 	require.False(t, db.IsAdmin(core.GLOBALCHANNELID, member))
 }
 
-//func TestAssetAdmin(t *testing.T) {
-//	wb := db.NewWriteBatch()
-//	require.False(t, db.IsAssetAdmin(privKey.PubKey()))
-//	err := wb.SetAssetAdmin(privKey.PubKey())
-//	require.NoError(t, err)
-//	require.NoError(t, wb.Sync())
-//	require.True(t, db.IsAssetAdmin(privKey.PubKey()))
-//}
+func TestAssetAdmin(t *testing.T) {
+	wb := db.NewWriteBatch()
+	require.Equal(t, db.GetAssetAdminPKBytes(), nil)
+	err := wb.SetAssetAdmin(privKey.PubKey())
+	require.NoError(t, err)
+	require.NoError(t, wb.Sync())
+	require.Equal(t, db.GetAssetAdminPKBytes(), privKey.PubKey())
+}
 
-//func TestAccount(t *testing.T) {
-//	wb := db.NewWriteBatch()
-//	address := common.BytesToAddress([]byte("12345678"))
-//	account, err := db.GetOrCreateAccount(address)
-//	require.NoError(t, err)
-//	require.Equal(t, account.GetBalance(), uint64(0))
-//	require.NoError(t, account.AddBalance(10))
-//	require.NoError(t, wb.UpdateAccounts(account))
-//	require.NoError(t, wb.Sync())
-//	account, err = db.GetOrCreateAccount(address)
-//	require.NoError(t, err)
-//	require.Equal(t, account.GetBalance(), uint64(10))
-//
-//}
+func TestAccount(t *testing.T) {
+	wb := db.NewWriteBatch()
+	address := common.BytesToAddress([]byte("channelname"))
+	account, err := db.GetOrCreateAccount(address)
+	require.NoError(t, err)
+	require.Equal(t, account.GetBalance(), uint64(0))
+	require.NoError(t, account.AddBalance(10))
+	require.NoError(t, wb.UpdateAccounts(account))
+	require.NoError(t, wb.Sync())
+	account, err = db.GetOrCreateAccount(address)
+	require.NoError(t, err)
+	require.Equal(t, account.GetBalance(), uint64(10))
+
+}
 
 func TestEnd(t *testing.T) {
 	os.RemoveAll(dir)
