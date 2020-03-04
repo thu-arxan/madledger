@@ -8,6 +8,17 @@ const (
 # Should be false or true (default: true)
 Debug: true
 
+# Configure for the TLS
+TLS:
+  # Should be true of false (default: false)
+  Enable: false
+  # The path of CA cert, it should not be empty if Enable is true
+  CA: 
+  # Cert of the client, it should not be empty if Enable is true
+  Cert: 
+  # Key of the client, it should not be empty if Enable is true
+  Key: 
+
 # Address of orderers
 Orderer:
   Address:

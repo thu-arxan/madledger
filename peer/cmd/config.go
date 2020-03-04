@@ -21,12 +21,12 @@ TLS:
   Enable: true
   # The path of CA cert, it should not be empty if Enable is true
   CA: 
-  # Cert of the Blockchain, it should not be empty if Enable is true
+  # Cert of the peer, it should not be empty if Enable is true
   Cert: 
-  # Key of the Blockchain, it should not be empty if Enable is true
+  # Key of the peer, it should not be empty if Enable is true
   Key: 
 
-# Configure for the BlockChain
+# Configure for the peer
 BlockChain:
   # default: $GOPATH/src/madledger/peer/data/blocks
   # But in the production environment, you must provide a path

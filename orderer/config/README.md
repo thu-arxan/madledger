@@ -20,9 +20,9 @@ TLS:
   Enable: false
   # The path of CA cert, it should not be empty if Enable is true
   CA: 
-  # Cert of the Blockchain, it should not be empty if Enable is true
+  # Cert of the orderer, it should not be empty if Enable is true
   Cert: 
-  # Key of the Blockchain, it should not be empty if Enable is true
+  # Key of the orderer, it should not be empty if Enable is true
   Key: 
 
 # Configure for the BlockChain

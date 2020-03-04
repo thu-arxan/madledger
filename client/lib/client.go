@@ -44,10 +44,6 @@ func NewClient(cfgFile string) (*Client, error) {
 
 // NewClientFromConfig will construct client from cfg
 func NewClientFromConfig(cfg *config.Config) (*Client, error) {
-	keyStore, err := cfg.GetKeyStoreConfig()
-	if err != nil {
-		return nil, err
-	}
 	// get clients
 	ordererClients, err := getOrdererClients(cfg)
 	if err != nil {
@@ -61,7 +57,7 @@ func NewClientFromConfig(cfg *config.Config) (*Client, error) {
 	return &Client{
 		ordererClients: ordererClients,
 		peerClients:    peerClients,
-		privKey:        keyStore.Keys[0],
+		privKey:        cfg.KeyStore.Privs[0],
 	}, nil
 }
 
