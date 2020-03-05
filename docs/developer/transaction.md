@@ -44,4 +44,4 @@ ripemd160.New().Write(channelID, sender, code)
 
 ### 3.3. Transfer
 
-单纯的转账是否需要支持待定。
+转账正在支持中。
