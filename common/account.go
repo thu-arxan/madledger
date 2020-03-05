@@ -7,29 +7,7 @@ import (
 	"madledger/common/math"
 )
 
-// Account is the account of madledger
-// type Account interface {
-// 	// These functions will be remained.
-// 	GetAddress() Address
-// 	GetBalance() uint64
-// 	AddBalance(balance uint64) error
-// 	SubBalance(balance uint64) error
-// 	GetCode() []byte
-// 	SetCode(code []byte)
-// 	// GetNonce() uint64
-// 	// SetNonce(nonce uint64)
-// 	Bytes() ([]byte, error)
-// 	// GetCodeHash return the hash of account code, please return [32]byte,
-// 	// and return [32]byte{0, ..., 0} if code is empty
-// 	GetCodeHash() []byte
-// 	GetNonce() uint64
-// 	SetNonce(nonce uint64)
-// 	// Suicide will suicide an account
-// 	Suicide()
-// 	HasSuicide() bool
-// }
-
-// Account is the default implementation of Account
+// Account is the Account of Madledger
 type Account struct {
 	Address     Address
 	Balance     uint64
