@@ -30,8 +30,8 @@ var (
 	CfgRaftAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffd")
 	// issue
 	IssueContractAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffc")
-	// issue
-	TransfeContractrAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffb")
+	// transfer
+	TransferContractrAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffb")
 )
 
 // GetTxType return tx type
@@ -44,7 +44,7 @@ func GetTxType(recipient string) (TxType, error) {
 		return NODE, nil
 	} else if strings.Compare(recipient, IssueContractAddress.String()) == 0 {
 		return ISSUE, nil
-	} else if strings.Compare(recipient, TransfeContractrAddress.String()) == 0 {
+	} else if strings.Compare(recipient, TransferContractrAddress.String()) == 0 {
 		return TRANSFER, nil
 	} else {
 		return 0, errors.New("unknown tx type")
