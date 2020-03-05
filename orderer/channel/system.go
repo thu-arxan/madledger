@@ -78,18 +78,21 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 	for _, tx := range block.Transactions {
 		status := &db.TxStatus{
 			Executed: false,
+			Reason:   "",
 		}
 
 		var payload ac.Payload
 		err = json.Unmarshal(tx.Data.Payload, &payload)
 		if err != nil {
 			log.Errorf("wrong tx format: %v", err)
+			status.Reason = err.Error()
 			cache.SetTxStatus(tx, status)
 			continue
 		}
 		sender, err := tx.GetSender()
 		if err != nil {
 			log.Errorf("wrong sender address %v", sender)
+			status.Reason = err.Error()
 			cache.SetTxStatus(tx, status)
 			continue
 		}
@@ -103,6 +106,7 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 			} else if payload.Action == "person" { // issue to person
 				err = manager.issue(cache, tx.Data.Sig.PK, payload.Address, value)
 			} else { // wrong payload
+				status.Reason = fmt.Errorf("wrong payload").Error()
 				cache.SetTxStatus(tx, status)
 				continue
 			}
@@ -135,6 +139,7 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		if err != nil {
 			// 如果有错误，那么应该在db里加一条key为txid的错误，如果正确，那么key为txid为ok
 			log.Errorf("err when execute account block tx %v : %v", tx, err)
+			status.Reason = err.Error()
 			cache.SetTxStatus(tx, status)
 			continue
 		}

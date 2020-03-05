@@ -188,7 +188,7 @@ func (manager *Manager) AddTx(tx *core.Tx) error {
 			return err
 		}
 		if !status.Executed {
-			return errors.New("tx failed to execute due to overflow")
+			return errors.New(status.Reason)
 		}
 	}
 	return nil

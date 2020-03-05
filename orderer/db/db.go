@@ -10,6 +10,7 @@ import (
 // TxStatus ...
 type TxStatus struct {
 	Executed bool
+	Reason   string
 }
 
 // WriteBatch ...
@@ -37,7 +38,6 @@ type DB interface {
 	Close() error
 	UpdateSystemAdmin(profile *cc.Profile) error
 	IsSystemAdmin(member *core.Member) bool
-
 
 	//GetAssetAdminPKBytes return nil is not exist
 	GetAssetAdminPKBytes() []byte
