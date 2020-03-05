@@ -2,10 +2,10 @@ package tx
 
 import (
 	"errors"
-	"madledger/common/abi"
 	"madledger/client/lib"
 	"madledger/client/util"
 	"madledger/common"
+	"madledger/common/abi"
 	"madledger/core"
 
 	"github.com/spf13/cobra"
@@ -33,6 +33,8 @@ func init() {
 	callViper.BindPFlag("channelID", callCmd.Flags().Lookup("channelID"))
 	callCmd.Flags().StringP("receiver", "r", "", "The contract address of the tx")
 	callViper.BindPFlag("receiver", callCmd.Flags().Lookup("receiver"))
+	callCmd.Flags().Int64P("value", "v", 0, "The value of the tx")
+	callViper.BindPFlag("value", callCmd.Flags().Lookup("value"))
 }
 
 func runCall(cmd *cobra.Command, args []string) error {
@@ -53,6 +55,7 @@ func runCall(cmd *cobra.Command, args []string) error {
 		return errors.New("The name of func can not be nil")
 	}
 	receiver := callViper.GetString("receiver")
+	value := uint64(callViper.GetInt64("value"))
 	if receiver == "" {
 		return errors.New("The address of receiver can not be nil")
 	}
@@ -67,7 +70,7 @@ func runCall(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	tx, err := core.NewTx(channelID, common.HexToAddress(receiver), payloadBytes, 0, "", client.GetPrivKey())
+	tx, err := core.NewTx(channelID, common.HexToAddress(receiver), payloadBytes, value, "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}

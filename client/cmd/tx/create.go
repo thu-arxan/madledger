@@ -26,6 +26,8 @@ func init() {
 	createViper.BindPFlag("config", createCmd.Flags().Lookup("config"))
 	createCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
 	createViper.BindPFlag("channelID", createCmd.Flags().Lookup("channelID"))
+	createCmd.Flags().Int64P("value", "v", 0, "The value of the tx")
+	createViper.BindPFlag("value", createCmd.Flags().Lookup("value"))
 }
 
 type createTxStatus struct {
@@ -43,6 +45,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	if channelID == "" {
 		return errors.New("The channelID of tx can not be nil")
 	}
+	value := uint64(createViper.GetInt64("value"))
 	binPath := createViper.GetString("bin")
 	if binPath == "" {
 		return errors.New("The bin path can not be nil")
@@ -57,7 +60,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	tx, err := core.NewTx(channelID, common.ZeroAddress, contractCodes, 0, "", client.GetPrivKey())
+	tx, err := core.NewTx(channelID, common.ZeroAddress, contractCodes, value, "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}
