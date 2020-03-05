@@ -42,7 +42,10 @@ func runIssue(cmd *cobra.Command, args []string) error {
 
 	//channelID can be empty
 	channelID := issueViper.GetString("channelID")
-
+	action := "person"
+	if channelID != "" {
+		action = "channel"
+	}
 	value := issueViper.GetInt("value")
 	if value < 0 {
 		return errors.New("cannot issue negative value")
@@ -57,7 +60,7 @@ func runIssue(cmd *cobra.Command, args []string) error {
 	}
 
 	payload, err := json.Marshal(asset.Payload{
-		Action:    "issue",
+		Action:    action,
 		ChannelID: channelID,
 		Address:   recipient,
 	})
