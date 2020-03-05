@@ -52,7 +52,10 @@ func runIssue(cmd *cobra.Command, args []string) error {
 	}
 
 	receiver := issueViper.GetString("address")
-	recipient := common.HexToAddress(receiver)
+	var recipient common.Address
+	if receiver != "" {
+		recipient = common.HexToAddress(receiver)
+	}
 
 	client, err := lib.NewClient(cfgFile)
 	if err != nil {
