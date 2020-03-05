@@ -1,68 +1,107 @@
 # 快速上手
 
-## 1 编译
+## 1. Requirement
 
-在项目scripts目录下执行编译脚本即可。
+- Go 环境
+- solcjs: [Solidity编译器](https://github.com/ethereum/solc-js), 用于编译用户自己编写的智能合约(测试文件中给出了部分示例，可以先直接使用该示例)
+  - solcjs --bin *.sol
+  - solcjs --abi *.sol
 
-```bash
-. build.sh
-```
+## 2. Install
 
-然后分别执行下述命令查看是否配置正确。
-
-```bash
-orderer version
-peer version
-client version
-```
-
-如果看到以下类似结果则说明配置正确。
+一共3个服务模块，`orderer、peer、client`，可以使用Makefile进行安装：
 
 ```bash
-Orderer version v0.0.1
-Peer version v0.0.1
-Client version v0.0.1
+make install
 ```
 
-否则，可能是$PATH设置有误，请将$GOPATH/bin添加为环境变量。
-
-## 2 环境
-
-为了方便测试以及使用，初始化了环境于env文件夹。关于env的详细解释如下。
-
-
-env文件主要是一些配置好的环境以方便开发和使用。主要是单机solo和拜占庭容错bft。
-
-
-### 2.1 solo
-
-待完善。
-
-### 2.2 bft
-
-该文件夹初始化了可以运行bft共识的一些环境，其中orderers下面分别由0、1、2、3四个文件夹，通过分别在文件夹目录下运行start.sh可以运行4个orderer节点，如下所示。
+也可以手动用`go install`进行安装：
 
 ```bash
-cd bft/orderers/0
-. start.sh
+# install orderer
+go install madledger/orderer
+# install peer
+go install madledger/peer
+# install client
+go install madledger/client
 ```
 
-当所有节点都启动后进入clients/admin文件夹。
+安装成功后可以运行下列命令，如果有正常输出则代表安装成功:
 
 ```bash
-client channel list #查看所有通道
-client channel create -n test #创建test通道
-client channel list #查看所有通道
+orderer version # Orderer version v0.0.1
+peer version    # Peer version v0.0.1
+client version  # Client version v0.0.1
 ```
 
-可以看到所有orderer节点都创建了所希望的通道，说明这些orderer节点之间进行了共识。
+可以使用`[basename] -h`的方式查看每个模块的命令和参数。
 
-要注意的是，bft的实现基于Tendermint且很不完善，存在一些可能的bug，这个环境也不完善，比如缺少peers节点因此只能创建通道但是没办法支持交易，这都是需要完善的部分。
+## 3. Start
 
-另外，如果需要将bft环境恢复初始状态，可以运行下面的脚本。
+这里描述了几种启动的方式，分别适用于下列场景。
+
+- 通过预先写好的脚本快速在单机上启动一个配置好的MadLedger网络。
+- 利用预先构建的环境在单机上手动启动一个配置好的MadLedger网络。
+- 根据实际情况一步步部署搭建一个MadLedger网络。
+
+### 3.1. 利用Makefile进行Quick start
+
+为了便于运行，提供了[Makefile](start.mk)来帮助运行。
 
 ```bash
-. init.sh
+# 安装
+make -f start.mk install
+# 初始化, CONSENSUS指定共识协议类型，注意, bft暂不支持
+make -f start.mk init CONSENSUS=raft/solo/bft
+# 启动
+make -f start.mk start
+# 测试
+make -f start.mk test
+# 关闭
+make -f start.mk stop
+# 清楚相关测试数据，配置文件
+make -f start.mk clean
 ```
 
-如果想要手动创建Tendermint的运行环境，可以参考下面的步骤。
+### 3.2. Env_local启动
+
+安装后，就可以按照相应规则生成配置文件并启动相关服务了。`env_local`文件夹中准备了一些可用于本机启动相关服务并运行测试的配置文件和测试脚本，开发者可利用该脚本和配置文件启动服务进行测试，也可自行生成。
+
+系统目前支持三种共识协议，每一种共识协议下，`client, peer`模块的配置大体一致，`orderer`模块配置文件略有不同。具体区别可查看`orderer/config`目录下的[文档](orderer/conifig/README.md)。
+
+#### 3.2.1. Solo
+
+`solo`模式的示例配置文件在，`env_local/solo`。其中:
+
+- `orderer`服务只部署一个。
+- `client`客户端不受限制，这里提供了1个客户端。
+- `peer`服务也不受限制，这里部署3个服务，每个`peer`服务均与同一个`orderer`服务通信。
+
+#### 3.2.2. Raft
+
+`raft`模式的示例配置文件在，`env_local/raft`。其中：
+
+- `ordere`服务部署4个。
+- `client`客户端不受限制，这里提供了6个客户端。
+- `peer`服务不受限制，这里部署4个服务，每个`peer`服务均与所有`orderer`服务通信。
+
+#### 3.2.3. BFT
+
+TODO
+
+### 3.3. 手动构建
+
+手动构建环境需要依次为orderer、peer及client准备工作目录并配置相关文件。
+
+#### 3.3.1. Orderer
+
+关于Orderer的详细配置见[Orderer](orderer.md)，也可参考env_local中的相关配置。
+
+#### 3.3.2. Peer
+
+关于Peer的详细配置见[Peer](peer.md)，也可参考env_local中的相关配置。
+
+#### 3.3.3. Client
+
+关于Client的详细配置见[Client](client.md)，也可参考env_local中的相关配置。
+
