@@ -55,7 +55,7 @@ func runTransfer(cmd *cobra.Command, args []string) error {
 	if channelID == "" && receiver != "" {
 		recipient = common.HexToAddress(receiver)
 	} else if channelID != "" && receiver == "" {
-		recipient = coreTypes.TransfeContractrAddress
+		recipient = coreTypes.TransferContractrAddress
 	} else {
 		return errors.New("only one of channelID and receiver can have value")
 	}
