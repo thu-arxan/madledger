@@ -59,12 +59,13 @@ func runIssue(cmd *cobra.Command, args []string) error {
 	payload, err := json.Marshal(asset.Payload{
 		Action:    "issue",
 		ChannelID: channelID,
+		Address:   recipient,
 	})
 	if err != nil {
 		return err
 	}
 
-	tx, err := coreTypes.NewTx(coreTypes.ASSETCHANNELID, recipient, payload, uint64(value), "", client.GetPrivKey())
+	tx, err := coreTypes.NewTx(coreTypes.ASSETCHANNELID, coreTypes.IssueContractAddress, payload, uint64(value), "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}

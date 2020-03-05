@@ -98,8 +98,8 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		value := tx.Data.Value
 		if receiver == core.IssueContractAddress { // issue to channel or person
 			if payload.Action == "channel" { // issue to channel
-				receiver = common.BytesToAddress([]byte(payload.ChannelID))
-				err = manager.issue(cache, tx.Data.Sig.PK, receiver, value)
+				rec := common.BytesToAddress([]byte(payload.ChannelID))
+				err = manager.issue(cache, tx.Data.Sig.PK, rec, value)
 			} else if payload.Action == "person" { // issue to person
 				err = manager.issue(cache, tx.Data.Sig.PK, payload.Address, value)
 			} else { // wrong payload
