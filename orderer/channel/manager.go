@@ -182,7 +182,7 @@ func (manager *Manager) AddTx(tx *core.Tx) error {
 		return result.Err
 	}
 
-	if tx.Data.ChannelID == "_asset" {
+	if tx.Data.ChannelID == core.ASSETCHANNELID {
 		status, err := manager.db.GetTxStatus(tx.Data.ChannelID, tx.ID)
 		if err != nil {
 			return err

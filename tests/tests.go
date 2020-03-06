@@ -1,11 +1,13 @@
 package tests
 
 import (
+	"madledger/blockchain/asset"
 	"madledger/common"
 	"madledger/common/abi"
+	"madledger/common/crypto"
 	"madledger/core"
 	"testing"
-
+	"encoding/json"
 	client "madledger/client/lib"
 
 	"github.com/stretchr/testify/assert"
@@ -42,6 +44,7 @@ func testCreateChannel(t *testing.T, client *client.Client, peers []*core.Member
 	}
 	require.Contains(t, channels, core.GLOBALCHANNELID)
 	require.Contains(t, channels, core.CONFIGCHANNELID)
+	require.Contains(t, channels, core.ASSETCHANNELID)
 	require.Contains(t, channels, "public")
 	// create channel test again
 	err = client.CreateChannel("public", true, nil, nil)
@@ -157,4 +160,69 @@ func testTxHistory(t *testing.T, client *client.Client) {
 	// check cahnnel config
 	require.Contains(t, history.Txs, core.CONFIGCHANNELID)
 	require.Len(t, history.Txs[core.CONFIGCHANNELID].Value, 2)
+}
+
+func testAsset(t *testing.T, client *client.Client) {
+	address, err := client.GetPrivKey().PubKey().Address()
+	require.NoError(t, err)
+	receiverPrivKey, err := crypto.NewPrivateKey([]byte("289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"))
+	require.NoError(t, err)
+	receiverAddress, err := receiverPrivKey.PubKey().Address()
+	require.NoError(t, err)
+	require.NotEqual(t, receiverAddress, address)
+
+	payload, err := json.Marshal(asset.Payload{
+		Action:    "person",
+		ChannelID: "",
+		Address:   receiverAddress,
+	})
+	tx, err := core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, 10, "", client.GetPrivKey())
+	require.NoError(t, err)
+	status, err := client.AddTx(tx)
+	require.NoError(t, err)
+	require.Empty(t, status.Err)
+
+	balance, err := client.GetAccountBalance(receiverAddress)
+	require.NoError(t, err)
+	require.Equal(t, balance, uint64(10))
+	// then try to issue again, this should cause authentication error
+
+	payload, err = json.Marshal(asset.Payload{
+		Action:    "person",
+		ChannelID: "",
+		Address:   address,
+	})
+	tx, err = core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, 10, "", receiverPrivKey)
+	require.NoError(t, err)
+	status, err = client.AddTx(tx)
+	require.NoError(t, err)
+	require.NotEmpty(t, status.Err)
+
+	payload, err = json.Marshal(asset.Payload{
+		Action:    "channel",
+		ChannelID: "public",
+	})
+	tx, err = core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, 10, "", client.GetPrivKey())
+	require.NoError(t, err)
+	status, err = client.AddTx(tx)
+	require.NoError(t, err)
+	require.Empty(t, status.Err)
+
+	payload, err = json.Marshal(asset.Payload{
+		Action:    "channel",
+		ChannelID: "public",
+	})
+	tx, err = core.NewTx(core.ASSETCHANNELID, core.TransferContractrAddress, payload, 10, "", receiverPrivKey)
+	require.NoError(t, err)
+	status, err = client.AddTx(tx)
+	require.NoError(t, err)
+	require.Empty(t, status.Err)
+
+	balance, err = client.GetAccountBalance(address)
+	require.NoError(t, err)
+	require.Equal(t, balance, uint64(0))
+	balance, err = client.GetAccountBalance(receiverAddress)
+	require.NoError(t, err)
+	require.Equal(t, balance, uint64(0))
+
 }

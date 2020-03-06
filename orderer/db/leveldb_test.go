@@ -3,7 +3,6 @@ package db
 import (
 	"encoding/hex"
 	"errors"
-	"fmt"
 	cc "madledger/blockchain/config"
 	"madledger/common"
 	"madledger/common/crypto"
@@ -134,7 +133,6 @@ func TestAccount(t *testing.T) {
 	wb := db.NewWriteBatch()
 	address := common.BytesToAddress([]byte("channelname"))
 	account, err := db.GetOrCreateAccount(address)
-	fmt.Printf("%v", account)
 	require.NoError(t, err)
 	require.Equal(t, account.GetBalance(), uint64(0))
 	require.NoError(t, account.AddBalance(10))
