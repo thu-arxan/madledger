@@ -9,6 +9,7 @@ import (
 	"testing"
 	"encoding/json"
 	client "madledger/client/lib"
+	"fmt"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -160,6 +161,7 @@ func testTxHistory(t *testing.T, client *client.Client) {
 	// check cahnnel config
 	require.Contains(t, history.Txs, core.CONFIGCHANNELID)
 	require.Len(t, history.Txs[core.CONFIGCHANNELID].Value, 2)
+	fmt.Printf("test Asset begin")
 }
 
 func testAsset(t *testing.T, client *client.Client) {
@@ -170,6 +172,7 @@ func testAsset(t *testing.T, client *client.Client) {
 	receiverAddress, err := receiverPrivKey.PubKey().Address()
 	require.NoError(t, err)
 	require.NotEqual(t, receiverAddress, address)
+	fmt.Printf("first issue")
 
 	payload, err := json.Marshal(asset.Payload{
 		Action:    "person",
