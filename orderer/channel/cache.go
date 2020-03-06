@@ -6,6 +6,7 @@ import (
 	"madledger/common/crypto"
 	"madledger/core"
 	"madledger/orderer/db"
+	"reflect"
 )
 
 type Cache struct {
@@ -29,14 +30,17 @@ func(cache *Cache) IsAssetAdmin(pk crypto.PublicKey) bool {
 		return false
 	}
 	if cache.adminPK != nil {
-		return pk == cache.adminPK
+		return reflect.DeepEqual(pk, cache.adminPK)
 	}
+	log.Infof("try fetch admin from db")
 	pkBytes := cache.db.GetAssetAdminPKBytes()
 	if pkBytes == nil {
 		return false
 	}
+	log.Infof("fetch admin from db succeed")
 	cache.adminPK, _ = crypto.NewPublicKey(pkBytes)
-	return pk == cache.adminPK
+	log.Infof("admin pk: %v, query pk: %v", cache.adminPK, pk)
+	return reflect.DeepEqual(pk, cache.adminPK)
 }
 
 func (cache *Cache) GetOrCreateAccount(address common.Address) (common.Account, error) {
