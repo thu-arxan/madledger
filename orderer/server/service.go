@@ -83,3 +83,4 @@ func (s *Server) GetAccountInfo(ctx context.Context, req *pb.GetAccountInfoReque
 	info.Balance = account.GetBalance()
 	return &info, err
 }
+

@@ -187,8 +187,8 @@ func (manager *Manager) AddTx(tx *core.Tx) error {
 		if err != nil {
 			return err
 		}
-		if !status.Executed {
-			return errors.New(status.Reason)
+		if status.Err != "" {
+			return status.Err
 		}
 	}
 	return nil
