@@ -7,12 +7,14 @@ import (
 	"madledger/core"
 )
 
-// TxStatus ...
+// TxStatus return the status of tx
 type TxStatus struct {
-	Executed bool
-	Reason   string
+	Err             string
+	BlockNumber     uint64
+	BlockIndex      int
+	Output          []byte
+	ContractAddress string
 }
-
 // WriteBatch ...
 type WriteBatch interface {
 	SetTxStatus(tx *core.Tx, status *TxStatus) error
