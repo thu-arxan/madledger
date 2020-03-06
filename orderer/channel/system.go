@@ -76,11 +76,13 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 	var err error
 
 	for i, tx := range block.Transactions {
+		receiver := tx.GetReceiver()
 		status := &db.TxStatus{
 			Err: "",
 			BlockNumber: block.Header.Number,
 			BlockIndex: i,
 			Output: nil,
+			ContractAddress: receiver.String(),
 		}
 
 		var payload ac.Payload
@@ -98,7 +100,6 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 			cache.SetTxStatus(tx, status)
 			continue
 		}
-		receiver := tx.GetReceiver()
 		//if receiver is not set, issue or transfer money to a channel
 		value := tx.Data.Value
 		if receiver == core.IssueContractAddress { // issue to channel or person
