@@ -181,7 +181,7 @@ func testAsset(t *testing.T, client *client.Client) {
 	})
 	tx, err := core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, 10, "", client.GetPrivKey())
 	require.NoError(t, err)
-	status, err := client.AddTx(tx)
+	status, err := client.AddTxInOrderer(tx)
 	require.NoError(t, err)
 	require.Empty(t, status.Err)
 
@@ -197,7 +197,7 @@ func testAsset(t *testing.T, client *client.Client) {
 	})
 	tx, err = core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, 10, "", receiverPrivKey)
 	require.NoError(t, err)
-	status, err = client.AddTx(tx)
+	status, err = client.AddTxInOrderer(tx)
 	require.NoError(t, err)
 	require.NotEmpty(t, status.Err)
 
@@ -207,7 +207,7 @@ func testAsset(t *testing.T, client *client.Client) {
 	})
 	tx, err = core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, 10, "", client.GetPrivKey())
 	require.NoError(t, err)
-	status, err = client.AddTx(tx)
+	status, err = client.AddTxInOrderer(tx)
 	require.NoError(t, err)
 	require.Empty(t, status.Err)
 
@@ -217,7 +217,7 @@ func testAsset(t *testing.T, client *client.Client) {
 	})
 	tx, err = core.NewTx(core.ASSETCHANNELID, core.TransferContractrAddress, payload, 10, "", receiverPrivKey)
 	require.NoError(t, err)
-	status, err = client.AddTx(tx)
+	status, err = client.AddTxInOrderer(tx)
 	require.NoError(t, err)
 	require.Empty(t, status.Err)
 
