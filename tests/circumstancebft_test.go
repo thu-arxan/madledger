@@ -194,6 +194,10 @@ func TestBFTCreateTx(t *testing.T) {
 		require.True(t, util.IsDirSame(getBFTOrdererBlockPath(0), getBFTOrdererBlockPath(i)), fmt.Sprintf("Orderer %d is not same with 0", i))
 	}
 }
+
+func TestBFTAsset(t *testing.T) {
+	testAsset(t, bftClients[0])
+}
 func TestBFTEnd(t *testing.T) {
 	for i := range bftOrderers {
 		stopOrderer(bftOrderers[i])
