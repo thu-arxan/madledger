@@ -1,7 +1,9 @@
 package db
 
 import (
+	cc "madledger/blockchain/config"
 	"madledger/common"
+	"madledger/common/crypto"
 	"madledger/core"
 )
 
@@ -28,6 +30,10 @@ type WriteBatch interface {
 	AddChannel(channelID string)
 	DeleteChannel(channelID string)
 	Sync() error
+
+	UpdateAccounts(accounts ...common.Account) error
+	//SetAssetAdmin only succeed at the first time it is called
+	SetAssetAdmin(pk crypto.PublicKey) error
 }
 
 // DB provide a interface for peer to access the global state
@@ -50,4 +56,10 @@ type DB interface {
 	Close()
 
 	Get(key []byte) ([]byte, error)
+	//GetAssetAdminPKBytes return nil is not exist
+	GetAssetAdminPKBytes() []byte
+	//GetOrCreateAccount return default account if not exist
+	GetOrCreateAccount(address common.Address) (common.Account, error)
+	UpdateSystemAdmin(profile *cc.Profile) error
+	IsSystemAdmin(member *core.Member) bool
 }

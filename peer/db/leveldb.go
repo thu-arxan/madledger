@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	cc "madledger/blockchain/config"
 	"madledger/common"
+	"madledger/common/crypto"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/core"
@@ -45,6 +47,47 @@ func NewLevelDB(dir string) (DB, error) {
 	db.connect = connect
 	db.hub = event.NewHub()
 	return db, nil
+}
+
+// UpdateSystemAdmin update system admin
+func (db *LevelDB) UpdateSystemAdmin(profile *cc.Profile) error {
+	var key = getSystemAdminKey()
+	data, err := json.Marshal(profile)
+	if err != nil {
+		return err
+	}
+	//更新key为_config$admin的记录, 具体内容示例如下：
+	//(_config$admin, {"Public":true,"Dependencies":null,"Members":null,"Admins":
+	// [{"PK":"BGXcjZ3bhemsoLP4HgBwnQ5gsc8VM91b3y8bW0b6knkWu8xCSKO2qiJXARMHcbtZtvU7Jos2A5kFCD1haJ/hLdg=","Name":"SystemAdmin"}]})
+	err = db.connect.Put(key, data, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// IsSystemAdmin return if the member is the system admin
+func (db *LevelDB) IsSystemAdmin(member *core.Member) bool {
+	var p cc.Profile
+	var key = getSystemAdminKey()
+	data, err := db.connect.Get(key, nil)
+	if err != nil {
+		return false
+	}
+	err = json.Unmarshal(data, &p)
+	if err != nil {
+		return false
+	}
+	for i := range p.Admins {
+		if p.Admins[i].Equal(member) {
+			return true
+		}
+	}
+	return false
+}
+
+func getSystemAdminKey() []byte {
+	return []byte(fmt.Sprintf("%s$admin", core.CONFIGCHANNELID))
 }
 
 // AccountExist is the implementation of the interface
@@ -195,6 +238,31 @@ func (db *LevelDB) Get(key []byte) ([]byte, error) {
 	return db.connect.Get(key, nil)
 }
 
+// GetAssetAdminPKByted returns public key bytes of _asset admin or nil if not exists
+func (db *LevelDB) GetAssetAdminPKBytes() []byte {
+	var key = getAssetAdminKey()
+	admin, err := db.connect.Get(key, nil)
+	if err != nil {
+		return nil
+	}
+	return admin
+}
+
+//GetOrCreateAccount return default account if not existx in leveldb
+func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, error) {
+	account := common.NewAccount(address)
+	key := getAccountKey(address)
+	data, err := db.connect.Get(key, nil)
+	if err != nil {
+		if err == leveldb.ErrNotFound {
+			err = nil
+		}
+		return *account, err
+	}
+	err = json.Unmarshal(data, &account)
+	return *account, err
+}
+
 // WriteBatchWrapper is a wrapper of level.Batch
 type WriteBatchWrapper struct {
 	batch *leveldb.Batch
@@ -341,4 +409,40 @@ func (wb *WriteBatchWrapper) updateChannels() {
 	var key = []byte("channels")
 	value, _ := json.Marshal(wb.channels)
 	wb.batch.Put(key, value)
+}
+
+//UpdateAccounts update asset
+func (wb *WriteBatchWrapper) UpdateAccounts(accounts ...common.Account) error {
+	for _, acc := range accounts {
+		key := getAccountKey(acc.GetAddress())
+		data, err := json.Marshal(acc)
+		if err != nil {
+			return err
+		}
+		wb.Put(key, data)
+	}
+	return nil
+}
+
+//SetAssetAdmin only succeed at the first time it is called
+func (wb *WriteBatchWrapper) SetAssetAdmin(pk crypto.PublicKey) error {
+	var key = getAssetAdminKey()
+	exists, _ := wb.db.connect.Has(key, nil)
+	if exists {
+		return fmt.Errorf("account admin already set")
+	}
+	pkBytes, err := pk.Bytes()
+	if err != nil {
+		return err
+	}
+	wb.Put(key, pkBytes)
+	return nil
+}
+
+func getAccountKey(address common.Address) []byte {
+	return []byte(fmt.Sprintf("%s@%s", core.ASSETCHANNELID, address.String()))
+}
+
+func getAssetAdminKey() []byte {
+	return []byte("_asset_admin")
 }
