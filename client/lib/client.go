@@ -168,7 +168,8 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 }
 
 // CreateChannel create a channel
-func (c *Client) CreateChannel(channelID string, public bool, admins, members []*core.Member) error {
+func (c *Client) CreateChannel(channelID string, public bool, admins, members []*core.Member,
+	gasprice uint64, ratio float32, maxgas uint64) error {
 	// log.Infof("Create channel %s", channelID)
 	self, err := core.NewMember(c.GetPrivKey().PubKey(), "admin")
 	if err != nil {
@@ -188,7 +189,10 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 			Admins:  admins,
 			Members: members,
 		},
-		Version: 1,
+		Version:         1,
+		GasPrice:        gasprice,
+		AssetTokenRatio: ratio,
+		MaxGas:          maxgas,
 	})
 	coreTx, _ := core.NewTx(core.CONFIGCHANNELID, core.CreateChannelContractAddress, payload, 0, "", c.GetPrivKey())
 	pbTx, _ := pb.NewTx(coreTx)
@@ -301,9 +305,9 @@ func (c *Client) AddTxInOrderer(tx *core.Tx) (*pb.TxStatus, error) {
 	for i := range c.ordererClients {
 		go func(i int) {
 			status, err := c.ordererClients[i].GetTxStatus(context.Background(), &pb.GetTxStatusRequest{
-				ChannelID:            tx.Data.ChannelID,
-				TxID:                 tx.ID,
-				Behavior:             pb.Behavior_RETURN_UNTIL_READY,
+				ChannelID: tx.Data.ChannelID,
+				TxID:      tx.ID,
+				Behavior:  pb.Behavior_RETURN_UNTIL_READY,
 			})
 			if err != nil {
 				collector.AddError(err)

@@ -10,6 +10,10 @@ type Payload struct {
 	ChannelID string
 	Profile   *Profile
 	Version   int32
+
+	GasPrice        uint64  // Gas: token = gas * gasprice
+	AssetTokenRatio float32 // = (asset / token), asset channel has the real money, it will transfer to token in other channel using this ratio
+	MaxGas          uint64
 }
 
 // Profile is the profile in payload

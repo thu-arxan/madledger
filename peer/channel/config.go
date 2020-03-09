@@ -26,6 +26,19 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 				log.Warnf("Fatal error! Nil channel id in config block, num: %d, index: %d", block.GetNumber(), i)
 			default:
 				channelID := payload.ChannelID
+
+				/* TODO: Gas
+				gasprice = payload.gasprice
+				ratio = payload.ratio
+				maxgas = payload.maxgas
+				这里应该将三个值都set到wb里去，需要新加db函数
+
+				这里还应该进行token的分配，
+				目前的一种想法是从sender账户里扣一个固定值，然后均分到每个member那里去。也需要两个db函数
+
+				*** 问题：那么除了这个初始的token分配，之后的token分配该在哪里做？***
+				*/
+
 				if payload.Profile.Public {
 					wb.AddChannel(channelID)
 					m.coordinator.hub.Broadcast("update", Update{

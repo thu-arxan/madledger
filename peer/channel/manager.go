@@ -173,6 +173,12 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		}
 		log.Debugf(" %v, %v, %v", sender, context, tx)
 		gas := uint64(10000000)
+		/* TODO: gas
+		判断payload中的gas是否为0
+		如果是0，则读取数据库中该通道的maxgas值，如果没有指定过，就默认为10000000
+		如果不是0，那么这里要得到sender在该通道中的剩余token以及通道的gasprice，并且将token减去gas*gasprice
+		*/
+
 		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, gas, m.db, wb)
 		if receiverAddress.String() != common.ZeroAddress.String() {
 			// if the length of payload is not zero, this is a contract call

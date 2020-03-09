@@ -128,6 +128,15 @@ func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
 
 // AddBlock add a block
 func (manager *Manager) AddBlock(block *core.Block) error {
+	/* TODO: Gas
+	这里应该要添加存储收费的feature
+	每次AddBlock，应当扣除manger.ID这个通道对应的钱（应该是预设的）
+	通道的钱是通过issue或者transfer来的
+	如果钱不够应当直接return
+
+	*** 问题：是不是只有用户通道才需要这一个feature？***
+	*/
+
 	// first update db
 	if err := manager.db.AddBlock(block); err != nil {
 		log.Infof("manager.db.AddBlock error: %s add block %d, %s",
@@ -207,6 +216,7 @@ func (manager *Manager) GetAccount(address common.Address) (common.Account, erro
 func (manager *Manager) GetTxStatus(channelID, txID string) (*db.TxStatus, error) {
 	return manager.db.GetTxStatus(channelID, txID)
 }
+
 // FetchBlockAsync will fetch book async.
 // TODO: fix the thread unsafety
 func (manager *Manager) FetchBlockAsync(num uint64) (*core.Block, error) {
