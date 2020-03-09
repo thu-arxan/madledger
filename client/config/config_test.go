@@ -16,23 +16,10 @@ func TestLoadConfig(t *testing.T) {
 	var err error
 	cfg, err = LoadConfig(getTestConfigFilePath())
 	require.NoError(t, err)
-}
-
-func TestGetKeyStoreConfig(t *testing.T) {
-	_, err := cfg.GetKeyStoreConfig()
-	require.NoError(t, err)
-}
-
-func TestGetOrdererConfig(t *testing.T) {
-	ordererConfig, err := cfg.GetOrdererConfig()
-	require.NoError(t, err)
-	require.Equal(t, []string{"localhost:12345"}, ordererConfig.Address)
-}
-
-func TestGetPeerConfig(t *testing.T) {
-	peerConfig, err := cfg.GetPeerConfig()
-	require.NoError(t, err)
-	require.Equal(t, []string{"localhost:23456", "localhost:34567"}, peerConfig.Address)
+	require.Equal(t, []string{"localhost:12345"}, cfg.Orderer.Address)
+	require.Equal(t, []string{"localhost:23456", "localhost:34567"}, cfg.Peer.Address)
+	require.Len(t, cfg.KeyStore.Privs, 1)
+	require.False(t, cfg.TLS.Enable)
 }
 
 func getTestConfigFilePath() string {

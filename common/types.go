@@ -8,7 +8,7 @@ import (
 	"github.com/tmthrgd/go-hex"
 )
 
-// his is copied from ethereum.
+// This is copied from ethereum.
 // However, there maybe many things is missed like
 // how to support different kind of encrypted functions.
 
@@ -126,7 +126,6 @@ func (a *Address) SetBytes(b []byte) {
 }
 
 // String return the upper 0x
-// Maybe lower is better
 func (a Address) String() string {
 	// return hex.EncodeUpperToString(a[:])
 	return "0x" + util.Hex(a[:])

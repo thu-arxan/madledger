@@ -18,7 +18,8 @@ type Config struct {
 	Orderer  OrdererConfig `yaml:"Orderer"`
 	Peer     PeerConfig    `yaml:"Peer"`
 	KeyStore struct {
-		Keys []string `yaml:"Keys"`
+		Keys  []string            `yaml:"Keys"`
+		Privs []crypto.PrivateKey `yaml:"-"`
 	} `yaml:"KeyStore"`
 }
 
@@ -45,16 +46,24 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = cfg.GetTLSConfig()
+	err = cfg.loadTLSConfig()
 	if err != nil {
+		return nil, err
+	}
+	if err := cfg.loadOrdererConfig(); err != nil {
+		return nil, err
+	}
+	if err := cfg.loadPeerConfig(); err != nil {
+		return nil, err
+	}
+	if err := cfg.loadKeys(); err != nil {
 		return nil, err
 	}
 	return &cfg, nil
 }
 
-// GetTLSConfig set tls config
-// TODO: maybe a better name
-func (cfg *Config) GetTLSConfig() error {
+// loadTLSConfig load tls config
+func (cfg *Config) loadTLSConfig() error {
 	if cfg.TLS.Enable {
 		// load pool
 		pool := x509.NewCertPool()
@@ -82,14 +91,12 @@ type OrdererConfig struct {
 	Address []string `yaml:"Address"`
 }
 
-// GetOrdererConfig return the orderer config
-func (cfg *Config) GetOrdererConfig() (*OrdererConfig, error) {
+// loadOrdererConfig load the orderer config
+func (cfg *Config) loadOrdererConfig() error {
 	if len(cfg.Orderer.Address) == 0 {
-		return nil, errors.New("The address of orderer should not be nil")
+		return errors.New("The address of orderer should not be nil")
 	}
-	return &OrdererConfig{
-		Address: cfg.Orderer.Address,
-	}, nil
+	return nil
 }
 
 // PeerConfig is the config of peer
@@ -97,14 +104,12 @@ type PeerConfig struct {
 	Address []string `yaml:"Address"`
 }
 
-// GetPeerConfig return the peer config
-func (cfg *Config) GetPeerConfig() (*PeerConfig, error) {
+// loadPeerConfig load the peer config
+func (cfg *Config) loadPeerConfig() error {
 	if len(cfg.Peer.Address) == 0 {
-		return nil, errors.New("The address of peer should not be nil")
+		return errors.New("The address of peer should not be nil")
 	}
-	return &PeerConfig{
-		Address: cfg.Peer.Address,
-	}, nil
+	return nil
 }
 
 // KeyStoreConfig is the config of KeyStore
@@ -112,20 +117,19 @@ type KeyStoreConfig struct {
 	Keys []crypto.PrivateKey
 }
 
-// GetKeyStoreConfig return the keystore config
-func (cfg *Config) GetKeyStoreConfig() (*KeyStoreConfig, error) {
+// loadKeys return the key store config
+func (cfg *Config) loadKeys() error {
 	if len(cfg.KeyStore.Keys) == 0 {
-		return nil, errors.New("The keys should not be nil")
+		return errors.New("The keys should not be nil")
 	}
 	var keys []crypto.PrivateKey
 	for _, keyFile := range cfg.KeyStore.Keys {
 		key, err := crypto.LoadPrivateKeyFromFile(keyFile)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		keys = append(keys, key)
 	}
-	return &KeyStoreConfig{
-		Keys: keys,
-	}, nil
+	cfg.KeyStore.Privs = keys
+	return nil
 }

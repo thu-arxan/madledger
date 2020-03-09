@@ -44,10 +44,6 @@ func NewClient(cfgFile string) (*Client, error) {
 
 // NewClientFromConfig will construct client from cfg
 func NewClientFromConfig(cfg *config.Config) (*Client, error) {
-	keyStore, err := cfg.GetKeyStoreConfig()
-	if err != nil {
-		return nil, err
-	}
 	// get clients
 	ordererClients, err := getOrdererClients(cfg)
 	if err != nil {
@@ -61,7 +57,7 @@ func NewClientFromConfig(cfg *config.Config) (*Client, error) {
 	return &Client{
 		ordererClients: ordererClients,
 		peerClients:    peerClients,
-		privKey:        keyStore.Keys[0],
+		privKey:        cfg.KeyStore.Privs[0],
 	}, nil
 }
 
@@ -225,7 +221,7 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 	}
 
 	for i, ordererClient := range c.ordererClients {
-		log.Info("add tx begin")
+		// log.Info("add tx begin")
 		_, err = ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
 			Tx: pbTx,
 		})
@@ -242,7 +238,7 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 			}
 		} else {
 			// add tx successfully and exit the loop
-			log.Info("add tx success")
+			// log.Info("add tx success")
 			break
 		}
 	}
@@ -271,7 +267,7 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 	return result.(*pb.TxStatus), nil
 }
 
-// AddTx try to add a tx
+// AddTxInOrderer try to add a tx into orderer and get tx result in orderer also
 // TODO: Support bft
 func (c *Client) AddTxInOrderer(tx *core.Tx) (*pb.TxStatus, error) {
 	pbTx, err := pb.NewTx(tx)
@@ -296,7 +292,7 @@ func (c *Client) AddTxInOrderer(tx *core.Tx) (*pb.TxStatus, error) {
 			}
 		} else {
 			// add tx successfully and exit the loop
-			log.Info("add tx success")
+			// log.Info("add tx success")
 			break
 		}
 	}
@@ -375,6 +371,7 @@ func (c *Client) GetPrivKey() crypto.PrivateKey {
 	return c.privKey
 }
 
+// GetAccountBalance return balance of account
 func (c *Client) GetAccountBalance(address common.Address) (uint64, error) {
 	var times int
 	var acc *pb.AccountInfo

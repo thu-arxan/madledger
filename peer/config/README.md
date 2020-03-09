@@ -1,7 +1,6 @@
-package cmd
+# Peer配置文件说明
 
-const (
-	cfgTemplate = `#############################################################################
+```yaml
 #############################################################################
 #   This is a configuration file for the MadLedger peer.
 #############################################################################
@@ -17,8 +16,8 @@ Debug: true
 
 # Configure for the TLS
 TLS:
-  # Should be true of false (default: true)
-  Enable: true
+  # Should be true of false (default: false)
+  Enable: false
   # The path of CA cert, it should not be empty if Enable is true
   CA: 
   # Cert of the peer, it should not be empty if Enable is true
@@ -26,7 +25,7 @@ TLS:
   # Key of the peer, it should not be empty if Enable is true
   Key: 
 
-# Configure for the peer
+# Configure for the BlockChain
 BlockChain:
   # default: $GOPATH/src/madledger/peer/data/blocks
   # But in the production environment, you must provide a path
@@ -48,6 +47,9 @@ DB:
 
 # KeyStore manage some private keys
 KeyStore:
-  Key: <<<KEYFILE>>>
-`
-)
+  Key: .key.pem
+```
+
+Peer的配置文件如上所示，接下来对其中的关键字段进行解释。
+
+***todo***

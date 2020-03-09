@@ -28,7 +28,8 @@ type Config struct {
 	BlockChain BlockChainConfig `yaml:"BlockChain"`
 	Orderer    OrdererConfig    `yaml:"Orderer"`
 	DB         struct {
-		Type    string `yaml:"Type"`
+		T       string `yaml:"Type"`
+		Type    DBType `yaml:"-"`
 		LevelDB struct {
 			Dir string `yaml:"Dir"`
 		} `yaml:"LevelDB"`
@@ -73,32 +74,29 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = cfg.GetTLSConfig()
-	if err != nil {
-		return nil, err
-	}
-	return &cfg, nil
-}
-
-// GetServerConfig return the ServerConfig
-func (cfg *Config) GetServerConfig() (*ServerConfig, error) {
 	if cfg.Port < 1024 {
 		return nil, fmt.Errorf("The port can not be %d", cfg.Port)
 	}
 	if cfg.Address == "" {
 		return nil, errors.New("The address can not be empty")
 	}
-
-	return &ServerConfig{
-		Port:    cfg.Port,
-		Address: cfg.Address,
-		Debug:   cfg.Debug,
-		TLS:     cfg.TLS,
-	}, nil
+	if err = cfg.loadTLSConfig(); err != nil {
+		return nil, err
+	}
+	if err = cfg.loadOrdererConfig(); err != nil {
+		return nil, err
+	}
+	if err = cfg.loadBlockChainConfig(); err != nil {
+		return nil, err
+	}
+	if err = cfg.loadDBConfig(); err != nil {
+		return nil, err
+	}
+	return &cfg, nil
 }
 
-// GetTLSConfig check the tls config and set necessary things
-func (cfg *Config) GetTLSConfig() error {
+// loadTLSConfig check the tls config and set necessary things
+func (cfg *Config) loadTLSConfig() error {
 	if cfg.TLS.Enable {
 		if cfg.TLS.CA == "" {
 			return errors.New("The CA can not be empty")
@@ -135,11 +133,12 @@ type OrdererConfig struct {
 	Address []string `yaml:"Address"`
 }
 
-// GetOrdererConfig return the orderer config
-func (cfg *Config) GetOrdererConfig() (*OrdererConfig, error) {
-	return &OrdererConfig{
-		Address: cfg.Orderer.Address,
-	}, nil
+// loadOrdererConfig check the orderer config and set necessary things
+func (cfg *Config) loadOrdererConfig() error {
+	if len(cfg.Orderer.Address) == 0 {
+		return errors.New("orderer address is not setted")
+	}
+	return nil
 }
 
 // BlockChainConfig is the config of blockchain
@@ -147,19 +146,16 @@ type BlockChainConfig struct {
 	Path string `yaml:"Path"`
 }
 
-// GetBlockChainConfig return the BlockChainConfig
-func (cfg *Config) GetBlockChainConfig() (*BlockChainConfig, error) {
-	var storePath = cfg.BlockChain.Path
-	if storePath == "" {
+// loadBlockChainConfig check the blockchain config and set necessary things
+func (cfg *Config) loadBlockChainConfig() error {
+	if cfg.BlockChain.Path == "" {
 		if cfg.Debug {
-			storePath = getDefaultChainPath()
+			cfg.BlockChain.Path = getDefaultChainPath()
 		} else {
-			return nil, errors.New("The path of blockchain is not provided")
+			return errors.New("The path of blockchain is not provided")
 		}
 	}
-	return &BlockChainConfig{
-		Path: storePath,
-	}, nil
+	return nil
 }
 
 // DBType is the type of DB
@@ -183,19 +179,20 @@ type LevelDBConfig struct {
 }
 
 // GetDBConfig return the DBConfig
-func (cfg *Config) GetDBConfig() (*DBConfig, error) {
-	var config DBConfig
-	switch cfg.DB.Type {
+func (cfg *Config) loadDBConfig() error {
+	switch cfg.DB.T {
 	case "leveldb":
-		config.Type = LEVELDB
-		config.LevelDB.Dir = cfg.DB.LevelDB.Dir
-		if config.LevelDB.Dir == "" {
-			config.LevelDB.Dir = getDefaultLevelDBPath()
+		cfg.DB.Type = LEVELDB
+		if cfg.DB.LevelDB.Dir == "" {
+			if !cfg.Debug {
+				return errors.New("leveldb path is not setted")
+			}
+			cfg.DB.LevelDB.Dir = getDefaultLevelDBPath()
 		}
 	default:
-		return nil, fmt.Errorf("Unsupport db type: %s", cfg.DB.Type)
+		return fmt.Errorf("unsupport db type: %s", cfg.DB.T)
 	}
-	return &config, nil
+	return nil
 }
 
 // GetIdentity return the identity of peer

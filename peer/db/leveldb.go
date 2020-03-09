@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"madledger/common"
+	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/core"
 	"sync"
@@ -26,7 +27,7 @@ type LevelDB struct {
 	dir     string
 	connect *leveldb.DB
 	lock    sync.Mutex
-	hub     *Hub
+	hub     *event.Hub
 }
 
 var (
@@ -42,7 +43,7 @@ func NewLevelDB(dir string) (DB, error) {
 		return nil, err
 	}
 	db.connect = connect
-	db.hub = NewHub()
+	db.hub = event.NewHub()
 	return db, nil
 }
 
@@ -120,7 +121,7 @@ func (db *LevelDB) GetTxStatusAsync(channelID, txID string) (*TxStatus, error) {
 		}
 		return &status, nil
 	}
-	status := db.hub.Watch(txID, func() { db.lock.Unlock() })
+	status := db.hub.Watch(txID, func() { db.lock.Unlock() }).(*TxStatus)
 	return status, nil
 }
 
@@ -131,27 +132,6 @@ func (db *LevelDB) BelongChannel(channelID string) bool {
 		return true
 	}
 	return false
-}
-
-// AddChannel is the implementation of interface
-func (db *LevelDB) AddChannel(channelID string) {
-	channels := db.GetChannels()
-	if !util.Contain(channels, channelID) {
-		channels = append(channels, channelID)
-	}
-	db.setChannels(channels)
-}
-
-// DeleteChannel is the implementation of interface
-func (db *LevelDB) DeleteChannel(channelID string) {
-	oldChannels := db.GetChannels()
-	var newChannels []string
-	for i := range oldChannels {
-		if channelID != oldChannels[i] {
-			newChannels = append(newChannels, oldChannels[i])
-		}
-	}
-	db.setChannels(newChannels)
 }
 
 // GetChannels is the implementation of interface
@@ -166,11 +146,14 @@ func (db *LevelDB) GetChannels() []string {
 		return channels
 	}
 	json.Unmarshal(value, &channels)
+	if channels == nil {
+		channels = make([]string, 0)
+	}
 	return channels
 }
 
-// ListTxHistory is the implementation of interface
-func (db *LevelDB) ListTxHistory(address []byte) map[string][]string {
+// GetTxHistory is the implementation of interface
+func (db *LevelDB) GetTxHistory(address []byte) map[string][]string {
 	var txs = make(map[string][]string)
 	if ok, _ := db.connect.Has(address, nil); ok {
 		value, _ := db.connect.Get(address, nil)
@@ -178,12 +161,6 @@ func (db *LevelDB) ListTxHistory(address []byte) map[string][]string {
 	}
 
 	return txs
-}
-
-func (db *LevelDB) setChannels(channels []string) {
-	var key = []byte("channels")
-	value, _ := json.Marshal(channels)
-	db.connect.Put(key, value, nil)
 }
 
 // NewWriteBatch implement the interface, WriteBatch is a wrapper of leveldb.Batch
@@ -219,6 +196,7 @@ type WriteBatchWrapper struct {
 	db    *LevelDB
 
 	histories map[string]map[string][]string
+	channels  []string
 }
 
 // SetAccount is the implementation of interface
@@ -322,7 +300,40 @@ func (wb *WriteBatchWrapper) PutBlock(block *core.Block) error {
 	return nil
 }
 
+// AddChannel is the implementation of interface
+func (wb *WriteBatchWrapper) AddChannel(channelID string) {
+	if wb.channels == nil {
+		wb.channels = wb.db.GetChannels()
+	}
+
+	if !util.Contain(wb.channels, channelID) {
+		wb.channels = append(wb.channels, channelID)
+	}
+	wb.updateChannels()
+}
+
+// DeleteChannel is the implementation of interface
+func (wb *WriteBatchWrapper) DeleteChannel(channelID string) {
+	if wb.channels == nil {
+		wb.channels = wb.db.GetChannels()
+	}
+	var channels = make([]string, 0)
+	for _, channel := range wb.channels {
+		if channelID != channel {
+			channels = append(channels, channel)
+		}
+	}
+	wb.channels = channels
+	wb.updateChannels()
+}
+
 // Sync sync batch to database
 func (wb *WriteBatchWrapper) Sync() error {
 	return wb.db.connect.Write(wb.batch, nil)
+}
+
+func (wb *WriteBatchWrapper) updateChannels() {
+	var key = []byte("channels")
+	value, _ := json.Marshal(wb.channels)
+	wb.batch.Put(key, value)
 }

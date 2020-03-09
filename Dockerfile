@@ -26,6 +26,9 @@ RUN apt install -y build-essential software-properties-common \
     && apt update \
     && apt install -y solc
 
+# git
+RUN apt install -y git
+
 # copy code
 COPY . gopath/src/madledger
 

@@ -2,13 +2,13 @@ package testfor1client_raft
 
 import (
 	"encoding/hex"
+	"madledger/common/abi"
 	"fmt"
 	"io"
 	"io/ioutil"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"madledger/common"
-	"madledger/common/abi"
 	"madledger/common/util"
 	"madledger/core"
 	oc "madledger/orderer/config"
@@ -547,7 +547,7 @@ func backupMdFile2(path string) error {
 func setNumForCallTx(num string) error {
 	abiPath := fmt.Sprintf(getRAFTClientPath(0) + "/MyTest.abi")
 	inputs := []string{num}
-	payloadBytes, err := abi.GetPayloadBytes(abiPath, "setNum", inputs)
+	payloadBytes, err := abi.Pack(abiPath, "setNum", inputs...)
 	if err != nil {
 		return err
 	}
@@ -568,7 +568,7 @@ func setNumForCallTx(num string) error {
 func getNumForCallTx(num string) error {
 	abiPath := fmt.Sprintf(getRAFTClientPath(0) + "/MyTest.abi")
 	var inputs = make([]string, 0)
-	payloadBytes, err := abi.GetPayloadBytes(abiPath, "getNum", inputs)
+	payloadBytes, err := abi.Pack(abiPath, "getNum", inputs...)
 	if err != nil {
 		return err
 	}
@@ -584,15 +584,11 @@ func getNumForCallTx(num string) error {
 		return err
 	}
 
-	values, err := abi.Unpacker(abiPath, "getNum", status.Output)
+	output, err := abi.Unpack(abiPath, "getNum", status.Output)
 	if err != nil {
 		return err
 	}
 
-	var output []string
-	for _, value := range values {
-		output = append(output, value.Value)
-	}
 	if output[0] != num {
 		return fmt.Errorf("call tx on channel test%d: getNum expect %s but receive %s", 0, num, output[0])
 	}

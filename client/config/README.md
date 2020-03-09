@@ -1,7 +1,7 @@
-package cmd
+# Client配置说明
 
-const (
-	cfgTemplate = `#############################################################################
+```yaml
+#############################################################################
 #   This is a configuration file for the MadLedger client.
 #############################################################################
 
@@ -10,7 +10,7 @@ Debug: true
 
 # Configure for the TLS
 TLS:
-  # Should be true of false (default: false)
+  # Should be true of false (default: true)
   Enable: false
   # The path of CA cert, it should not be empty if Enable is true
   CA: 
@@ -28,10 +28,12 @@ Orderer:
 Peer:
   Address:
     - localhost:23456
+    - localhost:34567
 
 # KeyStore manage some private keys
 KeyStore:
   Keys:
-    - <<<KEYFILE>>>
-`
-)
+    - .key.pem
+```
+
+其中，Client的配置文件如上所示。对于部分选项，下文中会进行一些解释。

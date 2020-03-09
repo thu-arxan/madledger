@@ -151,7 +151,10 @@ func (c *channel) notifyLater(block *Block) {
 func (c *channel) watch(block *Block) error {
 	hash := string(crypto.Hash(block.Bytes()))
 	res := c.hub.Watch(hash, nil)
-	return res.Err
+	if res == nil {
+		return nil
+	}
+	return res.(*event.Result).Err
 }
 
 func (c *channel) fetchBlockDone(num uint64) {
