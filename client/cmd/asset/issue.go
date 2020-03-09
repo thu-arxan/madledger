@@ -42,14 +42,20 @@ func runIssue(cmd *cobra.Command, args []string) error {
 
 	//channelID can be empty
 	channelID := issueViper.GetString("channelID")
-
+	action := "person"
+	if channelID != "" {
+		action = "channel"
+	}
 	value := issueViper.GetInt("value")
 	if value < 0 {
 		return errors.New("cannot issue negative value")
 	}
 
 	receiver := issueViper.GetString("address")
-	recipient := common.HexToAddress(receiver)
+	var recipient common.Address
+	if receiver != "" {
+		recipient = common.HexToAddress(receiver)
+	}
 
 	client, err := lib.NewClient(cfgFile)
 	if err != nil {
@@ -57,14 +63,15 @@ func runIssue(cmd *cobra.Command, args []string) error {
 	}
 
 	payload, err := json.Marshal(asset.Payload{
-		Action:    "issue",
+		Action:    action,
 		ChannelID: channelID,
+		Address:   recipient,
 	})
 	if err != nil {
 		return err
 	}
 
-	tx, err := coreTypes.NewTx(coreTypes.ASSETCHANNELID, recipient, payload, uint64(value), "", client.GetPrivKey())
+	tx, err := coreTypes.NewTx(coreTypes.ASSETCHANNELID, coreTypes.IssueContractAddress, payload, uint64(value), "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}

@@ -7,14 +7,20 @@ import (
 	"madledger/core"
 )
 
-// TxStatus ...
+// TxStatus return the status of tx
 type TxStatus struct {
-	Executed bool
+	Err             string
+	BlockNumber     uint64
+	BlockIndex      int
+	Output          []byte
+	ContractAddress string
 }
-
 // WriteBatch ...
 type WriteBatch interface {
 	SetTxStatus(tx *core.Tx, status *TxStatus) error
+	UpdateAccounts(accounts ...common.Account) error
+	//SetAssetAdmin only succeed at the first time it is called
+	SetAssetAdmin(pk crypto.PublicKey) error
 	Sync() error
 }
 
@@ -35,14 +41,12 @@ type DB interface {
 	UpdateSystemAdmin(profile *cc.Profile) error
 	IsSystemAdmin(member *core.Member) bool
 
-	//IsAssetAdmin return true if pk is the public key of account channel admin
-	IsAssetAdmin(pk crypto.PublicKey) bool
-	//SetAssetAdmin only succeed at the first time it is called
-	SetAssetAdmin(pk crypto.PublicKey) error
+	//GetAssetAdminPKBytes return nil is not exist
+	GetAssetAdminPKBytes() []byte
 	//GetOrCreateAccount return default account if not exist
 	GetOrCreateAccount(address common.Address) (common.Account, error)
-	UpdateAccounts(accounts ...common.Account) error
-
+	//NewWriteBatch new a write batch
 	NewWriteBatch() WriteBatch
+	//GetTxStatus gets tx status
 	GetTxStatus(channelID, txID string) (*TxStatus, error)
 }

@@ -274,10 +274,9 @@ func (c *Client) AddTxInOrderer(tx *core.Tx) (*pb.TxStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-	var result *pb.TxStatus
 	for i, ordererClient := range c.ordererClients {
-		// log.Info("add tx begin")
-		result, err = ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
+		log.Info("add tx begin")
+		_, err = ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
 			Tx: pbTx,
 		})
 
@@ -297,7 +296,29 @@ func (c *Client) AddTxInOrderer(tx *core.Tx) (*pb.TxStatus, error) {
 			break
 		}
 	}
-	return result, nil
+
+	collector := NewCollector(len(c.ordererClients), 1)
+	for i := range c.ordererClients {
+		go func(i int) {
+			status, err := c.ordererClients[i].GetTxStatus(context.Background(), &pb.GetTxStatusRequest{
+				ChannelID:            tx.Data.ChannelID,
+				TxID:                 tx.ID,
+				Behavior:             pb.Behavior_RETURN_UNTIL_READY,
+			})
+			if err != nil {
+				collector.AddError(err)
+			} else {
+				collector.Add(status)
+			}
+		}(i)
+	}
+
+	result, err := collector.Wait()
+
+	if err != nil {
+		return nil, err
+	}
+	return result.(*pb.TxStatus), nil
 }
 
 // GetHistory return the history of address

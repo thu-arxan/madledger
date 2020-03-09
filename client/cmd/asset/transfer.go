@@ -28,7 +28,7 @@ func init() {
 	transferViper.BindPFlag("channelID", transferCmd.Flags().Lookup("channelID"))
 	transferCmd.Flags().StringP("value", "v", "0", "value to be transfered")
 	transferViper.BindPFlag("value", transferCmd.Flags().Lookup("value"))
-	transferCmd.Flags().StringP("address", "a", "0", "receiver's hex address to be transfered")
+	transferCmd.Flags().StringP("address", "a", "", "receiver's hex address to be transfered")
 	transferViper.BindPFlag("address", transferCmd.Flags().Lookup("address"))
 }
 
@@ -45,17 +45,22 @@ func runTransfer(cmd *cobra.Command, args []string) error {
 	if value < 0 {
 		return errors.New("cannot issue negative value")
 	}
-
-	receiver := transferViper.GetString("address")
-	recipient := common.HexToAddress(receiver)
-
 	client, err := lib.NewClient(cfgFile)
 	if err != nil {
 		return err
 	}
+	receiver := transferViper.GetString("address")
+	var recipient common.Address
+
+	if channelID == "" && receiver != "" {
+		recipient = common.HexToAddress(receiver)
+	} else if channelID != "" && receiver == "" {
+		recipient = coreTypes.TransferContractrAddress
+	} else {
+		return errors.New("only one of channelID and receiver can have value")
+	}
 
 	payload, err := json.Marshal(asset.Payload{
-		Action:    "transfer",
 		ChannelID: channelID,
 	})
 	if err != nil {

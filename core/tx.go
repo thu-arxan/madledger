@@ -31,6 +31,10 @@ const (
 	VALIDATOR
 	// NODE is the raft cfgChange tx
 	NODE
+	// ISSUE is the issue tx
+	ISSUE
+	// TRANSFER is the transfer tx
+	TRANSFER
 )
 
 // TxData is the data of Tx

@@ -1,7 +1,10 @@
 package asset
 
+import "madledger/common"
+
 // todo: what is payload
 type Payload struct {
+	Action string // channel or person
 	ChannelID string
-	Action string // transfer or issue
+	Address common.Address
 }
