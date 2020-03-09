@@ -1,11 +1,17 @@
 package channel
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"fmt"
 	cc "madledger/blockchain/config"
+	"madledger/common/util"
 	"madledger/core"
 	"madledger/peer/db"
+	"math"
+
+	"github.com/prometheus/common/log"
 )
 
 // AddConfigBlock add a config block
@@ -38,6 +44,21 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 
 				*** 问题：那么除了这个初始的token分配，之后的token分配该在哪里做？***
 				*/
+				maxgas := make([]byte, 8)
+				binary.BigEndian.PutUint64(maxgas, payload.MaxGas)
+				wb.Put(util.BytesCombine([]byte(channelID), []byte("maxgas")), maxgas)
+				ratio := make([]byte, 4)
+				binary.BigEndian.PutUint32(ratio, math.Float32bits(payload.AssetTokenRatio))
+				wb.Put(util.BytesCombine([]byte(channelID), []byte("ratio")), ratio)
+				gasprice := make([]byte, 8)
+				binary.BigEndian.PutUint64(gasprice, payload.GasPrice)
+				wb.Put(util.BytesCombine([]byte(channelID), []byte("gasprice")), gasprice)
+
+				for member := range payload.Profile.Members {
+					fmt.Println(member)
+					// TODO: Gas
+					//  这里还没把orderer的issue和transfer部分复制过来，所以还没写。应该要给每个member扣钱
+				}
 
 				if payload.Profile.Public {
 					wb.AddChannel(channelID)

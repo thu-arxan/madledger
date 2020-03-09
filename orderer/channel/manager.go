@@ -128,14 +128,13 @@ func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
 
 // AddBlock add a block
 func (manager *Manager) AddBlock(block *core.Block) error {
-	/* TODO: Gas
-	这里应该要添加存储收费的feature
-	每次AddBlock，应当扣除manger.ID这个通道对应的钱（应该是预设的）
-	通道的钱是通过issue或者transfer来的
-	如果钱不够应当直接return
+	// TODO: Gas
+	//  这里应该要添加存储收费的feature
+	//  每次AddBlock，应当扣除manger.ID这个通道对应的钱（应该是预设的）
+	//  通道的钱是通过issue或者transfer来的
+	//  如果钱不够应当直接return
+	//  *** 问题：是不是只有用户通道才需要这一个feature？***
 
-	*** 问题：是不是只有用户通道才需要这一个feature？***
-	*/
 	acc, err := manager.db.GetOrCreateAccount(common.BytesToAddress([]byte(manager.ID)))
 	if err != nil {
 		return err
@@ -159,7 +158,8 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 			manager.ID, block.Header.Number, err.Error())
 		return err
 	}
-	// after adding block, sub the channel balance
+	// TODO: Gas
+	//  after adding block, sub the channel balance
 	if err := manager.subChannelAsset(manager.ID, price); err != nil {
 		return err
 	}

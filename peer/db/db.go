@@ -48,4 +48,6 @@ type DB interface {
 	// GetBlock gets block by block.num from db
 	GetBlock(num uint64) (*core.Block, error)
 	Close()
+
+	Get(key []byte) ([]byte, error)
 }

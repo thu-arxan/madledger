@@ -190,6 +190,11 @@ func (db *LevelDB) Close() {
 	}
 }
 
+// Get get the value by key
+func (db *LevelDB) Get(key []byte) ([]byte, error) {
+	return db.connect.Get(key, nil)
+}
+
 // WriteBatchWrapper is a wrapper of level.Batch
 type WriteBatchWrapper struct {
 	batch *leveldb.Batch

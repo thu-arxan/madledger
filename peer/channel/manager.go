@@ -138,6 +138,27 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		}()
 	}
 	wg.Wait()
+	// TODO: Gas 是不是应该判定一下如果是系统通道就不用这几个量了？
+	/*
+		var maxGas uint64
+		maxGasByte, err := m.db.Get(util.BytesCombine([]byte(m.id), []byte("maxgas")))
+		if err != nil {
+			return nil, err
+		}
+		maxGas = uint64(binary.BigEndian.Uint64(maxGasByte))
+		var ratio float32
+		ratioByte, err := m.db.Get(util.BytesCombine([]byte(m.id), []byte("ratio")))
+		if err != nil {
+			return nil, err
+		}
+		ratio = math.Float32frombits(binary.BigEndian.Uint32(ratioByte))
+		var gasPrice uint64
+		gasPriceByte, err := m.db.Get(util.BytesCombine([]byte(m.id), []byte("gasprice")))
+		if err != nil {
+			return nil, err
+		}
+		maxGas = uint64(binary.BigEndian.Uint64(gasPriceByte))
+	*/
 
 	for i, tx := range block.Transactions {
 		senderAddress, err := tx.GetSender()
@@ -174,12 +195,27 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		log.Debugf(" %v, %v, %v", sender, context, tx)
 		gas := uint64(10000000)
 		/* TODO: gas
-		判断payload中的gas是否为0
+		判断db中的gas是否为0
 		如果是0，则读取数据库中该通道的maxgas值，如果没有指定过，就默认为10000000
 		如果不是0，那么这里要得到sender在该通道中的剩余token以及通道的gasprice，并且将token减去gas*gasprice
 		*/
+		// TODO: gas 还没有加入orderer的issue和transfer，暂时没法获取token
+		/* 伪代码应如下：
+		if gasprice == 0 {
+			if maxgas != nil {
+				gas = maxgas
+			} else {
+				gas = default_max_gas (which is uint64(10000000))
+			}
+		} else {
+			token_left := gettoken(sender)
+			update_token(sender, token_left - gas * gasprice)
+		}
+		*/
 
-		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, gas, m.db, wb)
+		maxGas := uint64(10000000)
+
+		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, maxGas, m.db, wb)	
 		if receiverAddress.String() != common.ZeroAddress.String() {
 			// if the length of payload is not zero, this is a contract call
 			if len(tx.Data.Payload) != 0 && !m.db.AccountExist(receiverAddress) {
