@@ -61,7 +61,7 @@ func TestBFTAddNode1BC(t *testing.T) {
 	for i := 0; i <= 4; i++ {
 		// create channel
 		channel := "test" + strconv.Itoa(i)
-		err := bftClient.CreateChannel(channel, true, nil, nil)
+		err := bftClient.CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 		require.NoError(t, err)
 		// add orderer 3
 		if i == order {

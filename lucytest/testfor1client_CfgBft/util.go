@@ -422,7 +422,7 @@ func listChannel(client *client.Client) error {
 
 func createChannelForCallTx() error {
 	// client 0 create channel
-	err := bftClient.CreateChannel("test0", true, nil, nil)
+	err := bftClient.CreateChannel("test0", true, nil, nil, 1, 1, 10000000)
 	if err != nil {
 		return err
 	}

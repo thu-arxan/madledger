@@ -70,7 +70,7 @@ func TestRaftCreateChannels1PR(t *testing.T) {
 		// client0 create channel
 		channel := "test" + strconv.Itoa(m)
 		fmt.Printf("Create channel %s ...\n", channel)
-		err := client.CreateChannel(channel, true, nil, nil)
+		err := client.CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 		require.NoError(t, err)
 	}
 	// compare tx, one is peer0 starting another is peer0 stopped

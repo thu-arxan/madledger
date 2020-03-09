@@ -193,7 +193,6 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			continue
 		}
 		log.Debugf(" %v, %v, %v", sender, context, tx)
-		gas := uint64(10000000)
 		/* TODO: gas
 		判断db中的gas是否为0
 		如果是0，则读取数据库中该通道的maxgas值，如果没有指定过，就默认为10000000
@@ -215,7 +214,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 
 		maxGas := uint64(10000000)
 
-		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, maxGas, m.db, wb)	
+		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, maxGas, m.db, wb)
 		if receiverAddress.String() != common.ZeroAddress.String() {
 			// if the length of payload is not zero, this is a contract call
 			if len(tx.Data.Payload) != 0 && !m.db.AccountExist(receiverAddress) {

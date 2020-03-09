@@ -1,15 +1,15 @@
 package tests
 
 import (
+	"encoding/json"
+	"fmt"
 	"madledger/blockchain/asset"
+	client "madledger/client/lib"
 	"madledger/common"
 	"madledger/common/abi"
 	"madledger/common/crypto"
 	"madledger/core"
 	"testing"
-	"encoding/json"
-	client "madledger/client/lib"
-	"fmt"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,7 +34,7 @@ func testCreateChannel(t *testing.T, client *client.Client, peers []*core.Member
 	require.NotContains(t, channels, "public")
 
 	// then add a channel
-	err = client.CreateChannel("public", true, nil, nil)
+	err = client.CreateChannel("public", true, nil, nil, 1, 1, 10000000)
 	require.NoError(t, err)
 	// then query channels
 	infos, err = client.ListChannel(true)
@@ -48,10 +48,10 @@ func testCreateChannel(t *testing.T, client *client.Client, peers []*core.Member
 	require.Contains(t, channels, core.ASSETCHANNELID)
 	require.Contains(t, channels, "public")
 	// create channel test again
-	err = client.CreateChannel("public", true, nil, nil)
+	err = client.CreateChannel("public", true, nil, nil, 1, 1, 10000000)
 	require.Error(t, err)
 	// create private channel
-	err = client.CreateChannel("private", false, nil, peers)
+	err = client.CreateChannel("private", false, nil, peers, 1, 1, 10000000)
 	require.NoError(t, err)
 }
 

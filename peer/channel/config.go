@@ -10,8 +10,6 @@ import (
 	"madledger/core"
 	"madledger/peer/db"
 	"math"
-
-	"github.com/prometheus/common/log"
 )
 
 // AddConfigBlock add a config block

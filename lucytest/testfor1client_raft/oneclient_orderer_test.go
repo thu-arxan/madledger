@@ -70,7 +70,7 @@ func TestRaftCreateChannels1OR(t *testing.T) {
 		// client0 create channel
 		channel := "test" + strconv.Itoa(i)
 		fmt.Printf("Create channel %s ...\n", channel)
-		err := raftClients[0].CreateChannel(channel, true, nil, nil)
+		err := raftClients[0].CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 		require.NoError(t, err)
 	}
 	// compare channel in differnt orderer

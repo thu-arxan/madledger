@@ -72,7 +72,7 @@ func TestRaftCreateChannels2PR(t *testing.T) {
 			channel = "test0" + strconv.Itoa(i)
 		}
 		fmt.Printf("Create channel %s by client0 ...\n", channel)
-		err := raftClients[0].CreateChannel(channel, true, nil, nil)
+		err := raftClients[0].CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 		require.NoError(t, err)
 
 		// client 1 create channel
@@ -81,7 +81,7 @@ func TestRaftCreateChannels2PR(t *testing.T) {
 			channel = "test1" + strconv.Itoa(i)
 		}
 		fmt.Printf("Create channel %s by client1 ...\n", channel)
-		err = raftClients[1].CreateChannel(channel, true, nil, nil)
+		err = raftClients[1].CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 		require.NoError(t, err)
 	}
 	// compare tx, one is peer0 starting another is peer0 stopped

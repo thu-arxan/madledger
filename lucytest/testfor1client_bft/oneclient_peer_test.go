@@ -68,7 +68,7 @@ func TestBFTCreateChannels1PB(t *testing.T) {
 		// client0 create channel
 		channel := "test" + strconv.Itoa(m) + "0"
 		fmt.Printf("Create channel %s ...\n", channel)
-		err := bftClients[0].CreateChannel(channel, true, nil, nil)
+		err := bftClients[0].CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 		require.NoError(t, err)
 	}
 

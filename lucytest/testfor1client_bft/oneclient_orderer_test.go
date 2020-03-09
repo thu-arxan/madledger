@@ -1,12 +1,12 @@
 package testfor1client_bft
 
 import (
-	"madledger/common/abi"
 	"fmt"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	cliu "madledger/client/util"
 	"madledger/common"
+	"madledger/common/abi"
 	"madledger/core"
 	"os"
 	"regexp"
@@ -58,7 +58,7 @@ func TestBFTCreateChannels1OB(t *testing.T) {
 	// client0 create 3 channels
 	for i := 0; i < 3; i++ {
 		channel := "test" + strconv.Itoa(i)
-		err := bftClients[0].CreateChannel(channel, true, nil, nil)
+		err := bftClients[0].CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 		require.NoError(t, err)
 	}
 
@@ -76,7 +76,7 @@ func TestBFTNodeRestart1OB(t *testing.T) {
 	//client0 create channel test3
 	fmt.Println("Create channel test3 ...")
 	channel := "test3"
-	err := bftClients[0].CreateChannel(channel, true, nil, nil)
+	err := bftClients[0].CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 	require.NoError(t, err)
 
 	fmt.Println("Restart orderer 1 ...")
@@ -91,7 +91,7 @@ func TestBFTNodeRestart1OB(t *testing.T) {
 func TestBFTCreateChannelAfterRestart1OB(t *testing.T) {
 	//client1 create channel test4
 	channel := "test4"
-	err := bftClients[1].CreateChannel(channel, true, nil, nil)
+	err := bftClients[1].CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 	require.NoError(t, err)
 }
 

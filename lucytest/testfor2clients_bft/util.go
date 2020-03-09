@@ -2,12 +2,12 @@ package testfor2clients_bft
 
 import (
 	"encoding/hex"
-	"madledger/common/abi"
 	"fmt"
 	"io/ioutil"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"madledger/common"
+	"madledger/common/abi"
 	"madledger/common/util"
 	"madledger/core"
 	oc "madledger/orderer/config"
@@ -188,13 +188,13 @@ func startPeer(node int) string {
 
 func createChannelForCallTx() error {
 	// client 0 create channel
-	err := bftClients[0].CreateChannel("test0", true, nil, nil)
+	err := bftClients[0].CreateChannel("test0", true, nil, nil, 1, 1, 10000000)
 	if err != nil {
 		return err
 	}
 
 	// client 1 create channel
-	err = bftClients[1].CreateChannel("test1", true, nil, nil)
+	err = bftClients[1].CreateChannel("test1", true, nil, nil, 1, 1, 10000000)
 	if err != nil {
 		return err
 	}

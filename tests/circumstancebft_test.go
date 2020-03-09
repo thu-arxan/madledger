@@ -98,7 +98,7 @@ func TestBFTCreateChannels(t *testing.T) {
 				lock.Lock()
 				channels = append(channels, channel)
 				lock.Unlock()
-				err := client.CreateChannel(channel, true, nil, nil)
+				err := client.CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 				require.NoError(t, err)
 			}(t, i)
 		}
@@ -138,7 +138,7 @@ func TestBFTReCreateChannels(t *testing.T) {
 	// Here we recreate 2 channels
 	for i := 0; i < 2; i++ {
 		channel := strings.ToLower(util.RandomString(16))
-		err := bftClients[0].CreateChannel(channel, true, nil, nil)
+		err := bftClients[0].CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 		require.NoError(t, err)
 	}
 	time.Sleep(2 * time.Second)

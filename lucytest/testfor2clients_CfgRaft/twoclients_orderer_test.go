@@ -61,10 +61,10 @@ func TestRaftAddNode2RC(t *testing.T) {
 	for i := 1; i <= 8; i++ {
 		// create channel
 		channel := "test0" + strconv.Itoa(i)
-		err := raftClient[0].CreateChannel(channel, true, nil, nil)
+		err := raftClient[0].CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 		require.NoError(t, err)
 		channel = "test1" + strconv.Itoa(i)
-		err = raftClient[1].CreateChannel(channel, true, nil, nil)
+		err = raftClient[1].CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 		require.NoError(t, err)
 
 		// add orderer 3

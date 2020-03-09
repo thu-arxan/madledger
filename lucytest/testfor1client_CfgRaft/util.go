@@ -3,13 +3,13 @@ package testfor1client_CfgRaft
 import (
 	"encoding/hex"
 	"encoding/json"
-	"madledger/common/abi"
 	"fmt"
 	"io/ioutil"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	cliu "madledger/client/util"
 	"madledger/common"
+	"madledger/common/abi"
 	"madledger/common/util"
 	coreTypes "madledger/core"
 	oc "madledger/orderer/config"
@@ -433,7 +433,7 @@ func loadClient(node string, index int) error {
 
 func createChannelForCallTx() error {
 	// client 0 create channel
-	err := raftClient[0].CreateChannel("test0", true, nil, nil)
+	err := raftClient[0].CreateChannel("test0", true, nil, nil, 1, 1, 10000000)
 	if err != nil {
 		return err
 	}
