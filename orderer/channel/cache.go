@@ -32,14 +32,11 @@ func(cache *Cache) IsAssetAdmin(pk crypto.PublicKey) bool {
 	if cache.adminPK != nil {
 		return reflect.DeepEqual(pk, cache.adminPK)
 	}
-	log.Infof("try fetch admin from db")
 	pkBytes := cache.db.GetAssetAdminPKBytes()
 	if pkBytes == nil {
 		return false
 	}
-	log.Infof("fetch admin from db succeed")
 	cache.adminPK, _ = crypto.NewPublicKey(pkBytes)
-	log.Infof("admin pk: %v, query pk: %v", cache.adminPK, pk)
 	return reflect.DeepEqual(pk, cache.adminPK)
 }
 
