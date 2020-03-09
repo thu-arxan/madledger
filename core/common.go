@@ -13,6 +13,10 @@ const (
 	CONFIGCHANNELID = "_config"
 	// ASSETCHANNELID is the id of account channel
 	ASSETCHANNELID = "_asset"
+
+	// BLOCKPRICE is the price of block
+	BLOCKPRICE = 1
+
 )
 
 var (

@@ -136,6 +136,17 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 
 	*** 问题：是不是只有用户通道才需要这一个feature？***
 	*/
+	acc, err := manager.db.GetOrCreateAccount(common.BytesToAddress([]byte(manager.ID)))
+	if err != nil {
+		return err
+	}
+	left := acc.GetBalance()
+	price := uint64(len(block.Bytes()) * core.BLOCKPRICE)
+
+	if left < price {
+		errMsg := fmt.Sprintf("insuffuicient balance in channel %v", manager.ID)
+		return errors.New(errMsg)
+	}
 
 	// first update db
 	if err := manager.db.AddBlock(block); err != nil {
@@ -148,6 +159,11 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 			manager.ID, block.Header.Number, err.Error())
 		return err
 	}
+	// after adding block, sub the channel balance
+	if err := manager.subChannelAsset(manager.ID, price); err != nil {
+		return err
+	}
+
 	// check is there is any need to update local state of orderer
 	switch manager.ID {
 	case core.CONFIGCHANNELID:
@@ -159,6 +175,13 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 	default:
 		return nil
 	}
+}
+func (manager *Manager) subChannelAsset(id string, price uint64) error {
+	acc, err := manager.db.GetOrCreateAccount(common.BytesToAddress([]byte(id)))
+	if err != nil {
+		return err
+	}
+	return acc.SubBalance(price)
 }
 
 // GetBlockSize return the size of blocks
