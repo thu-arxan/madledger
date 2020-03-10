@@ -3,7 +3,6 @@ package channel
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"madledger/blockchain"
 	"madledger/common"
 	"madledger/common/util"
@@ -196,42 +195,40 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		}
 		log.Debugf(" %v, %v, %v", sender, context, tx)
 		/* TODO: gas
-		判断db中的gas是否为0
-		如果是0，则读取数据库中该通道的maxgas值，如果没有指定过，就默认为10000000
-		如果不是0，那么这里要得到sender在该通道中的剩余token以及通道的gasprice，并且将token减去gas*gasprice
+		用户的参数：user gas limit
+		通道的参数：channel gas limit, gas price, asset token ratio
+		gas limit = min (user, channel)
+		获取sender的token，如果比gas limit * gas price 小，那么不能执行，直接下一个tx
+		记录进入evm前的gas limit为before
+		用出来之后用before-gas limit可得到具体消耗了多少gas
+		然后将token -= gas * gas price，存到wb中
 		*/
-		// TODO: gas 还没有加入orderer的issue和transfer，暂时没法获取token
-		/* 伪代码应如下：
-		if gasprice == 0 {
-			if maxgas != nil {
-				gas = maxgas
-			} else {
-				gas = default_max_gas (which is uint64(10000000))
-			}
-		} else {
-			token_left := gettoken(sender)
-			update_token(sender, token_left - gas * gasprice)
-		}
-		*/
-		var gas uint64
-		if gasPrice == 0 {
-			if maxGas != 10000000 { //could be a problem
-				gas = maxGas
-			} else {
-				gas = 10000000
-			}
-		} else {
-			tokenByte, err := m.db.Get(util.BytesCombine([]byte("token"), []byte(m.id), senderAddress.Bytes()))
-			if err != nil {
-				continue
-			}
-			tokenLeft := binary.BigEndian.Uint64(tokenByte)
-			fmt.Print(tokenLeft)
-			//updateToken(sender, tokenLeft - gas * gasprice)
-			//是不是在这里减？
+
+		gasLimit := min(tx.Data.Gas, maxGas)
+		tokenByte, err := m.db.Get(util.BytesCombine([]byte("token"), []byte(m.id), senderAddress.Bytes()))
+		if err != nil {
+			status.Err = err.Error()
+			wb.SetTxStatus(tx, status)
+			continue
 		}
 
-		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, gas, m.db, wb)
+		tokenLeft := binary.BigEndian.Uint64(tokenByte)
+		if tokenLeft < gasLimit {
+			status.Err = "Not enough token"
+			wb.SetTxStatus(tx, status)
+			continue
+		}
+
+		before := gasLimit
+
+		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, gasLimit, m.db, wb)
+
+		gasUsed := before - gasLimit
+		tokenLeft -= gasUsed * gasPrice
+		var buf = make([]byte, 8)
+		binary.BigEndian.PutUint64(buf, uint64(tokenLeft))
+		wb.Put(util.BytesCombine([]byte("token"), []byte(m.id), senderAddress.Bytes()), buf)
+
 		if receiverAddress.String() != common.ZeroAddress.String() {
 			// if the length of payload is not zero, this is a contract call
 			if len(tx.Data.Payload) != 0 && !m.db.AccountExist(receiverAddress) {
@@ -268,6 +265,13 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 	}
 	// wb.PersistLog([]byte(fmt.Sprintf("block_log_%d", block.GetNumber())))
 	return wb, nil
+}
+
+func min(x, y uint64) uint64 {
+	if x < y {
+		return x
+	}
+	return y
 }
 
 // todo: here we should support evil orderer

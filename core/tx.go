@@ -47,7 +47,13 @@ type TxData struct {
 	Msg       string `json:"msg,omitempty"`
 	Version   int32  `json:"version,omitempty"`
 	Sig       TxSig  `json:"sig,omitempty"`
+	Gas       uint64 `json:"gas,omitempty"`
 }
+
+const (
+	// GLOBALGASLIMIT is user default gas limit
+	GLOBALGASLIMIT = 10000000
+)
 
 // TxSig is the sig of tx
 type TxSig struct {
@@ -69,6 +75,7 @@ func NewTx(channelID string, recipient common.Address, payload []byte, value uin
 			Value:     value,
 			Msg:       msg,
 			Version:   1,
+			Gas:       GLOBALGASLIMIT,
 		},
 		Time: util.Now(),
 	}
