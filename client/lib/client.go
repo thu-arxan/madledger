@@ -169,7 +169,7 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 
 // CreateChannel create a channel
 func (c *Client) CreateChannel(channelID string, public bool, admins, members []*core.Member,
-	gasprice uint64, ratio float32, maxgas uint64) error {
+	gasprice uint64, ratio uint64, maxgas uint64) error {
 	// log.Infof("Create channel %s", channelID)
 	self, err := core.NewMember(c.GetPrivKey().PubKey(), "admin")
 	if err != nil {

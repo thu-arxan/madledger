@@ -1,9 +1,12 @@
 package channel
 
 import (
+	"encoding/binary"
 	"errors"
+	"fmt"
 	"madledger/blockchain"
 	"madledger/common"
+	"madledger/common/util"
 	"madledger/core"
 
 	"madledger/executor/evm"
@@ -139,26 +142,25 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 	}
 	wg.Wait()
 	// TODO: Gas 是不是应该判定一下如果是系统通道就不用这几个量了？
-	/*
-		var maxGas uint64
-		maxGasByte, err := m.db.Get(util.BytesCombine([]byte(m.id), []byte("maxgas")))
-		if err != nil {
-			return nil, err
-		}
-		maxGas = uint64(binary.BigEndian.Uint64(maxGasByte))
-		var ratio float32
-		ratioByte, err := m.db.Get(util.BytesCombine([]byte(m.id), []byte("ratio")))
-		if err != nil {
-			return nil, err
-		}
-		ratio = math.Float32frombits(binary.BigEndian.Uint32(ratioByte))
-		var gasPrice uint64
-		gasPriceByte, err := m.db.Get(util.BytesCombine([]byte(m.id), []byte("gasprice")))
-		if err != nil {
-			return nil, err
-		}
-		maxGas = uint64(binary.BigEndian.Uint64(gasPriceByte))
-	*/
+
+	var maxGas uint64
+	maxGasByte, err := m.db.Get(util.BytesCombine([]byte(m.id), []byte("maxgas")))
+	if err != nil {
+		return nil, err
+	}
+	maxGas = uint64(binary.BigEndian.Uint64(maxGasByte))
+	// var ratio uint64
+	// ratioByte, err := m.db.Get(util.BytesCombine([]byte(m.id), []byte("ratio")))
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// ratio = uint64(binary.BigEndian.Uint64(ratioByte))
+	var gasPrice uint64
+	gasPriceByte, err := m.db.Get(util.BytesCombine([]byte(m.id), []byte("gasprice")))
+	if err != nil {
+		return nil, err
+	}
+	gasPrice = uint64(binary.BigEndian.Uint64(gasPriceByte))
 
 	for i, tx := range block.Transactions {
 		senderAddress, err := tx.GetSender()
@@ -211,10 +213,25 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			update_token(sender, token_left - gas * gasprice)
 		}
 		*/
+		var gas uint64
+		if gasPrice == 0 {
+			if maxGas != 10000000 { //could be a problem
+				gas = maxGas
+			} else {
+				gas = 10000000
+			}
+		} else {
+			tokenByte, err := m.db.Get(util.BytesCombine([]byte("token"), []byte(m.id), senderAddress.Bytes()))
+			if err != nil {
+				continue
+			}
+			tokenLeft := binary.BigEndian.Uint64(tokenByte)
+			fmt.Print(tokenLeft)
+			//updateToken(sender, tokenLeft - gas * gasprice)
+			//是不是在这里减？
+		}
 
-		maxGas := uint64(10000000)
-
-		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, maxGas, m.db, wb)
+		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, gas, m.db, wb)
 		if receiverAddress.String() != common.ZeroAddress.String() {
 			// if the length of payload is not zero, this is a contract call
 			if len(tx.Data.Payload) != 0 && !m.db.AccountExist(receiverAddress) {

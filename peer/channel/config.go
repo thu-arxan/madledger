@@ -6,10 +6,10 @@ import (
 	"errors"
 	"fmt"
 	cc "madledger/blockchain/config"
+	"madledger/common/crypto"
 	"madledger/common/util"
 	"madledger/core"
 	"madledger/peer/db"
-	"math"
 )
 
 // AddConfigBlock add a config block
@@ -45,8 +45,8 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 				maxgas := make([]byte, 8)
 				binary.BigEndian.PutUint64(maxgas, payload.MaxGas)
 				wb.Put(util.BytesCombine([]byte(channelID), []byte("maxgas")), maxgas)
-				ratio := make([]byte, 4)
-				binary.BigEndian.PutUint32(ratio, math.Float32bits(payload.AssetTokenRatio))
+				ratio := make([]byte, 8)
+				binary.BigEndian.PutUint64(ratio, payload.AssetTokenRatio)
 				wb.Put(util.BytesCombine([]byte(channelID), []byte("ratio")), ratio)
 				gasprice := make([]byte, 8)
 				binary.BigEndian.PutUint64(gasprice, payload.GasPrice)
@@ -60,7 +60,7 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 				if err = account.SubBalance(100); err != nil {
 					return err
 				}
-				part := 100 / len(payload.Profile.Members)
+				part := uint64(100/len(payload.Profile.Members)) * payload.AssetTokenRatio
 				var buf = make([]byte, 8)
 				binary.BigEndian.PutUint64(buf, uint64(part))
 				// 暂时写成sender减100asset，其他人均分，并且换算成token
@@ -68,8 +68,10 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 					fmt.Println(member)
 					// TODO: Gas
 					// add token and sub asset, should be atomic operation
-					// 现在sender 被减掉asset，key是address；member被加上token，key是token+channelID+PK
-					wb.Put(util.BytesCombine([]byte("token"), []byte(m.id), member.PK), buf)
+					// 现在sender 被减掉asset，key是address；member被加上token，key是token+channelID+addr
+					pk, _ := crypto.NewPublicKey(member.PK)
+					addr, _ := pk.Address()
+					wb.Put(util.BytesCombine([]byte("token"), []byte(m.id), addr.Bytes()), buf)
 
 				}
 
