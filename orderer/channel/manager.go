@@ -183,6 +183,7 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 	}
 }
 func (manager *Manager) subChannelAsset(id string, price uint64) error {
+	cache := NewCache(manager.db)
 	if !manager.isUserChannel(manager.ID) {
 		return nil
 	}
@@ -190,7 +191,10 @@ func (manager *Manager) subChannelAsset(id string, price uint64) error {
 	if err != nil {
 		return err
 	}
-	return acc.SubBalance(price)
+	if err := acc.SubBalance(price); err != nil {
+		return err
+	}
+	return cache.UpdateAccounts(acc)
 }
 func (manager *Manager) isUserChannel(id string) bool {
 	return manager.ID != core.GLOBALCHANNELID && manager.ID != core.CONFIGCHANNELID && manager.ID != core.ASSETCHANNELID
