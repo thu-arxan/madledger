@@ -52,10 +52,25 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 				binary.BigEndian.PutUint64(gasprice, payload.GasPrice)
 				wb.Put(util.BytesCombine([]byte(channelID), []byte("gasprice")), gasprice)
 
-				for member := range payload.Profile.Members {
+				sender, _ := tx.GetSender()
+				account, err := m.db.GetOrCreateAccount(sender)
+				if err != nil {
+					return err
+				}
+				if err = account.SubBalance(100); err != nil {
+					return err
+				}
+				part := 100 / len(payload.Profile.Members)
+				var buf = make([]byte, 8)
+				binary.BigEndian.PutUint64(buf, uint64(part))
+				// 暂时写成sender减100asset，其他人均分，并且换算成token
+				for _, member := range payload.Profile.Members {
 					fmt.Println(member)
 					// TODO: Gas
-					//  这里还没把orderer的issue和transfer部分复制过来，所以还没写。应该要给每个member扣钱
+					// add token and sub asset, should be atomic operation
+					// 现在sender 被减掉asset，key是address；member被加上token，key是token+channelID+PK
+					wb.Put(util.BytesCombine([]byte("token"), []byte(m.id), member.PK), buf)
+
 				}
 
 				if payload.Profile.Public {
