@@ -32,12 +32,19 @@ func init() {
 	issueCmd.Flags().StringP("address", "a", "0",
 		"receiver's hex address to be issued in asset channel")
 	issueViper.BindPFlag("address", issueCmd.Flags().Lookup("address"))
+
+	issueCmd.Flags().BoolP("self", "s", false, "issue to your self")
+	issueViper.BindPFlag("self", issueCmd.Flags().Lookup("self"))
 }
 
 func runIssue(cmd *cobra.Command, args []string) error {
 	cfgFile := issueViper.GetString("config")
 	if cfgFile == "" {
 		return errors.New("The config file of client can not be nil")
+	}
+	client, err := lib.NewClient(cfgFile)
+	if err != nil {
+		return err
 	}
 
 	//channelID can be empty
@@ -57,9 +64,9 @@ func runIssue(cmd *cobra.Command, args []string) error {
 		recipient = common.HexToAddress(receiver)
 	}
 
-	client, err := lib.NewClient(cfgFile)
-	if err != nil {
-		return err
+	self := issueViper.GetBool("self")
+	if self {
+		recipient, _ = client.GetPrivKey().PubKey().Address()
 	}
 
 	payload, err := json.Marshal(asset.Payload{

@@ -204,9 +204,12 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		然后将token -= gas * gas price，存到wb中
 		*/
 
+		log.Debug("try to find sender's token")
 		gasLimit := min(tx.Data.Gas, maxGas)
-		tokenByte, err := m.db.Get(util.BytesCombine([]byte("token"), []byte(m.id), senderAddress.Bytes()))
+		key := util.BytesCombine([]byte("token"), []byte(m.id), senderAddress.Bytes())
+		tokenByte, err := m.db.Get(key)
 		if err != nil {
+			log.Debugf("the err is %v", err.Error())
 			status.Err = err.Error()
 			wb.SetTxStatus(tx, status)
 			continue
@@ -214,16 +217,20 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 
 		tokenLeft := binary.BigEndian.Uint64(tokenByte)
 		if tokenLeft < gasLimit {
+			log.Info("Not enough token")
 			status.Err = "Not enough token"
 			wb.SetTxStatus(tx, status)
 			continue
 		}
 
-		before := gasLimit
-
+		before := new(uint64)
+		*before = gasLimit
+		log.Infof("the gas limit is %v", &gasLimit)
+		log.Infof("the before is %v", before)
 		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, gasLimit, m.db, wb)
 
-		gasUsed := before - gasLimit
+		gasUsed := *before - gasLimit
+		log.Infof("the gas cost is %v", gasUsed)
 		tokenLeft -= gasUsed * gasPrice
 		var buf = make([]byte, 8)
 		binary.BigEndian.PutUint64(buf, uint64(tokenLeft))

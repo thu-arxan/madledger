@@ -19,6 +19,7 @@ message txData {
 	string Msg = 6;
 	int32 Version = 7;  
 	txSig Sig = 8;
+	uint64 Gas = 9;
 }
 
 // txSig is the sig of tx

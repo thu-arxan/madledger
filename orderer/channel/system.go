@@ -39,6 +39,18 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 			// create genesis block here
 			// Note: the genesis block will contain no tx
 			genesisBlock := core.NewBlock(channelID, 0, core.GenesisBlockPrevHash, []*core.Tx{})
+
+			// TODO: Gas
+			// create channel 在将新块放入新的channel的时候，需要先给这个channel首充一点钱
+			// 应该使用的是transfer函数，将自己的asset转移到创建的channel中
+			// 同时，应该在issue加一个给自己发钱的功能
+			cache := NewCache(manager.db)
+			sender, err := tx.GetSender()
+			var initValue uint64 = 10000000
+			addr := common.BytesToAddress([]byte(channel.ID))
+			err = manager.transfer(cache, sender, addr, initValue)
+			cache.Sync()
+
 			err = channel.AddBlock(genesisBlock)
 			if err != nil {
 				return err
@@ -78,10 +90,10 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 	for i, tx := range block.Transactions {
 		receiver := tx.GetReceiver()
 		status := &db.TxStatus{
-			Err: "",
-			BlockNumber: block.Header.Number,
-			BlockIndex: i,
-			Output: nil,
+			Err:             "",
+			BlockNumber:     block.Header.Number,
+			BlockIndex:      i,
+			Output:          nil,
 			ContractAddress: receiver.String(),
 		}
 

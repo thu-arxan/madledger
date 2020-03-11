@@ -46,6 +46,7 @@ func NewTxData(txData *core.TxData) *TxData {
 			PK:  util.CopyBytes(txData.Sig.PK),
 			Sig: util.CopyBytes(txData.Sig.Sig),
 		},
+		Gas: txData.Gas,
 	}
 
 	return td
@@ -61,6 +62,7 @@ func (data *TxData) ToCore() *core.TxData {
 		Value:     data.Value,
 		Msg:       data.Msg,
 		Version:   data.Version,
+		Gas:       data.Gas,
 	}
 	if data.Sig != nil {
 		td.Sig = core.TxSig{

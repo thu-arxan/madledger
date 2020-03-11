@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"fmt"
 	cc "madledger/blockchain/config"
 	"madledger/common/crypto"
 	"madledger/common/util"
@@ -52,27 +51,35 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 				binary.BigEndian.PutUint64(gasprice, payload.GasPrice)
 				wb.Put(util.BytesCombine([]byte(channelID), []byte("gasprice")), gasprice)
 
+				// sub 10000000 from sender's asset
+				log.Debug("sub 10000000 from sender's asset")
 				sender, _ := tx.GetSender()
 				account, err := m.db.GetOrCreateAccount(sender)
 				if err != nil {
 					return err
 				}
-				if err = account.SubBalance(100); err != nil {
+				if err = account.SubBalance(10000000); err != nil {
 					return err
 				}
-				part := uint64(100/len(payload.Profile.Members)) * payload.AssetTokenRatio
+				wb.UpdateAccounts(account)
+
+				log.Debug("give 10000000 to all the members and admin of this channel in token")
+				// give 10000000 to all the members and admin of this channel in token
+				part := uint64(10000000/(len(payload.Profile.Admins)+len(payload.Profile.Members))) * payload.AssetTokenRatio
 				var buf = make([]byte, 8)
 				binary.BigEndian.PutUint64(buf, uint64(part))
-				// 暂时写成sender减100asset，其他人均分，并且换算成token
+				for _, admin := range payload.Profile.Admins {
+					pk, _ := crypto.NewPublicKey(admin.PK)
+					addr, _ := pk.Address()
+					key := util.BytesCombine([]byte("token"), []byte(channelID), addr.Bytes())
+					log.Debugf("config.go: the key is %v", key)
+					wb.Put(key, buf)
+				}
 				for _, member := range payload.Profile.Members {
-					fmt.Println(member)
-					// TODO: Gas
-					// add token and sub asset, should be atomic operation
 					// 现在sender 被减掉asset，key是address；member被加上token，key是token+channelID+addr
 					pk, _ := crypto.NewPublicKey(member.PK)
 					addr, _ := pk.Address()
 					wb.Put(util.BytesCombine([]byte("token"), []byte(m.id), addr.Bytes()), buf)
-
 				}
 
 				if payload.Profile.Public {

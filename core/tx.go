@@ -110,6 +110,7 @@ func NewTxWithoutSig(channelID string, payload []byte, nonce uint64) *Tx {
 			Recipient: common.ZeroAddress.Bytes(),
 			Payload:   payload,
 			Version:   1,
+			Gas:       GLOBALGASLIMIT,
 		},
 		Time: util.Now(),
 	}

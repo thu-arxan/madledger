@@ -142,13 +142,14 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		}
 		left := acc.GetBalance()
 		price = uint64(len(block.Bytes()) * core.BLOCKPRICE)
-
+		log.Infof("this block cost %d ", price)
+		log.Infof("this block has %d", left)
 		if left < price {
 			errMsg := fmt.Sprintf("insuffuicient balance in channel %v", manager.ID)
-			// return errors.New(errMsg)
+			return errors.New(errMsg)
 			// this should return an error, but if I let it return, too many test will fail because they don't have enough balance,
 			// so I temperorily comment it
-			log.Infof(errMsg)
+			// log.Infof(errMsg)
 		}
 	}
 	// first update db
@@ -164,10 +165,10 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 	}
 	// TODO: Gas
 	//  after adding block, sub the channel balance
-	if err := manager.subChannelAsset(manager.ID, price); err != nil {
-		// return err
-		// Important: this is temperorily comment because the channel don't have any asset
-		log.Debug(err)
+	if manager.isUserChannel(manager.ID) {
+		if err := manager.subChannelAsset(manager.ID, price); err != nil {
+			return err
+		}
 	}
 
 	// check is there is any need to update local state of orderer

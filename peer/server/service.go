@@ -19,6 +19,7 @@ func (s *Server) GetTxStatus(ctx context.Context, req *pb.GetTxStatusRequest) (*
 		Output:          status.Output,
 		ContractAddress: status.ContractAddress,
 	}
+	log.Debugf("status is %v", result)
 	return result, nil
 }
 
