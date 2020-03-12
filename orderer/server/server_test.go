@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"madledger/blockchain/asset"
 	cc "madledger/blockchain/config"
 	"madledger/common"
 	"madledger/common/crypto"
@@ -213,6 +214,12 @@ func TestCreateChannel(t *testing.T) {
 	client, err := getClient()
 	require.NoError(t, err)
 
+	issueTx := getSelfIssueTx("test")
+	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: issueTx,
+	})
+	require.NoError(t, err)
+
 	pbTx := getCreateChannelTx("test")
 	_, err = client.CreateChannel(context.Background(), &pb.CreateChannelRequest{
 		Tx: pbTx,
@@ -394,6 +401,20 @@ func getCreateChannelTx(channelID string) *pb.Tx {
 	coreTx, _ := core.NewTx(core.CONFIGCHANNELID, core.CreateChannelContractAddress, payload, 0, "", privKey)
 
 	pbTx, _ := pb.NewTx(coreTx)
+	return pbTx
+}
+
+func getSelfIssueTx(channelID string) *pb.Tx {
+	recipient, _ := privKey.PubKey().Address()
+
+	payload, _ := json.Marshal(asset.Payload{
+		Action:    "person",
+		ChannelID: channelID,
+		Address:   recipient,
+	})
+
+	tx, _ := core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, uint64(10000000000), "", privKey)
+	pbTx, _ := pb.NewTx(tx)
 	return pbTx
 }
 

@@ -33,6 +33,16 @@ func testCreateChannel(t *testing.T, client *client.Client, peers []*core.Member
 	require.Contains(t, channels, core.ASSETCHANNELID)
 	require.NotContains(t, channels, "public")
 
+	// first issue asset to client itself
+	recipient, _ := client.GetPrivKey().PubKey().Address()
+	payload, _ := json.Marshal(asset.Payload{
+		Action:    "person",
+		ChannelID: "public",
+		Address:   recipient,
+	})
+	tx, err := core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, 10000000000, "", client.GetPrivKey())
+	client.AddTx(tx)
+
 	// then add a channel
 	err = client.CreateChannel("public", true, nil, nil, 1, 1, 10000000)
 	require.NoError(t, err)

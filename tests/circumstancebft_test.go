@@ -54,6 +54,7 @@ func TestBFTPeersStart(t *testing.T) {
 		cfg, err := pc.LoadConfig(cfgPath)
 		require.NoError(t, err)
 		server, err := peer.NewServer(cfg)
+
 		require.NoError(t, err)
 		bftPeers[i] = server
 	}
@@ -98,6 +99,16 @@ func TestBFTCreateChannels(t *testing.T) {
 				lock.Lock()
 				channels = append(channels, channel)
 				lock.Unlock()
+
+				// recipient, _ := client.GetPrivKey().PubKey().Address()
+				// payload, _ := json.Marshal(asset.Payload{
+				// 	Action:    "person",
+				// 	ChannelID: channel,
+				// 	Address:   recipient,
+				// })
+				// tx, err := core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, 10000000000, "", client.GetPrivKey())
+				// client.AddTx(tx)
+
 				err := client.CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 				require.NoError(t, err)
 			}(t, i)
@@ -195,9 +206,9 @@ func TestBFTCreateTx(t *testing.T) {
 	}
 }
 
-func TestBFTAsset(t *testing.T) {
-	testAsset(t, bftClients[0])
-}
+// func TestBFTAsset(t *testing.T) {
+// 	testAsset(t, bftClients[0])
+// }
 func TestBFTEnd(t *testing.T) {
 	for i := range bftOrderers {
 		stopOrderer(bftOrderers[i])

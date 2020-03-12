@@ -3,6 +3,7 @@ package channel
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"madledger/blockchain"
 	"madledger/common"
 	"madledger/common/util"
@@ -62,6 +63,7 @@ func (m *Manager) Start() {
 		block, err := m.fetchBlock()
 		// fmt.Println("Succeed to fetch block", m.id, ":", block.Header.Number)
 		if err == nil {
+			fmt.Println("Succeed to fetch block", m.id, ":", block.Header.Number)
 			m.AddBlock(block)
 		} else if err.Error() == "Stop" {
 			m.stopCh <- true
@@ -88,14 +90,17 @@ func (m *Manager) AddBlock(block *core.Block) error {
 	}
 	switch block.Header.ChannelID {
 	case core.GLOBALCHANNELID:
-		m.AddGlobalBlock(block)
+		err = m.AddGlobalBlock(block)
 		log.Infof("Add global block %d", block.Header.Number)
+		return err
 	case core.CONFIGCHANNELID:
-		m.AddConfigBlock(block)
+		err = m.AddConfigBlock(block)
 		log.Infof("Add config block %d", block.Header.Number)
+		return err
 	case core.ASSETCHANNELID:
-		m.AddAssetBlock(block)
+		err = m.AddAssetBlock(block)
 		log.Infof("Add account block %d", block.Header.Number)
+		return err
 	default:
 		if !m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
 			m.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
@@ -109,8 +114,6 @@ func (m *Manager) AddBlock(block *core.Block) error {
 		wb.PutBlock(block)
 		return wb.Sync()
 	}
-
-	return nil
 }
 
 // RunBlock will carry out all txs in the block.
@@ -148,12 +151,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		return nil, err
 	}
 	maxGas = uint64(binary.BigEndian.Uint64(maxGasByte))
-	// var ratio uint64
-	// ratioByte, err := m.db.Get(util.BytesCombine([]byte(m.id), []byte("ratio")))
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// ratio = uint64(binary.BigEndian.Uint64(ratioByte))
+
 	var gasPrice uint64
 	gasPriceByte, err := m.db.Get(util.BytesCombine([]byte(m.id), []byte("gasprice")))
 	if err != nil {
@@ -216,6 +214,8 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		}
 
 		tokenLeft := binary.BigEndian.Uint64(tokenByte)
+		log.Infof("token left is %v", tokenLeft)
+		log.Infof("gas limit is %v", gasLimit)
 		if tokenLeft < gasLimit {
 			log.Info("Not enough token")
 			status.Err = "Not enough token"
@@ -223,13 +223,9 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			continue
 		}
 
-		before := new(uint64)
-		*before = gasLimit
-		log.Infof("the gas limit is %v", &gasLimit)
-		log.Infof("the before is %v", before)
 		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, gasLimit, m.db, wb)
 
-		gasUsed := *before - gasLimit
+		gasUsed := gasLimit - *context.BlockContext().Gas
 		log.Infof("the gas cost is %v", gasUsed)
 		tokenLeft -= gasUsed * gasPrice
 		var buf = make([]byte, 8)

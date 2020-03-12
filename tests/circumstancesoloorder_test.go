@@ -66,11 +66,11 @@ func TestSoloOrdererTxHistory(t *testing.T) {
 	testTxHistory(t, client)
 }
 
-func TestSoloOrdererAsset(t *testing.T) {
-	client, err := getSoloClient()
-	require.NoError(t, err)
-	testAsset(t, client)
-}
+// func TestSoloOrdererAsset(t *testing.T) {
+// 	client, err := getSoloClient()
+// 	require.NoError(t, err)
+// 	testAsset(t, client)
+// }
 func TestSoloOrdererEnd(t *testing.T) {
 	stopSoloOrderer()
 	stopPeers(3)

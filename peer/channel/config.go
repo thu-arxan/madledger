@@ -58,14 +58,14 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 				if err != nil {
 					return err
 				}
-				if err = account.SubBalance(10000000); err != nil {
+				if err = account.SubBalance(2000000000); err != nil {
 					return err
 				}
 				wb.UpdateAccounts(account)
 
 				log.Debug("give 10000000 to all the members and admin of this channel in token")
 				// give 10000000 to all the members and admin of this channel in token
-				part := uint64(10000000/(len(payload.Profile.Admins)+len(payload.Profile.Members))) * payload.AssetTokenRatio
+				part := uint64(2000000000/(len(payload.Profile.Admins)+len(payload.Profile.Members))) * payload.AssetTokenRatio
 				var buf = make([]byte, 8)
 				binary.BigEndian.PutUint64(buf, uint64(part))
 				for _, admin := range payload.Profile.Admins {
