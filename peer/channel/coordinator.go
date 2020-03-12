@@ -79,23 +79,25 @@ func (c *Coordinator) Locks() {
 }
 
 // Unlocks will unlock some channels
-func (c *Coordinator) Unlocks(nums map[string]uint64) {
+func (c *Coordinator) Unlocks(channelNums map[string][]uint64) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	for channel, num := range nums {
-		if util.Contain(c.states, channel) {
-			state := c.states[channel]
-			if num >= state.num {
+	for channel, nums := range channelNums {
+		for _, num := range nums {
+			if util.Contain(c.states, channel) {
+				state := c.states[channel]
+				if num >= state.num {
+					state.num = num
+					state.code = Runable
+				}
+			} else {
+				state := new(State)
 				state.num = num
 				state.code = Runable
+				c.states[channel] = state
 			}
-		} else {
-			state := new(State)
-			state.num = num
-			state.code = Runable
-			c.states[channel] = state
+			c.hub.Done(fmt.Sprintf("%s:%d", channel, num), nil)
 		}
-		c.hub.Done(fmt.Sprintf("%s:%d", channel, num), nil)
 	}
 }

@@ -10,7 +10,7 @@ import (
 
 // AddConfigBlock add a config block
 func (m *Manager) AddConfigBlock(block *core.Block) error {
-	nums := make(map[string]uint64)
+	nums := make(map[string][]uint64)
 	for i, tx := range block.Transactions {
 		status := &db.TxStatus{
 			Err:         "",
@@ -40,7 +40,7 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 						m.db.DeleteChannel(channelID)
 					}
 				}
-				nums[payload.ChannelID] = 0
+				nums[payload.ChannelID] = []uint64{0}
 			}
 		} else {
 			status.Err = err.Error()
@@ -53,7 +53,7 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 
 func getConfigPayload(tx *core.Tx) (*cc.Payload, error) {
 	if tx.Data.ChannelID != core.CONFIGCHANNELID {
-		return nil, errors.New("The tx does not belog to global channel")
+		return nil, errors.New("The tx does not belong to global channel")
 	}
 	var payload cc.Payload
 	err := json.Unmarshal(tx.Data.Payload, &payload)
