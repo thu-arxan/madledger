@@ -78,8 +78,7 @@ func (manager *Manager) Start() {
 				if manager.ID != core.GLOBALCHANNELID {
 					tx := core.NewGlobalTx(manager.ID, block.Header.Number, block.Hash())
 					// 打印非config通道向global通道中添加的tx信息
-					log.Debugf("Channel %s add tx %s to global channel.", manager.ID, tx.ID)
-
+					log.Debugf("Channel %s add tx %s to global channel, num: %d", manager.ID, tx.ID, block.Header.Number)
 					if err := manager.coordinator.GM.AddTx(tx); err != nil {
 						// todo: This is temporary fix
 						if err.Error() != "The tx exist in the blockchain aleardy" && raft.GetError(err) != raft.TxInPool {
@@ -92,7 +91,7 @@ func (manager *Manager) Start() {
 					log.Fatalf("Channel %s failed to run because of %s", manager.ID, err)
 					return
 				}
-				log.Debugf("Channel %s has %d block now", manager.ID, block.Header.Number+1)
+				log.Debugf("Channel %s has %d block now", manager.ID, block.Header.Number)
 				manager.hub.Done(string(block.Header.Number), nil)
 				for _, tx := range block.Transactions {
 					manager.hub.Done(util.Hex(tx.Hash()), nil)

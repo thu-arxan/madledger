@@ -39,7 +39,7 @@ func NewGlobalTx(channelID string, num uint64, hash common.Hash) *Tx {
 // GetGlobalTxPayload return the payload of tx
 func (tx *Tx) GetGlobalTxPayload() (*GlobalTxPayload, error) {
 	if tx.Data.ChannelID != GLOBALCHANNELID {
-		return nil, errors.New("The tx does not belog to global channel")
+		return nil, errors.New("The tx does not belong to global channel")
 	}
 	var payload GlobalTxPayload
 	err := json.Unmarshal(tx.Data.Payload, &payload)

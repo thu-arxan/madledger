@@ -64,7 +64,7 @@ func (m *Manager) Start() {
 			m.stopCh <- true
 			return
 		} else {
-			log.Infof("failed to fetch block: %d, err: %v", m.cm.GetExcept(), err)
+			log.Infof("%s failed to fetch block: %d, err: %v", m.id, m.cm.GetExcept(), err)
 		}
 	}
 }
@@ -97,7 +97,7 @@ func (m *Manager) AddBlock(block *core.Block) error {
 		if !m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
 			m.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
 		}
-		log.Infof("Run block %s: %d", m.id, block.Header.Number)
+		log.Infof("Run block %s:%d", m.id, block.Header.Number)
 		wb, err := m.RunBlock(block)
 		if err != nil {
 			return err
