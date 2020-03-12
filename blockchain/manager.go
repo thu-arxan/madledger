@@ -86,8 +86,10 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 	if block.Header.Number != manager.expect {
 		return fmt.Errorf("Channel %s expect block %d while receive block %d", manager.id, manager.expect, block.Header.Number)
 	}
-	log.Infof("Channel %s add block %d", manager.id, manager.expect)
 	var err error
+	defer func() {
+		log.Infof("Channel %s add block %d, err: %v", manager.id, manager.expect, err)
+	}()
 
 	err = manager.storeBlock(block)
 	if err != nil {
