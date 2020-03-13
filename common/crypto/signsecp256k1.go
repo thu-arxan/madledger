@@ -2,13 +2,11 @@ package crypto
 
 import (
 	"madledger/common"
-	"madledger/common/crypto/sha3"
+
+	"golang.org/x/crypto/sha3"
 
 	"github.com/decred/dcrd/dcrec/secp256k1"
 )
-
-// The secp256k1 implementation of sign.go
-// If need some help about secp256k1, visit https://godoc.org/github.com/decred/dcrd/dcrec/secp256k1
 
 // SECP256K1PrivateKey defines the secp256k1 private key in ecdsa
 type SECP256K1PrivateKey secp256k1.PrivateKey
@@ -63,7 +61,8 @@ func (p SECP256K1PublicKey) Address() (common.Address, error) {
 	if err != nil {
 		return common.ZeroAddress, nil
 	}
-	hash := sha3.Sha3(bytes[1:])
+
+	hash := LegacyKeccak256(bytes[1:])
 	addrBytes := hash[12:]
 	return common.AddressFromBytes(addrBytes)
 }
@@ -105,4 +104,13 @@ func newSECP256K1Signature(raw []byte) (Signature, error) {
 func toSECP256K1PrivateKey(bs []byte) (PrivateKey, error) {
 	priv, _ := secp256k1.PrivKeyFromBytes(bs)
 	return (SECP256K1PrivateKey)(*priv), nil
+}
+
+// LegacyKeccak256 hash data with LegacyKeccak256 function, which is a wrapper of sha3.NewLegacyKeccak256
+func LegacyKeccak256(data ...[]byte) []byte {
+	hash := sha3.NewLegacyKeccak256()
+	for _, b := range data {
+		hash.Write(b)
+	}
+	return hash.Sum(nil)
 }

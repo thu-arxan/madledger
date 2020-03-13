@@ -6,7 +6,8 @@ import (
 	"madledger/common/util"
 )
 
-// This file is a wrapper of madledger/common/abi
+// This file is a wrapper of github.com/thu-arxan/evm/abi
+// Also, it set the address parser of abi
 
 func init() {
 	eabi.SetAddressParser(20, func(bs []byte) string {
