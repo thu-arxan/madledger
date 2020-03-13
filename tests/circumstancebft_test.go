@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"madledger/blockchain/asset"
+	"madledger/blockchain/config"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"madledger/common"
@@ -90,7 +91,17 @@ func TestBFTCreateChannels(t *testing.T) {
 	var wg sync.WaitGroup
 	var lock sync.RWMutex
 	var channels []string
-	admin := bftClients[0]
+
+	for i := range bftClients {
+		recipient, _ := bftClients[i].GetPrivKey().PubKey().Address()
+		payload, _ := json.Marshal(asset.Payload{
+			Action:  "person",
+			Address: recipient,
+		})
+		tx, _ := core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, uint64(1000000000000), "", bftClients[0].GetPrivKey())
+		bftClients[0].AddTx(tx)
+	}
+
 	for i := range bftClients {
 		// each client will create 5 channels
 		for m := 0; m < 5; m++ {
@@ -103,16 +114,26 @@ func TestBFTCreateChannels(t *testing.T) {
 				channels = append(channels, channel)
 				lock.Unlock()
 
-				recipient, _ := admin.GetPrivKey().PubKey().Address()
-				payload, _ := json.Marshal(asset.Payload{
-					Action:    "person",
-					ChannelID: channel,
-					Address:   recipient,
-				})
-				tx, err := core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, 100000000000, "", admin.GetPrivKey())
-				admin.AddTx(tx)
+				err := client.CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 
-				err = client.CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
+				payload, _ := json.Marshal(asset.Payload{
+					ChannelID: "public",
+				})
+				tx, _ := core.NewTx(core.ASSETCHANNELID, core.TransferContractrAddress, payload, 100000000, "", client.GetPrivKey())
+				client.AddTx(tx)
+
+				self, _ := core.NewMember(client.GetPrivKey().PubKey(), "admin")
+				payload, _ = json.Marshal(config.Payload{
+					ChannelID: "public",
+					Profile: &config.Profile{
+						Public:  true,
+						Admins:  []*core.Member{self},
+						Members: make([]*core.Member, 0),
+					},
+				})
+				tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenDistributeContractAddress, payload, 1000000000, "", client.GetPrivKey())
+				client.AddTx(tx)
+
 				require.NoError(t, err)
 			}(t, i)
 		}
@@ -155,6 +176,25 @@ func TestBFTReCreateChannels(t *testing.T) {
 
 		err := bftClients[0].CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 		require.NoError(t, err)
+
+		payload, _ := json.Marshal(asset.Payload{
+			ChannelID: "public",
+		})
+		tx, _ := core.NewTx(core.ASSETCHANNELID, core.TransferContractrAddress, payload, 100000000, "", bftClients[0].GetPrivKey())
+		bftClients[0].AddTx(tx)
+
+		self, _ := core.NewMember(bftClients[0].GetPrivKey().PubKey(), "admin")
+		payload, _ = json.Marshal(config.Payload{
+			ChannelID: "public",
+			Profile: &config.Profile{
+				Public:  true,
+				Admins:  []*core.Member{self},
+				Members: make([]*core.Member, 0),
+			},
+		})
+		tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenDistributeContractAddress, payload, 1000000000, "", bftClients[0].GetPrivKey())
+		bftClients[0].AddTx(tx)
+
 	}
 	time.Sleep(2 * time.Second)
 	var prevChannels []string
