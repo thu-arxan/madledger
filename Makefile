@@ -118,9 +118,5 @@ clean:
 	@cd tests/performance/solo && rm -rf .clients .orderer .peer
 	@cd tests/performance/bft && rm -rf .clients .orderer .peer
 
-syncevm:
-	@rm -rf vendor/evm
-	@cd ../evm && zip evm.zip $$(git ls-files) && unzip -d ../madledger/vendor/evm evm.zip && rm evm.zip
-
 raft:
 	@$(GO_TEST_UNIT) madledger/consensus/raft
