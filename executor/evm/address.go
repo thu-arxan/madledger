@@ -1,8 +1,9 @@
 package evm
 
 import (
-	"evm/util"
 	"madledger/common"
+
+	"github.com/thu-arxan/evm/util"
 )
 
 // Address is the address
