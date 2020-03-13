@@ -1,8 +1,9 @@
 package evm
 
 import (
-	"evm"
 	"madledger/common"
+
+	"github.com/thu-arxan/evm"
 )
 
 // Account is the implemantation of evm.Account, wraps common.Account.

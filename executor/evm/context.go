@@ -1,7 +1,7 @@
 package evm
 
 import (
-	"evm"
+	"github.com/thu-arxan/evm"
 )
 
 // Context caches data changed in block, passed to each evm for tx.

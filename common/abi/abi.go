@@ -1,9 +1,10 @@
 package abi
 
 import (
-	eabi "evm/abi"
 	"fmt"
 	"madledger/common/util"
+
+	eabi "github.com/thu-arxan/evm/abi"
 )
 
 // This file is a wrapper of github.com/thu-arxan/evm/abi

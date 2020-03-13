@@ -1,7 +1,7 @@
 package evm
 
 import (
-	"evm"
+	"github.com/thu-arxan/evm"
 	"madledger/common"
 	"madledger/peer/db"
 )

@@ -1,6 +1,6 @@
 package evm
 
-import "evm"
+import "github.com/thu-arxan/evm"
 
 // Cache is the tx cache
 type Cache struct {

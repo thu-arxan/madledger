@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"evm"
+	"github.com/thu-arxan/evm"
 	"evm/util"
 	"fmt"
 	"madledger/common"
