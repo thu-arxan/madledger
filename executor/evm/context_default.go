@@ -10,6 +10,8 @@ import (
 	"madledger/common"
 	"madledger/core"
 	"madledger/peer/db"
+
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 // DefaultContext is the default implementation for Context
@@ -174,7 +176,7 @@ func (ctx *DefaultContext) getStorage(addr, key []byte) []byte {
 
 	// query from db
 	value, err := ctx.queryEngine.GetStorage(bytesToCommonAddress(addr), bytesToCommomWord256(key))
-	if err != nil {
+	if err != nil && err != leveldb.ErrNotFound {
 		log.Errorf("Fatal error! Failed to query value to %s for addr(%s), err: %v", hex.EncodeToString(key), hex.EncodeToString(addr), err)
 	}
 

@@ -8,6 +8,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,6 +20,7 @@ var (
 	// ContractAddress is the address of contract
 	ContractAddress = make(map[string]common.Address, 0)
 	mapLock         sync.Mutex
+	log             = logrus.WithFields(logrus.Fields{"app": "performance", "package": "tests"})
 )
 
 // CreateContract will create a channel by the client

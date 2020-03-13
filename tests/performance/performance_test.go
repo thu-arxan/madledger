@@ -2,7 +2,6 @@ package performance
 
 import (
 	"fmt"
-	"log"
 	"madledger/core"
 	"madledger/tests/performance/bft"
 	"os"
@@ -30,7 +29,7 @@ var (
 
 func init() {
 	go func() {
-		log.Println(http.ListenAndServe("127.0.0.1:6666", nil))
+		log.Info(http.ListenAndServe("127.0.0.1:6666", nil))
 	}()
 }
 
@@ -101,12 +100,12 @@ func TestEnd(t *testing.T) {
 	fmt.Println(time.Now(), "end")
 	switch consensus {
 	case "solo":
-		solo.StopOrderers()
 		solo.StopPeers()
+		solo.StopOrderers()
 		solo.Clean()
 	case "raft":
-		raft.StopOrderers()
 		raft.StopPeers()
+		raft.StopOrderers()
 		raft.Clean()
 	case "bft":
 		bft.Clean()
