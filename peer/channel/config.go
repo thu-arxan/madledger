@@ -114,6 +114,7 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 		} else {
 			status.Err = err.Error()
 		}
+		log.Infof("config going to set status: channel: %s, tx: %s", m.id, tx.ID)
 		wb.SetTxStatus(tx, status)
 	}
 	wb.PutBlock(block)

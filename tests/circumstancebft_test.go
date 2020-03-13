@@ -1,8 +1,10 @@
 package tests
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"madledger/blockchain/asset"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"madledger/common"
@@ -88,6 +90,7 @@ func TestBFTCreateChannels(t *testing.T) {
 	var wg sync.WaitGroup
 	var lock sync.RWMutex
 	var channels []string
+	admin := bftClients[0]
 	for i := range bftClients {
 		// each client will create 5 channels
 		for m := 0; m < 5; m++ {
@@ -100,16 +103,16 @@ func TestBFTCreateChannels(t *testing.T) {
 				channels = append(channels, channel)
 				lock.Unlock()
 
-				// recipient, _ := client.GetPrivKey().PubKey().Address()
-				// payload, _ := json.Marshal(asset.Payload{
-				// 	Action:    "person",
-				// 	ChannelID: channel,
-				// 	Address:   recipient,
-				// })
-				// tx, err := core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, 10000000000, "", client.GetPrivKey())
-				// client.AddTx(tx)
+				recipient, _ := admin.GetPrivKey().PubKey().Address()
+				payload, _ := json.Marshal(asset.Payload{
+					Action:    "person",
+					ChannelID: channel,
+					Address:   recipient,
+				})
+				tx, err := core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, 100000000000, "", admin.GetPrivKey())
+				admin.AddTx(tx)
 
-				err := client.CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
+				err = client.CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 				require.NoError(t, err)
 			}(t, i)
 		}
@@ -149,6 +152,7 @@ func TestBFTReCreateChannels(t *testing.T) {
 	// Here we recreate 2 channels
 	for i := 0; i < 2; i++ {
 		channel := strings.ToLower(util.RandomString(16))
+
 		err := bftClients[0].CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 		require.NoError(t, err)
 	}

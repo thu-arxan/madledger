@@ -69,7 +69,7 @@ func (m *Manager) Start() {
 			m.stopCh <- true
 			return
 		} else {
-			log.Infof("%s failed to fetch block: %d, err: %v", m.id, m.cm.GetExpect(), err)
+			log.Warnf("failed to fetch block: %d, err: %v", m.cm.GetExpect(), err)
 		}
 	}
 }
@@ -92,20 +92,27 @@ func (m *Manager) AddBlock(block *core.Block) error {
 	case core.GLOBALCHANNELID:
 		err = m.AddGlobalBlock(block)
 		log.Infof("Add global block %d", block.Header.Number)
+		if err != nil {
+			return err
+		}
 		return err
 	case core.CONFIGCHANNELID:
 		err = m.AddConfigBlock(block)
 		log.Infof("Add config block %d", block.Header.Number)
-		return err
+		if err != nil {
+			return err
+		}
 	case core.ASSETCHANNELID:
 		err = m.AddAssetBlock(block)
 		log.Infof("Add account block %d", block.Header.Number)
-		return err
+		if err != nil {
+			return err
+		}
 	default:
 		if !m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
 			m.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
 		}
-		log.Infof("Run block %s:%d", m.id, block.Header.Number)
+		log.Infof("Run block %s: %d", m.id, block.Header.Number)
 		wb, err := m.RunBlock(block)
 		if err != nil {
 			return err
@@ -114,6 +121,7 @@ func (m *Manager) AddBlock(block *core.Block) error {
 		wb.PutBlock(block)
 		return wb.Sync()
 	}
+	return nil
 }
 
 // RunBlock will carry out all txs in the block.
@@ -160,6 +168,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 	gasPrice = uint64(binary.BigEndian.Uint64(gasPriceByte))
 
 	for i, tx := range block.Transactions {
+		log.Infof("manager going to set status: channel: %s, tx: %s", m.id, tx.ID)
 		senderAddress, err := tx.GetSender()
 		status := &db.TxStatus{
 			Err:         "",
@@ -191,7 +200,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			wb.SetTxStatus(tx, status)
 			continue
 		}
-		log.Debugf(" %v, %v, %v", sender, context, tx)
+		log.Infof(" %v, %v, %v", sender, context, tx)
 		/* TODO: gas
 		用户的参数：user gas limit
 		通道的参数：channel gas limit, gas price, asset token ratio
@@ -202,12 +211,12 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		然后将token -= gas * gas price，存到wb中
 		*/
 
-		log.Debug("try to find sender's token")
+		log.Info("try to find sender's token")
 		gasLimit := min(tx.Data.Gas, maxGas)
 		key := util.BytesCombine([]byte("token"), []byte(m.id), senderAddress.Bytes())
 		tokenByte, err := m.db.Get(key)
 		if err != nil {
-			log.Debugf("the err is %v", err.Error())
+			log.Infof("the err is %v", err.Error())
 			status.Err = err.Error()
 			wb.SetTxStatus(tx, status)
 			continue
