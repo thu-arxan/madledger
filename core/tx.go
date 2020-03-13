@@ -35,6 +35,8 @@ const (
 	ISSUE
 	// TRANSFER is the transfer tx
 	TRANSFER
+	// TOKEN
+	TOKEN
 )
 
 // TxData is the data of Tx

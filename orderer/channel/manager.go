@@ -127,28 +127,21 @@ func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
 
 // AddBlock add a block
 func (manager *Manager) AddBlock(block *core.Block) error {
-	// TODO: Gas
-	//  这里应该要添加存储收费的feature
-	//  每次AddBlock，应当扣除manger.ID这个通道对应的钱（应该是预设的）
-	//  通道的钱是通过issue或者transfer来的
-	//  如果钱不够应当直接return
-	//  *** 问题：是不是只有用户通道才需要这一个feature？***
+	log.Infof("start adding block in channel %v success", manager.ID)
 	var price uint64
-	if manager.isUserChannel(manager.ID) {
+	if isUserChannel(manager.ID) && !isGenesisBlock(block) {
 		acc, err := manager.db.GetOrCreateAccount(common.BytesToAddress([]byte(manager.ID)))
 		if err != nil {
 			return err
 		}
 		left := acc.GetBalance()
 		price = uint64(len(block.Bytes()) * core.BLOCKPRICE)
-		log.Infof("this block cost %d ", price)
-		log.Infof("this block has %d", left)
+		log.Infof("block cost %d ", price)
+		log.Infof("channel %s has %d", manager.ID, left)
 		if left < price {
-			errMsg := fmt.Sprintf("insuffuicient balance in channel %v", manager.ID)
-			// return errors.New(errMsg)
-			// this should return an error, but if I let it return, too many test will fail because they don't have enough balance,
-			// so I temperorily comment it
-			log.Infof(errMsg)
+			errMsg := fmt.Sprintf("insuffuicient balance in channel %s", manager.ID)
+			log.Info(errMsg)
+			return errors.New(errMsg)
 		}
 	}
 	// first update db
@@ -164,12 +157,13 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 	}
 	// TODO: Gas
 	//  after adding block, sub the channel balance
-	if manager.isUserChannel(manager.ID) {
+	if isUserChannel(manager.ID) && !isGenesisBlock(block) {
 		if err := manager.subChannelAsset(manager.ID, price); err != nil {
-			// return err
-			log.Debug(err)
+			log.Infof("err: %v when sub channel asset", err)
+			return err
 		}
 	}
+	log.Infof("Add block in channel %v success", manager.ID)
 
 	// check is there is any need to update local state of orderer
 	switch manager.ID {
@@ -183,9 +177,14 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		return nil
 	}
 }
+
+func isGenesisBlock(block *core.Block) bool {
+	return block.GetNumber() == 0
+}
+
 func (manager *Manager) subChannelAsset(id string, price uint64) error {
-	cache := NewCache(manager.db)
-	if !manager.isUserChannel(manager.ID) {
+	wb := manager.db.NewWriteBatch()
+	if !isUserChannel(manager.ID) {
 		return nil
 	}
 	acc, err := manager.db.GetOrCreateAccount(common.BytesToAddress([]byte(id)))
@@ -195,10 +194,13 @@ func (manager *Manager) subChannelAsset(id string, price uint64) error {
 	if err := acc.SubBalance(price); err != nil {
 		return err
 	}
-	return cache.UpdateAccounts(acc)
+	if err := wb.UpdateAccounts(acc); err != nil {
+		return err
+	}
+	return wb.Sync()
 }
-func (manager *Manager) isUserChannel(id string) bool {
-	return manager.ID != core.GLOBALCHANNELID && manager.ID != core.CONFIGCHANNELID && manager.ID != core.ASSETCHANNELID
+func isUserChannel(id string) bool {
+	return id != core.GLOBALCHANNELID && id != core.CONFIGCHANNELID && id != core.ASSETCHANNELID
 }
 
 // GetBlockSize return the size of blocks

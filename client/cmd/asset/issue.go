@@ -83,7 +83,7 @@ func runIssue(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	status, err := client.AddTxInOrderer(tx)
+	status, err := client.AddTx(tx)
 	table := util.NewTable()
 	table.SetHeader("Status", "Error")
 

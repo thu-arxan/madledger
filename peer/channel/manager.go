@@ -95,7 +95,6 @@ func (m *Manager) AddBlock(block *core.Block) error {
 		if err != nil {
 			return err
 		}
-		return err
 	case core.CONFIGCHANNELID:
 		err = m.AddConfigBlock(block)
 		log.Infof("Add config block %d", block.Header.Number)
@@ -151,21 +150,12 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		}()
 	}
 	wg.Wait()
-	// TODO: Gas 是不是应该判定一下如果是系统通道就不用这几个量了？
 
-	var maxGas uint64
-	maxGasByte, err := m.db.Get(util.BytesCombine([]byte(m.id), []byte("maxgas")))
+	maxGas, gasPrice, err := m.getParam()
 	if err != nil {
+		log.Info("get param fail")
 		return nil, err
 	}
-	maxGas = uint64(binary.BigEndian.Uint64(maxGasByte))
-
-	var gasPrice uint64
-	gasPriceByte, err := m.db.Get(util.BytesCombine([]byte(m.id), []byte("gasprice")))
-	if err != nil {
-		return nil, err
-	}
-	gasPrice = uint64(binary.BigEndian.Uint64(gasPriceByte))
 
 	for i, tx := range block.Transactions {
 		log.Infof("manager going to set status: channel: %s, tx: %s", m.id, tx.ID)
@@ -200,46 +190,44 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			wb.SetTxStatus(tx, status)
 			continue
 		}
-		log.Infof(" %v, %v, %v", sender, context, tx)
-		/* TODO: gas
-		用户的参数：user gas limit
-		通道的参数：channel gas limit, gas price, asset token ratio
-		gas limit = min (user, channel)
-		获取sender的token，如果比gas limit * gas price 小，那么不能执行，直接下一个tx
-		记录进入evm前的gas limit为before
-		用出来之后用before-gas limit可得到具体消耗了多少gas
-		然后将token -= gas * gas price，存到wb中
-		*/
 
-		log.Info("try to find sender's token")
+		// 用户的参数：tx.Data.Gas (user gas limit)
+		// 通道的参数：maxGas (channel gas limit), gasPrice
+		// gas limit = min (user, channel)
+		// 获取sender的token，如果比gas limit * gas price 小，那么不能执行，直接下一个tx
+		// 记录进入evm前的gas limit
+		// 用出来之后用前减后可得到具体消耗了多少gas
+		// 然后将token -= gas * gas price，存到wb中
+
+		log.Info("get sender's token")
 		gasLimit := min(tx.Data.Gas, maxGas)
-		key := util.BytesCombine([]byte("token"), []byte(m.id), senderAddress.Bytes())
+		key := getTokenKey(m.id, senderAddress)
 		tokenByte, err := m.db.Get(key)
 		if err != nil {
-			log.Infof("the err is %v", err.Error())
+			log.Infof("err: %v when getting token byte", err.Error())
 			status.Err = err.Error()
 			wb.SetTxStatus(tx, status)
 			continue
 		}
-
 		tokenLeft := binary.BigEndian.Uint64(tokenByte)
-		log.Infof("token left is %v", tokenLeft)
-		log.Infof("gas limit is %v", gasLimit)
+		log.Infof("token left is %d", tokenLeft)
+		log.Infof("gas limit is %d", gasLimit)
 		if tokenLeft < gasLimit {
-			log.Info("Not enough token")
 			status.Err = "Not enough token"
+			log.Info(status.Err)
 			wb.SetTxStatus(tx, status)
 			continue
 		}
 
 		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, gasLimit, m.db, wb)
 
+		// TODO: still 0, why?
 		gasUsed := gasLimit - *context.BlockContext().Gas
 		log.Infof("the gas cost is %v", gasUsed)
 		tokenLeft -= gasUsed * gasPrice
-		var buf = make([]byte, 8)
-		binary.BigEndian.PutUint64(buf, uint64(tokenLeft))
-		wb.Put(util.BytesCombine([]byte("token"), []byte(m.id), senderAddress.Bytes()), buf)
+		var tokenValue = make([]byte, 8)
+		binary.BigEndian.PutUint64(tokenValue, uint64(tokenLeft))
+		wb.Put(getTokenKey(m.id, senderAddress), tokenValue)
 
 		if receiverAddress.String() != common.ZeroAddress.String() {
 			// if the length of payload is not zero, this is a contract call
@@ -277,6 +265,23 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 	}
 	// wb.PersistLog([]byte(fmt.Sprintf("block_log_%d", block.GetNumber())))
 	return wb, nil
+}
+
+func (m *Manager) getParam() (uint64, uint64, error) {
+
+	maxGasByte, err := m.db.Get(util.BytesCombine([]byte(m.id), []byte("maxgas")))
+	if err != nil {
+		return 0, 0, err
+	}
+	gasPriceByte, err := m.db.Get(util.BytesCombine([]byte(m.id), []byte("gasprice")))
+	if err != nil {
+		return 0, 0, err
+	}
+	return uint64(binary.BigEndian.Uint64(maxGasByte)), uint64(binary.BigEndian.Uint64(gasPriceByte)), nil
+}
+
+func getTokenKey(channelID string, senderAddress common.Address) []byte {
+	return util.BytesCombine([]byte("token"), []byte(channelID), senderAddress.Bytes())
 }
 
 func min(x, y uint64) uint64 {

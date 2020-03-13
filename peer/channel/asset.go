@@ -58,30 +58,11 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 				continue
 			}
 		} else if receiver == core.TransferContractrAddress { // transfer to channel
-			err = manager.transfer(cache, sender, payload.Address, value)
+			log.Info("going to transfer to channel")
+			err = manager.transfer(cache, sender, common.BytesToAddress([]byte(payload.ChannelID)), value)
 		} else { // transfer to person
 			err = manager.transfer(cache, sender, receiver, value)
 		}
-
-		/*if receiver == common.ZeroAddress {
-			receiver = common.BytesToAddress([]byte(payload.ChannelID))
-			if receiver == common.ZeroAddress {
-				log.Errorf("Not specified receiver")
-				cache.SetTxStatus(tx, status)
-				continue
-			}
-		}
-
-		switch payload.Action {
-		case "issue":
-			// avoid overflow
-			issueValue := tx.Data.Value
-			err = manager.issue(cache, tx.Data.Sig.PK, receiver, issueValue)
-		case "transfer":
-			// if value < 0, sender get money from receiver ??
-			transferValue := tx.Data.Value
-			err = manager.transfer(cache, sender, receiver, transferValue)
-		}*/
 
 		if err != nil {
 			// 如果有错误，那么应该在db里加一条key为txid的错误，如果正确，那么key为txid为ok

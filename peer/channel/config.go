@@ -29,86 +29,83 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 				log.Warnf("Fatal error! Nil channel id in config block, num: %d, index: %d", block.GetNumber(), i)
 			default:
 				channelID := payload.ChannelID
-
-				/* TODO: Gas
-				gasprice = payload.gasprice
-				ratio = payload.ratio
-				maxgas = payload.maxgas
-				这里应该将三个值都set到wb里去，需要新加db函数
-
-				这里还应该进行token的分配，
-				目前的一种想法是从sender账户里扣一个固定值，然后均分到每个member那里去。也需要两个db函数
-
-				*** 问题：那么除了这个初始的token分配，之后的token分配该在哪里做？***
-				*/
-				maxgas := make([]byte, 8)
-				binary.BigEndian.PutUint64(maxgas, payload.MaxGas)
-				wb.Put(util.BytesCombine([]byte(channelID), []byte("maxgas")), maxgas)
-				ratio := make([]byte, 8)
-				binary.BigEndian.PutUint64(ratio, payload.AssetTokenRatio)
-				wb.Put(util.BytesCombine([]byte(channelID), []byte("ratio")), ratio)
-				gasprice := make([]byte, 8)
-				binary.BigEndian.PutUint64(gasprice, payload.GasPrice)
-				wb.Put(util.BytesCombine([]byte(channelID), []byte("gasprice")), gasprice)
-
-				// sub 10000000 from sender's asset
-				log.Debug("sub 10000000 from sender's asset")
 				sender, _ := tx.GetSender()
-				account, err := m.db.GetOrCreateAccount(sender)
-				if err != nil {
-					return err
-				}
-				if err = account.SubBalance(2000000000); err != nil {
-					return err
-				}
-				wb.UpdateAccounts(account)
 
-				log.Debug("give 10000000 to all the members and admin of this channel in token")
-				// give 10000000 to all the members and admin of this channel in token
-				part := uint64(2000000000/(len(payload.Profile.Admins)+len(payload.Profile.Members))) * payload.AssetTokenRatio
-				var buf = make([]byte, 8)
-				binary.BigEndian.PutUint64(buf, uint64(part))
-				for _, admin := range payload.Profile.Admins {
-					pk, _ := crypto.NewPublicKey(admin.PK)
-					addr, _ := pk.Address()
-					key := util.BytesCombine([]byte("token"), []byte(channelID), addr.Bytes())
-					log.Debugf("config.go: the key is %v", key)
-					wb.Put(key, buf)
-				}
-				for _, member := range payload.Profile.Members {
-					// 现在sender 被减掉asset，key是address；member被加上token，key是token+channelID+addr
-					pk, _ := crypto.NewPublicKey(member.PK)
-					addr, _ := pk.Address()
-					wb.Put(util.BytesCombine([]byte("token"), []byte(m.id), addr.Bytes()), buf)
-				}
+				// 更新通道的关于gas的设置，目前是gas price, ratio, gas limit
+				// TODO: 应该判断是否是通道管理员，应该用payload.IsAdmin来判断，但是不知道怎么生成传入的参数，所以暂时用cake替代
+				if tx.GetReceiver().String() == core.CreateChannelContractAddress.String() {
+					log.Infof("create channel and update config")
+					updateChannelConfig(channelID, wb, payload)
 
-				if payload.Profile.Public {
-					wb.AddChannel(channelID)
-					m.coordinator.hub.Broadcast("update", Update{
-						ID:     channelID,
-						Remove: false,
-					})
-				} else {
-					var remove = true
-					for _, member := range payload.Profile.Members {
-						if member.Equal(m.identity) {
-							wb.AddChannel(channelID)
-							m.coordinator.hub.Broadcast("update", Update{
-								ID:     channelID,
-								Remove: false,
-							})
-							remove = false
-							break
-						}
-					}
-					if remove && m.db.BelongChannel(channelID) {
-						wb.DeleteChannel(channelID)
+					if payload.Profile.Public {
+						wb.AddChannel(channelID)
 						m.coordinator.hub.Broadcast("update", Update{
 							ID:     channelID,
-							Remove: true,
+							Remove: false,
 						})
+					} else {
+						var remove = true
+						for _, member := range payload.Profile.Members {
+							if member.Equal(m.identity) {
+								wb.AddChannel(channelID)
+								m.coordinator.hub.Broadcast("update", Update{
+									ID:     channelID,
+									Remove: false,
+								})
+								remove = false
+								break
+							}
+						}
+						if remove && m.db.BelongChannel(channelID) {
+							wb.DeleteChannel(channelID)
+							m.coordinator.hub.Broadcast("update", Update{
+								ID:     channelID,
+								Remove: true,
+							})
+						}
 					}
 				}
+
+				// 如果AssetToDistribute被设置这里还应该进行token的分配，
+				// 目前的做法是从sender账户里扣AssetToDistribute这么多的asset，然后换算成token均分到每个member那里去
+				cake := tx.Data.Value
+				// 如果没有设置这个变量，则Umarshal之后是0
+				if cake > 0 {
+					// 现在sender 被减掉asset，key是address；member被加上token，key是token+channelID+addr
+					log.Infof("going to distribute asset to token")
+					account, err := m.db.GetOrCreateAccount(sender)
+					if err != nil {
+						status.Err = err.Error()
+						wb.SetTxStatus(tx, status)
+						continue
+					}
+					if err = account.SubBalance(cake); err != nil {
+						status.Err = err.Error()
+						wb.SetTxStatus(tx, status)
+						continue
+					}
+					wb.UpdateAccounts(account)
+					peopleNum := uint64(len(payload.Profile.Admins) + len(payload.Profile.Members))
+					ratioByte, err := m.db.Get(util.BytesCombine([]byte(channelID), []byte("ratio")))
+					if err != nil {
+						status.Err = err.Error()
+						wb.SetTxStatus(tx, status)
+						continue
+					}
+					ratio := uint64(binary.BigEndian.Uint64(ratioByte))
+					part := (cake / peopleNum) * ratio
+					var value = make([]byte, 8)
+					binary.BigEndian.PutUint64(value, part)
+					members := append(payload.Profile.Admins, payload.Profile.Members...)
+					for _, member := range members {
+						pk, _ := crypto.NewPublicKey(member.PK)
+						addr, _ := pk.Address()
+						wb.Put(util.BytesCombine([]byte("token"), []byte(channelID), addr.Bytes()), value)
+					}
+				}
+
+				log.Infof("create channel or token finish")
+
 				nums[payload.ChannelID] = []uint64{0}
 			}
 		} else {
@@ -121,6 +118,18 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 	wb.Sync()
 	m.coordinator.Unlocks(nums)
 	return nil
+}
+
+func updateChannelConfig(channelID string, wb db.WriteBatch, payload *cc.Payload) {
+	maxgas := make([]byte, 8)
+	binary.BigEndian.PutUint64(maxgas, payload.MaxGas)
+	wb.Put(util.BytesCombine([]byte(channelID), []byte("maxgas")), maxgas)
+	ratio := make([]byte, 8)
+	binary.BigEndian.PutUint64(ratio, payload.AssetTokenRatio)
+	wb.Put(util.BytesCombine([]byte(channelID), []byte("ratio")), ratio)
+	gasprice := make([]byte, 8)
+	binary.BigEndian.PutUint64(gasprice, payload.GasPrice)
+	wb.Put(util.BytesCombine([]byte(channelID), []byte("gasprice")), gasprice)
 }
 
 func getConfigPayload(tx *core.Tx) (*cc.Payload, error) {
