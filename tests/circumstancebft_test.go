@@ -116,35 +116,37 @@ func TestBFTCreateChannels(t *testing.T) {
 		// each client will create 5 channels
 		for m := 0; m < 5; m++ {
 			wg.Add(1)
-			client := bftClients[i]
-			channel := strings.ToLower(util.RandomString(16))
-			lock.Lock()
-			channels = append(channels, channel)
-			lock.Unlock()
+			go func(t *testing.T, i int) {
 
-			err := client.CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
+				client := bftClients[i]
+				channel := strings.ToLower(util.RandomString(16))
+				lock.Lock()
+				channels = append(channels, channel)
+				lock.Unlock()
 
-			payload, _ := json.Marshal(asset.Payload{
-				ChannelID: channel,
-			})
-			tx, _ := core.NewTx(core.ASSETCHANNELID, core.TransferContractrAddress, payload, 100000000, "", client.GetPrivKey())
-			client.AddTx(tx)
+				err := client.CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
 
-			self, _ := core.NewMember(client.GetPrivKey().PubKey(), "admin")
-			payload, _ = json.Marshal(config.Payload{
-				ChannelID: channel,
-				Profile: &config.Profile{
-					Public:  true,
-					Admins:  []*core.Member{self},
-					Members: bftClientsSet,
-				},
-			})
-			tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenDistributeContractAddress, payload, 1000000000, "", client.GetPrivKey())
-			client.AddTx(tx)
+				payload, _ := json.Marshal(asset.Payload{
+					ChannelID: channel,
+				})
+				tx, _ := core.NewTx(core.ASSETCHANNELID, core.TransferContractrAddress, payload, 100000000, "", client.GetPrivKey())
+				client.AddTx(tx)
 
-			require.NoError(t, err)
-			wg.Done()
+				self, _ := core.NewMember(client.GetPrivKey().PubKey(), "admin")
+				payload, _ = json.Marshal(config.Payload{
+					ChannelID: channel,
+					Profile: &config.Profile{
+						Public:  true,
+						Admins:  []*core.Member{self},
+						Members: bftClientsSet,
+					},
+				})
+				tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenDistributeContractAddress, payload, 1000000000, "", client.GetPrivKey())
+				client.AddTx(tx)
 
+				require.NoError(t, err)
+				defer wg.Done()
+			}(t, i)
 			/*
 				go func(t *testing.T, i int) {
 					defer wg.Done()

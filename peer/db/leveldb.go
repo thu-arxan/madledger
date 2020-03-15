@@ -238,7 +238,7 @@ func (db *LevelDB) Get(key []byte) ([]byte, error) {
 	return db.connect.Get(key, nil)
 }
 
-// GetAssetAdminPKByted returns public key bytes of _asset admin or nil if not exists
+// GetAssetAdminPKBytes returns public key bytes of _asset admin or nil if not exists
 func (db *LevelDB) GetAssetAdminPKBytes() []byte {
 	var key = getAssetAdminKey()
 	admin, err := db.connect.Get(key, nil)
@@ -250,6 +250,7 @@ func (db *LevelDB) GetAssetAdminPKBytes() []byte {
 
 //GetOrCreateAccount return default account if not existx in leveldb
 func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, error) {
+	db.lock.Lock()
 	account := common.NewAccount(address)
 	key := getAccountKey(address)
 	data, err := db.connect.Get(key, nil)
@@ -257,9 +258,11 @@ func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, e
 		if err == leveldb.ErrNotFound {
 			err = nil
 		}
+		db.lock.Unlock()
 		return *account, err
 	}
 	err = json.Unmarshal(data, &account)
+	db.lock.Unlock()
 	return *account, err
 }
 
