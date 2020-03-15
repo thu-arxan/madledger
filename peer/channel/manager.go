@@ -201,8 +201,9 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 
 		log.Info("get sender's token")
 		gasLimit := min(tx.Data.Gas, maxGas)
-		key := getTokenKey(m.id, senderAddress)
+		key := getTokenKey(m.id, tx.Data.Sig.PK)
 		tokenByte, err := m.db.Get(key)
+		log.Infof("token key is %v", string(key))
 		if err != nil {
 			log.Infof("err: %v when getting token byte", err.Error())
 			status.Err = err.Error()
@@ -227,7 +228,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		tokenLeft -= gasUsed * gasPrice
 		var tokenValue = make([]byte, 8)
 		binary.BigEndian.PutUint64(tokenValue, uint64(tokenLeft))
-		wb.Put(getTokenKey(m.id, senderAddress), tokenValue)
+		wb.Put(getTokenKey(m.id, tx.Data.Sig.PK), tokenValue)
 
 		if receiverAddress.String() != common.ZeroAddress.String() {
 			// if the length of payload is not zero, this is a contract call
@@ -280,8 +281,8 @@ func (m *Manager) getParam() (uint64, uint64, error) {
 	return uint64(binary.BigEndian.Uint64(maxGasByte)), uint64(binary.BigEndian.Uint64(gasPriceByte)), nil
 }
 
-func getTokenKey(channelID string, senderAddress common.Address) []byte {
-	return util.BytesCombine([]byte("token"), []byte(channelID), senderAddress.Bytes())
+func getTokenKey(channelID string, pk []byte) []byte {
+	return util.BytesCombine([]byte("token"), []byte(channelID), pk)
 }
 
 func min(x, y uint64) uint64 {

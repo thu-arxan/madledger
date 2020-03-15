@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	cc "madledger/blockchain/config"
-	"madledger/common/crypto"
 	"madledger/common/util"
 	"madledger/core"
 	"madledger/peer/db"
@@ -75,6 +74,7 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 					log.Infof("going to distribute asset to token")
 					account, err := m.db.GetOrCreateAccount(sender)
 					if err != nil {
+						log.Infof("get or create account wrong with err : %v", err)
 						status.Err = err.Error()
 						wb.SetTxStatus(tx, status)
 						continue
@@ -86,8 +86,11 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 					}
 					wb.UpdateAccounts(account)
 					peopleNum := uint64(len(payload.Profile.Admins) + len(payload.Profile.Members))
-					ratioByte, err := m.db.Get(util.BytesCombine([]byte(channelID), []byte("ratio")))
+					ratioKey := util.BytesCombine([]byte(channelID), []byte("ratio"))
+					log.Infof("ratio key is %v", ratioKey)
+					ratioByte, err := m.db.Get(ratioKey)
 					if err != nil {
+						log.Infof("get ratio token wrong with err : %v", err)
 						status.Err = err.Error()
 						wb.SetTxStatus(tx, status)
 						continue
@@ -98,9 +101,8 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 					binary.BigEndian.PutUint64(value, part)
 					members := append(payload.Profile.Admins, payload.Profile.Members...)
 					for _, member := range members {
-						pk, _ := crypto.NewPublicKey(member.PK)
-						addr, _ := pk.Address()
-						wb.Put(util.BytesCombine([]byte("token"), []byte(channelID), addr.Bytes()), value)
+						wb.Put(util.BytesCombine([]byte("token"), []byte(channelID), member.PK), value)
+						log.Infof("set token key is %v", string(util.BytesCombine([]byte("token"), []byte(channelID), member.PK)))
 					}
 				}
 
@@ -127,6 +129,7 @@ func updateChannelConfig(channelID string, wb db.WriteBatch, payload *cc.Payload
 	ratio := make([]byte, 8)
 	binary.BigEndian.PutUint64(ratio, payload.AssetTokenRatio)
 	wb.Put(util.BytesCombine([]byte(channelID), []byte("ratio")), ratio)
+	log.Infof("set ratio key %v", util.BytesCombine([]byte(channelID), []byte("ratio")))
 	gasprice := make([]byte, 8)
 	binary.BigEndian.PutUint64(gasprice, payload.GasPrice)
 	wb.Put(util.BytesCombine([]byte(channelID), []byte("gasprice")), gasprice)

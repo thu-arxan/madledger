@@ -205,7 +205,7 @@ func testTxHistory(t *testing.T, client *client.Client) {
 	require.Len(t, history.Txs["private"].Value, 9)
 	// check cahnnel config
 	require.Contains(t, history.Txs, core.CONFIGCHANNELID)
-	require.Len(t, history.Txs[core.CONFIGCHANNELID].Value, 2)
+	require.Len(t, history.Txs[core.CONFIGCHANNELID].Value, 4) // because every time create a channel, a distribution of token will conduct and will become a block in config
 	fmt.Printf("test Asset begin")
 }
 
