@@ -235,6 +235,30 @@ func TestCreateChannel(t *testing.T) {
 		Tx: pbTx,
 	})
 	require.NoError(t, err)
+
+	payload, _ := json.Marshal(asset.Payload{
+		ChannelID: "test",
+	})
+	tx, _ := core.NewTx(core.ASSETCHANNELID, core.TransferContractrAddress, payload, 100000000, "", privKey)
+	pbTx, err = pb.NewTx(tx)
+	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: pbTx,
+	})
+
+	self, _ := core.NewMember(privKey.PubKey(), "admin")
+	payload, _ = json.Marshal(cc.Payload{
+		ChannelID: "test",
+		Profile: &cc.Profile{
+			Public:  true,
+			Admins:  []*core.Member{self},
+			Members: make([]*core.Member, 0),
+		},
+	})
+	tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenDistributeContractAddress, payload, 1000000000, "", privKey)
+	pbTx, err = pb.NewTx(tx)
+	_, err = client.CreateChannel(context.Background(), &pb.CreateChannelRequest{
+		Tx: pbTx,
+	})
 	// then stop
 	server.Stop()
 }
@@ -405,7 +429,10 @@ func getCreateChannelTx(channelID string) *pb.Tx {
 			Public: true,
 			Admins: []*core.Member{admin},
 		},
-		Version: 1,
+		Version:         1,
+		GasPrice:        1,
+		AssetTokenRatio: 1,
+		MaxGas:          10000000,
 	})
 	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
 	coreTx, _ := core.NewTx(core.CONFIGCHANNELID, core.CreateChannelContractAddress, payload, 0, "", privKey)
@@ -423,7 +450,7 @@ func getSelfIssueTx(channelID string) *pb.Tx {
 		Address:   recipient,
 	})
 
-	tx, _ := core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, uint64(10000000000), "", privKey)
+	tx, _ := core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, uint64(1000000000000), "", privKey)
 	pbTx, _ := pb.NewTx(tx)
 	return pbTx
 }

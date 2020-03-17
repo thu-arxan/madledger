@@ -149,7 +149,6 @@ func (c *Coordinator) Unlocks(channelNums map[string][]uint64) {
 				state.code = Runable
 				c.states[channel] = state
 			}
-			log.Infof("Done: %v", fmt.Sprintf("%s:%d", channel, num))
 			c.hub.Done(fmt.Sprintf("%s:%d", channel, num), nil)
 		}
 	}

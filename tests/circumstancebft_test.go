@@ -157,38 +157,6 @@ func TestBFTCreateChannels(t *testing.T) {
 				require.NoError(t, err)
 				defer wg.Done()
 			}(t, i)
-			/*
-				go func(t *testing.T, i int) {
-					defer wg.Done()
-					client := bftClients[i]
-					channel := strings.ToLower(util.RandomString(16))
-					lock.Lock()
-					channels = append(channels, channel)
-					lock.Unlock()
-
-					err := client.CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
-
-					payload, _ := json.Marshal(asset.Payload{
-						ChannelID: "public",
-					})
-					tx, _ := core.NewTx(core.ASSETCHANNELID, core.TransferContractrAddress, payload, 100000000, "", client.GetPrivKey())
-					client.AddTx(tx)
-
-					self, _ := core.NewMember(client.GetPrivKey().PubKey(), "admin")
-					payload, _ = json.Marshal(config.Payload{
-						ChannelID: "public",
-						Profile: &config.Profile{
-							Public:  true,
-							Admins:  []*core.Member{self},
-							Members: make([]*core.Member, 0),
-						},
-					})
-					tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenDistributeContractAddress, payload, 1000000000, "", client.GetPrivKey())
-					client.AddTx(tx)
-
-					require.NoError(t, err)
-				}(t, i)
-			*/
 		}
 	}
 	wg.Wait()
@@ -298,7 +266,6 @@ func TestBFTCreateTx(t *testing.T) {
 		require.NoError(t, err)
 
 	}
-	fmt.Println("ok bro")
 	time.Sleep(1000 * time.Millisecond)
 	for i := range bftOrderers {
 		require.True(t, util.IsDirSame(getBFTOrdererBlockPath(0), getBFTOrdererBlockPath(i)), fmt.Sprintf("Orderer %d is not same with 0", i))

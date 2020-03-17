@@ -17,9 +17,7 @@ import (
 
 // GetTxStatus is the implementation of protos
 func (s *Server) GetTxStatus(ctx context.Context, req *pb.GetTxStatusRequest) (*pb.TxStatus, error) {
-	log.Infof("in peer get tx status: channel: %s, Tx: %s", req.ChannelID, req.TxID)
 	status, err := s.cm.GetTxStatus(req.ChannelID, req.TxID, true)
-	log.Infof("get tx %s status of channel %s", req.TxID, req.ChannelID)
 	if err != nil {
 		return &pb.TxStatus{}, err
 	}
@@ -30,7 +28,6 @@ func (s *Server) GetTxStatus(ctx context.Context, req *pb.GetTxStatusRequest) (*
 		Output:          status.Output,
 		ContractAddress: status.ContractAddress,
 	}
-	log.Infof("status is %v", result)
 	return result, nil
 }
 

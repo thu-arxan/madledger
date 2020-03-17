@@ -146,8 +146,7 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		}
 		left := acc.GetBalance()
 		price = uint64(len(block.Bytes()) * core.BLOCKPRICE)
-		log.Infof("block cost %d ", price)
-		log.Infof("channel %s has %d", manager.ID, left)
+		log.Infof("block cost %d, channel %s has %d", price, manager.ID, left)
 		if left < price {
 			errMsg := fmt.Sprintf("insuffuicient balance in channel %s", manager.ID)
 			log.Info(errMsg)
@@ -169,7 +168,6 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 	//  after adding block, sub the channel balance
 	if isUserChannel(manager.ID) && !isGenesisBlock(block) {
 		if err := manager.subChannelAsset(manager.ID, price); err != nil {
-			log.Infof("err: %v when sub channel asset", err)
 			return err
 		}
 	}
@@ -181,7 +179,6 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 	switch manager.ID {
 	case core.CONFIGCHANNELID:
 		if block.GetNumber() != 0 && !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
-			log.Infof("watch: %v", fmt.Sprintf("%s:%d", block.Header.ChannelID, block.Header.Number))
 			manager.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
 		}
 		return manager.AddConfigBlock(block)
@@ -189,7 +186,6 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		return manager.AddGlobalBlock(block)
 	case core.ASSETCHANNELID:
 		if block.GetNumber() != 0 && !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
-			log.Infof("watch: %v", fmt.Sprintf("%s:%d", block.Header.ChannelID, block.Header.Number))
 			manager.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
 		}
 		return manager.AddAssetBlock(block)

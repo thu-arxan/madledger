@@ -152,12 +152,10 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 
 	maxGas, gasPrice, err := m.getParam()
 	if err != nil {
-		log.Info("get param fail")
 		return nil, err
 	}
 
 	for i, tx := range block.Transactions {
-		log.Infof("manager going to set status: channel: %s, tx: %s", m.id, tx.ID)
 		senderAddress, err := tx.GetSender()
 		status := &db.TxStatus{
 			Err:         "",
@@ -198,20 +196,16 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		// 用出来之后用前减后可得到具体消耗了多少gas
 		// 然后将token -= gas * gas price，存到wb中
 
-		log.Info("get sender's token")
 		gasLimit := min(tx.Data.Gas, maxGas)
 		key := getTokenKey(m.id, tx.Data.Sig.PK)
 		tokenByte, err := m.db.Get(key)
-		log.Infof("token key is %v", string(key))
 		if err != nil {
-			log.Infof("err: %v when getting token byte", err.Error())
 			status.Err = err.Error()
 			wb.SetTxStatus(tx, status)
 			continue
 		}
 		tokenLeft := binary.BigEndian.Uint64(tokenByte)
-		log.Infof("token left is %d", tokenLeft)
-		log.Infof("gas limit is %d", gasLimit)
+		log.Infof("token left is %d, gas limit is %d", tokenLeft, gasLimit)
 		if tokenLeft < gasLimit {
 			status.Err = "Not enough token"
 			log.Info(status.Err)
@@ -223,7 +217,6 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 
 		// TODO: still 0, why?
 		gasUsed := gasLimit - *context.BlockContext().Gas
-		log.Infof("the gas cost is %v", gasUsed)
 		tokenLeft -= gasUsed * gasPrice
 		var tokenValue = make([]byte, 8)
 		binary.BigEndian.PutUint64(tokenValue, uint64(tokenLeft))

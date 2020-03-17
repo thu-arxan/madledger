@@ -43,7 +43,6 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 				// 更新通道的关于gas的设置，目前是gas price, ratio, gas limit
 				// TODO: 应该判断是否是通道管理员，应该用payload.IsAdmin来判断，但是不知道怎么生成传入的参数，所以暂时用cake替代
 				if tx.GetReceiver().String() == core.CreateChannelContractAddress.String() {
-					log.Infof("create channel and update config")
 					updateChannelConfig(channelID, wb, payload)
 
 					if payload.Profile.Public {
@@ -81,10 +80,8 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 				// 如果没有设置这个变量，则Umarshal之后是0
 				if cake > 0 {
 					// 现在sender 被减掉asset，key是address；member被加上token，key是token+channelID+addr
-					log.Infof("going to distribute asset to token")
 					account, err := m.db.GetOrCreateAccount(sender)
 					if err != nil {
-						log.Infof("get or create account wrong with err : %v", err)
 						status.Err = err.Error()
 						wb.SetTxStatus(tx, status)
 						continue
@@ -97,10 +94,8 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 					wb.UpdateAccounts(account)
 					peopleNum := uint64(len(payload.Profile.Admins) + len(payload.Profile.Members))
 					ratioKey := util.BytesCombine([]byte(channelID), []byte("ratio"))
-					log.Infof("ratio key is %v", ratioKey)
 					ratioByte, err := m.db.Get(ratioKey)
 					if err != nil {
-						log.Infof("get ratio token wrong with err : %v", err)
 						status.Err = err.Error()
 						wb.SetTxStatus(tx, status)
 						continue
@@ -112,18 +107,14 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 					members := append(payload.Profile.Admins, payload.Profile.Members...)
 					for _, member := range members {
 						wb.Put(util.BytesCombine([]byte("token"), []byte(channelID), member.PK), value)
-						log.Infof("set token key is %v", string(util.BytesCombine([]byte("token"), []byte(channelID), member.PK)))
 					}
 				}
-
-				log.Infof("create channel or token finish")
 
 				nums[payload.ChannelID] = []uint64{0}
 			}
 		} else {
 			status.Err = err.Error()
 		}
-		log.Infof("config going to set status: channel: %s, tx: %s", m.id, tx.ID)
 		wb.SetTxStatus(tx, status)
 	}
 	wb.PutBlock(block)
@@ -139,7 +130,6 @@ func updateChannelConfig(channelID string, wb db.WriteBatch, payload *cc.Payload
 	ratio := make([]byte, 8)
 	binary.BigEndian.PutUint64(ratio, payload.AssetTokenRatio)
 	wb.Put(util.BytesCombine([]byte(channelID), []byte("ratio")), ratio)
-	log.Infof("set ratio key %v", util.BytesCombine([]byte(channelID), []byte("ratio")))
 	gasprice := make([]byte, 8)
 	binary.BigEndian.PutUint64(gasprice, payload.GasPrice)
 	wb.Put(util.BytesCombine([]byte(channelID), []byte("gasprice")), gasprice)

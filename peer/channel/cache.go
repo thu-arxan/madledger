@@ -71,7 +71,6 @@ func (cache *Cache) SetAssetAdmin(pk crypto.PublicKey) error {
 
 //SetTxStatus store tx execution information to db
 func (cache *Cache) SetTxStatus(tx *core.Tx, status *db.TxStatus) error {
-	log.Infof("in cache  set tx status: tx : %s", tx.ID)
 	return cache.wb.SetTxStatus(tx, status)
 }
 

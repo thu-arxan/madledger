@@ -139,7 +139,6 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 				continue
 			}
 		} else if receiver == core.TransferContractrAddress { // transfer to channel
-			log.Info("going to transfer to channel")
 			err = manager.transfer(cache, sender, common.BytesToAddress([]byte(payload.ChannelID)), value)
 		} else { // transfer to person
 			err = manager.transfer(cache, sender, receiver, value)
