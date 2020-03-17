@@ -79,6 +79,16 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 // Note: It should not add block file again.
 // TODO: update something in the db
 func (manager *Manager) AddGlobalBlock(block *core.Block) error {
+	nums := make(map[string][]uint64)
+	for _, tx := range block.Transactions {
+		payload, err := tx.GetGlobalTxPayload()
+		if err != nil {
+			return err
+		}
+		nums[payload.ChannelID] = append(nums[payload.ChannelID], payload.Num)
+	}
+	manager.coordinator.Unlocks(nums)
+
 	return nil
 }
 
