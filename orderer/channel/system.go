@@ -15,6 +15,7 @@ import (
 // AddConfigBlock add a config block
 // The block is formated, so there is no need to verify
 func (manager *Manager) AddConfigBlock(block *core.Block) error {
+	nums := make(map[string][]uint64)
 	if block.Header.Number == 0 {
 		return nil
 	}
@@ -57,7 +58,10 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 		if err != nil {
 			return err
 		}
+		nums[payload.ChannelID] = []uint64{0}
 	}
+	manager.coordinator.Unlocks(nums)
+
 	return nil
 }
 

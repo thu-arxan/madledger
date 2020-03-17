@@ -168,10 +168,16 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 	// check is there is any need to update local state of orderer
 	switch manager.ID {
 	case core.CONFIGCHANNELID:
+		if !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
+			manager.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
+		}
 		return manager.AddConfigBlock(block)
 	case core.GLOBALCHANNELID:
 		return manager.AddGlobalBlock(block)
 	case core.ASSETCHANNELID:
+		if !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
+			manager.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
+		}
 		return manager.AddAssetBlock(block)
 	default:
 		return nil
