@@ -179,6 +179,7 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 	switch manager.ID {
 	case core.CONFIGCHANNELID:
 		if !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
+			log.Infof("watch: %v", fmt.Sprintf("%s:%d", block.Header.ChannelID, block.Header.Number))
 			manager.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
 		}
 		return manager.AddConfigBlock(block)
@@ -186,6 +187,7 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		return manager.AddGlobalBlock(block)
 	case core.ASSETCHANNELID:
 		if !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
+			log.Infof("watch: %v", fmt.Sprintf("%s:%d", block.Header.ChannelID, block.Header.Number))
 			manager.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
 		}
 		return manager.AddAssetBlock(block)

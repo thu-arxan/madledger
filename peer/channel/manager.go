@@ -100,23 +100,14 @@ func (m *Manager) AddBlock(block *core.Block) error {
 	}
 	switch block.Header.ChannelID {
 	case core.GLOBALCHANNELID:
-		err = m.AddGlobalBlock(block)
+		m.AddGlobalBlock(block)
 		log.Infof("Add global block %d", block.Header.Number)
-		if err != nil {
-			return err
-		}
 	case core.CONFIGCHANNELID:
-		err = m.AddConfigBlock(block)
+		m.AddConfigBlock(block)
 		log.Infof("Add config block %d", block.Header.Number)
-		if err != nil {
-			return err
-		}
 	case core.ASSETCHANNELID:
-		err = m.AddAssetBlock(block)
+		m.AddAssetBlock(block)
 		log.Infof("Add account block %d", block.Header.Number)
-		if err != nil {
-			return err
-		}
 	default:
 		if !m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
 			m.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
