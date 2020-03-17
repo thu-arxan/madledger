@@ -13,7 +13,6 @@ package channel
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"madledger/blockchain"
 	"madledger/common"
 	"madledger/common/util"
@@ -71,9 +70,8 @@ func (m *Manager) Start() {
 	log.Infof("channel %s is starting...", m.id)
 	for {
 		block, err := m.fetchBlock()
-		// fmt.Println("Succeed to fetch block", m.id, ":", block.Header.Number)
 		if err == nil {
-			fmt.Println("Succeed to fetch block", m.id, ":", block.Header.Number)
+			// fmt.Println("Succeed to fetch block", m.id, ":", block.Header.Number)
 			m.AddBlock(block)
 		} else if err.Error() == "Stop" {
 			m.stopCh <- true

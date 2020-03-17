@@ -52,8 +52,9 @@ type Coordinator struct {
 
 	Consensus consensus.Consensus
 
-	hub    *event.Hub
-	states map[string]*State
+	hub       *event.Hub
+	stateLock sync.RWMutex
+	states    map[string]*State
 }
 
 // StateCode represent the code of state
@@ -65,20 +66,12 @@ const (
 	Runable
 )
 
-// Dependency defines the channel and block that depends on
-type Dependency struct {
-	ChannelID string
-	Num       uint64
-}
-
 // State represents the state of channel
 type State struct {
 	num  uint64
 	code StateCode
 	// hashes is not working now
 	hashes map[uint64][]byte
-	// dependencies is not working now
-	dependencies []Dependency
 }
 
 // NewCoordinator is the constructor of Coordinator
@@ -116,8 +109,8 @@ func NewCoordinator(dbDir string, chainCfg *config.BlockChainConfig, consensusCf
 
 // CanRun return runable
 func (c *Coordinator) CanRun(channelID string, num uint64) bool {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	c.stateLock.Lock()
+	defer c.stateLock.Unlock()
 
 	if util.Contain(c.states, channelID) {
 		state := c.states[channelID]
@@ -139,8 +132,8 @@ func (c *Coordinator) Watch(channelID string, num uint64) {
 
 // Unlocks will unlock some channels
 func (c *Coordinator) Unlocks(channelNums map[string][]uint64) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	c.stateLock.Lock()
+	defer c.stateLock.Unlock()
 
 	for channel, nums := range channelNums {
 		for _, num := range nums {

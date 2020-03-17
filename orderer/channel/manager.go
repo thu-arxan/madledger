@@ -137,7 +137,7 @@ func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
 
 // AddBlock add a block
 func (manager *Manager) AddBlock(block *core.Block) error {
-	log.Infof("start adding block in channel %v success", manager.ID)
+	log.Infof("start adding block %d in channel %v", block.GetNumber(), manager.ID)
 	var price uint64
 	if isUserChannel(manager.ID) && !isGenesisBlock(block) {
 		acc, err := manager.db.GetOrCreateAccount(common.BytesToAddress([]byte(manager.ID)))
@@ -173,12 +173,14 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 			return err
 		}
 	}
-	log.Infof("Add block in channel %v success", manager.ID)
+	defer func() {
+		log.Infof("Add block %d in channel %v success", block.GetNumber(), manager.ID)
+	}()
 
 	// check is there is any need to update local state of orderer
 	switch manager.ID {
 	case core.CONFIGCHANNELID:
-		if !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
+		if block.GetNumber() != 0 && !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
 			log.Infof("watch: %v", fmt.Sprintf("%s:%d", block.Header.ChannelID, block.Header.Number))
 			manager.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
 		}
@@ -186,7 +188,7 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 	case core.GLOBALCHANNELID:
 		return manager.AddGlobalBlock(block)
 	case core.ASSETCHANNELID:
-		if !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
+		if block.GetNumber() != 0 && !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
 			log.Infof("watch: %v", fmt.Sprintf("%s:%d", block.Header.ChannelID, block.Header.Number))
 			manager.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
 		}
@@ -318,8 +320,8 @@ func (manager *Manager) getTxsFromConsensusBlock(block consensus.Block) (legal, 
 		if !util.Contain(count, tx.ID) && !manager.db.HasTx(tx) {
 			count[tx.ID] = true
 			legal = append(legal, tx)
-			log.Infof("getTxsFromConsensusBlock: block %d in %s add tx %s",
-				block.GetNumber(), manager.ID, tx.ID)
+			// log.Infof("getTxsFromConsensusBlock: block %d in %s add tx %s",
+			// 	block.GetNumber(), manager.ID, tx.ID)
 		} else {
 			duplicate = append(duplicate, tx)
 		}
