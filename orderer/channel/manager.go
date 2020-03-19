@@ -82,7 +82,7 @@ func (manager *Manager) Start() {
 					block = core.NewBlock(manager.ID, 0, core.GenesisBlockPrevHash, txs)
 					log.Debugf("Channel %s create new block %d, hash is %s", manager.ID, 0, util.Hex(block.Hash().Bytes()))
 				} else {
-					block = core.NewBlock(manager.ID, prevBlock.Header.Number+1, prevBlock.Hash().Bytes(), txs)
+					block = core.NewBlock(manager.ID, prevBlock.Header.Number + 1, prevBlock.Hash().Bytes(), txs)
 					log.Debugf("Channel %s create new block %d, hash is %s", manager.ID, prevBlock.Header.Number+1, util.Hex(block.Hash().Bytes()))
 				}
 				// If the channel is not the global channel, it should send a tx to the global channel
@@ -178,14 +178,14 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 	// check is there is any need to update local state of orderer
 	switch manager.ID {
 	case core.CONFIGCHANNELID:
-		if block.GetNumber() != 0 && !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
+		if !isGenesisBlock(block) && !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
 			manager.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
 		}
 		return manager.AddConfigBlock(block)
 	case core.GLOBALCHANNELID:
 		return manager.AddGlobalBlock(block)
 	case core.ASSETCHANNELID:
-		if block.GetNumber() != 0 && !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
+		if !isGenesisBlock(block) && !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
 			manager.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
 		}
 		return manager.AddAssetBlock(block)
@@ -215,6 +215,7 @@ func (manager *Manager) subChannelAsset(id string, price uint64) error {
 	}
 	return wb.Sync()
 }
+
 func isUserChannel(id string) bool {
 	return id != core.GLOBALCHANNELID && id != core.CONFIGCHANNELID && id != core.ASSETCHANNELID
 }

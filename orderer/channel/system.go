@@ -62,13 +62,13 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 			}()
 			// 更新coordinator.Managers(map类型)
 			manager.coordinator.setChannel(channelID, channel)
+			nums[payload.ChannelID] = []uint64{0}
 		}
 		// 更新leveldb
 		err := manager.db.UpdateChannel(channelID, payload.Profile)
 		if err != nil {
 			return err
 		}
-		nums[payload.ChannelID] = []uint64{0}
 	}
 	manager.coordinator.Unlocks(nums)
 
@@ -153,8 +153,7 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		}
 		cache.SetTxStatus(tx, status)
 	}
-	cache.Sync()
-	return nil
+	return cache.Sync()
 }
 
 func (manager *Manager) issue(cache Cache, senderPKBytes []byte, receiver common.Address, value uint64) error {

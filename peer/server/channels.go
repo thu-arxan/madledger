@@ -37,10 +37,11 @@ type ChannelManager struct {
 	GlobalChannel *channel.Manager
 	// ConfigChannel is the config channel manager
 	ConfigChannel *channel.Manager
-	// Channels manager all user channels
-	Channels map[string]*channel.Manager
 	// AssetChannel is the asset channel manager
 	AssetChannel   *channel.Manager
+	// Channels manager all user channels
+	Channels map[string]*channel.Manager
+
 	coordinator    *channel.Coordinator
 	ordererClients []*orderer.Client
 }
