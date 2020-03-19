@@ -272,9 +272,10 @@ func TestBFTCreateTx(t *testing.T) {
 	}
 }
 
-// func TestBFTAsset(t *testing.T) {
-// 	testAsset(t, bftClients[0])
-// }
+func TestBFTAsset(t *testing.T) {
+	testAsset(t, bftClients[0])
+}
+
 func TestBFTEnd(t *testing.T) {
 	for i := range bftOrderers {
 		stopOrderer(bftOrderers[i])
