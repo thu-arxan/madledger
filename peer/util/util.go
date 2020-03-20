@@ -18,8 +18,8 @@ import (
 )
 
 // GeneratePrivateKey try to generate a private key below the path
-func GeneratePrivateKey(path string) (string, error) {
-	privKey, err := crypto.GeneratePrivateKey()
+func GeneratePrivateKey(path string, algo crypto.Algorithm) (string, error) {
+	privKey, err := crypto.GeneratePrivateKey(algo)
 	if err != nil {
 		return "", err
 	}
