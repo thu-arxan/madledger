@@ -155,6 +155,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		return nil, err
 	}
 
+	cache := NewCache(m.db)
 	for i, tx := range block.Transactions {
 		senderAddress, err := tx.GetSender()
 		status := &db.TxStatus{
@@ -198,7 +199,8 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 
 		gasLimit := min(tx.Data.Gas, maxGas)
 		key := getTokenKey(m.id, tx.Data.Sig.PK)
-		tokenByte, err := m.db.Get(key)
+		// tokenByte, err := m.db.Get(key)
+		tokenByte, err := cache.GetToken(key)
 		if err != nil {
 			status.Err = err.Error()
 			wb.SetTxStatus(tx, status)
@@ -214,13 +216,6 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		}
 
 		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, gasLimit, m.db, wb)
-
-		// TODO: still 0, why?
-		gasUsed := gasLimit - *context.BlockContext().Gas
-		tokenLeft -= gasUsed * gasPrice
-		var tokenValue = make([]byte, 8)
-		binary.BigEndian.PutUint64(tokenValue, uint64(tokenLeft))
-		wb.Put(getTokenKey(m.id, tx.Data.Sig.PK), tokenValue)
 
 		if receiverAddress.String() != common.ZeroAddress.String() {
 			// if the length of payload is not zero, this is a contract call
@@ -255,8 +250,17 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			//m.db.SetTxStatus(tx, status)
 			wb.SetTxStatus(tx, status)
 		}
+		// TODO: still 0, why?
+		gasUsed := gasLimit - *context.BlockContext().Gas
+		tokenLeft -= gasUsed * gasPrice
+		var tokenValue = make([]byte, 8)
+		binary.BigEndian.PutUint64(tokenValue, uint64(tokenLeft))
+		// wb.Put(getTokenKey(m.id, tx.Data.Sig.PK), tokenValue)
+		cache.SetToken(getTokenKey(m.id, tx.Data.Sig.PK), tokenValue)
+
 	}
 	// wb.PersistLog([]byte(fmt.Sprintf("block_log_%d", block.GetNumber())))
+	cache.Sync()
 	return wb, nil
 }
 

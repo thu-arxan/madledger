@@ -14,6 +14,7 @@ type Cache struct {
 	wb      db.WriteBatch
 	storage map[common.Address]common.Account
 	adminPK crypto.PublicKey
+	token   map[string][]byte
 }
 
 func NewCache(db db.DB) Cache {
@@ -21,7 +22,19 @@ func NewCache(db db.DB) Cache {
 		db:      db,
 		wb:      db.NewWriteBatch(),
 		storage: make(map[common.Address]common.Account),
+		token:   make(map[string][]byte),
 	}
+}
+
+func (cache *Cache) GetToken(key []byte) ([]byte, error) {
+	if _, ok := cache.token[string(key)]; ok {
+		return cache.token[string(key)], nil
+	}
+	return cache.db.Get(key)
+}
+
+func (cache *Cache) SetToken(key, value []byte) {
+	cache.token[string(key)] = value
 }
 
 // IsAssetAdmin decides whether a pk is the admin public key of _asset
@@ -76,5 +89,8 @@ func (cache *Cache) SetTxStatus(tx *core.Tx, status *db.TxStatus) error {
 
 // Sync writes updated data in cache to db
 func (cache *Cache) Sync() error {
+	for key, value := range cache.token {
+		cache.wb.Put([]byte(key), value)
+	}
 	return cache.wb.Sync()
 }
