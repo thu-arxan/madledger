@@ -13,6 +13,7 @@ package crypto
 import (
 	"encoding/hex"
 	"fmt"
+	"madledger/common/crypto/hash"
 	"testing"
 )
 
@@ -52,7 +53,7 @@ var (
 // }
 
 func TestAddress(t *testing.T) {
-	privKey, _ := NewPrivateKey(rawPrivKey)
+	privKey, _ := NewPrivateKey(rawPrivKey, KeyAlgoSecp256k1)
 	pubKey := privKey.PubKey()
 	addr, err := pubKey.Address()
 	if err != nil {
@@ -65,33 +66,49 @@ func TestAddress(t *testing.T) {
 
 func BenchmarkNewPrivateKey(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		NewPrivateKey(rawPrivKey)
+		NewPrivateKey(rawPrivKey, KeyAlgoSecp256k1)
 	}
 }
 
-// TODO: Recover it.
-// func BenchmarkSign(b *testing.B) {
-// 	privKey, _ := NewPrivateKey(rawPrivKey)
-// 	hash := Hash([]byte("abc"))
-// 	for i := 0; i < b.N; i++ {
-// 		privKey.Sign(hash)
-// 	}
-// }
+func BenchmarkSecp256k1Sign(b *testing.B) {
+	privKey, _ := GenerateSECP256K1PrivateKey()
+	hash := hash.SHA256([]byte("abc"))
+	for i := 0; i < b.N; i++ {
+		privKey.Sign(hash)
+	}
+}
+
+func BenchmarkSM2Sign(b *testing.B) {
+	privKey, _ := GenerateSM2PrivateKey()
+	hash := hash.SM3([]byte("abc"))
+	for i := 0; i < b.N; i++ {
+		privKey.Sign(hash)
+	}
+}
 
 func BenchmarkGetPubKeyFromPrivKey(b *testing.B) {
-	privKey, _ := NewPrivateKey(rawPrivKey)
+	privKey, _ := NewPrivateKey(rawPrivKey, KeyAlgoSecp256k1)
 	for i := 0; i < b.N; i++ {
 		privKey.PubKey()
 	}
 }
 
-// TODO: Recover it.
-// func BenchmarkSignVerify(b *testing.B) {
-// 	privKey, _ := NewPrivateKey(rawPrivKey)
-// 	hash := Hash([]byte("abc"))
-// 	sig, _ := privKey.Sign(hash)
-// 	pubKey := privKey.PubKey()
-// 	for i := 0; i < b.N; i++ {
-// 		sig.Verify(hash, pubKey)
-// 	}
-// }
+func BenchmarkSecp256k1SignVerify(b *testing.B) {
+	privKey, _ := GenerateSECP256K1PrivateKey()
+	hash := hash.SHA256([]byte("abc"))
+	sig, _ := privKey.Sign(hash)
+	pubKey := privKey.PubKey()
+	for i := 0; i < b.N; i++ {
+		sig.Verify(hash, pubKey)
+	}
+}
+
+func BenchmarkSM2SignVerify(b *testing.B) {
+	privKey, _ := GenerateSM2PrivateKey()
+	hash := hash.SM3([]byte("abc"))
+	sig, _ := privKey.Sign(hash)
+	pubKey := privKey.PubKey()
+	for i := 0; i < b.N; i++ {
+		sig.Verify(hash, pubKey)
+	}
+}

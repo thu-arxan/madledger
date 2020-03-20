@@ -41,7 +41,7 @@ const (
 var (
 	rawSecp256k1Bytes, _ = hex.DecodeString(secp256k1String)
 	rawPrivKey           = rawSecp256k1Bytes
-	privKey, _           = crypto.NewPrivateKey(rawPrivKey)
+	privKey, _           = crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 	pubKeyBytes, _       = privKey.PubKey().Bytes()
 )
 
@@ -224,7 +224,7 @@ func TestServerRestartWithUserChannel(t *testing.T) {
 	client, _ := getClient()
 	// Then try to send a tx to test channel
 	// then add a tx into test channel
-	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
+	privKey, _ := crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 	coreTx, err := core.NewTx("test", common.ZeroAddress, []byte("Just for test"), 0, "", privKey)
 	require.NoError(t, err)
 
@@ -332,7 +332,7 @@ func TestAddDuplicateTxs(t *testing.T) {
 	client, _ := getClient()
 	// Then try to send a tx to test channel
 	// then add a tx into test channel
-	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
+	privKey, _ := crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 	coreTx, err := core.NewTx("test", common.ZeroAddress, []byte("Duplicate"), 0, "", privKey)
 	require.NoError(t, err)
 
@@ -379,7 +379,7 @@ func getCreateChannelTx(channelID string) *pb.Tx {
 		},
 		Version: 1,
 	})
-	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
+	privKey, _ := crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 	coreTx, _ := core.NewTx(core.CONFIGCHANNELID, core.CreateChannelContractAddress, payload, 0, "", privKey)
 
 	pbTx, _ := pb.NewTx(coreTx)

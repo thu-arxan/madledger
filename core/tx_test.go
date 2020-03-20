@@ -181,6 +181,6 @@ func BenchmarkVerify(b *testing.B) {
 }
 
 func getPrivKey() crypto.PrivateKey {
-	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
+	privKey, _ := crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 	return privKey
 }

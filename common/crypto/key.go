@@ -11,6 +11,7 @@ package crypto
 
 import (
 	"encoding/hex"
+	"fmt"
 	"io/ioutil"
 	"madledger/common"
 )
@@ -64,18 +65,22 @@ func LoadPrivateKeyFromFile(file string) (PrivateKey, error) {
 	// Note: secp256k1 private key we store on disk using hex string, so we can distinguish these two keys
 	key, err := hex.DecodeString(string(data))
 	if err != nil {
-		return toSM2PrivateKey(data)
+		return NewPrivateKey(data, KeyAlgoSM2)
 	}
-	return NewPrivateKey(key)
+	return NewPrivateKey(key, KeyAlgoSecp256k1)
 }
 
 // NewPrivateKey return a PrivateKey
 // Support secp256k1 and sm2
-func NewPrivateKey(raw []byte) (PrivateKey, error) {
-	if priv, err := toSM2PrivateKey(raw); err == nil {
-		return priv, nil
+func NewPrivateKey(raw []byte, algo Algorithm) (PrivateKey, error) {
+	switch algo {
+	case KeyAlgoSecp256k1:
+		return toSECP256K1PrivateKey(raw)
+	case KeyAlgoSM2:
+		return toSM2PrivateKey(raw)
+	default:
+		return nil, fmt.Errorf("unsupport algo:%v", algo)
 	}
-	return toSECP256K1PrivateKey(raw)
 }
 
 // NewPublicKey return a PublicKey from []byte

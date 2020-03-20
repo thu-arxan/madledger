@@ -44,7 +44,7 @@ func TestConvertBlock(t *testing.T) {
 	}
 	// test block with tx and with sig
 	rawPrivKey, _ := hex.DecodeString("289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032")
-	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
+	privKey, _ := crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 	sigTx, err := core.NewTx(core.GLOBALCHANNELID, common.ZeroAddress, []byte("Hello World again"), 0, "", privKey)
 	if err != nil {
 		t.Fatal(err)

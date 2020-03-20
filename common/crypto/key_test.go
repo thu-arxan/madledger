@@ -29,7 +29,7 @@ func TestNewPrivateKey(t *testing.T) {
 		require.NoError(t, err)
 		bs, err := privKey.Bytes()
 		require.NoError(t, err)
-		newPrivKey, err := NewPrivateKey(bs)
+		newPrivKey, err := NewPrivateKey(bs, algos[i])
 		require.NoError(t, err)
 		require.Equal(t, algos[i], newPrivKey.Algo())
 	}
@@ -42,7 +42,7 @@ func TestNewPublicKey(t *testing.T) {
 		require.NoError(t, err)
 		bs, err := privKey.PubKey().Bytes()
 		require.NoError(t, err)
-		_, err = NewPublicKey(bs)
+		_, err = NewPublicKey(bs, algos[i])
 		require.NoError(t, err)
 	}
 }
@@ -64,4 +64,5 @@ func TestLoadPrivateKeyFromFile(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, algos[i], newPrivKey.Algo())
 	}
+	os.Remove(keyPath)
 }
