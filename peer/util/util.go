@@ -24,19 +24,21 @@ func GeneratePrivateKey(path string) (string, error) {
 		return "", err
 	}
 	privKeyBytes, _ := privKey.Bytes()
-	privKeyHex := cutil.Hex(privKeyBytes)
+	var privKeyStr string
 	var digest string
 	switch privKey.Algo() {
 	case crypto.KeyAlgoSecp256k1:
 		digest = cutil.Hex(hash.SHA256(privKeyBytes))
+		privKeyStr = cutil.Hex(privKeyBytes)
 	default:
 		digest = cutil.Hex(hash.SM3(privKeyBytes))
+		privKeyStr = string(privKeyBytes)
 	}
 	filePath, err := cutil.MakeFileAbs(digest, path)
 	if err != nil {
 		return "", err
 	}
-	err = ioutil.WriteFile(filePath, []byte(privKeyHex), 0600)
+	err = ioutil.WriteFile(filePath, []byte(privKeyStr), 0600)
 	if err != nil {
 		return "", err
 	}
