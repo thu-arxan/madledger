@@ -67,7 +67,7 @@ func (p SECP256K1PrivateKey) Algo() Algorithm {
 // Bytes returns the bytes of Public key
 func (p SECP256K1PublicKey) Bytes() ([]byte, error) {
 	var pubKey = (secp256k1.PublicKey)(p)
-	return pubKey.SerializeCompressed(), nil
+	return pubKey.SerializeUncompressed(), nil
 }
 
 // Address is the implementation of interface

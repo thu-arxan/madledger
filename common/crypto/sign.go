@@ -33,7 +33,6 @@ func NewSignature(raw []byte, algo Algorithm) (Signature, error) {
 	default:
 		return nil, errors.New("unsupport algo")
 	}
-	// return newSECP256K1Signature(raw)
 }
 
 func isOdd(a *big.Int) bool {

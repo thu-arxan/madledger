@@ -38,7 +38,6 @@ type PrivateKey interface {
 // It  support secp256k1 or sm2
 type PublicKey interface {
 	Bytes() ([]byte, error)
-	// GetSerializeLength() int
 	Address() (common.Address, error)
 	Algo() Algorithm
 }

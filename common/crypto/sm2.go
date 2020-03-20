@@ -68,7 +68,8 @@ func (p SM2PrivateKey) Algo() Algorithm {
 // Bytes returns the bytes of Public key
 func (p SM2PublicKey) Bytes() ([]byte, error) {
 	var pubKey = (sm2.PublicKey)(p)
-	return sm2.CompressPubKey(&pubKey)
+	// return sm2.CompressPubKey(&pubKey)
+	return pubKey.SerializeUncompressed()
 }
 
 // Address is the implementation of interface
