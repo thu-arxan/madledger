@@ -27,8 +27,7 @@ func TestNewPrivateKey(t *testing.T) {
 	for i := range algos {
 		privKey, err := GeneratePrivateKey(algos[i])
 		require.NoError(t, err)
-		bs, err := privKey.Bytes()
-		require.NoError(t, err)
+		bs := privKey.Bytes()
 		newPrivKey, err := NewPrivateKey(bs, algos[i])
 		require.NoError(t, err)
 		require.Equal(t, algos[i], newPrivKey.Algo())
@@ -53,8 +52,7 @@ func TestLoadPrivateKeyFromFile(t *testing.T) {
 	for i := range algos {
 		privKey, err := GeneratePrivateKey(algos[i])
 		require.NoError(t, err)
-		bs, err := privKey.Bytes()
-		require.NoError(t, err)
+		bs := privKey.Bytes()
 		if algos[i] == KeyAlgoSecp256k1 {
 			ioutil.WriteFile(keyPath, []byte(fmt.Sprintf("%x", bs)), os.ModePerm)
 		} else {

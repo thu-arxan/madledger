@@ -31,12 +31,12 @@ const (
 type PrivateKey interface {
 	Sign(hash []byte) (Signature, error)
 	PubKey() PublicKey
-	Bytes() ([]byte, error)
+	Bytes() []byte
 	Algo() Algorithm
 }
 
 // PublicKey is the interface of publicKey
-// It  support secp256k1 or sm2
+// It support secp256k1 or sm2
 type PublicKey interface {
 	Bytes() ([]byte, error)
 	Address() (common.Address, error)

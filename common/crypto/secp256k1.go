@@ -44,9 +44,9 @@ func (p SECP256K1PrivateKey) PubKey() PublicKey {
 }
 
 // Bytes is the implementation of interface
-func (p SECP256K1PrivateKey) Bytes() ([]byte, error) {
+func (p SECP256K1PrivateKey) Bytes() []byte {
 	var privKey = (secp256k1.PrivateKey)(p)
-	return privKey.Serialize(), nil
+	return privKey.Serialize()
 }
 
 // Sign sign the data using the privateKey

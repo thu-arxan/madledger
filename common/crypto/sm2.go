@@ -41,9 +41,10 @@ func (p SM2PrivateKey) PubKey() PublicKey {
 }
 
 // Bytes is the implementation of interface
-func (p SM2PrivateKey) Bytes() ([]byte, error) {
+func (p SM2PrivateKey) Bytes() []byte {
 	var privKey = (sm2.PrivateKey)(p)
-	return sm2.WritePrivateKeytoMem(&privKey, nil)
+	bs, _ := sm2.WritePrivateKeytoMem(&privKey, nil)
+	return bs
 }
 
 // Sign sign the data using the privateKey

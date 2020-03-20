@@ -23,7 +23,7 @@ func GeneratePrivateKey(path string, algo crypto.Algorithm) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	privKeyBytes, _ := privKey.Bytes()
+	privKeyBytes := privKey.Bytes()
 	var privKeyStr string
 	var digest string
 	switch privKey.Algo() {
