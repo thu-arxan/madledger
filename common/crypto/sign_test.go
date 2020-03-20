@@ -15,6 +15,8 @@ import (
 	"fmt"
 	"madledger/common/crypto/hash"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -28,37 +30,21 @@ var (
 	rawPrivKey           = rawSecp256k1Bytes
 )
 
-// func TestNewPrivateKey(t *testing.T) {
-// 	_, err := NewPrivateKey(rawPrivKey)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// }
-
-// TODO: Recover it.
-// func TestSignVerify(t *testing.T) {
-// 	privKey, _ := NewPrivateKey(rawPrivKey)
-// 	hash := Hash([]byte("abc"))
-// 	sig, err := privKey.Sign(hash)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	pubKey := privKey.PubKey()
-// 	if !sig.Verify(hash, pubKey) {
-// 		t.Fatal()
-// 	}
-// 	if sig.Verify(Hash([]byte("ab")), pubKey) {
-// 		t.Fatal()
-// 	}
-// }
+func TestSecp256k1SignVerify(t *testing.T) {
+	privKey, _ := NewPrivateKey(rawPrivKey, KeyAlgoSecp256k1)
+	digest := hash.SHA256([]byte("abc"))
+	sig, err := privKey.Sign(digest)
+	require.NoError(t, err)
+	pubKey := privKey.PubKey()
+	require.True(t, sig.Verify(digest, pubKey))
+	require.False(t, sig.Verify(hash.SHA256([]byte("ab")), pubKey))
+}
 
 func TestAddress(t *testing.T) {
 	privKey, _ := NewPrivateKey(rawPrivKey, KeyAlgoSecp256k1)
 	pubKey := privKey.PubKey()
 	addr, err := pubKey.Address()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	if addr.String() != "0x970e8128ab834e8eac17ab8e3812f010678cf791" {
 		t.Fatal(fmt.Errorf("The address is %s", addr.String()))
 	}
