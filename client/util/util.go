@@ -13,6 +13,7 @@ package util
 import (
 	"io/ioutil"
 	"madledger/common/crypto"
+	"madledger/common/crypto/hash"
 	cutil "madledger/common/util"
 )
 
@@ -24,7 +25,8 @@ func GeneratePrivateKey(path string) (string, error) {
 	}
 	privKeyBytes, _ := privKey.Bytes()
 	privKeyHex := cutil.Hex(privKeyBytes)
-	hash := cutil.Hex(crypto.Hash(privKeyBytes))
+	// TODO: should we change it?
+	hash := cutil.Hex(hash.Hash(privKeyBytes))
 	filePath, err := cutil.MakeFileAbs(hash, path)
 	if err != nil {
 		return "", err

@@ -12,15 +12,22 @@ package hash
 
 import (
 	"crypto/sha256"
+	"madledger/common/crypto/openssl/sm3"
 )
 
-// Hash return the hash of date
+// Hash is just wrapper now.
+// TODO: Change it.
 func Hash(data []byte) []byte {
-	return hashWithSHA256(data)
+	return SM3(data)
 }
 
-// hashWithSHA256 is the implementation of SHA256
-func hashWithSHA256(data []byte) []byte {
+// SHA256 return the sha256 of data
+func SHA256(data []byte) []byte {
 	hash := sha256.Sum256(data)
 	return hash[:]
+}
+
+// SM3 return the sm3 of data
+func SM3(data []byte) []byte {
+	return sm3.Sm3Sum(data)
 }

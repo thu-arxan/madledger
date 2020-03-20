@@ -13,7 +13,7 @@ package eraft
 import (
 	"encoding/json"
 	"errors"
-	"madledger/common/crypto"
+	"madledger/common/crypto/hash"
 	"madledger/common/event"
 	"madledger/common/util"
 	"sort"
@@ -56,7 +56,8 @@ func (c *channel) addBlock(block *Block) {
 	c.Lock()
 	defer c.Unlock()
 
-	hash := string(crypto.Hash(block.Bytes()))
+	// TODO: Should we not only use sm3?
+	hash := string(hash.Hash(block.Bytes()))
 
 	if util.Contain(c.blocks, block.GetNumber()) {
 		c.hub.Done(hash, &event.Result{
@@ -158,8 +159,9 @@ func (c *channel) notifyLater(block *Block) {
 	c.blockCh <- block
 }
 
+// TODO: should we not only use sm3
 func (c *channel) watch(block *Block) error {
-	hash := string(crypto.Hash(block.Bytes()))
+	hash := string(hash.Hash(block.Bytes()))
 	res := c.hub.Watch(hash, nil)
 	if res == nil {
 		return nil

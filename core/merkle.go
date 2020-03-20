@@ -12,7 +12,7 @@ package core
 
 import (
 	"bytes"
-	"madledger/common/crypto"
+	"madledger/common/crypto/hash"
 	"math"
 )
 
@@ -106,7 +106,7 @@ func HashMerkleBranches(left []byte, right []byte) []byte {
 	buffer.Write(left)
 	buffer.Write(right)
 	concats := buffer.Bytes()
-	return crypto.Hash(concats[:])
+	return hash.Hash(concats[:])
 }
 
 // nextPowerOfTwo returns the next highest power of two from a given number if

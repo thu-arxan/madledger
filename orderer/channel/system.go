@@ -138,6 +138,7 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 }
 
 func (manager *Manager) issue(senderPKBytes []byte, receiver common.Address, value uint64) error {
+	// TODO: Support secp256k1
 	pk, err := crypto.NewPublicKey(senderPKBytes)
 	if !manager.db.IsAssetAdmin(pk) && manager.db.SetAssetAdmin(pk) != nil {
 		return fmt.Errorf("issue authentication failed: %v", err)

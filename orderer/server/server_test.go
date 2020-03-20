@@ -70,6 +70,7 @@ func TestListChannelsAtNil(t *testing.T) {
 	infos, err := client.ListChannels(context.Background(), &pb.ListChannelsRequest{
 		System: true,
 		PK:     pubKeyBytes,
+		Algo:   privKey.PubKey().Algo(),
 	})
 	require.NoError(t, err)
 	require.Len(t, infos.Channels, 3)
@@ -85,6 +86,7 @@ func TestListChannelsAtNil(t *testing.T) {
 	infos, err = client.ListChannels(context.Background(), &pb.ListChannelsRequest{
 		System: false,
 		PK:     pubKeyBytes,
+		Algo:   privKey.PubKey().Algo(),
 	})
 	require.NoError(t, err)
 	require.Len(t, infos.Channels, 0)
@@ -250,6 +252,7 @@ func TestFetchBlockAsync(t *testing.T) {
 	channelInfos, _ := client.ListChannels(context.Background(), &pb.ListChannelsRequest{
 		System: true,
 		PK:     pubKeyBytes,
+		Algo:   privKey.PubKey().Algo(),
 	})
 	require.Len(t, channelInfos.Channels, 4)
 	var globalInfo *pb.ChannelInfo

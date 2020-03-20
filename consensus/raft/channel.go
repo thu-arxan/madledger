@@ -14,7 +14,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"madledger/common"
-	"madledger/common/crypto"
+	"madledger/common/crypto/hash"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
@@ -123,7 +123,8 @@ func (c *channel) addTx(tx []byte) error {
 		c.txs <- true
 	}()
 
-	hash := util.Hex(crypto.Hash(tx))
+	// TODO: Should we not only use sm3?
+	hash := util.Hex(hash.Hash(tx))
 	log.Infof("[%d][%s] watch tx: %s", c.id, c.channelID, hash)
 	result := c.hub.Watch(hash, nil)
 	if result == nil {
@@ -170,7 +171,8 @@ func (c *channel) blockDone(block *eraft.Block) error {
 	c.raft.PutBlock(block)
 
 	for _, tx := range block.Txs {
-		hash := util.Hex(crypto.Hash(tx))
+		// TODO: Should we not only use sm3?
+		hash := util.Hex(hash.Hash(tx))
 		log.Infof("Node[%d] channel[%s] hub done tx %s", c.raft.GetID(), c.channelID, hash)
 		c.hub.Done(hash, nil)
 	}
