@@ -69,7 +69,7 @@ func (b *Block) Hash() common.Hash {
 	// So we should set block time to same thing if we want support evm timestamp instruction in consensus which
 	// block time is not consensused.
 	// buffer.Write(util.Int64ToBytes(b.Header.Time))
-	return common.BytesToHash(hash.Hash(buffer.Bytes()))
+	return common.BytesToHash(hash.SM3(buffer.Bytes()))
 }
 
 // NewBlockHeader is the constructor of BlockHeader

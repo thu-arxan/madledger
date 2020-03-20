@@ -16,7 +16,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"madledger/common/crypto/hash"
 	"madledger/common/util"
 )
 
@@ -85,8 +84,7 @@ func (c *Consensus) AddTx(tx *core.Tx) error {
 	var err error
 
 	bytes, _ := tx.Bytes()
-	// TODO: Should we not only use sm3?
-	hash := util.Hex(hash.Hash(bytes))
+	hash := util.Hex(Hash(bytes))
 	channelID := tx.Data.ChannelID
 
 	// todo: we should parse the leader address other than random choose a leader

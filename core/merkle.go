@@ -106,7 +106,7 @@ func HashMerkleBranches(left []byte, right []byte) []byte {
 	buffer.Write(left)
 	buffer.Write(right)
 	concats := buffer.Bytes()
-	return hash.Hash(concats[:])
+	return hash.SM3(concats[:])
 }
 
 // nextPowerOfTwo returns the next highest power of two from a given number if

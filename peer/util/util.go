@@ -25,9 +25,14 @@ func GeneratePrivateKey(path string) (string, error) {
 	}
 	privKeyBytes, _ := privKey.Bytes()
 	privKeyHex := cutil.Hex(privKeyBytes)
-	// TODO: Should we not only use sm3?
-	hash := cutil.Hex(hash.Hash(privKeyBytes))
-	filePath, err := cutil.MakeFileAbs(hash, path)
+	var digest string
+	switch privKey.Algo() {
+	case crypto.KeyAlgoSecp256k1:
+		digest = cutil.Hex(hash.SHA256(privKeyBytes))
+	default:
+		digest = cutil.Hex(hash.SM3(privKeyBytes))
+	}
+	filePath, err := cutil.MakeFileAbs(digest, path)
 	if err != nil {
 		return "", err
 	}

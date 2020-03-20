@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"madledger/common/crypto/hash"
 	"madledger/common/event"
 	"math"
 	"net"
@@ -324,8 +323,7 @@ func (e *ERaft) startHTTP() error {
 // Note: The etcd raft Propose will not gurantee the Propose succeed means that the data is appended to the log, so
 // ERaft should make sure the thing happens by itself. And it need retry if timeout.
 func (e *ERaft) propose(data []byte) error {
-	// TODO: Should we not only use sm3?
-	hash := string(hash.Hash(data))
+	hash := string(Hash(data))
 
 	// try to propose
 	if err := e.node.Propose(context.TODO(), data); err != nil {
@@ -366,8 +364,7 @@ func (e *ERaft) proposeConfChange(cc raftpb.ConfChange) error {
 	if err != nil {
 		return err
 	}
-	// TODO: Should we not only use sm3?
-	hash := string(hash.Hash(ccBytes))
+	hash := string(Hash(ccBytes))
 
 	if err := e.node.ProposeConfChange(context.TODO(), cc); err != nil {
 		return err
@@ -445,8 +442,7 @@ func (e *ERaft) publishEntries(ents []raftpb.Entry) error {
 				break
 			}
 			log.Infof("publishEntries.EntryNormal: I'm raft %d", e.cfg.id)
-			// TODO: Should we not only use sm3?
-			e.hub.Done(string(hash.Hash(entry.Data)), nil)
+			e.hub.Done(string(Hash(entry.Data)), nil)
 			e.app.Commit(entry.Data)
 		case raftpb.EntryConfChange:
 			var cc raftpb.ConfChange
@@ -457,16 +453,14 @@ func (e *ERaft) publishEntries(ents []raftpb.Entry) error {
 			switch cc.Type {
 			case raftpb.ConfChangeAddNode:
 				ccBytes, _ := json.Marshal(cc)
-				// TODO: Should we not only use sm3?
-				e.hub.Done(string(hash.Hash(ccBytes)), nil)
+				e.hub.Done(string(Hash(ccBytes)), nil)
 				if len(cc.Context) > 0 {
 					// context should be the url of the new node etcd raft url
 					e.transport.AddPeer(types.ID(cc.NodeID), []string{fmt.Sprintf("http://%s", string(cc.Context))})
 				}
 			case raftpb.ConfChangeRemoveNode:
 				ccBytes, _ := json.Marshal(cc)
-				// TODO: Should we not only use sm3?
-				e.hub.Done(string(hash.Hash(ccBytes)), nil)
+				e.hub.Done(string(Hash(ccBytes)), nil)
 				if cc.NodeID == e.cfg.id {
 					log.Printf("I've been removed from the cluster! Shutting down.")
 					return errors.New("Removed from the cluster")
