@@ -117,7 +117,7 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		case "issue":
 			// avoid overflow
 			issueValue := tx.Data.Value
-			err = manager.issue(tx.Data.Sig.PK, receiver, issueValue)
+			err = manager.issue(tx.Data.Sig.PK, tx.Data.Sig.Algo, receiver, issueValue)
 		case "transfer":
 			// if value < 0, sender get money from receiver ??
 			transferValue := tx.Data.Value
@@ -137,9 +137,8 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 	return nil
 }
 
-func (manager *Manager) issue(senderPKBytes []byte, receiver common.Address, value uint64) error {
-	// TODO: Support secp256k1
-	pk, err := crypto.NewPublicKey(senderPKBytes)
+func (manager *Manager) issue(senderPKBytes []byte, pkAlgo crypto.Algorithm, receiver common.Address, value uint64) error {
+	pk, err := crypto.NewPublicKey(senderPKBytes, pkAlgo)
 	if !manager.db.IsAssetAdmin(pk) && manager.db.SetAssetAdmin(pk) != nil {
 		return fmt.Errorf("issue authentication failed: %v", err)
 	}

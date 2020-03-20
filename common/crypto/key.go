@@ -85,14 +85,11 @@ func NewPrivateKey(raw []byte, algo Algorithm) (PrivateKey, error) {
 
 // NewPublicKey return a PublicKey from []byte
 // Support secp256k1 and sm2
-func NewPublicKey(raw []byte, algo ...Algorithm) (PublicKey, error) {
-	if len(algo) != 0 {
-		switch algo[0] {
-		case KeyAlgoSecp256k1:
-			return newSECP256K1PublicKey(raw)
-		default:
-			return newSM2PublicKey(raw)
-		}
+func NewPublicKey(raw []byte, algo Algorithm) (PublicKey, error) {
+	switch algo {
+	case KeyAlgoSecp256k1:
+		return newSECP256K1PublicKey(raw)
+	default:
+		return newSM2PublicKey(raw)
 	}
-	return newSM2PublicKey(raw)
 }
