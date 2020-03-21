@@ -65,7 +65,7 @@ type DB interface {
 	GetBlock(num uint64) (*core.Block, error)
 	Close()
 
-	Get(key []byte) ([]byte, error)
+	Get(key []byte, couldBeEmpty bool) ([]byte, error)
 	//GetAssetAdminPKBytes return nil is not exist
 	GetAssetAdminPKBytes() []byte
 	//GetOrCreateAccount return default account if not exist

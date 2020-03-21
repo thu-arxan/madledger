@@ -34,7 +34,7 @@ var (
 func testCreateChannel(t *testing.T, client *client.Client, peers []*core.Member) {
 	recipient, _ := client.GetPrivKey().PubKey().Address()
 	payload, _ := json.Marshal(asset.Payload{
-		Action:  "person",
+		//Action:  "person",
 		Address: recipient,
 	})
 	tx, _ := core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, uint64(1000000000000), "", client.GetPrivKey())
@@ -70,7 +70,7 @@ func testCreateChannel(t *testing.T, client *client.Client, peers []*core.Member
 			Members: make([]*core.Member, 0),
 		},
 	})
-	tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenDistributeContractAddress, payload, 1000000000, "", client.GetPrivKey())
+	tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenExchangeAddress, payload, 1000000000, "", client.GetPrivKey())
 	client.AddTx(tx)
 
 	require.NoError(t, err)
@@ -106,7 +106,7 @@ func testCreateChannel(t *testing.T, client *client.Client, peers []*core.Member
 			Members: peers,
 		},
 	})
-	tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenDistributeContractAddress, payload, 1000000000, "", client.GetPrivKey())
+	tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenExchangeAddress, payload, 1000000000, "", client.GetPrivKey())
 	client.AddTx(tx)
 }
 
@@ -230,7 +230,7 @@ func testAsset(t *testing.T, client *client.Client) {
 	fmt.Printf("first issue")
 
 	payload, err := json.Marshal(asset.Payload{
-		Action:    "person",
+		//Action:    "person",
 		ChannelID: "",
 		Address:   receiverAddress,
 	})
@@ -246,7 +246,7 @@ func testAsset(t *testing.T, client *client.Client) {
 	// then try to issue again, this should cause authentication error
 
 	payload, err = json.Marshal(asset.Payload{
-		Action:    "person",
+		//Action:    "person",
 		ChannelID: "",
 		Address:   address,
 	})
@@ -257,7 +257,7 @@ func testAsset(t *testing.T, client *client.Client) {
 	require.NotEmpty(t, status.Err)
 
 	payload, err = json.Marshal(asset.Payload{
-		Action:    "channel",
+		//Action:    "channel",
 		ChannelID: "public",
 	})
 	tx, err = core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, 10, "", client.GetPrivKey())
@@ -267,7 +267,7 @@ func testAsset(t *testing.T, client *client.Client) {
 	require.Empty(t, status.Err)
 
 	payload, err = json.Marshal(asset.Payload{
-		Action:    "channel",
+		//Action:    "channel",
 		ChannelID: "public",
 	})
 	tx, err = core.NewTx(core.ASSETCHANNELID, core.TransferContractrAddress, payload, 10, "", receiverPrivKey)

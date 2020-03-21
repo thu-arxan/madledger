@@ -27,6 +27,5 @@ var (
 func Cmd() *cobra.Command {
 	channelCmd.AddCommand(createCmd)
 	channelCmd.AddCommand(listCmd)
-	channelCmd.AddCommand(tokenCmd)
 	return channelCmd
 }

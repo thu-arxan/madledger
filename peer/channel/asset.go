@@ -1,16 +1,18 @@
 package channel
 
 import (
+	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	ac "madledger/blockchain/asset"
 	"madledger/common"
 	"madledger/common/crypto"
+	"madledger/common/util"
 	"madledger/core"
 	"madledger/peer/db"
 )
 
-//todo: ab
 // AddAssetBlock add an asset block
 func (manager *Manager) AddAssetBlock(block *core.Block) error {
 	if block.Header.Number == 0 {
@@ -46,32 +48,30 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		}
 		//if receiver is not set, issue or transfer money to a channel
 		value := tx.Data.Value
-		if receiver == core.IssueContractAddress { // issue to channel or person
-			if payload.Action == "channel" { // issue to channel
-				rec := common.BytesToAddress([]byte(payload.ChannelID))
-				err = manager.issue(cache, tx.Data.Sig.PK, rec, value)
-			} else if payload.Action == "person" { // issue to person
-				err = manager.issue(cache, tx.Data.Sig.PK, payload.Address, value)
-			} else { // wrong payload
-				status.Err = fmt.Errorf("wrong payload").Error()
-				cache.SetTxStatus(tx, status)
-				continue
-			}
-		} else if receiver == core.TransferContractrAddress { // transfer to channel
-			err = manager.transfer(cache, sender, common.BytesToAddress([]byte(payload.ChannelID)), value)
-		} else { // transfer to person
-			err = manager.transfer(cache, sender, receiver, value)
+		recipient := payload.Address
+		if recipient == common.ZeroAddress {
+			recipient = common.BytesToAddress([]byte(payload.ChannelID))
+		}
+		switch receiver {
+		case core.IssueContractAddress:
+			err = manager.issue(cache, tx.Data.Sig.PK, recipient, value)
+		case core.TransferContractrAddress:
+			err = manager.transfer(cache, sender, recipient, value)
+		case core.TokenExchangeAddress:
+			err = manager.exchangeToken(cache, sender, recipient, value)
+		default:
+			err = errors.New("Contract not support in _asset")
 		}
 
 		if err != nil {
 			// 如果有错误，那么应该在db里加一条key为txid的错误，如果正确，那么key为txid为ok
-			log.Infof("err when execute account block tx %v : %v", tx, err)
 			status.Err = err.Error()
 			cache.SetTxStatus(tx, status)
 			continue
 		}
 		cache.SetTxStatus(tx, status)
 	}
+	cache.PutBlock(block)
 	cache.Sync()
 	return nil
 }
@@ -117,4 +117,33 @@ func (manager *Manager) transfer(cache Cache, sender, receiver common.Address, v
 	}
 
 	return cache.UpdateAccounts(senderAccount, receiverAccount)
+}
+
+func (manager *Manager) exchangeToken(cache Cache, sender, receiver common.Address, value uint64) error {
+	if err := manager.transfer(cache, sender, receiver, value); err != nil {
+		return err
+	}
+
+	ratioKey := util.BytesCombine(receiver.Bytes(), []byte("ratio"))
+	// if ratio not set, default to 1
+	ratioBytes, err := cache.Get(ratioKey, true)
+	if err != nil {
+		return err
+	}
+
+	var ratio uint64
+	if ratioBytes != nil {
+		ratio = uint64(binary.BigEndian.Uint64(ratioBytes))
+	} else {
+		ratio = 1
+		var ratioVal = make([]byte, 8)
+		binary.BigEndian.PutUint64(ratioVal, ratio)
+		cache.Put(ratioKey, ratioVal)
+	}
+
+	log.Infof("exchangeToken get token / asset ratio %d", ratio)
+	var val = make([]byte, 8)
+	binary.BigEndian.PutUint64(val, ratio*value)
+	cache.Put(util.BytesCombine(receiver.Bytes(), []byte("token"), sender.Bytes()), val)
+	return nil
 }

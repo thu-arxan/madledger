@@ -23,9 +23,6 @@ const (
 	CONFIGCHANNELID = "_config"
 	// ASSETCHANNELID is the id of account channel
 	ASSETCHANNELID = "_asset"
-
-	// BLOCKPRICE is the price of block
-	BLOCKPRICE = 1
 )
 
 var (
@@ -45,8 +42,8 @@ var (
 	IssueContractAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffc")
 	// transfer
 	TransferContractrAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffb")
-	// token distribute
-	TokenDistributeContractAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffa")
+	// exchange token
+	TokenExchangeAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffa")
 )
 
 // GetTxType return tx type
@@ -61,7 +58,7 @@ func GetTxType(recipient string) (TxType, error) {
 		return ISSUE, nil
 	} else if strings.Compare(recipient, TransferContractrAddress.String()) == 0 {
 		return TRANSFER, nil
-	} else if strings.Compare(recipient, TokenDistributeContractAddress.String()) == 0 {
+	} else if strings.Compare(recipient, TokenExchangeAddress.String()) == 0 {
 		return TOKEN, nil
 	} else {
 		return 0, errors.New("unknown tx type")

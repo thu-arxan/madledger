@@ -15,7 +15,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"madledger/blockchain/asset"
 	cc "madledger/blockchain/config"
 	"madledger/common"
 	"madledger/common/crypto"
@@ -224,41 +223,12 @@ func TestCreateChannel(t *testing.T) {
 	client, err := getClient()
 	require.NoError(t, err)
 
-	issueTx := getSelfIssueTx("test")
-	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
-		Tx: issueTx,
-	})
-	require.NoError(t, err)
-
 	pbTx := getCreateChannelTx("test")
 	_, err = client.CreateChannel(context.Background(), &pb.CreateChannelRequest{
 		Tx: pbTx,
 	})
 	require.NoError(t, err)
 
-	payload, _ := json.Marshal(asset.Payload{
-		ChannelID: "test",
-	})
-	tx, _ := core.NewTx(core.ASSETCHANNELID, core.TransferContractrAddress, payload, 100000000, "", privKey)
-	pbTx, err = pb.NewTx(tx)
-	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
-		Tx: pbTx,
-	})
-
-	self, _ := core.NewMember(privKey.PubKey(), "admin")
-	payload, _ = json.Marshal(cc.Payload{
-		ChannelID: "test",
-		Profile: &cc.Profile{
-			Public:  true,
-			Admins:  []*core.Member{self},
-			Members: make([]*core.Member, 0),
-		},
-	})
-	tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenDistributeContractAddress, payload, 1000000000, "", privKey)
-	pbTx, err = pb.NewTx(tx)
-	_, err = client.CreateChannel(context.Background(), &pb.CreateChannelRequest{
-		Tx: pbTx,
-	})
 	// then stop
 	server.Stop()
 }
@@ -405,6 +375,14 @@ func TestAddDuplicateTxs(t *testing.T) {
 	server.Stop()
 }
 
+func TestAsset(t *testing.T) {
+
+}
+
+func TestChargeBlock(t *testing.T) {
+
+}
+
 func TestEnd(t *testing.T) {
 	initTestEnvironment(".data")
 	initTestEnvironment(".data1")
@@ -438,20 +416,6 @@ func getCreateChannelTx(channelID string) *pb.Tx {
 	coreTx, _ := core.NewTx(core.CONFIGCHANNELID, core.CreateChannelContractAddress, payload, 0, "", privKey)
 
 	pbTx, _ := pb.NewTx(coreTx)
-	return pbTx
-}
-
-func getSelfIssueTx(channelID string) *pb.Tx {
-	recipient, _ := privKey.PubKey().Address()
-
-	payload, _ := json.Marshal(asset.Payload{
-		Action:    "person",
-		ChannelID: channelID,
-		Address:   recipient,
-	})
-
-	tx, _ := core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, uint64(1000000000000), "", privKey)
-	pbTx, _ := pb.NewTx(tx)
 	return pbTx
 }
 

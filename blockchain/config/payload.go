@@ -25,7 +25,8 @@ type Payload struct {
 	AssetTokenRatio uint64 // = (asset / token), asset channel has the real money, it will transfer to token in other channel using this ratio
 	MaxGas          uint64 // or gas limit set by user
 
-	AssetToDistribute uint64 `json:",omitempty"` // sub the asset from sender, and distribute to all the member and admin of this channel in the way of token
+	BlockPrice uint64 // BlockPrice is charged for block storage default to zero ,can only be modified by system admin
+
 }
 
 // Profile is the profile in payload

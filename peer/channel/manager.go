@@ -15,7 +15,6 @@ import (
 	"errors"
 	"madledger/blockchain"
 	"madledger/common"
-	"madledger/common/util"
 	"madledger/core"
 
 	"madledger/executor/evm"
@@ -126,8 +125,8 @@ func (m *Manager) AddBlock(block *core.Block) error {
 // It will return after the block is runned.
 // In the future, this will contains chains which rely on something or nothing
 func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
-	wb := m.db.NewWriteBatch()
-	context := evm.NewContext(block, m.db, wb)
+	cache := NewCache(m.db)
+	context := evm.NewContext(block, cache.db, cache.wb)
 	defer context.BlockFinalize()
 	// first parallel get sender to speed up
 	threadSize := runtime.NumCPU()
@@ -150,12 +149,11 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 	}
 	wg.Wait()
 
-	maxGas, gasPrice, err := m.getParam()
+	maxGas, gasPrice, err := cache.GetGasParams(m.id)
 	if err != nil {
 		return nil, err
 	}
 
-	cache := NewCache(m.db)
 	for i, tx := range block.Transactions {
 		senderAddress, err := tx.GetSender()
 		status := &db.TxStatus{
@@ -166,7 +164,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		}
 		if err != nil {
 			status.Err = err.Error()
-			wb.SetTxStatus(tx, status)
+			cache.SetTxStatus(tx, status)
 			continue
 		}
 		receiverAddress := tx.GetReceiver()
@@ -174,18 +172,17 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		sender, err := m.db.GetAccount(senderAddress)
 		if err != nil {
 			status.Err = err.Error()
-			//m.db.SetTxStatus(tx, status)
-			wb.SetTxStatus(tx, status)
+			cache.SetTxStatus(tx, status)
 			continue
 		}
 
 		if receiverAddress.String() == core.CfgTendermintAddress.String() {
-			wb.SetTxStatus(tx, status)
+			cache.SetTxStatus(tx, status)
 			continue
 		}
 
 		if receiverAddress.String() == core.CfgRaftAddress.String() {
-			wb.SetTxStatus(tx, status)
+			cache.SetTxStatus(tx, status)
 			continue
 		}
 
@@ -195,34 +192,31 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		// 获取sender的token，如果比gas limit * gas price 小，那么不能执行，直接下一个tx
 		// 记录进入evm前的gas limit
 		// 用出来之后用前减后可得到具体消耗了多少gas
-		// 然后将token -= gas * gas price，存到wb中
+		// 然后将token -= gas * gas price，存到cache中
 
-		gasLimit := min(tx.Data.Gas, maxGas)
-		key := getTokenKey(m.id, tx.Data.Sig.PK)
-		// tokenByte, err := m.db.Get(key)
-		tokenByte, err := cache.GetToken(key)
+		gasLimit := maxGas
+		if gasLimit > tx.Data.Gas {
+			gasLimit = tx.Data.Gas
+		}
+		tokenLeft, err := cache.GetToken(m.id, senderAddress)
 		if err != nil {
 			status.Err = err.Error()
-			wb.SetTxStatus(tx, status)
+			cache.SetTxStatus(tx, status)
 			continue
 		}
-		tokenLeft := binary.BigEndian.Uint64(tokenByte)
-		log.Infof("token left is %d, gas limit is %d", tokenLeft, gasLimit)
 		if tokenLeft < gasLimit {
 			status.Err = "Not enough token"
-			log.Info(status.Err)
-			wb.SetTxStatus(tx, status)
+			cache.SetTxStatus(tx, status)
 			continue
 		}
 
-		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, gasLimit, m.db, wb)
+		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, gasLimit, cache.db, cache.wb)
 
 		if receiverAddress.String() != common.ZeroAddress.String() {
 			// if the length of payload is not zero, this is a contract call
 			if len(tx.Data.Payload) != 0 && !m.db.AccountExist(receiverAddress) {
 				status.Err = "Invalid Address"
-				//m.db.SetTxStatus(tx, status)
-				wb.SetTxStatus(tx, status)
+				cache.SetTxStatus(tx, status)
 				continue
 			}
 
@@ -230,7 +224,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			if err != nil {
 				status.Err = err.Error()
 				//m.db.SetTxStatus(tx, status)
-				wb.SetTxStatus(tx, status)
+				cache.SetTxStatus(tx, status)
 				continue
 			}
 			output, err := evm.Call(sender, receiver, receiver.GetCode())
@@ -238,8 +232,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			if err != nil {
 				status.Err = err.Error()
 			}
-			//m.db.SetTxStatus(tx, status)
-			wb.SetTxStatus(tx, status)
+			cache.SetTxStatus(tx, status)
 		} else {
 			output, addr, err := evm.Create(sender)
 			status.Output = output
@@ -248,44 +241,16 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 				status.Err = err.Error()
 			}
 			//m.db.SetTxStatus(tx, status)
-			wb.SetTxStatus(tx, status)
+			cache.SetTxStatus(tx, status)
 		}
-		// TODO: still 0, why?
 		gasUsed := gasLimit - *context.BlockContext().Gas
 		tokenLeft -= gasUsed * gasPrice
 		var tokenValue = make([]byte, 8)
 		binary.BigEndian.PutUint64(tokenValue, uint64(tokenLeft))
-		// wb.Put(getTokenKey(m.id, tx.Data.Sig.PK), tokenValue)
-		cache.SetToken(getTokenKey(m.id, tx.Data.Sig.PK), tokenValue)
+		cache.SetToken(m.id, senderAddress, tokenValue)
 
 	}
-	// wb.PersistLog([]byte(fmt.Sprintf("block_log_%d", block.GetNumber())))
-	cache.Sync()
-	return wb, nil
-}
-
-func (m *Manager) getParam() (uint64, uint64, error) {
-
-	maxGasByte, err := m.db.Get(util.BytesCombine([]byte(m.id), []byte("maxgas")))
-	if err != nil {
-		return 0, 0, err
-	}
-	gasPriceByte, err := m.db.Get(util.BytesCombine([]byte(m.id), []byte("gasprice")))
-	if err != nil {
-		return 0, 0, err
-	}
-	return uint64(binary.BigEndian.Uint64(maxGasByte)), uint64(binary.BigEndian.Uint64(gasPriceByte)), nil
-}
-
-func getTokenKey(channelID string, pk []byte) []byte {
-	return util.BytesCombine([]byte("token"), []byte(channelID), pk)
-}
-
-func min(x, y uint64) uint64 {
-	if x < y {
-		return x
-	}
-	return y
+	return cache.wb, nil
 }
 
 // todo: here we should support evil orderer

@@ -32,19 +32,20 @@ var (
 
 func init() {
 	issueCmd.RunE = runIssue
+
 	issueCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
 	issueViper.BindPFlag("config", issueCmd.Flags().Lookup("config"))
+
 	issueCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
 	issueViper.BindPFlag("channelID", issueCmd.Flags().Lookup("channelID"))
+
 	issueCmd.Flags().StringP("value", "v", "0",
 		"value to be issued")
 	issueViper.BindPFlag("value", issueCmd.Flags().Lookup("value"))
+
 	issueCmd.Flags().StringP("address", "a", "0",
 		"receiver's hex address to be issued in asset channel")
 	issueViper.BindPFlag("address", issueCmd.Flags().Lookup("address"))
-
-	issueCmd.Flags().BoolP("self", "s", false, "issue to your self")
-	issueViper.BindPFlag("self", issueCmd.Flags().Lookup("self"))
 }
 
 func runIssue(cmd *cobra.Command, args []string) error {
@@ -59,28 +60,23 @@ func runIssue(cmd *cobra.Command, args []string) error {
 
 	//channelID can be empty
 	channelID := issueViper.GetString("channelID")
-	action := "person"
-	if channelID != "" {
-		action = "channel"
-	}
+
 	value := issueViper.GetInt("value")
 	if value < 0 {
 		return errors.New("cannot issue negative value")
 	}
 
 	receiver := issueViper.GetString("address")
-	var recipient common.Address
+	recipient := common.ZeroAddress
 	if receiver != "" {
 		recipient = common.HexToAddress(receiver)
 	}
 
-	self := issueViper.GetBool("self")
-	if self {
-		recipient, _ = client.GetPrivKey().PubKey().Address()
+	if channelID == "" && recipient == common.ZeroAddress {
+		return errors.New("Specify issued account")
 	}
 
 	payload, err := json.Marshal(asset.Payload{
-		Action:    action,
 		ChannelID: channelID,
 		Address:   recipient,
 	})

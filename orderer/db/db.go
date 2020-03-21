@@ -25,12 +25,14 @@ type TxStatus struct {
 	Output          []byte
 	ContractAddress string
 }
+
 // WriteBatch ...
 type WriteBatch interface {
 	SetTxStatus(tx *core.Tx, status *TxStatus) error
 	UpdateAccounts(accounts ...common.Account) error
 	//SetAssetAdmin only succeed at the first time it is called
 	SetAssetAdmin(pk crypto.PublicKey) error
+	Put(key, value []byte)
 	Sync() error
 }
 
@@ -51,6 +53,10 @@ type DB interface {
 	UpdateSystemAdmin(profile *cc.Profile) error
 	IsSystemAdmin(member *core.Member) bool
 
+	Put(key, value []byte) error
+	// if couldBeEmpty set to true and error is ErrNotFound
+	// return no error
+	Get(key []byte, couldBeEmpty bool) ([]byte, error)
 	//GetAssetAdminPKBytes return nil is not exist
 	GetAssetAdminPKBytes() []byte
 	//GetOrCreateAccount return default account if not exist

@@ -95,8 +95,8 @@ func (m *ChannelManager) start() error {
 	go m.GlobalChannel.Start()
 	go m.ConfigChannel.Start()
 	go m.AssetChannel.Start()
-	for _, manage := range m.Channels {
-		go manage.Start()
+	for _, manager := range m.Channels {
+		go manager.Start()
 	}
 
 	go func() {

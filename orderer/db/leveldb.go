@@ -16,12 +16,13 @@ import (
 	"fmt"
 	"madledger/common"
 
-	"github.com/syndtr/goleveldb/leveldb"
 	cc "madledger/blockchain/config"
 	"madledger/common/crypto"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/core"
+
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 /*
@@ -252,8 +253,7 @@ func getSystemAdminKey() []byte {
 	return []byte(fmt.Sprintf("%s$admin", core.CONFIGCHANNELID))
 }
 
-
-// GetAssetAdminPKByted returns public key bytes of _asset admin or nil if not exists
+// GetAssetAdminPKBytes returns public key bytes of _asset admin or nil if not exists
 func (db *LevelDB) GetAssetAdminPKBytes() []byte {
 	var key = getAssetAdminKey()
 	admin, err := db.connect.Get(key, nil)
@@ -297,6 +297,20 @@ func (db *LevelDB) GetTxStatus(channelID, txID string) (*TxStatus, error) {
 	return &status, nil
 }
 
+// Get get the value by key
+func (db *LevelDB) Get(key []byte, couldBeEmpty bool) ([]byte, error) {
+	val, err := db.connect.Get(key, nil)
+	if err == leveldb.ErrNotFound && couldBeEmpty {
+		err = nil
+	}
+	return val, err
+}
+
+// Put put the kv pair
+func (db *LevelDB) Put(key, val []byte) error {
+	return db.connect.Put(key, val, nil)
+}
+
 // NewWriteBatch implement the interface, WriteBatch is a wrapper of leveldb.Batch
 func (db *LevelDB) NewWriteBatch() WriteBatch {
 	batch := new(leveldb.Batch)
@@ -316,6 +330,7 @@ type WriteBatchWrapper struct {
 func (wb *WriteBatchWrapper) Put(key, value []byte) {
 	wb.batch.Put(key, value)
 }
+
 // Sync sync batch to database
 func (wb *WriteBatchWrapper) Sync() error {
 	return wb.db.connect.Write(wb.batch, nil)
@@ -359,7 +374,6 @@ func (wb *WriteBatchWrapper) SetAssetAdmin(pk crypto.PublicKey) error {
 	wb.Put(key, pkBytes)
 	return nil
 }
-
 
 func getAccountKey(address common.Address) []byte {
 	return []byte(fmt.Sprintf("%s@%s", core.ASSETCHANNELID, address.String()))

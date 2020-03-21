@@ -115,7 +115,7 @@ func TestBFTCreateChannels(t *testing.T) {
 	for i := range bftClients {
 		recipient, _ := bftClients[i].GetPrivKey().PubKey().Address()
 		payload, _ := json.Marshal(asset.Payload{
-			Action:  "person",
+			//Action:  "person",
 			Address: recipient,
 		})
 		tx, _ := core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, uint64(1000000000000), "", bftClients[0].GetPrivKey())
@@ -151,7 +151,7 @@ func TestBFTCreateChannels(t *testing.T) {
 						Members: bftClientsSet,
 					},
 				})
-				tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenDistributeContractAddress, payload, 1000000000, "", client.GetPrivKey())
+				tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenExchangeAddress, payload, 1000000000, "", client.GetPrivKey())
 				client.AddTx(tx)
 
 				require.NoError(t, err)
@@ -213,7 +213,7 @@ func TestBFTReCreateChannels(t *testing.T) {
 				Members: bftClientsSet,
 			},
 		})
-		tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenDistributeContractAddress, payload, 1000000000, "", bftClients[i].GetPrivKey())
+		tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenExchangeAddress, payload, 1000000000, "", bftClients[i].GetPrivKey())
 		bftClients[i].AddTx(tx)
 
 	}

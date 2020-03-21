@@ -11,6 +11,7 @@
 package channel
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"madledger/blockchain"
@@ -82,7 +83,7 @@ func (manager *Manager) Start() {
 					block = core.NewBlock(manager.ID, 0, core.GenesisBlockPrevHash, txs)
 					log.Debugf("Channel %s create new block %d, hash is %s", manager.ID, 0, util.Hex(block.Hash().Bytes()))
 				} else {
-					block = core.NewBlock(manager.ID, prevBlock.Header.Number + 1, prevBlock.Hash().Bytes(), txs)
+					block = core.NewBlock(manager.ID, prevBlock.Header.Number+1, prevBlock.Hash().Bytes(), txs)
 					log.Debugf("Channel %s create new block %d, hash is %s", manager.ID, prevBlock.Header.Number+1, util.Hex(block.Hash().Bytes()))
 				}
 				// If the channel is not the global channel, it should send a tx to the global channel
@@ -139,17 +140,23 @@ func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
 func (manager *Manager) AddBlock(block *core.Block) error {
 	log.Infof("start adding block %d in channel %v", block.GetNumber(), manager.ID)
 	var price uint64
-	if isUserChannel(manager.ID) && !isGenesisBlock(block) {
+	BlockPriceBytes, err := manager.db.Get([]byte("system@blockprice"), true)
+	if err != nil {
+		log.Infof("manager.db not available: %s add block %d, %s",
+			manager.ID, block.Header.Number, err.Error())
+		return err
+	}
+	if BlockPriceBytes != nil && isUserChannel(manager.ID) && !isGenesisBlock(block) {
 		acc, err := manager.db.GetOrCreateAccount(common.BytesToAddress([]byte(manager.ID)))
 		if err != nil {
 			return err
 		}
 		left := acc.GetBalance()
-		price = uint64(len(block.Bytes()) * core.BLOCKPRICE)
-		log.Infof("block cost %d, channel %s has %d", price, manager.ID, left)
+		BlockPrice := uint64(binary.BigEndian.Uint64(BlockPriceBytes))
+
+		price = uint64(len(block.Bytes())) * BlockPrice
 		if left < price {
 			errMsg := fmt.Sprintf("insuffuicient balance in channel %s", manager.ID)
-			log.Info(errMsg)
 			return errors.New(errMsg)
 		}
 	}
@@ -164,15 +171,15 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 			manager.ID, block.Header.Number, err.Error())
 		return err
 	}
-	// TODO: Gas
+
 	//  after adding block, sub the channel balance
-	if isUserChannel(manager.ID) && !isGenesisBlock(block) {
+	if price != 0 && isUserChannel(manager.ID) && !isGenesisBlock(block) {
 		if err := manager.subChannelAsset(manager.ID, price); err != nil {
 			return err
 		}
 	}
 	defer func() {
-		log.Infof("Add block %d in channel %v success", block.GetNumber(), manager.ID)
+		log.Infof("AddBlock %d in orderer channel %v success", block.GetNumber(), manager.ID)
 	}()
 
 	// check is there is any need to update local state of orderer
@@ -192,32 +199,6 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 	default:
 		return nil
 	}
-}
-
-func isGenesisBlock(block *core.Block) bool {
-	return block.GetNumber() == 0
-}
-
-func (manager *Manager) subChannelAsset(id string, price uint64) error {
-	wb := manager.db.NewWriteBatch()
-	if !isUserChannel(manager.ID) {
-		return nil
-	}
-	acc, err := manager.db.GetOrCreateAccount(common.BytesToAddress([]byte(id)))
-	if err != nil {
-		return err
-	}
-	if err := acc.SubBalance(price); err != nil {
-		return err
-	}
-	if err := wb.UpdateAccounts(acc); err != nil {
-		return err
-	}
-	return wb.Sync()
-}
-
-func isUserChannel(id string) bool {
-	return id != core.GLOBALCHANNELID && id != core.CONFIGCHANNELID && id != core.ASSETCHANNELID
 }
 
 // GetBlockSize return the size of blocks
@@ -324,4 +305,30 @@ func (manager *Manager) getTxsFromConsensusBlock(block consensus.Block) (legal, 
 		}
 	}
 	return
+}
+
+func isGenesisBlock(block *core.Block) bool {
+	return block.GetNumber() == 0
+}
+
+func (manager *Manager) subChannelAsset(id string, price uint64) error {
+	wb := manager.db.NewWriteBatch()
+	if !isUserChannel(manager.ID) {
+		return nil
+	}
+	acc, err := manager.db.GetOrCreateAccount(common.BytesToAddress([]byte(id)))
+	if err != nil {
+		return err
+	}
+	if err := acc.SubBalance(price); err != nil {
+		return err
+	}
+	if err := wb.UpdateAccounts(acc); err != nil {
+		return err
+	}
+	return wb.Sync()
+}
+
+func isUserChannel(id string) bool {
+	return id != core.GLOBALCHANNELID && id != core.CONFIGCHANNELID && id != core.ASSETCHANNELID
 }
