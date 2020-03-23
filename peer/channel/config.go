@@ -85,8 +85,6 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 	return nil
 }
 
-//todo: ab what to default?
-// gasprice could be zero?
 // keys are unified now in orderer / peer
 // if needed to modify, modify all of them
 func setChannelConfig(channelID string, wb db.WriteBatch, payload *cc.Payload) {
@@ -98,11 +96,9 @@ func setChannelConfig(channelID string, wb db.WriteBatch, payload *cc.Payload) {
 	binary.BigEndian.PutUint64(ratioBytes, ratio)
 	wb.Put(util.BytesCombine([]byte(channelID), []byte("ratio")), ratioBytes)
 
+	// gasPrice could be zero
 	gasPriceBytes := make([]byte, 8)
 	gasPrice := payload.GasPrice
-	if gasPrice == 0 {
-		gasPrice = 1
-	}
 	binary.BigEndian.PutUint64(gasPriceBytes, gasPrice)
 	wb.Put(util.BytesCombine([]byte(channelID), []byte("gasPrice")), gasPriceBytes)
 

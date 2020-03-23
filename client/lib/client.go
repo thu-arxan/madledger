@@ -14,6 +14,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/core"
@@ -130,16 +131,19 @@ func getPeerClients(cfg *config.Config) ([]pb.PeerClient, error) {
 // ListChannel list the info of channel
 func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 	var channelInfos []ChannelInfo
-	pk, err := c.GetPrivKey().PubKey().Bytes()
+	pubKey := c.GetPrivKey().PubKey()
+	pk, err := pubKey.Bytes()
 	if err != nil {
 		return channelInfos, err
 	}
 	var infos *pb.ChannelInfos
 
 	for i, ordererClient := range c.ordererClients {
+		fmt.Printf(">>list channel")
 		infos, err = ordererClient.ListChannels(context.Background(), &pb.ListChannelsRequest{
 			System: system,
 			PK:     pk,
+			Algo:   pubKey.Algo(),
 		})
 		times := i + 1
 		if err != nil {

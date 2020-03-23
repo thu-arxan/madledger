@@ -53,8 +53,9 @@ func NewTxData(txData *core.TxData) *TxData {
 		Msg:       txData.Msg,
 		Version:   txData.Version,
 		Sig: &TxSig{
-			PK:  util.CopyBytes(txData.Sig.PK),
-			Sig: util.CopyBytes(txData.Sig.Sig),
+			PK:   util.CopyBytes(txData.Sig.PK),
+			Sig:  util.CopyBytes(txData.Sig.Sig),
+			Algo: txData.Sig.Algo,
 		},
 		Gas: txData.Gas,
 	}
@@ -76,8 +77,9 @@ func (data *TxData) ToCore() *core.TxData {
 	}
 	if data.Sig != nil {
 		td.Sig = core.TxSig{
-			PK:  util.CopyBytes(data.Sig.PK),
-			Sig: util.CopyBytes(data.Sig.Sig),
+			PK:   util.CopyBytes(data.Sig.PK),
+			Sig:  util.CopyBytes(data.Sig.Sig),
+			Algo: data.Sig.Algo,
 		}
 	}
 	return td

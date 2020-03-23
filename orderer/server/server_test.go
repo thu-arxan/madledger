@@ -41,7 +41,7 @@ const (
 var (
 	rawSecp256k1Bytes, _ = hex.DecodeString(secp256k1String)
 	rawPrivKey           = rawSecp256k1Bytes
-	privKey, _           = crypto.NewPrivateKey(rawPrivKey)
+	privKey, _           = crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 	pubKeyBytes, _       = privKey.PubKey().Bytes()
 )
 
@@ -70,6 +70,7 @@ func TestListChannelsAtNil(t *testing.T) {
 	infos, err := client.ListChannels(context.Background(), &pb.ListChannelsRequest{
 		System: true,
 		PK:     pubKeyBytes,
+		Algo:   privKey.PubKey().Algo(),
 	})
 	require.NoError(t, err)
 	require.Len(t, infos.Channels, 3)
@@ -85,6 +86,7 @@ func TestListChannelsAtNil(t *testing.T) {
 	infos, err = client.ListChannels(context.Background(), &pb.ListChannelsRequest{
 		System: false,
 		PK:     pubKeyBytes,
+		Algo:   privKey.PubKey().Algo(),
 	})
 	require.NoError(t, err)
 	require.Len(t, infos.Channels, 0)
@@ -245,7 +247,7 @@ func TestServerRestartWithUserChannel(t *testing.T) {
 	client, _ := getClient()
 	// Then try to send a tx to test channel
 	// then add a tx into test channel
-	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
+	privKey, _ := crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 	coreTx, err := core.NewTx("test", common.ZeroAddress, []byte("Just for test"), 0, "", privKey)
 	require.NoError(t, err)
 
@@ -273,6 +275,7 @@ func TestFetchBlockAsync(t *testing.T) {
 	channelInfos, _ := client.ListChannels(context.Background(), &pb.ListChannelsRequest{
 		System: true,
 		PK:     pubKeyBytes,
+		Algo:   privKey.PubKey().Algo(),
 	})
 	require.Len(t, channelInfos.Channels, 4)
 	var globalInfo *pb.ChannelInfo
@@ -354,7 +357,7 @@ func TestAddDuplicateTxs(t *testing.T) {
 	client, _ := getClient()
 	// Then try to send a tx to test channel
 	// then add a tx into test channel
-	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
+	privKey, _ := crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 	coreTx, err := core.NewTx("test", common.ZeroAddress, []byte("Duplicate"), 0, "", privKey)
 	require.NoError(t, err)
 
@@ -412,7 +415,7 @@ func getCreateChannelTx(channelID string) *pb.Tx {
 		AssetTokenRatio: 1,
 		MaxGas:          10000000,
 	})
-	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
+	privKey, _ := crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 	coreTx, _ := core.NewTx(core.CONFIGCHANNELID, core.CreateChannelContractAddress, payload, 0, "", privKey)
 
 	pbTx, _ := pb.NewTx(coreTx)

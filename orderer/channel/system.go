@@ -147,7 +147,7 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		}
 		switch receiver {
 		case core.IssueContractAddress:
-			err = manager.issue(cache, tx.Data.Sig.PK, recipient, value)
+			err = manager.issue(cache, tx.Data.Sig.PK, tx.Data.Sig.Algo, recipient, value)
 		case core.TransferContractrAddress:
 			err = manager.transfer(cache, sender, recipient, value)
 		case core.TokenExchangeAddress:
@@ -166,8 +166,9 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 	return cache.Sync()
 }
 
-func (manager *Manager) issue(cache Cache, senderPKBytes []byte, receiver common.Address, value uint64) error {
-	pk, err := crypto.NewPublicKey(senderPKBytes)
+
+func (manager *Manager) issue(cache Cache, senderPKBytes []byte, pkAlgo crypto.Algorithm, receiver common.Address, value uint64) error {
+	pk, err := crypto.NewPublicKey(senderPKBytes, pkAlgo)
 	if !cache.IsAssetAdmin(pk) && cache.SetAssetAdmin(pk) != nil {
 		return fmt.Errorf("issue authentication failed: %v", err)
 	}

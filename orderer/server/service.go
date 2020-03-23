@@ -64,7 +64,7 @@ func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus,
 	// get tx type according to recipient
 	txType, err := core.GetTxType(common.BytesToAddress(tx.Data.Recipient).String())
 	if err == nil && (txType == core.VALIDATOR || txType == core.NODE) {
-		pk, err := crypto.NewPublicKey(req.Tx.Data.Sig.PK)
+		pk, err := crypto.NewPublicKey(req.Tx.Data.Sig.PK, req.Tx.Data.Sig.Algo)
 		if err != nil {
 			return &status, err
 		}

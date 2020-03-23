@@ -38,4 +38,5 @@ message txData {
 message txSig {
 	bytes PK = 1;
     bytes Sig = 2;
+	int32 Algo = 3;
 }
