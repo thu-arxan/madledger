@@ -14,8 +14,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"madledger/blockchain/asset"
-	"madledger/blockchain/config"
-	cc "madledger/blockchain/config"
 	client "madledger/client/lib"
 	"madledger/common"
 	"madledger/common/abi"
@@ -32,8 +30,6 @@ var (
 )
 
 func testCreateChannel(t *testing.T, client *client.Client, peers []*core.Member) {
-	recipient, _ := client.GetPrivKey().PubKey().Address()
-
 	// first query channels
 	// then query channels
 	infos, err := client.ListChannel(true)
@@ -175,13 +171,13 @@ func testTxHistory(t *testing.T, client *client.Client) {
 	require.Len(t, history.Txs["private"].Value, 9)
 	// check cahnnel config
 	require.Contains(t, history.Txs, core.CONFIGCHANNELID)
-	require.Len(t, history.Txs[core.CONFIGCHANNELID].Value, 4) // because every time create a channel, a distribution of token will conduct and will become a block in config
+	require.Len(t, history.Txs[core.CONFIGCHANNELID].Value, 2)
 }
 
 func testAsset(t *testing.T, client *client.Client) {
 	address, err := client.GetPrivKey().PubKey().Address()
 	require.NoError(t, err)
-	receiverPrivKey, err := crypto.NewPrivateKey([]byte("289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"))
+	receiverPrivKey, err := crypto.NewPrivateKey([]byte("289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"), crypto.KeyAlgoSecp256k1)
 	require.NoError(t, err)
 	receiverAddress, err := receiverPrivKey.PubKey().Address()
 	require.NoError(t, err)

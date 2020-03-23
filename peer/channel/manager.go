@@ -204,7 +204,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			cache.SetTxStatus(tx, status)
 			continue
 		}
-		if tokenLeft < gasLimit {
+		if tokenLeft < gasLimit * gasPrice {
 			status.Err = "Not enough token"
 			cache.SetTxStatus(tx, status)
 			continue

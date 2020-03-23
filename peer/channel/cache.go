@@ -84,6 +84,7 @@ func (cache *Cache) GetToken(channelID string, sender common.Address) (uint64, e
 			return 0, err
 		}
 		if tokenBytes == nil {
+			tokenBytes = make([]byte, 8)
 			binary.BigEndian.PutUint64(tokenBytes, 0)
 		}
 		cache.kvs[string(tokenKey)] = tokenBytes
@@ -104,7 +105,7 @@ func (cache *Cache) IsAssetAdmin(pk crypto.PublicKey) bool {
 	if pkBytes == nil {
 		return false
 	}
-	cache.adminPK, _ = crypto.NewPublicKey(pkBytes)
+	cache.adminPK, _ = crypto.NewPublicKey(pkBytes, crypto.KeyAlgoSecp256k1)
 	return reflect.DeepEqual(pk, cache.adminPK)
 }
 
