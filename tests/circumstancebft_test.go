@@ -11,11 +11,8 @@
 package tests
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"madledger/blockchain/asset"
-	"madledger/blockchain/config"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"madledger/common"
@@ -113,16 +110,6 @@ func TestBFTCreateChannels(t *testing.T) {
 	var channels []string
 
 	for i := range bftClients {
-		recipient, _ := bftClients[i].GetPrivKey().PubKey().Address()
-		payload, _ := json.Marshal(asset.Payload{
-			//Action:  "person",
-			Address: recipient,
-		})
-		tx, _ := core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, uint64(1000000000000), "", bftClients[0].GetPrivKey())
-		bftClients[0].AddTx(tx)
-	}
-
-	for i := range bftClients {
 		// each client will create 5 channels
 		for m := 0; m < 5; m++ {
 			wg.Add(1)
@@ -134,26 +121,7 @@ func TestBFTCreateChannels(t *testing.T) {
 				channels = append(channels, channel)
 				lock.Unlock()
 
-				err := client.CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
-
-				payload, _ := json.Marshal(asset.Payload{
-					ChannelID: channel,
-				})
-				tx, _ := core.NewTx(core.ASSETCHANNELID, core.TransferContractrAddress, payload, 100000000, "", client.GetPrivKey())
-				client.AddTx(tx)
-
-				self, _ := core.NewMember(client.GetPrivKey().PubKey(), "admin")
-				payload, _ = json.Marshal(config.Payload{
-					ChannelID: channel,
-					Profile: &config.Profile{
-						Public:  true,
-						Admins:  []*core.Member{self},
-						Members: bftClientsSet,
-					},
-				})
-				tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenExchangeAddress, payload, 1000000000, "", client.GetPrivKey())
-				client.AddTx(tx)
-
+				err := client.CreateChannel(channel, true, nil, nil, 0, 1, 10000000)
 				require.NoError(t, err)
 				defer wg.Done()
 			}(t, i)
@@ -195,27 +163,8 @@ func TestBFTReCreateChannels(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		channel := strings.ToLower(util.RandomString(16))
 
-		err := bftClients[i].CreateChannel(channel, true, nil, nil, 1, 1, 10000000)
+		err := bftClients[i].CreateChannel(channel, true, nil, nil, 0, 1, 10000000)
 		require.NoError(t, err)
-
-		payload, _ := json.Marshal(asset.Payload{
-			ChannelID: channel,
-		})
-		tx, _ := core.NewTx(core.ASSETCHANNELID, core.TransferContractrAddress, payload, 100000000, "", bftClients[i].GetPrivKey())
-		bftClients[i].AddTx(tx)
-
-		self, _ := core.NewMember(bftClients[i].GetPrivKey().PubKey(), "admin")
-		payload, _ = json.Marshal(config.Payload{
-			ChannelID: channel,
-			Profile: &config.Profile{
-				Public:  true,
-				Admins:  []*core.Member{self},
-				Members: bftClientsSet,
-			},
-		})
-		tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenExchangeAddress, payload, 1000000000, "", bftClients[i].GetPrivKey())
-		bftClients[i].AddTx(tx)
-
 	}
 	time.Sleep(2 * time.Second)
 	var prevChannels []string
@@ -238,13 +187,13 @@ func TestBFTCreateTx(t *testing.T) {
 	client0 := bftClients[0]
 	client1 := bftClients[1]
 	for m := 1; m <= 6; m++ {
-		// if m == 3 { // stop orderer0
-		// 	stopOrderer(bftOrderers[0])
-		// 	require.NoError(t, os.RemoveAll(getBFTOrdererDataPath(0)))
-		// }
-		// if m == 4 { // restart orderer0
-		// 	bftOrderers[0] = startOrderer(0)
-		// }
+		if m == 3 { // stop orderer0
+			stopOrderer(bftOrderers[0])
+			require.NoError(t, os.RemoveAll(getBFTOrdererDataPath(0)))
+		}
+		if m == 4 { // restart orderer0
+			bftOrderers[0] = startOrderer(0)
+		}
 		// client 0 create contract
 		contractCodes, err := readCodes(getBFTClientPath(1) + "/MyTest.bin")
 		require.NoError(t, err)
@@ -272,9 +221,9 @@ func TestBFTCreateTx(t *testing.T) {
 	}
 }
 
-func TestBFTAsset(t *testing.T) {
-	testAsset(t, bftClients[0])
-}
+// func TestBFTAsset(t *testing.T) {
+// 	testAsset(t, bftClients[0])
+// }
 
 func TestBFTEnd(t *testing.T) {
 	for i := range bftOrderers {

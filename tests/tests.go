@@ -33,12 +33,6 @@ var (
 
 func testCreateChannel(t *testing.T, client *client.Client, peers []*core.Member) {
 	recipient, _ := client.GetPrivKey().PubKey().Address()
-	payload, _ := json.Marshal(asset.Payload{
-		//Action:  "person",
-		Address: recipient,
-	})
-	tx, _ := core.NewTx(core.ASSETCHANNELID, core.IssueContractAddress, payload, uint64(1000000000000), "", client.GetPrivKey())
-	client.AddTx(tx)
 
 	// first query channels
 	// then query channels
@@ -54,26 +48,9 @@ func testCreateChannel(t *testing.T, client *client.Client, peers []*core.Member
 	require.NotContains(t, channels, "public")
 
 	// then add a channel
-	err = client.CreateChannel("public", true, nil, nil, 1, 1, 10000000)
-	payload, _ = json.Marshal(asset.Payload{
-		ChannelID: "public",
-	})
-	tx, _ = core.NewTx(core.ASSETCHANNELID, core.TransferContractrAddress, payload, 100000000, "", client.GetPrivKey())
-	client.AddTx(tx)
-
-	self, _ := core.NewMember(client.GetPrivKey().PubKey(), "admin")
-	payload, _ = json.Marshal(config.Payload{
-		ChannelID: "public",
-		Profile: &cc.Profile{
-			Public:  true,
-			Admins:  []*core.Member{self},
-			Members: make([]*core.Member, 0),
-		},
-	})
-	tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenExchangeAddress, payload, 1000000000, "", client.GetPrivKey())
-	client.AddTx(tx)
-
+	err = client.CreateChannel("public", true, nil, nil, 0, 1, 10000000)
 	require.NoError(t, err)
+
 	// then query channels
 	infos, err = client.ListChannel(true)
 	require.NoError(t, err)
@@ -86,28 +63,11 @@ func testCreateChannel(t *testing.T, client *client.Client, peers []*core.Member
 	require.Contains(t, channels, core.ASSETCHANNELID)
 	require.Contains(t, channels, "public")
 	// create channel test again
-	err = client.CreateChannel("public", true, nil, nil, 1, 1, 10000000)
+	err = client.CreateChannel("public", true, nil, nil, 0, 1, 10000000)
 	require.Error(t, err)
 	// create private channel
-	err = client.CreateChannel("private", false, nil, peers, 1, 1, 10000000)
+	err = client.CreateChannel("private", false, nil, peers, 0, 1, 10000000)
 	require.NoError(t, err)
-	payload, _ = json.Marshal(asset.Payload{
-		ChannelID: "private",
-	})
-	tx, _ = core.NewTx(core.ASSETCHANNELID, core.TransferContractrAddress, payload, 100000000, "", client.GetPrivKey())
-	client.AddTx(tx)
-
-	self, _ = core.NewMember(client.GetPrivKey().PubKey(), "admin")
-	payload, _ = json.Marshal(config.Payload{
-		ChannelID: "private",
-		Profile: &cc.Profile{
-			Public:  false,
-			Admins:  []*core.Member{self},
-			Members: peers,
-		},
-	})
-	tx, _ = core.NewTx(core.CONFIGCHANNELID, core.TokenExchangeAddress, payload, 1000000000, "", client.GetPrivKey())
-	client.AddTx(tx)
 }
 
 func testCreateContract(t *testing.T, client *client.Client) {
@@ -216,7 +176,6 @@ func testTxHistory(t *testing.T, client *client.Client) {
 	// check cahnnel config
 	require.Contains(t, history.Txs, core.CONFIGCHANNELID)
 	require.Len(t, history.Txs[core.CONFIGCHANNELID].Value, 4) // because every time create a channel, a distribution of token will conduct and will become a block in config
-	fmt.Printf("test Asset begin")
 }
 
 func testAsset(t *testing.T, client *client.Client) {
