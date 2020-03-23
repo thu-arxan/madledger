@@ -203,7 +203,6 @@ func GetAllFiles(dirPth string, abs bool) (files []string, err error) {
 }
 
 // IsDirSame return is two dir contain same files
-// TODO: We are not compare data now
 func IsDirSame(a, b string) bool {
 	aFiles, err := GetAllFiles(a, false)
 	if err != nil {

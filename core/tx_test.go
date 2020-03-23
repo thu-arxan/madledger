@@ -36,6 +36,14 @@ func TestNewTx(t *testing.T) {
 	tx, err := NewTx("test", common.ZeroAddress, []byte("Hello World"), 0, "", getPrivKey())
 	require.NoError(t, err)
 	require.EqualValues(t, 0, tx.Data.Value)
+	var algos = []crypto.Algorithm{crypto.KeyAlgoSM2, crypto.KeyAlgoSecp256k1}
+	for i := range algos {
+		privKey, err := crypto.GeneratePrivateKey(algos[i])
+		require.NoError(t, err)
+		tx, err = NewTx("test", common.ZeroAddress, []byte("Hello World"), 0, "", privKey)
+		require.NoError(t, err)
+		require.True(t, tx.Verify())
+	}
 }
 
 func TestVerify(t *testing.T) {
@@ -56,8 +64,9 @@ func TestVerify(t *testing.T) {
 	}
 	// However, the situation is more complicated than what you thought
 	sig := TxSig{
-		PK:  tx.Data.Sig.PK,
-		Sig: tx.Data.Sig.Sig,
+		PK:   tx.Data.Sig.PK,
+		Sig:  tx.Data.Sig.Sig,
+		Algo: tx.Data.Sig.Algo,
 	}
 	// 1. set the pk to nil
 	tx.Data.Sig.PK = nil
@@ -83,9 +92,7 @@ func TestVerify(t *testing.T) {
 
 	// then make everything to be right
 	tx.Data.Sig = sig
-	if !tx.Verify() {
-		t.Fatal()
-	}
+	require.True(t, tx.Verify())
 }
 
 func TestGetSender(t *testing.T) {
@@ -174,6 +181,6 @@ func BenchmarkVerify(b *testing.B) {
 }
 
 func getPrivKey() crypto.PrivateKey {
-	privKey, _ := crypto.NewPrivateKey(rawPrivKey)
+	privKey, _ := crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 	return privKey
 }

@@ -39,6 +39,20 @@ RUN apt install -y build-essential software-properties-common \
 # git
 RUN apt install -y git
 
+# install openssl
+RUN wget http://digiccy.liuyihua.com/openssl-1.1.1.tar.gz
+RUN tar -xzf openssl-1.1.1.tar.gz \
+    && rm -rf openssl-1.1.1.tar.gz \
+    && apt-get install build-essential -y \
+    && cd openssl-1.1.1 \
+    && ./config --prefix=/usr/local/openssl --openssldir=/usr/local/openssl --shared \
+    && make \
+    && make install \
+    && cd .. \
+    && rm -rf openssl-1.1.1
+
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/openssl/lib
+
 # copy code
 COPY . gopath/src/madledger
 

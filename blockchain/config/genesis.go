@@ -34,7 +34,7 @@ func CreateGenesisBlock(admins []*core.Member) (*core.Block, error) {
 		Version: 1,
 	}, Payload{
 		ChannelID: core.ASSETCHANNELID,
-		Profile: &Profile {
+		Profile: &Profile{
 			Public: true,
 		},
 		Version: 1,
@@ -63,6 +63,7 @@ func CreateGenesisBlock(admins []*core.Member) (*core.Block, error) {
 
 // CreateAdmins create admins
 // TODO: Hard code here
+// TODO: Remove it
 func CreateAdmins() ([]*core.Member, error) {
 	// get pubkey from string by base64 encoding
 	data, err := base64.StdEncoding.DecodeString("BGXcjZ3bhemsoLP4HgBwnQ5gsc8VM91b3y8bW0b6knkWu8x" +
@@ -71,7 +72,8 @@ func CreateAdmins() ([]*core.Member, error) {
 		return nil, err
 	}
 	// create PublicKey
-	pk, err := crypto.NewPublicKey(data)
+	// TODO: Should not do that
+	pk, err := crypto.NewPublicKey(data, crypto.KeyAlgoSecp256k1)
 	if err != nil {
 		return nil, err
 	}

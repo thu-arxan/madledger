@@ -54,6 +54,7 @@ message ListChannelsRequest {
     // If system channel are included
     bool System = 1;
     bytes PK = 2;
+    int32 Algo = 3;
 }
 
 // ChannelInfos contains ChannelInfo

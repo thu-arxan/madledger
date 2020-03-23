@@ -28,7 +28,7 @@ var (
 	secp256k1String      = "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"
 	rawSecp256k1Bytes, _ = hex.DecodeString(secp256k1String)
 	rawPrivKey           = rawSecp256k1Bytes
-	privKey, _           = crypto.NewPrivateKey(rawPrivKey)
+	privKey, _           = crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 )
 
 var (

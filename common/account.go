@@ -86,7 +86,8 @@ func (a *Account) GetCodeHash() []byte {
 	if len(a.Code) == 0 {
 		return bytes
 	}
-	return hash.Hash(a.Code)
+	// TODO: Should we replace it with sm3?
+	return hash.SHA256(a.Code)
 }
 
 // GetNonce ...

@@ -12,6 +12,7 @@ package cmd
 
 import (
 	"io/ioutil"
+	"madledger/common/crypto"
 	"madledger/common/util"
 	"os"
 	"strings"
@@ -34,6 +35,8 @@ func init() {
 	initCmd.RunE = runInit
 	initCmd.Flags().StringP("config", "c", "peer.yaml", "The config file of peer")
 	initViper.BindPFlag("config", initCmd.Flags().Lookup("config"))
+	initCmd.Flags().StringP("keyAlgo", "k", "sm2", "Crypto of private key, secp256k1 or sm2")
+	initViper.BindPFlag("keyAlgo", initCmd.Flags().Lookup("keyAlgo"))
 	rootCmd.AddCommand(initCmd)
 }
 
@@ -61,7 +64,14 @@ func createConfigFile(cfgFile string) error {
 	if err != nil {
 		return err
 	}
-	keyPath, err := cutil.GeneratePrivateKey(keyStorePath)
+	var algo crypto.Algorithm
+	switch initViper.GetString("keyAlgo") {
+	case "secp256k1":
+		algo = crypto.KeyAlgoSecp256k1
+	default:
+		algo = crypto.KeyAlgoSM2
+	}
+	keyPath, err := cutil.GeneratePrivateKey(keyStorePath, algo)
 	if err != nil {
 		return err
 	}
