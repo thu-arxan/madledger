@@ -415,13 +415,14 @@ func (c *Client) GetAccountBalance(address common.Address) (uint64, error) {
 }
 
 // GetTokenInfo return balance of account
-func (c *Client) GetTokenInfo(address common.Address) (uint64, error) {
+func (c *Client) GetTokenInfo(address common.Address, channelID []byte) (uint64, error) {
 	var err error
 	collector := NewCollector(len(c.peerClients), 1)
 	for i := range c.peerClients {
 		go func(i int) {
-			token, err := c.peerClients[i].GetTokenInfo(context.Background(), &pb.GetAccountInfoRequest{
-				Address: address.Bytes(),
+			token, err := c.peerClients[i].GetTokenInfo(context.Background(), &pb.GetTokenInfoRequest{
+				Address:   address.Bytes(),
+				ChannelID: channelID,
 			})
 			if err != nil {
 				collector.AddError(err)
@@ -434,5 +435,5 @@ func (c *Client) GetTokenInfo(address common.Address) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return result.(*pb.AccountInfo).GetBalance(), err
+	return result.(*pb.TokenInfo).GetBalance(), err
 }

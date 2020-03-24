@@ -100,7 +100,7 @@ message TxStatus {
 service Peer {
     rpc GetTxStatus(GetTxStatusRequest) returns (TxStatus){}
     rpc ListTxHistory(ListTxHistoryRequest) returns(TxHistory){}
-    rpc GetTokenInfo(GetAccountInfoRequest) returns(AccountInfo){}
+    rpc GetTokenInfo(GetTokenInfoRequest) returns(TokenInfo){}
  }
 
 message GetTxStatusRequest {
@@ -124,5 +124,14 @@ message GetAccountInfoRequest {
 }
 
 message AccountInfo {
+    uint64 Balance = 1;
+}
+
+message GetTokenInfoRequest {
+    bytes Address = 1;
+    bytes ChannelID = 2;
+}
+
+message TokenInfo {
     uint64 Balance = 1;
 }

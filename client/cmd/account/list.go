@@ -30,6 +30,8 @@ func init() {
 	listCmd.RunE = runList
 	listCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
 	listViper.BindPFlag("config", listCmd.Flags().Lookup("config"))
+	listCmd.Flags().StringP("channel", "n", "", "The name of channel")
+	listViper.BindPFlag("channel", listCmd.Flags().Lookup("channel"))
 }
 
 func runList(cmd *cobra.Command, args []string) error {
@@ -52,13 +54,21 @@ func runList(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	token, err := client.GetTokenInfo(address)
-	if err != nil {
-		return err
-	}
+
 	table := util.NewTable()
-	table.SetHeader("Address", "balance", "token")
-	table.AddRow(address.String(), info, token)
+
+	channel := listViper.GetString("channel")
+	if channel == "" {
+		table.SetHeader("Address", "balance")
+		table.AddRow(address.String(), info)
+	} else {
+		token, err := client.GetTokenInfo(address, []byte(channel))
+		if err != nil {
+			return err
+		}
+		table.SetHeader("Address", "balance", "token")
+		table.AddRow(address.String(), info, token)
+	}
 	table.Render()
 
 	return nil

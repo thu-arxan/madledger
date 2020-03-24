@@ -14,7 +14,6 @@ import (
 	"context"
 	"encoding/binary"
 	"madledger/common/util"
-	"madledger/core"
 	pb "madledger/protos"
 )
 
@@ -52,10 +51,10 @@ func (s *Server) ListTxHistory(ctx context.Context, req *pb.ListTxHistoryRequest
 }
 
 // GetTokenInfo is the implementation of protos
-func (s *Server) GetTokenInfo(ctx context.Context, req *pb.GetAccountInfoRequest) (*pb.AccountInfo, error) {
-	var info pb.AccountInfo
+func (s *Server) GetTokenInfo(ctx context.Context, req *pb.GetTokenInfoRequest) (*pb.TokenInfo, error) {
+	var info pb.TokenInfo
 
-	key := util.BytesCombine(core.TokenExchangeAddress.Bytes(), []byte("token"), req.GetAddress())
+	key := util.BytesCombine(req.GetChannelID(), []byte("token"), req.GetAddress())
 	tokenBytes, err := s.cm.db.Get(key, false)
 	if err != nil {
 		return &info, err
