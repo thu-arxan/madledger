@@ -46,5 +46,5 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	return client.CreateChannel(name, true, nil, nil, 1, 1, 10000000)
+	return client.CreateChannel(name, true, nil, nil, 0, 1, 1000000)
 }

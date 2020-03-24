@@ -11,7 +11,6 @@
 package channel
 
 import (
-	"encoding/binary"
 	"errors"
 	"madledger/blockchain"
 	"madledger/common"
@@ -204,7 +203,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			cache.SetTxStatus(tx, status)
 			continue
 		}
-		if tokenLeft < gasLimit * gasPrice {
+		if tokenLeft < gasLimit*gasPrice {
 			status.Err = "Not enough token"
 			cache.SetTxStatus(tx, status)
 			continue
@@ -223,7 +222,6 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			receiver, err := m.db.GetAccount(receiverAddress)
 			if err != nil {
 				status.Err = err.Error()
-				//m.db.SetTxStatus(tx, status)
 				cache.SetTxStatus(tx, status)
 				continue
 			}
@@ -240,15 +238,11 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			if err != nil {
 				status.Err = err.Error()
 			}
-			//m.db.SetTxStatus(tx, status)
 			cache.SetTxStatus(tx, status)
 		}
 		gasUsed := gasLimit - *context.BlockContext().Gas
 		tokenLeft -= gasUsed * gasPrice
-		var tokenValue = make([]byte, 8)
-		binary.BigEndian.PutUint64(tokenValue, uint64(tokenLeft))
-		cache.SetToken(m.id, senderAddress, tokenValue)
-
+		cache.SetToken(m.id, senderAddress, tokenLeft)
 	}
 	return cache.wb, nil
 }

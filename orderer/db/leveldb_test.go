@@ -97,7 +97,7 @@ func TestUpdateChannel(t *testing.T) {
 	channels = db.ListChannel()
 	require.Len(t, channels, 4)
 	if !util.Contain(channels, "_asset") {
-		t.Fatal(errors.New("Channel _global is not contained"))
+		t.Fatal(errors.New("Channel _asset is not contained"))
 	}
 }
 
@@ -152,6 +152,14 @@ func TestAccount(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, account.GetBalance(), uint64(10))
 
+}
+
+func TestGetAndPut(t *testing.T) {
+	testVal, err := db.Get([]byte("testVal"), true)
+	require.NoError(t, err)
+	require.NoError(t, db.Put([]byte("testVal"), testVal))
+	testVal, err = db.Get([]byte("testVal"), false)
+	require.NoError(t, err)
 }
 
 func TestEnd(t *testing.T) {

@@ -53,7 +53,7 @@ func (cache *Cache) GetGasParams(channelID string) (uint64, uint64, error) {
 	maxGasKey := util.BytesCombine([]byte(channelID), []byte("maxGas"))
 	gasPriceKey := util.BytesCombine([]byte(channelID), []byte("gasPrice"))
 	if _, ok := cache.kvs[string(maxGasKey)]; !ok {
-		maxGasBytes, err := cache.Get(maxGasKey, false)
+		maxGasBytes, err := cache.db.Get(maxGasKey, false)
 		if err != nil {
 			return 0, 0, err
 		}
@@ -63,7 +63,7 @@ func (cache *Cache) GetGasParams(channelID string) (uint64, uint64, error) {
 	maxGas = binary.BigEndian.Uint64(maxGasBytes)
 
 	if _, ok := cache.kvs[string(gasPriceKey)]; !ok {
-		gasPriceBytes, err := cache.Get(gasPriceKey, false)
+		gasPriceBytes, err := cache.db.Get(gasPriceKey, false)
 		if err != nil {
 			return 0, 0, err
 		}
@@ -79,7 +79,7 @@ func (cache *Cache) GetToken(channelID string, sender common.Address) (uint64, e
 	tokenKey := util.BytesCombine([]byte(channelID), []byte("token"), sender.Bytes())
 	var tokenBytes []byte
 	if _, ok := cache.kvs[string(tokenKey)]; !ok {
-		tokenBytes, err := cache.Get(tokenKey, true)
+		tokenBytes, err := cache.db.Get(tokenKey, true)
 		if err != nil {
 			return 0, err
 		}
@@ -146,10 +146,12 @@ func (cache *Cache) SetTxStatus(tx *core.Tx, status *db.TxStatus) error {
 }
 
 // SetToken set token to db
-func (cache *Cache) SetToken(channelID string, sender common.Address, token []byte) {
+func (cache *Cache) SetToken(channelID string, sender common.Address, token uint64) {
 	tokenKey := util.BytesCombine([]byte(channelID), []byte("token"), sender.Bytes())
-	cache.kvs[string(tokenKey)] = token
-	cache.wb.Put(tokenKey, token)
+	tokenBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(tokenBytes, token)
+	cache.kvs[string(tokenKey)] = tokenBytes
+	cache.wb.Put(tokenKey, tokenBytes)
 }
 
 // PutBlock only used by addAssetBlock

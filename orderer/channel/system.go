@@ -244,26 +244,26 @@ func (manager *Manager) exchangeToken(cache Cache, sender, receiver common.Addre
 		return err
 	}
 
-	ratioKey := util.BytesCombine(receiver.Bytes(), []byte("ratio"))
-	// ratio is set to a value (maybe default by 1) when channel init
-	ratioBytes, err := cache.Get(ratioKey, false)
-	if err != nil {
-		return err
-	}
+	// orderer can't modify token because they don't know the exact value of token in every channel!!
 
-	var ratio uint64
-	if ratioBytes != nil {
-		ratio = uint64(binary.BigEndian.Uint64(ratioBytes))
-	} else {
-		ratio = 1
-		var ratioVal = make([]byte, 8)
-		binary.BigEndian.PutUint64(ratioVal, ratio)
-		cache.Put(ratioKey, ratioVal)
-	}
+	// ratioBytes, err := cache.Get(ratioKey, false)
+	// if err != nil {
+	// 	return err
+	// }
+	// ratio := uint64(binary.BigEndian.Uint64(ratioBytes))
+	// log.Infof("exchangeToken get token / asset ratio %d", ratio)
 
-	log.Infof("exchangeToken get token / asset ratio %d", ratio)
-	var val = make([]byte, 8)
-	binary.BigEndian.PutUint64(val, ratio*value)
-	cache.Put(util.BytesCombine(receiver.Bytes(), []byte("token"), sender.Bytes()), val)
+	// tokenKey := util.BytesCombine(receiver.Bytes(), []byte("token"), sender.Bytes())
+	// tokenBytes, err := cache.Get(tokenKey, true)
+	// var token uint64
+	// if tokenBytes != nil {
+	// 	token = uint64(binary.BigEndian.Uint64(tokenBytes))
+	// }
+	// token += ratio * value
+	// val := make([]byte, 8)
+	// binary.BigEndian.PutUint64(val, token)
+
+	// cache.Put(tokenKey, val)
+	// log.Infof("exchange token completed. token left: %v", val)
 	return nil
 }
