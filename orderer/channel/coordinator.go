@@ -213,23 +213,32 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 	if req.System {
 		if c.GM != nil {
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
-				ChannelID: core.GLOBALCHANNELID,
-				BlockSize: c.GM.GetBlockSize(),
-				Identity:  pb.Identity_MEMBER,
+				ChannelID:       core.GLOBALCHANNELID,
+				BlockSize:       c.GM.GetBlockSize(),
+				Identity:        pb.Identity_MEMBER,
+				MaxGas:          0,
+				GasPrice:        0,
+				AssetTokenRatio: 0,
 			})
 		}
 		if c.CM != nil {
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
-				ChannelID: core.CONFIGCHANNELID,
-				BlockSize: c.CM.GetBlockSize(),
-				Identity:  pb.Identity_MEMBER,
+				ChannelID:       core.CONFIGCHANNELID,
+				BlockSize:       c.CM.GetBlockSize(),
+				Identity:        pb.Identity_MEMBER,
+				MaxGas:          0,
+				GasPrice:        0,
+				AssetTokenRatio: 0,
 			})
 		}
 		if c.AM != nil {
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
-				ChannelID: core.ASSETCHANNELID,
-				BlockSize: c.AM.GetBlockSize(),
-				Identity:  pb.Identity_MEMBER,
+				ChannelID:       core.ASSETCHANNELID,
+				BlockSize:       c.AM.GetBlockSize(),
+				Identity:        pb.Identity_MEMBER,
+				MaxGas:          0,
+				GasPrice:        0,
+				AssetTokenRatio: 0,
 			})
 		}
 	}
@@ -247,9 +256,12 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 				identity = pb.Identity_ADMIN
 			}
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
-				ChannelID: channel,
-				BlockSize: channelManager.GetBlockSize(),
-				Identity:  identity,
+				ChannelID:       channel,
+				BlockSize:       channelManager.GetBlockSize(),
+				Identity:        identity,
+				MaxGas:          channelManager.GetMaxGas(),
+				GasPrice:        channelManager.GetGasPrice(),
+				AssetTokenRatio: channelManager.GetAssetTokenRatio(),
 			})
 		}
 	}

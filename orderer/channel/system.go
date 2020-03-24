@@ -39,6 +39,7 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 		// This is a create channel tx,从leveldb中查询是否已经存在channelID
 		// 这里并没有对channelID已经存在做出响应,而是在coordinator的createChannel做出响应
 		if !manager.db.HasChannel(channelID) {
+			setChannelConfig(channelID, manager.db, payload)
 			// then start the consensus
 			err := manager.coordinator.Consensus.AddChannel(channelID, consensus.Config{
 				Timeout: manager.coordinator.chainCfg.BatchTimeout,
@@ -87,6 +88,35 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 	manager.coordinator.Unlocks(nums)
 
 	return nil
+}
+
+// orderer will not use these values for execution but will use them for listChannelInfo
+// keys are unified now in orderer / peer
+// if needed to modify, modify all of them
+func setChannelConfig(channelID string, db db.DB, payload *cc.Payload) {
+	wb := db.NewWriteBatch()
+	ratioBytes := make([]byte, 8)
+	ratio := payload.AssetTokenRatio
+	if ratio == 0 {
+		ratio = 1
+	}
+	binary.BigEndian.PutUint64(ratioBytes, ratio)
+	wb.Put(util.BytesCombine([]byte(channelID), []byte("ratio")), ratioBytes)
+
+	// gasPrice could be zero
+	gasPriceBytes := make([]byte, 8)
+	gasPrice := payload.GasPrice
+	binary.BigEndian.PutUint64(gasPriceBytes, gasPrice)
+	wb.Put(util.BytesCombine([]byte(channelID), []byte("gasPrice")), gasPriceBytes)
+
+	maxGasBytes := make([]byte, 8)
+	maxGas := payload.MaxGas
+	if maxGas == 0 {
+		maxGas = 1000000
+	}
+	binary.BigEndian.PutUint64(maxGasBytes, maxGas)
+	wb.Put(util.BytesCombine([]byte(channelID), []byte("maxGas")), maxGasBytes)
+
 }
 
 // AddGlobalBlock add a global block
@@ -166,10 +196,9 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 	return cache.Sync()
 }
 
-
 func (manager *Manager) issue(cache Cache, senderPKBytes []byte, pkAlgo crypto.Algorithm, receiver common.Address, value uint64) error {
 	pk, err := crypto.NewPublicKey(senderPKBytes, pkAlgo)
-	if !cache.IsAssetAdmin(pk) && cache.SetAssetAdmin(pk) != nil {
+	if !cache.IsAssetAdmin(pk, pkAlgo) && cache.SetAssetAdmin(pk, pkAlgo) != nil {
 		return fmt.Errorf("issue authentication failed: %v", err)
 	}
 	if value == 0 {

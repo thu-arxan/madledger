@@ -54,7 +54,7 @@ func runList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	table := util.NewTable()
-	table.SetHeader("Name", "System", "BlockSize", "Identity")
+	table.SetHeader("Name", "System", "BlockSize", "Identity", "MaxGas", "GasPrice", "AssetTokenRatio")
 	for _, info := range infos {
 		table.AddRow(info.Name, info.System, info.BlockSize, info.Identity)
 	}

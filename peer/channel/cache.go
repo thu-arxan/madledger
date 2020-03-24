@@ -53,7 +53,7 @@ func (cache *Cache) GetGasParams(channelID string) (uint64, uint64, error) {
 	maxGasKey := util.BytesCombine([]byte(channelID), []byte("maxGas"))
 	gasPriceKey := util.BytesCombine([]byte(channelID), []byte("gasPrice"))
 	if _, ok := cache.kvs[string(maxGasKey)]; !ok {
-		maxGasBytes, err := cache.Get(maxGasKey, true)
+		maxGasBytes, err := cache.Get(maxGasKey, false)
 		if err != nil {
 			return 0, 0, err
 		}
@@ -63,7 +63,7 @@ func (cache *Cache) GetGasParams(channelID string) (uint64, uint64, error) {
 	maxGas = binary.BigEndian.Uint64(maxGasBytes)
 
 	if _, ok := cache.kvs[string(gasPriceKey)]; !ok {
-		gasPriceBytes, err := cache.Get(gasPriceKey, true)
+		gasPriceBytes, err := cache.Get(gasPriceKey, false)
 		if err != nil {
 			return 0, 0, err
 		}
@@ -94,7 +94,7 @@ func (cache *Cache) GetToken(channelID string, sender common.Address) (uint64, e
 }
 
 // IsAssetAdmin decides whether a pk is the admin public key of _asset
-func (cache *Cache) IsAssetAdmin(pk crypto.PublicKey) bool {
+func (cache *Cache) IsAssetAdmin(pk crypto.PublicKey, pkAlgo crypto.Algorithm) bool {
 	if pk == nil {
 		return false
 	}
@@ -105,7 +105,7 @@ func (cache *Cache) IsAssetAdmin(pk crypto.PublicKey) bool {
 	if pkBytes == nil {
 		return false
 	}
-	cache.adminPK, _ = crypto.NewPublicKey(pkBytes, crypto.KeyAlgoSecp256k1)
+	cache.adminPK, _ = crypto.NewPublicKey(pkBytes, pkAlgo)
 	return reflect.DeepEqual(pk, cache.adminPK)
 }
 
@@ -127,12 +127,13 @@ func (cache *Cache) UpdateAccounts(accs ...common.Account) error {
 }
 
 // SetAssetAdmin only works when it is first called
-func (cache *Cache) SetAssetAdmin(pk crypto.PublicKey) error {
+func (cache *Cache) SetAssetAdmin(pk crypto.PublicKey, pkAlgo crypto.Algorithm) error {
 	if cache.adminPK != nil {
 		return errors.New("_asset admin exists")
 	}
 	pkBytes := cache.db.GetAssetAdminPKBytes()
 	if pkBytes != nil {
+		cache.adminPK, _ = crypto.NewPublicKey(pkBytes, pkAlgo)
 		return errors.New("_asset admin exists")
 	}
 	cache.adminPK = pk
@@ -144,6 +145,7 @@ func (cache *Cache) SetTxStatus(tx *core.Tx, status *db.TxStatus) error {
 	return cache.wb.SetTxStatus(tx, status)
 }
 
+// SetToken set token to db
 func (cache *Cache) SetToken(channelID string, sender common.Address, token []byte) {
 	tokenKey := util.BytesCombine([]byte(channelID), []byte("token"), sender.Bytes())
 	cache.kvs[string(tokenKey)] = token

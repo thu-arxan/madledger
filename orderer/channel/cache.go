@@ -43,7 +43,7 @@ func (cache *Cache) Get(key []byte, couldBeEmpty bool) ([]byte, error) {
 }
 
 // IsAssetAdmin decides whether a pk is the admin public key of _asset
-func (cache *Cache) IsAssetAdmin(pk crypto.PublicKey) bool {
+func (cache *Cache) IsAssetAdmin(pk crypto.PublicKey, pkAlgo crypto.Algorithm) bool {
 	if pk == nil {
 		return false
 	}
@@ -54,7 +54,7 @@ func (cache *Cache) IsAssetAdmin(pk crypto.PublicKey) bool {
 	if pkBytes == nil {
 		return false
 	}
-	cache.adminPK, _ = crypto.NewPublicKey(pkBytes, crypto.KeyAlgoSecp256k1)
+	cache.adminPK, _ = crypto.NewPublicKey(pkBytes, pkAlgo)
 	return reflect.DeepEqual(pk, cache.adminPK)
 }
 
@@ -76,13 +76,13 @@ func (cache *Cache) UpdateAccounts(accs ...common.Account) error {
 }
 
 // SetAssetAdmin only works when it is first called
-func (cache *Cache) SetAssetAdmin(pk crypto.PublicKey) error {
+func (cache *Cache) SetAssetAdmin(pk crypto.PublicKey, pkAlgo crypto.Algorithm) error {
 	if cache.adminPK != nil {
 		return errors.New("_asset admin exists")
 	}
 	pkBytes := cache.db.GetAssetAdminPKBytes()
 	if pkBytes != nil {
-		cache.adminPK, _ = crypto.NewPublicKey(pkBytes, crypto.KeyAlgoSecp256k1)
+		cache.adminPK, _ = crypto.NewPublicKey(pkBytes, pkAlgo)
 		return errors.New("_asset admin exists")
 	}
 	cache.adminPK = pk

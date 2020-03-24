@@ -257,6 +257,25 @@ func (manager *Manager) GetTxStatus(channelID, txID string) (*db.TxStatus, error
 	return manager.db.GetTxStatus(channelID, txID)
 }
 
+// GetMaxGas used by userchannel
+func (manager *Manager) GetMaxGas() uint64 {
+	// this param should be set when every user channel is created
+	maxGasBytes := manager.db.Get(util.BytesCombine([]byte(channelID), []byte("maxGas")), false)
+	return binary.BigEndian.Uint64(maxGasBytes)
+}
+
+// GetGasPrice used by userchannel
+func (manager *Manager) GetGasPrice() uint64 {
+	gasPriceBytes := manager.db.Get(util.BytesCombine([]byte(channelID), []byte("gasPrice")), false)
+	return binary.BigEndian.Uint64(gasPriceBytes)
+}
+
+// GetAssetTokenRatio used by userchannel
+func (manager *Manager) GetAssetTokenRatio() uint64 {
+	ratioBytes := manager.db.Get(util.BytesCombine([]byte(channelID), []byte("ratio")), false)
+	return binary.BigEndian.Uint64(ratioBytes)
+}
+
 // FetchBlockAsync will fetch book async.
 // TODO: fix the thread unsafety
 func (manager *Manager) FetchBlockAsync(num uint64) (*core.Block, error) {

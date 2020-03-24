@@ -67,7 +67,10 @@ message ChannelInfos {
 message ChannelInfo {
     string ChannelID = 1;
     uint64 BlockSize = 2;
-    Identity Identity = 3; 
+    Identity Identity = 3;
+    uint64 MaxGas = 4;
+    uint64 GasPrice = 5;
+    uint64 AssetTokenRatio = 6; 
 }
 
 // CreateChannelRequest include a special tx which create a channel.
