@@ -15,6 +15,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"madledger/blockchain/asset"
 	cc "madledger/blockchain/config"
 	"madledger/common"
 	"madledger/common/crypto"
@@ -379,7 +380,106 @@ func TestAddDuplicateTxs(t *testing.T) {
 }
 
 func TestAsset(t *testing.T) {
+	//1.test init
+	var err error
+	server, err = NewServer(getTestConfig())
+	require.NoError(t, err)
 
+	go func() {
+		require.NoError(t, server.Start())
+	}()
+	time.Sleep(500 * time.Millisecond)
+
+	client, _ := getClient()
+
+	//2.test issue
+	algo := crypto.KeyAlgoSecp256k1
+
+	issuerKey, err := crypto.GeneratePrivateKey(algo)
+	require.NoError(t, err)
+	falseIssuerKey, err := crypto.GeneratePrivateKey(algo)
+	require.NoError(t, err)
+	receiverKey, err := crypto.GeneratePrivateKey(algo)
+	require.NoError(t, err)
+
+	issuer, err := privKey.PubKey().Address()
+	require.NoError(t, err)
+	falseIssuer, err := privKey.PubKey().Address()
+	require.NoError(t, err)
+	receiver, err := privKey.PubKey.Address()
+
+	//issue to issuer itself
+	pbTx := getAssetChannelTx(core.IssueContractAddress, issuer, "", uint64(10), issuerKey)
+	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: pbTx,
+	})
+	require.NoError(t, err)
+
+	acc, err := client.GetAccountInfo(context.Background(), &pb.GetAccountInfoRequest{
+		Address: issuer.Bytes(),
+	})
+	require.NoError(t, err)
+	require.Equal(t, 10, acc.GetBalance())
+
+	//falseissuer issue fail
+	pbTx = getAssetChannelTx(core.IssueContractAddress, falseIssuer, "", uint64(10), falseIssuerKey)
+	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: pbTx,
+	})
+	require.Error(t, err)
+	acc, err = client.GetAccountInfo(context.Background(), &pb.GetAccountInfoRequest{
+		Address: issuer.Bytes(),
+	})
+	require.NoError(t, err)
+	require.Equal(t, 0, acc.GetBalance())
+
+	//test issue to channel
+	pbTx = getAssetChannelTx(core.IssueContractAddress, common.ZeroAddress, "test", uint64(10), issuerKey)
+	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: pbTx,
+	})
+	require.NoError(t, err)
+	acc, err = client.GetAccountInfo(context.Background(), &pb.GetAccountInfoRequest{
+		Address: common.BytesToAddress([]byte("test")).Bytes(),
+	})
+	require.NoError(t, err)
+	require.Equal(t, 10, acc.GetBalance())
+
+	//3.test transfer
+	pbTx = getAssetChannelTx(core.TransferContractrAddress, receiver, "", uint64(5), issuerKey)
+	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: pbTx,
+	})
+	require.NoError(t, err)
+	acc, err = client.GetAccountInfo(context.Background(), &pb.GetAccountInfoRequest{
+		Address: receiver.Bytes(),
+	})
+	require.NoError(t, err)
+	require.Equal(t, 5, acc.GetBalance())
+
+	//test transfer fail
+	pbTx = getAssetChannelTx(core.TransferContractrAddress, receiver, "", uint64(5), falseIssuerKey)
+	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: pbTx,
+	})
+	require.Error(t, err)
+	acc, err = client.GetAccountInfo(context.Background(), &pb.GetAccountInfoRequest{
+		Address: receiver.Bytes(),
+	})
+	require.NoError(t, err)
+	require.Equal(t, 5, acc.GetBalance())
+
+	//4.test exchangeToken a.k.a transfer to channel in orderer execution
+	pbTx = getAssetChannelTx(core.TransferContractrAddress, common.ZeroAddress, "test", uint64(5), receiverKey)
+	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: pbTx,
+	})
+	require.NoError(t, err)
+	acc, err = client.GetAccountInfo(context.Background(), &pb.GetAccountInfoRequest{
+		Address: common.BytesToAddress([]byte("test")).Bytes(),
+	})
+	require.NoError(t, err)
+	require.Equal(t, 15, acc.GetBalance())
 }
 
 func TestChargeBlock(t *testing.T) {
@@ -411,13 +511,23 @@ func getCreateChannelTx(channelID string) *pb.Tx {
 			Admins: []*core.Member{admin},
 		},
 		Version:         1,
-		GasPrice:        1,
+		GasPrice:        0,
 		AssetTokenRatio: 1,
 		MaxGas:          10000000,
 	})
 	privKey, _ := crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 	coreTx, _ := core.NewTx(core.CONFIGCHANNELID, core.CreateChannelContractAddress, payload, 0, "", privKey)
 
+	pbTx, _ := pb.NewTx(coreTx)
+	return pbTx
+}
+
+func getAssetChannelTx(contract, addressInPayload common.Address, channelInPayload string, value uint64, privKey crypto.PrivateKey) *pb.Tx {
+	payload, _ := json.Marshal(asset.Payload{
+		Address:   addressInPayload,
+		ChannelID: channelInPayload,
+	})
+	coreTx, _ := core.NewTx(core.ASSETCHANNELID, contract, payload, value, "", privKey)
 	pbTx, _ := pb.NewTx(coreTx)
 	return pbTx
 }
