@@ -39,7 +39,7 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 		// This is a create channel tx,从leveldb中查询是否已经存在channelID
 		// 这里并没有对channelID已经存在做出响应,而是在coordinator的createChannel做出响应
 		if !manager.db.HasChannel(channelID) {
-			setChannelConfig(channelID, manager.db, payload)
+			setChannelConfig(channelID, manager.db, &payload)
 			// then start the consensus
 			err := manager.coordinator.Consensus.AddChannel(channelID, consensus.Config{
 				Timeout: manager.coordinator.chainCfg.BatchTimeout,

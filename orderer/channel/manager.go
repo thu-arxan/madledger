@@ -260,19 +260,28 @@ func (manager *Manager) GetTxStatus(channelID, txID string) (*db.TxStatus, error
 // GetMaxGas used by userchannel
 func (manager *Manager) GetMaxGas() uint64 {
 	// this param should be set when every user channel is created
-	maxGasBytes := manager.db.Get(util.BytesCombine([]byte(channelID), []byte("maxGas")), false)
+	maxGasBytes, err := manager.db.Get(util.BytesCombine([]byte(manager.ID), []byte("maxGas")), false)
+	if err != nil {
+		return 0
+	}
 	return binary.BigEndian.Uint64(maxGasBytes)
 }
 
 // GetGasPrice used by userchannel
 func (manager *Manager) GetGasPrice() uint64 {
-	gasPriceBytes := manager.db.Get(util.BytesCombine([]byte(channelID), []byte("gasPrice")), false)
+	gasPriceBytes, err := manager.db.Get(util.BytesCombine([]byte(manager.ID), []byte("gasPrice")), false)
+	if err != nil {
+		return 0
+	}
 	return binary.BigEndian.Uint64(gasPriceBytes)
 }
 
 // GetAssetTokenRatio used by userchannel
 func (manager *Manager) GetAssetTokenRatio() uint64 {
-	ratioBytes := manager.db.Get(util.BytesCombine([]byte(channelID), []byte("ratio")), false)
+	ratioBytes, err := manager.db.Get(util.BytesCombine([]byte(manager.ID), []byte("ratio")), false)
+	if err != nil {
+		return 0
+	}
 	return binary.BigEndian.Uint64(ratioBytes)
 }
 

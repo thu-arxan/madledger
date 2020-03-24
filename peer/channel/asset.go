@@ -78,7 +78,7 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 
 func (manager *Manager) issue(cache Cache, senderPKBytes []byte, pkAlgo crypto.Algorithm, receiver common.Address, value uint64) error {
 	pk, err := crypto.NewPublicKey(senderPKBytes, pkAlgo)
-	if !cache.IsAssetAdmin(pk, pkAlgo) && cache.SetAssetAdmin(pkAlgo) != nil {
+	if !cache.IsAssetAdmin(pk, pkAlgo) && cache.SetAssetAdmin(pk, pkAlgo) != nil {
 		return fmt.Errorf("issue authentication failed: %v", err)
 	}
 	if value == 0 {
