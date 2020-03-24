@@ -3,7 +3,7 @@
 	"ignore": "",
 	"package": [
 		{
-			"checksumSHA1": "fvyvGC200+y9ANK16U4/mc37lNc=",
+			"checksumSHA1": "NvtNQGpPzBRmuitTin4gbL98Z24=",
 			"path": "github.com/thu-arxan/evm",
 			"revision": "9cad9e1e62885961b0cf91f40b450dd32c8e0421",
 			"revisionTime": "2020-03-13T07:01:06Z"

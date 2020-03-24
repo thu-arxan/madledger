@@ -36,7 +36,7 @@ func init() {
 	addViper.BindPFlag("pubkey", addCmd.Flags().Lookup("pubkey"))
 	addCmd.Flags().StringP("power", "p", "10", "The power of validator")
 	addViper.BindPFlag("power", addCmd.Flags().Lookup("power"))
-	addCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
+	addCmd.Flags().StringP("config", "c", "explorer-client.yaml", "The config file of client")
 	addViper.BindPFlag("config", addCmd.Flags().Lookup("config"))
 	addCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
 	addViper.BindPFlag("channelID", addCmd.Flags().Lookup("channelID"))

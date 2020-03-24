@@ -29,7 +29,7 @@ func init() {
 	createCmd.RunE = runCreate
 	createCmd.Flags().StringP("name", "n", "", "The name of channel")
 	createViper.BindPFlag("name", createCmd.Flags().Lookup("name"))
-	createCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
+	createCmd.Flags().StringP("config", "c", "explorer-client.yaml", "The config file of client")
 	createViper.BindPFlag("config", createCmd.Flags().Lookup("config"))
 }
 

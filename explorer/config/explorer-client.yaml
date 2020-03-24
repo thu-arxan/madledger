@@ -1,0 +1,48 @@
+# Copyright (c) 2020 THU-Arxan
+# Madledger is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#          http://license.coscl.org.cn/MulanPSL2
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+
+#############################################################################
+#   This is a configuration file for the MadLedger client.
+#############################################################################
+
+# Should be false or true (default: true)
+Debug: true
+
+# Configure for the TLS
+TLS:
+  # Should be true of false (default: true)
+  Enable: true
+  # The path of CA cert, it should not be empty if Enable is true
+  CA: ./config/cert/ca.cer
+  # Cert of the Blockchain, it should not be empty if Enable is true
+  Cert: ./config/cert/client.pem
+  # Key of the Blockchain, it should not be empty if Enable is true
+  Key: ./config/cert/client.key
+
+# Address of orderers
+Orderer:
+  Address:
+    - localhost:12345
+    - localhost:23456
+    - localhost:34567
+  
+  
+# Address of peers
+Peer:
+  Address:
+    - localhost:20500
+    - localhost:20501
+    - localhost:20502
+    - localhost:20503
+
+# KeyStore manage some private keys
+KeyStore:
+  Keys:
+    - ./config/.keystore/4aeddab58766a6d3a26daab19bd36cbea9d94539b6751f7ae410984a97b74d8d

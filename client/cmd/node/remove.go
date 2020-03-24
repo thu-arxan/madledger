@@ -35,7 +35,7 @@ func init() {
 	removeCmd.Flags().StringP("nodeID", "i", "4",
 		"The ID of node you want to remove from the exiting cluster")
 	removeViper.BindPFlag("nodeID", removeCmd.Flags().Lookup("nodeID"))
-	removeCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
+	removeCmd.Flags().StringP("config", "c", "explorer-client.yaml", "The config file of client")
 	removeViper.BindPFlag("config", removeCmd.Flags().Lookup("config"))
 	removeCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
 	removeViper.BindPFlag("channelID", removeCmd.Flags().Lookup("channelID"))

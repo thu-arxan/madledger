@@ -32,7 +32,7 @@ var (
 
 func init() {
 	transferCmd.RunE = runTransfer
-	transferCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
+	transferCmd.Flags().StringP("config", "c", "explorer-client.yaml", "The config file of client")
 	transferViper.BindPFlag("config", transferCmd.Flags().Lookup("config"))
 	transferCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
 	transferViper.BindPFlag("channelID", transferCmd.Flags().Lookup("channelID"))

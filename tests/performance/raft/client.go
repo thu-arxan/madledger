@@ -58,7 +58,7 @@ var (
 func GetClients() []*client.Client {
 	if !clientInit {
 		for i := range clients {
-			cfgPath, _ := util.MakeFileAbs(fmt.Sprintf("%d/client.yaml", i), getClientsPath())
+			cfgPath, _ := util.MakeFileAbs(fmt.Sprintf("%d/explorer-client.yaml", i), getClientsPath())
 			client, err := client.NewClient(cfgPath)
 			if err != nil {
 				panic(err)
@@ -83,7 +83,7 @@ func newClients(peerNum int) error {
 }
 
 func newClient(path string, peerNum int) error {
-	cfgPath, _ := util.MakeFileAbs("client.yaml", path)
+	cfgPath, _ := util.MakeFileAbs("explorer-client.yaml", path)
 	keyStorePath, _ := util.MakeFileAbs(".keystore", path)
 	os.MkdirAll(keyStorePath, os.ModePerm)
 

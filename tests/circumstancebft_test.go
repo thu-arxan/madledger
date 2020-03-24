@@ -381,7 +381,7 @@ func getBFTClientPath(node int) string {
 }
 
 func getBFTClientConfigPath(node int) string {
-	return getBFTClientPath(node) + "/client.yaml"
+	return getBFTClientPath(node) + "/explorer-client.yaml"
 }
 
 func getBFTOrdererDataPath(node int) string {

@@ -32,7 +32,7 @@ var (
 
 func init() {
 	issueCmd.RunE = runIssue
-	issueCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
+	issueCmd.Flags().StringP("config", "c", "explorer-client.yaml", "The config file of client")
 	issueViper.BindPFlag("config", issueCmd.Flags().Lookup("config"))
 	issueCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
 	issueViper.BindPFlag("channelID", issueCmd.Flags().Lookup("channelID"))

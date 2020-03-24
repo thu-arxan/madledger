@@ -31,7 +31,7 @@ var (
 
 func init() {
 	initCmd.RunE = runInit
-	initCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
+	initCmd.Flags().StringP("config", "c", "explorer-client.yaml", "The config file of client")
 	initViper.BindPFlag("config", initCmd.Flags().Lookup("config"))
 	rootCmd.AddCommand(initCmd)
 }

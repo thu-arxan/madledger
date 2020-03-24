@@ -37,7 +37,7 @@ func init() {
 	callViper.BindPFlag("func", callCmd.Flags().Lookup("func"))
 	callCmd.Flags().StringSliceP("inputs", "i", nil, "The inputs of function")
 	callViper.BindPFlag("inputs", callCmd.Flags().Lookup("inputs"))
-	callCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
+	callCmd.Flags().StringP("config", "c", "explorer-client.yaml", "The config file of client")
 	callViper.BindPFlag("config", callCmd.Flags().Lookup("config"))
 	callCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
 	callViper.BindPFlag("channelID", callCmd.Flags().Lookup("channelID"))
