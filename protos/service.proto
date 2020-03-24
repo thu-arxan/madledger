@@ -100,7 +100,8 @@ message TxStatus {
 service Peer {
     rpc GetTxStatus(GetTxStatusRequest) returns (TxStatus){}
     rpc ListTxHistory(ListTxHistoryRequest) returns(TxHistory){}
-}
+    rpc GetTokenInfo(GetAccountInfoRequest) returns(AccountInfo){}
+ }
 
 message GetTxStatusRequest {
     string ChannelID = 1;

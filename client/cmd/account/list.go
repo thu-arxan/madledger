@@ -52,9 +52,13 @@ func runList(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	token, err := client.GetTokenInfo(address)
+	if err != nil {
+		return err
+	}
 	table := util.NewTable()
-	table.SetHeader("Address", "balance")
-	table.AddRow(address.String(), info)
+	table.SetHeader("Address", "balance", "token")
+	table.AddRow(address.String(), info, token)
 	table.Render()
 
 	return nil

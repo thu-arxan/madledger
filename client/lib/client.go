@@ -413,3 +413,26 @@ func (c *Client) GetAccountBalance(address common.Address) (uint64, error) {
 	}
 	return acc.GetBalance(), nil
 }
+
+// GetTokenInfo return balance of account
+func (c *Client) GetTokenInfo(address common.Address) (uint64, error) {
+	var err error
+	collector := NewCollector(len(c.peerClients), 1)
+	for i := range c.peerClients {
+		go func(i int) {
+			token, err := c.peerClients[i].GetTokenInfo(context.Background(), &pb.GetAccountInfoRequest{
+				Address: address.Bytes(),
+			})
+			if err != nil {
+				collector.AddError(err)
+			} else {
+				collector.Add(token)
+			}
+		}(i)
+	}
+	result, err := collector.Wait()
+	if err != nil {
+		return 0, err
+	}
+	return result.(*pb.AccountInfo).GetBalance(), err
+}
