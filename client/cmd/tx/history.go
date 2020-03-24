@@ -28,7 +28,7 @@ var (
 
 func init() {
 	historyCmd.RunE = runHistory
-	historyCmd.Flags().StringP("config", "c", "explorer-client.yaml", "The config file of client")
+	historyCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
 	historyViper.BindPFlag("config", historyCmd.Flags().Lookup("config"))
 }
 

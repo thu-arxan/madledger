@@ -30,8 +30,8 @@ start:
 	@cd $(SAMPLE_DIR) && bash start.sh
 
 stop:
-	@-kill `pidof orderer`
-	@-kill `pidof peer`
+	killall orderer
+	killall peer
 
 setup:
 	@mkdir -p $(SAMPLE_DIR)

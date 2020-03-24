@@ -28,7 +28,7 @@ var (
 
 func init() {
 	listCmd.RunE = runList
-	listCmd.Flags().StringP("config", "c", "explorer-client.yaml", "The config file of client")
+	listCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
 	listViper.BindPFlag("config", listCmd.Flags().Lookup("config"))
 }
 

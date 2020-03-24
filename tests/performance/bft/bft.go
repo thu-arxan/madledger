@@ -73,7 +73,7 @@ func newClients(peerNum int) error {
 }
 
 func newClient(path string, peerNum int) error {
-	cfgPath, _ := util.MakeFileAbs("explorer-client.yaml", path)
+	cfgPath, _ := util.MakeFileAbs("client.yaml", path)
 	keyStorePath, _ := util.MakeFileAbs(".keystore", path)
 	os.MkdirAll(keyStorePath, os.ModePerm)
 
