@@ -484,6 +484,39 @@ func TestAsset(t *testing.T) {
 }
 
 func TestChargeBlock(t *testing.T) {
+	//this test is merged with TestAsset, with no server shutdown and restart
+	coreTx, err := core.NewTx("test", common.ZeroAddress, []byte("success"), 0, "", privKey)
+	require.NoError(t, err)
+	pbTx, err := pb.NewTx(coreTx)
+	require.NoError(t, err)
+	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: pbTx,
+	})
+	require.NoError(t, err)
+
+	//change BlockPrice of test channel's
+	payload, err := json.Marshal(cc.Payload{
+		ChannelID:  "test",
+		BlockPrice: uint64(100000),
+	})
+	require.NoError(t, err)
+	coreTx, err = core.NewTx(core.CONFIGCHANNELID, common.ZeroAddress, payload, 0, "", privKey)
+	pbTx, err = pb.NewTx(coreTx)
+	require.NoError(t, err)
+	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: pbTx,
+	})
+	require.NoError(t, err)
+
+	//now add block should fail
+	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("fail"), 0, "", privKey)
+	require.NoError(t, err)
+	pbTx, err = pb.NewTx(coreTx)
+	require.NoError(t, err)
+	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: pbTx,
+	})
+	require.NoError(t, err)
 
 }
 
