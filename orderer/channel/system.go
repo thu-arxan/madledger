@@ -185,11 +185,8 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		default:
 			err = errors.New("Contract not support in _asset")
 		}
-
 		if err != nil {
 			status.Err = err.Error()
-			cache.SetTxStatus(tx, status)
-			continue
 		}
 		cache.SetTxStatus(tx, status)
 	}

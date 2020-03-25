@@ -399,14 +399,15 @@ func TestAsset(t *testing.T) {
 	require.NoError(t, err)
 	falseIssuerKey, err := crypto.GeneratePrivateKey(algo)
 	require.NoError(t, err)
+	require.NotEqual(t, issuerKey, falseIssuerKey)
 	receiverKey, err := crypto.GeneratePrivateKey(algo)
 	require.NoError(t, err)
 
-	issuer, err := privKey.PubKey().Address()
+	issuer, err := issuerKey.PubKey().Address()
 	require.NoError(t, err)
-	falseIssuer, err := privKey.PubKey().Address()
+	falseIssuer, err := falseIssuerKey.PubKey().Address()
 	require.NoError(t, err)
-	receiver, err := privKey.PubKey.Address()
+	receiver, err := receiverKey.PubKey().Address()
 
 	//issue to issuer itself
 	pbTx := getAssetChannelTx(core.IssueContractAddress, issuer, "", uint64(10), issuerKey)
@@ -419,19 +420,19 @@ func TestAsset(t *testing.T) {
 		Address: issuer.Bytes(),
 	})
 	require.NoError(t, err)
-	require.Equal(t, 10, acc.GetBalance())
+	require.Equal(t, uint64(10), acc.GetBalance())
 
 	//falseissuer issue fail
 	pbTx = getAssetChannelTx(core.IssueContractAddress, falseIssuer, "", uint64(10), falseIssuerKey)
 	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
 		Tx: pbTx,
 	})
-	require.Error(t, err)
+	require.NoError(t, err)
 	acc, err = client.GetAccountInfo(context.Background(), &pb.GetAccountInfoRequest{
-		Address: issuer.Bytes(),
+		Address: falseIssuer.Bytes(),
 	})
 	require.NoError(t, err)
-	require.Equal(t, 0, acc.GetBalance())
+	require.Equal(t, uint64(0), acc.GetBalance())
 
 	//test issue to channel
 	pbTx = getAssetChannelTx(core.IssueContractAddress, common.ZeroAddress, "test", uint64(10), issuerKey)
@@ -443,7 +444,7 @@ func TestAsset(t *testing.T) {
 		Address: common.BytesToAddress([]byte("test")).Bytes(),
 	})
 	require.NoError(t, err)
-	require.Equal(t, 10, acc.GetBalance())
+	require.Equal(t, uint64(10), acc.GetBalance())
 
 	//3.test transfer
 	pbTx = getAssetChannelTx(core.TransferContractrAddress, receiver, "", uint64(5), issuerKey)
@@ -455,19 +456,19 @@ func TestAsset(t *testing.T) {
 		Address: receiver.Bytes(),
 	})
 	require.NoError(t, err)
-	require.Equal(t, 5, acc.GetBalance())
+	require.Equal(t, uint64(5), acc.GetBalance())
 
 	//test transfer fail
 	pbTx = getAssetChannelTx(core.TransferContractrAddress, receiver, "", uint64(5), falseIssuerKey)
 	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
 		Tx: pbTx,
 	})
-	require.Error(t, err)
+	require.NoError(t, err)
 	acc, err = client.GetAccountInfo(context.Background(), &pb.GetAccountInfoRequest{
 		Address: receiver.Bytes(),
 	})
 	require.NoError(t, err)
-	require.Equal(t, 5, acc.GetBalance())
+	require.Equal(t, uint64(5), acc.GetBalance())
 
 	//4.test exchangeToken a.k.a transfer to channel in orderer execution
 	pbTx = getAssetChannelTx(core.TransferContractrAddress, common.ZeroAddress, "test", uint64(5), receiverKey)
@@ -479,7 +480,7 @@ func TestAsset(t *testing.T) {
 		Address: common.BytesToAddress([]byte("test")).Bytes(),
 	})
 	require.NoError(t, err)
-	require.Equal(t, 15, acc.GetBalance())
+	require.Equal(t, uint64(15), acc.GetBalance())
 }
 
 func TestChargeBlock(t *testing.T) {
