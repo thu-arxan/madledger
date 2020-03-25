@@ -481,10 +481,23 @@ func TestAsset(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, uint64(15), acc.GetBalance())
+	server.Stop()
 }
 
 func TestChargeBlock(t *testing.T) {
-	//this test is merged with TestAsset, with no server shutdown and restart
+	var err error
+	server, err = NewServer(getTestConfig())
+	require.NoError(t, err)
+
+	go func() {
+		require.NoError(t, server.Start())
+	}()
+	time.Sleep(500 * time.Millisecond)
+	client, _ := getClient()
+	// Then try to send a tx to test channel
+	// then add a tx into test channel
+	privKey, _ := crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
+	
 	coreTx, err := core.NewTx("test", common.ZeroAddress, []byte("success"), 0, "", privKey)
 	require.NoError(t, err)
 	pbTx, err := pb.NewTx(coreTx)
@@ -517,7 +530,7 @@ func TestChargeBlock(t *testing.T) {
 		Tx: pbTx,
 	})
 	require.NoError(t, err)
-
+	server.Stop()
 }
 
 func TestEnd(t *testing.T) {
