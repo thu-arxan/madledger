@@ -89,7 +89,7 @@ func (manager *Manager) issue(cache Cache, senderPKBytes []byte, pkAlgo crypto.A
 	if err != nil {
 		return nil
 	}
-	valueLeft, err := manager.payDueAndTryWakeChannel(receiverAccount, value)
+	valueLeft, err := manager.payDue(receiverAccount, value)
 	if err != nil {
 		return err
 	}
@@ -117,7 +117,7 @@ func (manager *Manager) transfer(cache Cache, sender, receiver common.Address, v
 	if err != nil {
 		return err
 	}
-	valueLeft, err := manager.payDueAndTryWakeChannel(receiverAccount, value)
+	valueLeft, err := manager.payDue(receiverAccount, value)
 	if err != nil {
 		return err
 	}

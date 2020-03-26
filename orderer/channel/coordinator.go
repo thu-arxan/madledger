@@ -217,9 +217,6 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 				ChannelID:       core.GLOBALCHANNELID,
 				BlockSize:       c.GM.GetBlockSize(),
 				Identity:        pb.Identity_MEMBER,
-				MaxGas:          0,
-				GasPrice:        0,
-				AssetTokenRatio: 0,
 			})
 		}
 		if c.CM != nil {
@@ -227,9 +224,6 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 				ChannelID:       core.CONFIGCHANNELID,
 				BlockSize:       c.CM.GetBlockSize(),
 				Identity:        pb.Identity_MEMBER,
-				MaxGas:          0,
-				GasPrice:        0,
-				AssetTokenRatio: 0,
 			})
 		}
 		if c.AM != nil {
@@ -237,9 +231,6 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 				ChannelID:       core.ASSETCHANNELID,
 				BlockSize:       c.AM.GetBlockSize(),
 				Identity:        pb.Identity_MEMBER,
-				MaxGas:          0,
-				GasPrice:        0,
-				AssetTokenRatio: 0,
 			})
 		}
 	}
@@ -260,9 +251,6 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 				ChannelID:       channel,
 				BlockSize:       channelManager.GetBlockSize(),
 				Identity:        identity,
-				MaxGas:          channelManager.GetMaxGas(),
-				GasPrice:        channelManager.GetGasPrice(),
-				AssetTokenRatio: channelManager.GetAssetTokenRatio(),
 			})
 		}
 	}
@@ -493,7 +481,7 @@ func (c *Coordinator) WakeDueChannel(channelID string) error {
 	if !ok {
 		return fmt.Errorf("channel %s info not contained in coordinator", channelID)
 	}
-	manager.WakeWithSufficientBalance()
+	manager.WakeFromSufficientBalance()
 	return nil
 }
 
