@@ -120,7 +120,6 @@ func (m *Manager) AddBlock(block *core.Block) error {
 		wb.PutBlock(block)
 		return wb.Sync()
 	}
-	return nil
 }
 
 func isGenesisBlock(block *core.Block) bool {
