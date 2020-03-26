@@ -556,11 +556,11 @@ func getCreateChannelTx(channelID string) *pb.Tx {
 		Profile: &cc.Profile{
 			Public: true,
 			Admins: []*core.Member{admin},
+			GasPrice: 0,
+			AssetTokenRatio: 1,
+			MaxGas:  10000000,
 		},
 		Version:         1,
-		GasPrice:        0,
-		AssetTokenRatio: 1,
-		MaxGas:          10000000,
 	})
 	privKey, _ := crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 	coreTx, _ := core.NewTx(core.CONFIGCHANNELID, core.CreateChannelContractAddress, payload, 0, "", privKey)
