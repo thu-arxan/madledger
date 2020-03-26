@@ -441,7 +441,7 @@ func TestAsset(t *testing.T) {
 	})
 	require.NoError(t, err)
 	acc, err = client.GetAccountInfo(context.Background(), &pb.GetAccountInfoRequest{
-		Address: common.BytesToAddress([]byte("test")).Bytes(),
+		Address: common.AddressFromChannelID("test").Bytes(),
 	})
 	require.NoError(t, err)
 	require.Equal(t, uint64(10), acc.GetBalance())
@@ -477,7 +477,7 @@ func TestAsset(t *testing.T) {
 	})
 	require.NoError(t, err)
 	acc, err = client.GetAccountInfo(context.Background(), &pb.GetAccountInfoRequest{
-		Address: common.BytesToAddress([]byte("test")).Bytes(),
+		Address: common.AddressFromChannelID("test").Bytes(),
 	})
 	require.NoError(t, err)
 	require.Equal(t, uint64(15), acc.GetBalance())
@@ -554,13 +554,13 @@ func getCreateChannelTx(channelID string) *pb.Tx {
 	payload, _ := json.Marshal(cc.Payload{
 		ChannelID: channelID,
 		Profile: &cc.Profile{
-			Public: true,
-			Admins: []*core.Member{admin},
-			GasPrice: 0,
+			Public:          true,
+			Admins:          []*core.Member{admin},
+			GasPrice:        0,
 			AssetTokenRatio: 1,
-			MaxGas:  10000000,
+			MaxGas:          10000000,
 		},
-		Version:         1,
+		Version: 1,
 	})
 	privKey, _ := crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 	coreTx, _ := core.NewTx(core.CONFIGCHANNELID, core.CreateChannelContractAddress, payload, 0, "", privKey)

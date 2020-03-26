@@ -218,7 +218,7 @@ func testAsset(t *testing.T, client *client.Client) {
 	// question, what if test is not created?
 	_, err = client.AddTx(coreTx)
 	require.NoError(t, err)
-	acc, err = client.GetAccountBalance(common.BytesToAddress([]byte("test")))
+	acc, err = client.GetAccountBalance(common.AddressFromChannelID("test"))
 	require.NoError(t, err)
 	require.Equal(t, uint64(10), acc)
 
@@ -244,7 +244,7 @@ func testAsset(t *testing.T, client *client.Client) {
 	coreTx = getAssetChannelTx(core.TransferContractrAddress, common.ZeroAddress, "test", uint64(5), receiverKey)
 	_, err = client.AddTx(coreTx)
 	require.NoError(t, err)
-	acc, err = client.GetAccountBalance(common.BytesToAddress([]byte("test")))
+	acc, err = client.GetAccountBalance(common.AddressFromChannelID("test"))
 	require.NoError(t, err)
 	require.Equal(t, uint64(15), acc)
 	// token, err := client.GetTokenInfo(receiver, []byte("test"))
