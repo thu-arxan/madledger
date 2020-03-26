@@ -175,6 +175,86 @@ func testTxHistory(t *testing.T, client *client.Client) {
 }
 
 func testAsset(t *testing.T, client *client.Client) {
+	algo := crypto.KeyAlgoSecp256k1
+
+	issuerKey, err := crypto.GeneratePrivateKey(algo)
+	require.NoError(t, err)
+	falseIssuerKey, err := crypto.GeneratePrivateKey(algo)
+	require.NoError(t, err)
+	require.NotEqual(t, issuerKey, falseIssuerKey)
+	receiverKey, err := crypto.GeneratePrivateKey(algo)
+	require.NoError(t, err)
+
+	issuer, err := issuerKey.PubKey().Address()
+	require.NoError(t, err)
+	falseIssuer, err := falseIssuerKey.PubKey().Address()
+	require.NoError(t, err)
+	receiver, err := receiverKey.PubKey().Address()
+	require.NoError(t, err)
+
+	//issue to issuer itself
+	coreTx := getAssetChannelTx(core.IssueContractAddress, issuer, "", uint64(10), issuerKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+
+	acc, err := client.GetAccountBalance(issuer)
+	require.NoError(t, err)
+	require.Equal(t, uint64(10), acc)
+
+	//falseissuer issue fail
+	coreTx = getAssetChannelTx(core.IssueContractAddress, falseIssuer, "", uint64(10), falseIssuerKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+
+	acc, err = client.GetAccountBalance(falseIssuer)
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), acc)
+
+	//test issue to channel
+	coreTx = getAssetChannelTx(core.IssueContractAddress, common.ZeroAddress, "test", uint64(10), issuerKey)
+	// question, what if test is not created?
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+	acc, err = client.GetAccountBalance(common.BytesToAddress([]byte("test")))
+	require.NoError(t, err)
+	require.Equal(t, uint64(10), acc)
+
+	//test transfer
+	coreTx = getAssetChannelTx(core.TransferContractrAddress, receiver, "", uint64(5), issuerKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+	acc, err = client.GetAccountBalance(receiver)
+	require.NoError(t, err)
+	require.Equal(t, uint64(5), acc)
+
+	//test transfer fail
+	coreTx = getAssetChannelTx(core.TransferContractrAddress, receiver, "", uint64(5), falseIssuerKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+	acc, err = client.GetAccountBalance(receiver)
+	require.NoError(t, err)
+	require.Equal(t, uint64(5), acc)
+
+	//test exchangeToken
+	//question: does this test do exchange token?
+	coreTx = getAssetChannelTx(core.TransferContractrAddress, common.ZeroAddress, "test", uint64(5), receiverKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+	acc, err = client.GetAccountBalance(common.BytesToAddress([]byte("test")))
+	require.NoError(t, err)
+	require.Equal(t, uint64(15), acc)
+}
+
+func getAssetChannelTx(contract, addressInPayload common.Address, channelInPayload string, value uint64, privKey crypto.PrivateKey) *core.Tx {
+	payload, _ := json.Marshal(asset.Payload{
+		Address:   addressInPayload,
+		ChannelID: channelInPayload,
+	})
+	coreTx, _ := core.NewTx(core.ASSETCHANNELID, contract, payload, value, "", privKey)
+	return coreTx
+}
+
+func testAssetOld(t *testing.T, client *client.Client) {
 	address, err := client.GetPrivKey().PubKey().Address()
 	require.NoError(t, err)
 	receiverPrivKey, err := crypto.NewPrivateKey([]byte("289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"), crypto.KeyAlgoSecp256k1)
