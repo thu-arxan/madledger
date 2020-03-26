@@ -96,14 +96,17 @@ func (m *Manager) AddBlock(block *core.Block) error {
 	}
 	switch block.Header.ChannelID {
 	case core.GLOBALCHANNELID:
-		m.AddGlobalBlock(block)
-		log.Infof("Add global block %d", block.Header.Number)
+		return m.AddGlobalBlock(block)
 	case core.CONFIGCHANNELID:
-		m.AddConfigBlock(block)
-		log.Infof("Add config block %d", block.Header.Number)
+		if !isGenesisBlock(block) && !m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
+			m.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
+		}
+		return m.AddConfigBlock(block)
 	case core.ASSETCHANNELID:
-		m.AddAssetBlock(block)
-		log.Infof("Add asset block %d", block.Header.Number)
+		if !isGenesisBlock(block) && !m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
+			m.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
+		}
+		return m.AddAssetBlock(block)
 	default:
 		if !m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
 			m.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
@@ -118,6 +121,10 @@ func (m *Manager) AddBlock(block *core.Block) error {
 		return wb.Sync()
 	}
 	return nil
+}
+
+func isGenesisBlock(block *core.Block) bool {
+	return block.GetNumber() == 0
 }
 
 // RunBlock will carry out all txs in the block.

@@ -183,7 +183,7 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 
 // CreateChannel create a channel
 func (c *Client) CreateChannel(channelID string, public bool, admins, members []*core.Member,
-	gasprice uint64, ratio uint64, maxgas uint64) error {
+	gasPrice uint64, ratio uint64, maxGas uint64) error {
 	// log.Infof("Create channel %s", channelID)
 	self, err := core.NewMember(c.GetPrivKey().PubKey(), "admin")
 	if err != nil {
@@ -199,14 +199,14 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 	payload, _ := json.Marshal(cc.Payload{
 		ChannelID: channelID,
 		Profile: &cc.Profile{
-			Public:  public,
-			Admins:  admins,
-			Members: members,
+			Public:          public,
+			Admins:          admins,
+			Members:         members,
+			GasPrice:        gasPrice,
+			AssetTokenRatio: ratio,
+			MaxGas:          maxGas,
 		},
-		Version:         1,
-		GasPrice:        gasprice,
-		AssetTokenRatio: ratio,
-		MaxGas:          maxgas,
+		Version: 1,
 	})
 	coreTx, _ := core.NewTx(core.CONFIGCHANNELID, core.CreateChannelContractAddress, payload, 0, "", c.GetPrivKey())
 	pbTx, _ := pb.NewTx(coreTx)
@@ -272,60 +272,6 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 				Behavior:  pb.Behavior_RETURN_UNTIL_READY,
 			})
 			log.Infof("get status %v, err : %v", status, err)
-			if err != nil {
-				collector.AddError(err)
-			} else {
-				collector.Add(status)
-			}
-		}(i)
-	}
-
-	result, err := collector.Wait()
-
-	if err != nil {
-		return nil, err
-	}
-	return result.(*pb.TxStatus), nil
-}
-
-// AddTxInOrderer try to add a tx into orderer and get tx result in orderer also
-// TODO: Support bft
-func (c *Client) AddTxInOrderer(tx *core.Tx) (*pb.TxStatus, error) {
-	pbTx, err := pb.NewTx(tx)
-	if err != nil {
-		return nil, err
-	}
-	for i, ordererClient := range c.ordererClients {
-		log.Info("add tx begin")
-		_, err = ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
-			Tx: pbTx,
-		})
-
-		times := i + 1
-		if err != nil {
-			// if the client is not system admin, just exit the loop
-			if strings.Contains(err.Error(), "the client is not system admin and can not update validator") {
-				return nil, err
-			}
-			// try to use other ordererClients until the last one still returns an error
-			if times == len(c.ordererClients) {
-				return nil, err
-			}
-		} else {
-			// add tx successfully and exit the loop
-			// log.Info("add tx success")
-			break
-		}
-	}
-
-	collector := NewCollector(len(c.ordererClients), 1)
-	for i := range c.ordererClients {
-		go func(i int) {
-			status, err := c.ordererClients[i].GetTxStatus(context.Background(), &pb.GetTxStatusRequest{
-				ChannelID: tx.Data.ChannelID,
-				TxID:      tx.ID,
-				Behavior:  pb.Behavior_RETURN_UNTIL_READY,
-			})
 			if err != nil {
 				collector.AddError(err)
 			} else {

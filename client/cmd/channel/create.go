@@ -31,6 +31,13 @@ func init() {
 	createViper.BindPFlag("name", createCmd.Flags().Lookup("name"))
 	createCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
 	createViper.BindPFlag("config", createCmd.Flags().Lookup("config"))
+	createCmd.Flags().StringP("gasPrice", "g", "", "Numbers of token spent for one gas")
+	createViper.BindPFlag("gasPrice", createCmd.Flags().Lookup("gasPrice"))
+	createCmd.Flags().StringP("maxGas", "m", "", "max gas spent for transaction execution")
+	createViper.BindPFlag("maxGas", createCmd.Flags().Lookup("maxGas"))
+	createCmd.Flags().StringP("ratio", "r", "", "Numbers of token exchanged from one asset")
+	createViper.BindPFlag("ratio", createCmd.Flags().Lookup("ratio"))
+
 }
 
 func runCreate(cmd *cobra.Command, args []string) error {
@@ -42,9 +49,25 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	if name == "" {
 		return errors.New("The name of channel should be [a-z0-9]{1,32} such as test, test01 and etc")
 	}
+
+	gasPrice := createViper.GetInt("gasPrice")
+	if gasPrice < 0 {
+		return errors.New("gasPrice cannot be negative")
+	}
+
+	maxGas := createViper.GetInt("maxGas")
+	if maxGas < 0 {
+		return errors.New("maxGas cannot be negative")
+	}
+
+	ratio := createViper.GetInt("ratio")
+	if ratio < 0 {
+		return errors.New("gasPrice cannot be negative")
+	}
+
 	client, err := lib.NewClient(cfgFile)
 	if err != nil {
 		return err
 	}
-	return client.CreateChannel(name, true, nil, nil, 0, 1, 1000000)
+	return client.CreateChannel(name, true, nil, nil, uint64(gasPrice), uint64(ratio), uint64(maxGas))
 }

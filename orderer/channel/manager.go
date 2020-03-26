@@ -11,7 +11,6 @@
 package channel
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"madledger/blockchain"
@@ -22,6 +21,7 @@ import (
 	"madledger/consensus/raft"
 	"madledger/core"
 	"madledger/orderer/db"
+	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -45,6 +45,9 @@ type Manager struct {
 	stop        chan bool
 	hub         *event.Hub
 	coordinator *Coordinator
+
+	lock                sync.RWMutex
+	insufficientBalance bool
 }
 
 // NewManager is the constructor of Manager
@@ -54,14 +57,15 @@ func NewManager(id string, coordinator *Coordinator) (*Manager, error) {
 		return nil, err
 	}
 	return &Manager{
-		ID:          id,
-		db:          coordinator.db,
-		cm:          cm,
-		cbc:         make(chan consensus.Block, 1024),
-		init:        false,
-		stop:        make(chan bool),
-		hub:         event.NewHub(),
-		coordinator: coordinator,
+		ID:                  id,
+		db:                  coordinator.db,
+		cm:                  cm,
+		cbc:                 make(chan consensus.Block, 1024),
+		init:                false,
+		stop:                make(chan bool),
+		hub:                 event.NewHub(),
+		coordinator:         coordinator,
+		insufficientBalance: false,
 	}, nil
 }
 
@@ -139,27 +143,6 @@ func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
 // AddBlock add a block
 func (manager *Manager) AddBlock(block *core.Block) error {
 	log.Infof("start adding block %d in channel %v", block.GetNumber(), manager.ID)
-	var price uint64
-	BlockPriceBytes, err := manager.db.Get([]byte("system@blockprice"), true)
-	if err != nil {
-		log.Infof("manager.db not available: %s add block %d, %s",
-			manager.ID, block.Header.Number, err.Error())
-		return err
-	}
-	if BlockPriceBytes != nil && isUserChannel(manager.ID) && !isGenesisBlock(block) {
-		acc, err := manager.db.GetOrCreateAccount(common.BytesToAddress([]byte(manager.ID)))
-		if err != nil {
-			return err
-		}
-		left := acc.GetBalance()
-		BlockPrice := uint64(binary.BigEndian.Uint64(BlockPriceBytes))
-
-		price = uint64(len(block.Bytes())) * BlockPrice
-		if left < price {
-			errMsg := fmt.Sprintf("insuffuicient balance in channel %s", manager.ID)
-			return errors.New(errMsg)
-		}
-	}
 	// first update db
 	if err := manager.db.AddBlock(block); err != nil {
 		log.Infof("manager.db.AddBlock error: %s add block %d, %s",
@@ -172,9 +155,33 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		return err
 	}
 
-	//  after adding block, sub the channel balance
-	if price != 0 && isUserChannel(manager.ID) && !isGenesisBlock(block) {
-		if err := manager.subChannelAsset(manager.ID, price); err != nil {
+	profile, err := manager.db.GetChannelProfile(manager.ID)
+	if err != nil {
+		log.Infof("manager.db cannot get channel profile: %s add block %d, %s",
+			manager.ID, block.Header.Number, err.Error())
+		return err
+	}
+	if profile.BlockPrice != 0 && isUserChannel(manager.ID) && !isGenesisBlock(block) {
+		acc, err := manager.db.GetOrCreateAccount(common.AddressFromChannelID(manager.ID))
+		if err != nil {
+			return err
+		}
+		balance := acc.GetBalance()
+
+		storagePrice := uint64(len(block.Bytes())) * profile.BlockPrice
+		if balance < storagePrice {
+			manager.lock.Lock()
+			manager.insufficientBalance = true
+			manager.lock.Unlock()
+			acc.SubBalance(balance)
+			acc.AddDue(price - balance)
+		} else {
+			acc.SubBalance(storagePrice)
+		}
+		err = manager.db.SetAccount(acc)
+		if err != nil {
+			log.Infof("manager.db cannot set account: %s add block %d, %s",
+				manager.ID, block.Header.Number, err.Error())
 			return err
 		}
 	}
@@ -210,6 +217,14 @@ func (manager *Manager) GetBlockSize() uint64 {
 func (manager *Manager) AddTx(tx *core.Tx) error {
 	if manager.db.HasTx(tx) {
 		return errors.New("The tx exist in the blockchain aleardy")
+	}
+
+	var insufficientBalance bool
+	c.lock.RLock()
+	insufficientBalance = manager.insufficientBalance
+	c.lock.RUnlock()
+	if insufficientBalance {
+		return errors.New("Not Enough Balance In User Channel To Generate New Block")
 	}
 
 	hash := tx.Hash()
@@ -252,37 +267,10 @@ func (manager *Manager) GetAccount(address common.Address) (common.Account, erro
 	return manager.db.GetOrCreateAccount(address)
 }
 
-// GetTxStatus return request txStatus
-func (manager *Manager) GetTxStatus(channelID, txID string) (*db.TxStatus, error) {
-	return manager.db.GetTxStatus(channelID, txID)
-}
-
-// GetMaxGas used by userchannel
-func (manager *Manager) GetMaxGas() uint64 {
-	// this param should be set when every user channel is created
-	maxGasBytes, err := manager.db.Get(util.BytesCombine([]byte(manager.ID), []byte("maxGas")), false)
-	if err != nil {
-		return 0
-	}
-	return binary.BigEndian.Uint64(maxGasBytes)
-}
-
-// GetGasPrice used by userchannel
-func (manager *Manager) GetGasPrice() uint64 {
-	gasPriceBytes, err := manager.db.Get(util.BytesCombine([]byte(manager.ID), []byte("gasPrice")), false)
-	if err != nil {
-		return 0
-	}
-	return binary.BigEndian.Uint64(gasPriceBytes)
-}
-
-// GetAssetTokenRatio used by userchannel
-func (manager *Manager) GetAssetTokenRatio() uint64 {
-	ratioBytes, err := manager.db.Get(util.BytesCombine([]byte(manager.ID), []byte("ratio")), false)
-	if err != nil {
-		return 0
-	}
-	return binary.BigEndian.Uint64(ratioBytes)
+func (manager *Manager) WakeFromSufficientBalance() {
+	manager.lock.Lock()
+	manager.insufficientBalance = false
+	manager.lock.Unlock()
 }
 
 // FetchBlockAsync will fetch book async.
@@ -337,24 +325,6 @@ func (manager *Manager) getTxsFromConsensusBlock(block consensus.Block) (legal, 
 
 func isGenesisBlock(block *core.Block) bool {
 	return block.GetNumber() == 0
-}
-
-func (manager *Manager) subChannelAsset(id string, price uint64) error {
-	wb := manager.db.NewWriteBatch()
-	if !isUserChannel(manager.ID) {
-		return nil
-	}
-	acc, err := manager.db.GetOrCreateAccount(common.BytesToAddress([]byte(id)))
-	if err != nil {
-		return err
-	}
-	if err := acc.SubBalance(price); err != nil {
-		return err
-	}
-	if err := wb.UpdateAccounts(acc); err != nil {
-		return err
-	}
-	return wb.Sync()
 }
 
 func isUserChannel(id string) bool {
