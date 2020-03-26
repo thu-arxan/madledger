@@ -20,13 +20,6 @@ type Payload struct {
 	ChannelID string
 	Profile   *Profile
 	Version   int32
-
-	GasPrice        uint64 // Gas: token = gas * gasprice
-	AssetTokenRatio uint64 // = (asset / token), asset channel has the real money, it will transfer to token in other channel using this ratio
-	MaxGas          uint64 // or gas limit set by user
-
-	BlockPrice uint64 // BlockPrice is charged for block storage default to zero ,can only be modified by system admin
-
 }
 
 // Profile is the profile in payload
@@ -42,6 +35,16 @@ type Profile struct {
 	// Note: If the public is true, Admins is still works and may not be contained in the
 	// Members. But if the public is false, Admins should be contained in the Members.
 	Admins []*core.Member
+
+	// GasPrice is the token needed per gas
+	GasPrice uint64
+	// number of tokens that one asset exchange
+	AssetTokenRatio uint64
+	// Maximum Gas spent in one evm execution
+	MaxGas uint64
+
+	// Block Storage Price
+	BlockPrice uint64
 }
 
 // Verify returns if a payload is packed well

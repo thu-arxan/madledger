@@ -28,7 +28,6 @@ type TxStatus struct {
 
 // WriteBatch ...
 type WriteBatch interface {
-	SetTxStatus(tx *core.Tx, status *TxStatus) error
 	UpdateAccounts(accounts ...common.Account) error
 	//SetAssetAdmin only succeed at the first time it is called
 	SetAssetAdmin(pk crypto.PublicKey) error
@@ -41,6 +40,7 @@ type DB interface {
 	ListChannel() []string
 	HasChannel(id string) bool
 	UpdateChannel(id string, profile *cc.Profile) error
+	GetChannelProfile(id string) (profile *cc.Profile, error)
 	// AddBlock will records all txs in the block to get rid of duplicated txs
 	AddBlock(block *core.Block) error
 	HasTx(tx *core.Tx) bool
@@ -61,8 +61,8 @@ type DB interface {
 	GetAssetAdminPKBytes() []byte
 	//GetOrCreateAccount return default account if not exist
 	GetOrCreateAccount(address common.Address) (common.Account, error)
+	//SetAccount can only be called when atomicity is at one account level
+	SetAccount(account common.Account) error
 	//NewWriteBatch new a write batch
 	NewWriteBatch() WriteBatch
-	//GetTxStatus gets tx status
-	GetTxStatus(channelID, txID string) (*TxStatus, error)
 }

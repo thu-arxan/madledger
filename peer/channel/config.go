@@ -11,11 +11,9 @@
 package channel
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	cc "madledger/blockchain/config"
-	"madledger/common/util"
 	"madledger/core"
 	"madledger/peer/db"
 )
@@ -32,50 +30,53 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 			Output:      nil,
 		}
 		payload, err := getConfigPayload(tx)
-		if err == nil {
-			switch len(payload.ChannelID) {
-			case 0:
-				log.Warnf("Fatal error! Nil channel id in config block, num: %d, index: %d", block.GetNumber(), i)
-			default:
-				channelID := payload.ChannelID
+		if err != nil {
+			status.Err = err.Error()
+			wb.SetTxStatus(tx, status)
+			continue
+		}
+		if len(payload.ChannelID == 0) {
+			log.Warnf("Fatal error! Nil channel id in config block, num: %d, index: %d", block.GetNumber(), i)
+			continue
+		}
 
-				// 创建通道时指定关于gas的设置，目前是gas price, ratio, gas limit
-				if tx.GetReceiver().String() == core.CreateChannelContractAddress.String() {
-					setChannelConfig(channelID, wb, payload)
+		channelID := payload.ChannelID
+		if tx.GetReceiver().String() == core.CreateChannelContractAddress.String() {
 
-					if payload.Profile.Public {
+			if payload.Profile.Public {
+				wb.AddChannel(channelID)
+				m.coordinator.hub.Broadcast("update", Update{
+					ID:     channelID,
+					Remove: false,
+				})
+			} else {
+				var remove = true
+				for _, member := range payload.Profile.Members {
+					if member.Equal(m.identity) {
 						wb.AddChannel(channelID)
 						m.coordinator.hub.Broadcast("update", Update{
 							ID:     channelID,
 							Remove: false,
 						})
-					} else {
-						var remove = true
-						for _, member := range payload.Profile.Members {
-							if member.Equal(m.identity) {
-								wb.AddChannel(channelID)
-								m.coordinator.hub.Broadcast("update", Update{
-									ID:     channelID,
-									Remove: false,
-								})
-								remove = false
-								break
-							}
-						}
-						if remove && m.db.BelongChannel(channelID) {
-							wb.DeleteChannel(channelID)
-							m.coordinator.hub.Broadcast("update", Update{
-								ID:     channelID,
-								Remove: true,
-							})
-						}
+						remove = false
+						break
 					}
 				}
-
-				nums[payload.ChannelID] = []uint64{0}
+				if remove && m.db.BelongChannel(channelID) {
+					wb.DeleteChannel(channelID)
+					m.coordinator.hub.Broadcast("update", Update{
+						ID:     channelID,
+						Remove: true,
+					})
+				}
 			}
-		} else {
-			status.Err = err.Error()
+			nums[payload.ChannelID] = []uint64{0}
+		}
+		// todo:
+		// in orderer this part does not use write batch
+		err := m.db.UpdateChannel(channelID, payload.Profile)
+		if err != nil {
+			status.Err = err
 		}
 		wb.SetTxStatus(tx, status)
 	}
@@ -85,36 +86,9 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 	return nil
 }
 
-// keys are unified now in orderer / peer
-// if needed to modify, modify all of them
-func setChannelConfig(channelID string, wb db.WriteBatch, payload *cc.Payload) {
-	ratioBytes := make([]byte, 8)
-	ratio := payload.AssetTokenRatio
-	if ratio == 0 {
-		ratio = 1
-	}
-	binary.BigEndian.PutUint64(ratioBytes, ratio)
-	wb.Put(util.BytesCombine([]byte(channelID), []byte("ratio")), ratioBytes)
-
-	// gasPrice could be zero
-	gasPriceBytes := make([]byte, 8)
-	gasPrice := payload.GasPrice
-	binary.BigEndian.PutUint64(gasPriceBytes, gasPrice)
-	wb.Put(util.BytesCombine([]byte(channelID), []byte("gasPrice")), gasPriceBytes)
-
-	maxGasBytes := make([]byte, 8)
-	maxGas := payload.MaxGas
-	if maxGas == 0 {
-		maxGas = 1000000
-	}
-	binary.BigEndian.PutUint64(maxGasBytes, maxGas)
-	wb.Put(util.BytesCombine([]byte(channelID), []byte("maxGas")), maxGasBytes)
-
-}
-
 func getConfigPayload(tx *core.Tx) (*cc.Payload, error) {
 	if tx.Data.ChannelID != core.CONFIGCHANNELID {
-		return nil, errors.New("The tx does not belong to global channel")
+		return nil, errors.New("The tx does not belong to config channel")
 	}
 	var payload cc.Payload
 	err := json.Unmarshal(tx.Data.Payload, &payload)

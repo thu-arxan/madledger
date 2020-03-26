@@ -484,54 +484,54 @@ func TestAsset(t *testing.T) {
 	server.Stop()
 }
 
-func TestChargeBlock(t *testing.T) {
-	var err error
-	server, err = NewServer(getTestConfig())
-	require.NoError(t, err)
+// func TestChargeBlock(t *testing.T) {
+// 	var err error
+// 	server, err = NewServer(getTestConfig())
+// 	require.NoError(t, err)
 
-	go func() {
-		require.NoError(t, server.Start())
-	}()
-	time.Sleep(500 * time.Millisecond)
-	client, _ := getClient()
-	// Then try to send a tx to test channel
-	// then add a tx into test channel
-	privKey, _ := crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
-	
-	coreTx, err := core.NewTx("test", common.ZeroAddress, []byte("success"), 0, "", privKey)
-	require.NoError(t, err)
-	pbTx, err := pb.NewTx(coreTx)
-	require.NoError(t, err)
-	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
-		Tx: pbTx,
-	})
-	require.NoError(t, err)
+// 	go func() {
+// 		require.NoError(t, server.Start())
+// 	}()
+// 	time.Sleep(500 * time.Millisecond)
+// 	client, _ := getClient()
+// 	// Then try to send a tx to test channel
+// 	// then add a tx into test channel
+// 	privKey, _ := crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 
-	//change BlockPrice of test channel's
-	payload, err := json.Marshal(cc.Payload{
-		ChannelID:  "test",
-		BlockPrice: uint64(100000),
-	})
-	require.NoError(t, err)
-	coreTx, err = core.NewTx(core.CONFIGCHANNELID, common.ZeroAddress, payload, 0, "", privKey)
-	pbTx, err = pb.NewTx(coreTx)
-	require.NoError(t, err)
-	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
-		Tx: pbTx,
-	})
-	require.NoError(t, err)
+// 	coreTx, err := core.NewTx("test", common.ZeroAddress, []byte("success"), 0, "", privKey)
+// 	require.NoError(t, err)
+// 	pbTx, err := pb.NewTx(coreTx)
+// 	require.NoError(t, err)
+// 	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+// 		Tx: pbTx,
+// 	})
+// 	require.NoError(t, err)
 
-	//now add block should fail
-	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("fail"), 0, "", privKey)
-	require.NoError(t, err)
-	pbTx, err = pb.NewTx(coreTx)
-	require.NoError(t, err)
-	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
-		Tx: pbTx,
-	})
-	require.NoError(t, err)
-	server.Stop()
-}
+// 	//change BlockPrice of test channel's
+// 	payload, err := json.Marshal(cc.Payload{
+// 		ChannelID:  "test",
+// 		BlockPrice: uint64(100000),
+// 	})
+// 	require.NoError(t, err)
+// 	coreTx, err = core.NewTx(core.CONFIGCHANNELID, common.ZeroAddress, payload, 0, "", privKey)
+// 	pbTx, err = pb.NewTx(coreTx)
+// 	require.NoError(t, err)
+// 	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+// 		Tx: pbTx,
+// 	})
+// 	require.NoError(t, err)
+
+// 	//now add block should fail
+// 	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("fail"), 0, "", privKey)
+// 	require.NoError(t, err)
+// 	pbTx, err = pb.NewTx(coreTx)
+// 	require.NoError(t, err)
+// 	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+// 		Tx: pbTx,
+// 	})
+// 	require.NoError(t, err)
+// 	server.Stop()
+// }
 
 func TestEnd(t *testing.T) {
 	initTestEnvironment(".data")

@@ -50,7 +50,7 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		value := tx.Data.Value
 		recipient := payload.Address
 		if recipient == common.ZeroAddress {
-			recipient = common.BytesToAddress([]byte(payload.ChannelID))
+			recipient = common.AddressFromChannelID(payload.ChannelID)
 		}
 		switch receiver {
 		case core.IssueContractAddress:
@@ -89,9 +89,14 @@ func (manager *Manager) issue(cache Cache, senderPKBytes []byte, pkAlgo crypto.A
 	if err != nil {
 		return nil
 	}
-	err = receiverAccount.AddBalance(value)
+	valueLeft, err := manager.payDueAndTryWakeChannel(receiverAccount, value)
 	if err != nil {
-		return nil
+		return err
+	}
+
+	err = receiverAccount.AddBalance(valueLeft)
+	if err != nil {
+		return err
 	}
 	return cache.UpdateAccounts(receiverAccount)
 }
@@ -112,7 +117,12 @@ func (manager *Manager) transfer(cache Cache, sender, receiver common.Address, v
 	if err != nil {
 		return err
 	}
-	if err = receiverAccount.AddBalance(value); err != nil {
+	valueLeft, err := manager.payDueAndTryWakeChannel(receiverAccount, value)
+	if err != nil {
+		return err
+	}
+
+	if err = receiverAccount.AddBalance(valueLeft); err != nil {
 		return err
 	}
 
@@ -145,4 +155,14 @@ func (manager *Manager) exchangeToken(cache Cache, sender, receiver common.Addre
 	cache.Put(tokenKey, val)
 	log.Infof("exchange token completed. token left: %v", val)
 	return nil
+}
+
+func (manager *Manager) payDue(acc common.Account, value uint64) (uint64, error) {
+	due := acc.GetDue()
+	if(due == 0)
+		return value, nil
+	if value < due {
+		return 0, acc.SubDue(value)
+	}
+	return 0, acc.SubDue(value)
 }

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"madledger/common"
 	"madledger/common/crypto"
-	"madledger/core"
 	"madledger/orderer/db"
 	"reflect"
 )
@@ -87,11 +86,6 @@ func (cache *Cache) SetAssetAdmin(pk crypto.PublicKey, pkAlgo crypto.Algorithm) 
 	}
 	cache.adminPK = pk
 	return cache.wb.SetAssetAdmin(pk)
-}
-
-//SetTxStatus store tx execution information to db
-func (cache *Cache) SetTxStatus(tx *core.Tx, status *db.TxStatus) error {
-	return cache.wb.SetTxStatus(tx, status)
 }
 
 // Put store []byte indexed by []byte

@@ -12,7 +12,6 @@ package db
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"madledger/common"
 
@@ -91,13 +90,25 @@ func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
 	}
 	//更新key为_config@id的记录, 具体内容示例如下：
 	// _config@test30 ,  {"Public":true,"Dependencies":null,"Members":[],
-	// "Admins":[{"PK":"BN2PLBpBd5BrSLfTY7QEBYQT0h6lFvWlZyuAVt3/bfEz1g5QJ2lIEXP2Zk15B6E2MWpA/Q4Yxnl+XjFGObvAKTY=","Name":"admin"}]}
+	// "Admins":[{"PK":"BN2PLBpBd5BrSLfTY7QEBYQT0h6lFvWlZyuAVt3/bfEz1g5QJ2lIEXP2Zk15B6E2MWpA/Q4Yxnl+XjFGObvAKTY=","Name":"admin"}]
+	// "gasPrice": 1, "ratio": 1, "maxGas": 1000000 }
 	err = db.connect.Put(key, data, nil)
 	if err != nil {
 		return err
 	}
 	db.hub.Done(id, nil)
 	return nil
+}
+
+func (db *LevelDB) GetChannelProfile(id string) (*cc.Profile, error) {
+	var key = getChannelProfileKey(id)
+	data, err := db.connect.Get(key, nil)
+	if err != nil {
+		return nil, err
+	}
+	var profile cc.Profile
+	err := json.Unmarshal(data, &profile)
+	return profile, err
 }
 
 // AddBlock will records all txs in the block to get rid of duplicated txs
@@ -278,23 +289,14 @@ func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, e
 	return *account, err
 }
 
-// GetTxStatus is the implementation of interface
-func (db *LevelDB) GetTxStatus(channelID, txID string) (*TxStatus, error) {
-	var key = util.BytesCombine([]byte(channelID), []byte(txID))
-	// TODO: Read twice is not necessary
-	if ok, _ := db.connect.Has(key, nil); !ok {
-		return nil, errors.New("not exist")
-	}
-	value, err := db.connect.Get(key, nil)
+//SetAccount can only be called when atomicity is at one account level
+func (db *LevelDB) SetAccount(account common.Account) error {
+	key := getAccountKey(account.GetAddress())
+	data, err := json.Marshal(acc)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	var status TxStatus
-	err = json.Unmarshal(value, &status)
-	if err != nil {
-		return nil, err
-	}
-	return &status, nil
+	return db.Put(key, data)
 }
 
 // Get get the value by key
@@ -336,17 +338,6 @@ func (wb *WriteBatchWrapper) Sync() error {
 	return wb.db.connect.Write(wb.batch, nil)
 }
 
-// SetTxStatus set tx status
-func (wb *WriteBatchWrapper) SetTxStatus(tx *core.Tx, status *TxStatus) error {
-	value, err := json.Marshal(status)
-	if err != nil {
-		return err
-	}
-	var key = util.BytesCombine([]byte(tx.Data.ChannelID), []byte(tx.ID))
-	wb.batch.Put(key, value)
-	return nil
-}
-
 //UpdateAccounts update asset
 func (wb *WriteBatchWrapper) UpdateAccounts(accounts ...common.Account) error {
 	for _, acc := range accounts {
@@ -355,7 +346,9 @@ func (wb *WriteBatchWrapper) UpdateAccounts(accounts ...common.Account) error {
 		if err != nil {
 			return err
 		}
-		wb.Put(key, data)
+		if err = wb.Put(key, data); err != nil {
+			return err
+		}
 	}
 	return nil
 }

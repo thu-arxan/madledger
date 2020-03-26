@@ -12,7 +12,9 @@ package channel
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/common/event"
 	"madledger/common/util"
@@ -471,10 +473,28 @@ func (c *Coordinator) loadUserChannel() error {
 			c.managerLock.Lock()
 			c.Managers[channelID] = manager
 			c.managerLock.Unlock()
+
+			account, err := c.db.GetOrCreateAccount(common.AddressFromChannelID(channelID))
+			if err != nil {
+				return err
+			}
+			if account.GetDue() > 0 {
+				manager.insufficientBalance = true
+			}
 			log.Infof("loadUserChannel: load channel %s from leveldb", channelID)
 		}
 	}
 	return nil
+}
+
+func (c *Coordinator) WakeDueChannel(channelID string) error {
+	c.managerLock.lock()
+	manager, ok := c.Managers[channelID]
+	c.managerLock.Unlcok()
+	if !ok {
+		return errors.New("channel %s info not contained in coordinator", channelID)
+	}
+	manager.WakeWithSufficientBalance()
 }
 
 // setConsensus set consensus according to the consensus config

@@ -59,6 +59,70 @@ func NewLevelDB(dir string) (DB, error) {
 	return db, nil
 }
 
+// HasChannel is the implementation of DB
+func (db *LevelDB) HasChannel(id string) bool {
+	exist, _ := db.connect.Has(getChannelProfileKey(id), nil)
+	return exist
+}
+
+// UpdateChannel is the implementation of DB
+func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
+	var key = getChannelProfileKey(id)
+	if !db.HasChannel(id) {
+		// 更新key为_config的记录，简单记录所有的test通道。 _config,  ["test11","test10","test21","test20"]
+		err := db.addChannel(id)
+		if err != nil {
+			return err
+		}
+	}
+	data, err := json.Marshal(profile)
+	if err != nil {
+		return err
+	}
+	//更新key为_config@id的记录, 具体内容示例如下：
+	// _config@test30 ,  {"Public":true,"Dependencies":null,"Members":[],
+	// "Admins":[{"PK":"BN2PLBpBd5BrSLfTY7QEBYQT0h6lFvWlZyuAVt3/bfEz1g5QJ2lIEXP2Zk15B6E2MWpA/Q4Yxnl+XjFGObvAKTY=","Name":"admin"}]
+	// "gasPrice": 1, "ratio": 1, "maxGas": 1000000 }
+	err = db.connect.Put(key, data, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getChannelProfileKey(id string) []byte {
+	return []byte(fmt.Sprintf("%s@%s", core.CONFIGCHANNELID, id))
+}
+
+// addChannel add a record into key core.CONFIGCHANNELID
+func (db *LevelDB) addChannel(id string) error {
+	var key = []byte(core.CONFIGCHANNELID)
+	exist, _ := db.connect.Has(key, nil)
+	var ids []string
+	if exist {
+		data, err := db.connect.Get(key, nil)
+		if err != nil {
+			return err
+		}
+		err = json.Unmarshal(data, &ids)
+		if err != nil {
+			return err
+		}
+	}
+	if !util.Contain(ids, id) {
+		ids = append(ids, id)
+	}
+	data, err := json.Marshal(ids)
+	if err != nil {
+		return err
+	}
+	err = db.connect.Put(key, data, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // UpdateSystemAdmin update system admin
 func (db *LevelDB) UpdateSystemAdmin(profile *cc.Profile) error {
 	var key = getSystemAdminKey()

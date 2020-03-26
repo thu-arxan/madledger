@@ -39,6 +39,7 @@ type WriteBatch interface {
 	RemoveAccountStorage(address common.Address)
 	AddChannel(channelID string)
 	DeleteChannel(channelID string)
+	UpdateChannel()
 	Sync() error
 
 	UpdateAccounts(accounts ...common.Account) error
@@ -59,6 +60,8 @@ type DB interface {
 	GetTxStatusAsync(channelID, txID string) (*TxStatus, error)
 	BelongChannel(channelID string) bool
 	GetChannels() []string
+	HasChannel(id string) bool
+	UpdateChannel(id string, profile *cc.Profile) error
 	GetTxHistory(address []byte) map[string][]string
 	NewWriteBatch() WriteBatch
 	// GetBlock gets block by block.num from db

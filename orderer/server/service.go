@@ -93,23 +93,3 @@ func (s *Server) GetAccountInfo(ctx context.Context, req *pb.GetAccountInfoReque
 	info.Balance = account.GetBalance()
 	return &info, err
 }
-
-// GetTxStatus is the implementation of protos
-func (s *Server) GetTxStatus(ctx context.Context, req *pb.GetTxStatusRequest) (*pb.TxStatus, error) {
-	status, err := s.cc.AM.GetTxStatus(req.ChannelID, req.TxID)
-	log.Infof("orderer.service.GetTxStatus: get tx %s status in channel %s", req.TxID, req.ChannelID)
-	if err != nil {
-		return &pb.TxStatus{}, nil
-	}
-	result := &pb.TxStatus{
-		Err:                  status.Err,
-		BlockNumber:          status.BlockNumber,
-		BlockIndex:           int32(status.BlockIndex),
-		Output:               status.Output,
-		ContractAddress:      status.ContractAddress,
-		XXX_NoUnkeyedLiteral: struct{}{},
-		XXX_unrecognized:     nil,
-		XXX_sizecache:        0,
-	}
-	return result, nil
-}

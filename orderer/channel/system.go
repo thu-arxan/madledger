@@ -11,7 +11,6 @@
 package channel
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,10 +18,8 @@ import (
 	cc "madledger/blockchain/config"
 	"madledger/common"
 	"madledger/common/crypto"
-	"madledger/common/util"
 	"madledger/consensus"
 	"madledger/core"
-	"madledger/orderer/db"
 )
 
 // AddConfigBlock add a config block
@@ -39,7 +36,6 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 		// This is a create channel tx,从leveldb中查询是否已经存在channelID
 		// 这里并没有对channelID已经存在做出响应,而是在coordinator的createChannel做出响应
 		if !manager.db.HasChannel(channelID) {
-			setChannelConfig(channelID, manager.db, &payload)
 			// then start the consensus
 			err := manager.coordinator.Consensus.AddChannel(channelID, consensus.Config{
 				Timeout: manager.coordinator.chainCfg.BatchTimeout,
@@ -68,18 +64,9 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 			manager.coordinator.setChannel(channelID, channel)
 			nums[payload.ChannelID] = []uint64{0}
 		}
-		//todo: ab where to add this kind of tx
+		//todo: ab update channel may modify blockPrice of user channel
 		//         may need authentication check
-		// this variable only used by orderer to charge block storage
-		if payload.BlockPrice != 0 {
-			blockPriceBytes := make([]byte, 8)
-			binary.BigEndian.PutUint64(blockPriceBytes, payload.BlockPrice)
-			err := manager.db.Put([]byte("system@blockprice"), blockPriceBytes)
-			if err != nil {
-				return nil
-			}
-		}
-		// 更新leveldb
+		// also should this use write batch?
 		err := manager.db.UpdateChannel(channelID, payload.Profile)
 		if err != nil {
 			return err
@@ -90,38 +77,6 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 	return nil
 }
 
-// orderer will not use these values for execution but will use them for listChannelInfo
-// keys are unified now in orderer / peer
-// if needed to modify, modify all of them
-func setChannelConfig(channelID string, db db.DB, payload *cc.Payload) {
-	wb := db.NewWriteBatch()
-	ratioBytes := make([]byte, 8)
-	ratio := payload.AssetTokenRatio
-	if ratio == 0 {
-		ratio = 1
-	}
-	binary.BigEndian.PutUint64(ratioBytes, ratio)
-	wb.Put(util.BytesCombine([]byte(channelID), []byte("ratio")), ratioBytes)
-
-	// gasPrice could be zero
-	gasPriceBytes := make([]byte, 8)
-	gasPrice := payload.GasPrice
-	binary.BigEndian.PutUint64(gasPriceBytes, gasPrice)
-	wb.Put(util.BytesCombine([]byte(channelID), []byte("gasPrice")), gasPriceBytes)
-
-	maxGasBytes := make([]byte, 8)
-	maxGas := payload.MaxGas
-	if maxGas == 0 {
-		maxGas = 1000000
-	}
-	binary.BigEndian.PutUint64(maxGasBytes, maxGas)
-	wb.Put(util.BytesCombine([]byte(channelID), []byte("maxGas")), maxGasBytes)
-
-}
-
-// AddGlobalBlock add a global block
-// Note: It should not add block file again.
-// TODO: update something in the db
 func (manager *Manager) AddGlobalBlock(block *core.Block) error {
 	nums := make(map[string][]uint64)
 	for _, tx := range block.Transactions {
@@ -129,7 +84,12 @@ func (manager *Manager) AddGlobalBlock(block *core.Block) error {
 		if err != nil {
 			return err
 		}
-		nums[payload.ChannelID] = append(nums[payload.ChannelID], payload.Num)
+		switch payload.ChannelID {
+		case core.CONFIGCHANNELID, core.ASSETCHANNELID:
+			manager.coordinator.Unlocks(map[string][]uint64{payload.ChannelID: pyaload.Num})
+		default:
+			nums[payload.ChannelID] = append(nums[payload.ChannelID], payload.Num)
+		}
 	}
 	manager.coordinator.Unlocks(nums)
 
@@ -146,54 +106,38 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 
 	for i, tx := range block.Transactions {
 		receiver := tx.GetReceiver()
-		status := &db.TxStatus{
-			Err:             "",
-			BlockNumber:     block.Header.Number,
-			BlockIndex:      i,
-			Output:          nil,
-			ContractAddress: receiver.String(),
-		}
-
 		var payload ac.Payload
 		err = json.Unmarshal(tx.Data.Payload, &payload)
 		if err != nil {
 			log.Infof("wrong tx format: %v", err)
-			status.Err = err.Error()
-			cache.SetTxStatus(tx, status)
 			continue
 		}
 		sender, err := tx.GetSender()
 		if err != nil {
 			log.Infof("wrong sender address %v", sender)
-			status.Err = err.Error()
-			cache.SetTxStatus(tx, status)
 			continue
 		}
 		//if receiver is not set, issue or transfer money to a channel
 		value := tx.Data.Value
 		recipient := payload.Address
 		if recipient == common.ZeroAddress {
-			recipient = common.BytesToAddress([]byte(payload.ChannelID))
+			recipient = common.AddressFromChannelID(payload.ChannelID)
 		}
 		switch receiver {
 		case core.IssueContractAddress:
-			err = manager.issue(cache, tx.Data.Sig.PK, tx.Data.Sig.Algo, recipient, value)
+			err = manager.issue(cache, tx.Data.Sig.PK, tx.Data.Sig.Algo, recipient, value, payload.ChannelID)
 		case core.TransferContractrAddress:
-			err = manager.transfer(cache, sender, recipient, value)
+			err = manager.transfer(cache, sender, recipient, value, payload.ChannelID)
 		case core.TokenExchangeAddress:
 			err = manager.exchangeToken(cache, sender, recipient, value)
 		default:
 			err = errors.New("Contract not support in _asset")
 		}
-		if err != nil {
-			status.Err = err.Error()
-		}
-		cache.SetTxStatus(tx, status)
 	}
 	return cache.Sync()
 }
 
-func (manager *Manager) issue(cache Cache, senderPKBytes []byte, pkAlgo crypto.Algorithm, receiver common.Address, value uint64) error {
+func (manager *Manager) issue(cache Cache, senderPKBytes []byte, pkAlgo crypto.Algorithm, receiver common.Address, value uint64, channelID string) error {
 	pk, err := crypto.NewPublicKey(senderPKBytes, pkAlgo)
 	if !cache.IsAssetAdmin(pk, pkAlgo) && cache.SetAssetAdmin(pk, pkAlgo) != nil {
 		return fmt.Errorf("issue authentication failed: %v", err)
@@ -204,20 +148,27 @@ func (manager *Manager) issue(cache Cache, senderPKBytes []byte, pkAlgo crypto.A
 
 	receiverAccount, err := cache.GetOrCreateAccount(receiver)
 	if err != nil {
-		return nil
+		return err
 	}
-	err = receiverAccount.AddBalance(value)
+
+	valueLeft, err := manager.payDueAndTryWakeChannel(receiverAccount, value, channelID)
 	if err != nil {
-		return nil
+		return err
+	}
+
+	err = receiverAccount.AddBalance(valueLeft)
+	if err != nil {
+		return err
 	}
 	return cache.UpdateAccounts(receiverAccount)
 }
 
-func (manager *Manager) transfer(cache Cache, sender, receiver common.Address, value uint64) error {
+func (manager *Manager) transfer(cache Cache, sender, receiver common.Address, value uint64, channelID string) error {
 
 	if value == 0 {
 		return nil
 	}
+
 	senderAccount, err := cache.GetOrCreateAccount(sender)
 	if err != nil {
 		return err
@@ -225,11 +176,18 @@ func (manager *Manager) transfer(cache Cache, sender, receiver common.Address, v
 	if err = senderAccount.SubBalance(value); err != nil {
 		return err
 	}
+
 	receiverAccount, err := cache.GetOrCreateAccount(receiver)
 	if err != nil {
 		return err
 	}
-	if err = receiverAccount.AddBalance(value); err != nil {
+
+	valueLeft, err := manager.payDueAndTryWakeChannel(receiverAccount, value, channelID)
+	if err != nil {
+		return err
+	}
+
+	if err = receiverAccount.AddBalance(valueLeft); err != nil {
 		return err
 	}
 
@@ -242,25 +200,16 @@ func (manager *Manager) exchangeToken(cache Cache, sender, receiver common.Addre
 	}
 
 	// orderer can't modify token because they don't know the exact value of token in every channel!!
-
-	// ratioBytes, err := cache.Get(ratioKey, false)
-	// if err != nil {
-	// 	return err
-	// }
-	// ratio := uint64(binary.BigEndian.Uint64(ratioBytes))
-	// log.Infof("exchangeToken get token / asset ratio %d", ratio)
-
-	// tokenKey := util.BytesCombine(receiver.Bytes(), []byte("token"), sender.Bytes())
-	// tokenBytes, err := cache.Get(tokenKey, true)
-	// var token uint64
-	// if tokenBytes != nil {
-	// 	token = uint64(binary.BigEndian.Uint64(tokenBytes))
-	// }
-	// token += ratio * value
-	// val := make([]byte, 8)
-	// binary.BigEndian.PutUint64(val, token)
-
-	// cache.Put(tokenKey, val)
-	// log.Infof("exchange token completed. token left: %v", val)
 	return nil
+}
+
+func (manager *Manager) payDueAndTryWakeChannel(acc common.Account, value uint64, channelID string) (uint64, error) {
+	due := acc.GetDue()
+	if(due == 0)
+		return value, nil
+	if value < due {
+		return 0, acc.SubDue(value)
+	}
+	manager.coordinator.WakeDueChannel(channelID)
+	return 0, acc.SubDue(value)
 }

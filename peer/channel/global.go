@@ -22,7 +22,12 @@ func (m *Manager) AddGlobalBlock(block *core.Block) error {
 		if err != nil {
 			return err
 		}
-		nums[payload.ChannelID] = append(nums[payload.ChannelID], payload.Num)
+		switch payload.ChannelID {
+		case core.CONFIGCHANNELID, core.ASSETCHANNELID:
+			manager.coordinator.Unlocks(map[string][]uint64{payload.ChannelID: pyaload.Num})
+		default:
+			nums[payload.ChannelID] = append(nums[payload.ChannelID], payload.Num)
+		}
 	}
 	m.coordinator.Unlocks(nums)
 	wb := m.db.NewWriteBatch()
