@@ -192,6 +192,9 @@ func testAsset(t *testing.T, client *client.Client) {
 	receiver, err := receiverKey.PubKey().Address()
 	require.NoError(t, err)
 
+	err = client.CreateChannel("test", true, nil, nil, 0, 1, 10000000)
+	require.NoError(t, err)
+
 	//issue to issuer itself
 	coreTx := getAssetChannelTx(core.IssueContractAddress, issuer, "", uint64(10), issuerKey)
 	_, err = client.AddTx(coreTx)
@@ -235,14 +238,20 @@ func testAsset(t *testing.T, client *client.Client) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(5), acc)
 
+	// fmt.Println("test exchangeToken")
 	//test exchangeToken
-	//question: does this test do exchange token?
+	// coreTx = getAssetChannelTx(core.TokenExchangeAddress, common.ZeroAddress, "test", uint64(5), receiverKey)
 	coreTx = getAssetChannelTx(core.TransferContractrAddress, common.ZeroAddress, "test", uint64(5), receiverKey)
 	_, err = client.AddTx(coreTx)
 	require.NoError(t, err)
 	acc, err = client.GetAccountBalance(common.BytesToAddress([]byte("test")))
 	require.NoError(t, err)
 	require.Equal(t, uint64(15), acc)
+	// token, err := client.GetTokenInfo(receiver, []byte("test"))
+	// require.NoError(t, err)
+	// require.Equal(t, uint64(5), token)
+	// fmt.Println("test exchangeToken success")
+
 }
 
 func getAssetChannelTx(contract, addressInPayload common.Address, channelInPayload string, value uint64, privKey crypto.PrivateKey) *core.Tx {
