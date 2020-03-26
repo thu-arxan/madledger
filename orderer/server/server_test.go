@@ -511,7 +511,17 @@ func TestAsset(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	//now add tx should fail
+	//now add tx that cause due
+	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("cause due but pass"), 0, "", privKey)
+	require.NoError(t, err)
+	pbTx, err = pb.NewTx(coreTx)
+	require.NoError(t, err)
+	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: pbTx,
+	})
+	require.NoError(t, err)
+
+	//this one should fail
 	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("fail"), 0, "", privKey)
 	require.NoError(t, err)
 	pbTx, err = pb.NewTx(coreTx)
