@@ -13,6 +13,7 @@ package server
 import (
 	"context"
 	"encoding/binary"
+	"madledger/common"
 	"madledger/common/util"
 	pb "madledger/protos"
 )
@@ -54,7 +55,8 @@ func (s *Server) ListTxHistory(ctx context.Context, req *pb.ListTxHistoryRequest
 func (s *Server) GetTokenInfo(ctx context.Context, req *pb.GetTokenInfoRequest) (*pb.TokenInfo, error) {
 	var info pb.TokenInfo
 
-	key := util.BytesCombine(req.GetChannelID(), []byte("token"), req.GetAddress())
+	channelID := string(req.GetChannelID())
+	key := util.BytesCombine(common.AddressFromChannelID(channelID).Bytes(), []byte("token"), req.GetAddress())
 	tokenBytes, err := s.cm.db.Get(key, false)
 	if err != nil {
 		return &info, err
