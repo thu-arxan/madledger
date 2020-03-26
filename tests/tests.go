@@ -147,7 +147,8 @@ func callContract(t *testing.T, channelID string, client *client.Client) {
 	tx, _ = core.NewTx(channelID, contractAddress, payload, 0, "", client.GetPrivKey())
 	status, err = client.AddTx(tx)
 	require.NoError(t, err)
-	txStatus, err = getTxStatus(BalanceAbi, "info", status)address, err := client.GetPrivKey().PubKey().Address()
+	txStatus, err = getTxStatus(BalanceAbi, "info", status)
+	address, err := client.GetPrivKey().PubKey().Address()
 	require.NoError(t, err)
 	assert.Equal(t, []string{address.String(), "1314"}, txStatus.Output)
 	// then call an address which is not exist
