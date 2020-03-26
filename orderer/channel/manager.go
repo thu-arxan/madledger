@@ -180,6 +180,7 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 			} else {
 				acc.SubBalance(storagePrice)
 			}
+			log.Infof("channel %s need pay %d due to continue", manager.ID, acc.GetDue())
 			err = manager.db.SetAccount(acc)
 			if err != nil {
 				log.Infof("manager.db cannot set account: %s add block %d, %s",
