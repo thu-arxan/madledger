@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"madledger/blockchain/asset"
+	cc "madledger/blockchain/config"
 	client "madledger/client/lib"
 	"madledger/common"
 	"madledger/common/abi"
@@ -146,8 +147,7 @@ func callContract(t *testing.T, channelID string, client *client.Client) {
 	tx, _ = core.NewTx(channelID, contractAddress, payload, 0, "", client.GetPrivKey())
 	status, err = client.AddTx(tx)
 	require.NoError(t, err)
-	txStatus, err = getTxStatus(BalanceAbi, "info", status)
-	address, err := client.GetPrivKey().PubKey().Address()
+	txStatus, err = getTxStatus(BalanceAbi, "info", status)address, err := client.GetPrivKey().PubKey().Address()
 	require.NoError(t, err)
 	assert.Equal(t, []string{address.String(), "1314"}, txStatus.Output)
 	// then call an address which is not exist
@@ -200,58 +200,94 @@ func testAsset(t *testing.T, client *client.Client) {
 	_, err = client.AddTx(coreTx)
 	require.NoError(t, err)
 
-	acc, err := client.GetAccountBalance(issuer)
+	balance, err := client.GetAccountBalance(issuer)
 	require.NoError(t, err)
-	require.Equal(t, uint64(10), acc)
+	require.Equal(t, uint64(10), balance)
 
 	//falseissuer issue fail
 	coreTx = getAssetChannelTx(core.IssueContractAddress, falseIssuer, "", uint64(10), falseIssuerKey)
 	_, err = client.AddTx(coreTx)
 	require.NoError(t, err)
 
-	acc, err = client.GetAccountBalance(falseIssuer)
+	balance, err = client.GetAccountBalance(falseIssuer)
 	require.NoError(t, err)
-	require.Equal(t, uint64(0), acc)
+	require.Equal(t, uint64(0), balance)
 
 	//test issue to channel
 	coreTx = getAssetChannelTx(core.IssueContractAddress, common.ZeroAddress, "test", uint64(10), issuerKey)
 	// question, what if test is not created?
 	_, err = client.AddTx(coreTx)
 	require.NoError(t, err)
-	acc, err = client.GetAccountBalance(common.AddressFromChannelID("test"))
+	balance, err = client.GetAccountBalance(common.AddressFromChannelID("test"))
 	require.NoError(t, err)
-	require.Equal(t, uint64(10), acc)
+	require.Equal(t, uint64(10), balance)
 
 	//test transfer
 	coreTx = getAssetChannelTx(core.TransferContractrAddress, receiver, "", uint64(5), issuerKey)
 	_, err = client.AddTx(coreTx)
 	require.NoError(t, err)
-	acc, err = client.GetAccountBalance(receiver)
+	balance, err = client.GetAccountBalance(receiver)
 	require.NoError(t, err)
-	require.Equal(t, uint64(5), acc)
+	require.Equal(t, uint64(5), balance)
 
 	//test transfer fail
 	coreTx = getAssetChannelTx(core.TransferContractrAddress, receiver, "", uint64(5), falseIssuerKey)
 	_, err = client.AddTx(coreTx)
 	require.NoError(t, err)
-	acc, err = client.GetAccountBalance(receiver)
+	balance, err = client.GetAccountBalance(receiver)
 	require.NoError(t, err)
-	require.Equal(t, uint64(5), acc)
+	require.Equal(t, uint64(5), balance)
 
-	// fmt.Println("test exchangeToken")
-	//test exchangeToken
-	// coreTx = getAssetChannelTx(core.TokenExchangeAddress, common.ZeroAddress, "test", uint64(5), receiverKey)
-	coreTx = getAssetChannelTx(core.TransferContractrAddress, common.ZeroAddress, "test", uint64(5), receiverKey)
+	//4.test exchangeToken a.k.a transfer to channel in orderer execution
+	coreTx = getAssetChannelTx(core.TokenExchangeAddress, common.ZeroAddress, "test", uint64(5), receiverKey)
 	_, err = client.AddTx(coreTx)
 	require.NoError(t, err)
-	acc, err = client.GetAccountBalance(common.AddressFromChannelID("test"))
-	require.NoError(t, err)
-	require.Equal(t, uint64(15), acc)
-	// token, err := client.GetTokenInfo(receiver, []byte("test"))
-	// require.NoError(t, err)
-	// require.Equal(t, uint64(5), token)
-	// fmt.Println("test exchangeToken success")
 
+	balance, err = client.GetAccountBalance(common.AddressFromChannelID("test"))
+	require.NoError(t, err)
+	require.Equal(t, uint64(15), balance)
+
+	token, err := client.GetTokenInfo(receiver, []byte("test"))
+	require.NoError(t, err)
+	require.Equal(t, uint64(5), token)
+
+
+	//test Block Price
+	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("success"), 0, "", issuerKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+
+	//change BlockPrice of test channel's
+
+	payload, err := json.Marshal(cc.Payload{
+		ChannelID:  "test",
+		Profile:	&cc.Profile{
+			BlockPrice: 100,
+		},
+	})
+	require.NoError(t, err)
+	coreTx, err = core.NewTx(core.CONFIGCHANNELID, common.ZeroAddress, payload, 0, "", issuerKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+
+	//now add tx that cause due
+	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("cause due but pass"), 0, "", issuerKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+
+	//this one should fail
+	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("fail"), 0, "", issuerKey)
+	_, err = client.AddTx(coreTx)
+	require.Error(t, err)
+
+	//now issue money to channel account to wake it
+	coreTx = getAssetChannelTx(core.IssueContractAddress, common.ZeroAddress, "test", uint64(1000000), issuerKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+
+	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("success again"), 0, "", issuerKey)
+	_, err = client.AddTx(coreTx)
+	require.Error(t, err)
 }
 
 func getAssetChannelTx(contract, addressInPayload common.Address, channelInPayload string, value uint64, privKey crypto.PrivateKey) *core.Tx {

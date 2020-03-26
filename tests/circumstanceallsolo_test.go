@@ -82,6 +82,7 @@ func TestAllSoloAsset(t *testing.T) {
 	require.NoError(t, err)
 	testAsset(t, client)
 }
+
 func TestAllSoloEnd(t *testing.T) {
 	stopSoloOrderer()
 	stopSoloPeer()

@@ -471,7 +471,7 @@ func TestAsset(t *testing.T) {
 	require.Equal(t, uint64(5), acc.GetBalance())
 
 	//4.test exchangeToken a.k.a transfer to channel in orderer execution
-	pbTx = getAssetChannelTx(core.TransferContractrAddress, common.ZeroAddress, "test", uint64(5), receiverKey)
+	pbTx = getAssetChannelTx(core.TokenExchangeAddress, common.ZeroAddress, "test", uint64(5), receiverKey)
 	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
 		Tx: pbTx,
 	})
@@ -495,12 +495,12 @@ func TestAsset(t *testing.T) {
 	require.NoError(t, err)
 
 	//change BlockPrice of test channel's
-	profile := cc.Profile{
-		BlockPrice:      100,
-	}
+
 	payload, err := json.Marshal(cc.Payload{
 		ChannelID:  "test",
-		Profile:	&profile,
+		Profile:	&cc.Profile{
+			BlockPrice: 100,
+		},
 	})
 	require.NoError(t, err)
 	coreTx, err = core.NewTx(core.CONFIGCHANNELID, common.ZeroAddress, payload, 0, "", privKey)
