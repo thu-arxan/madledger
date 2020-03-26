@@ -155,37 +155,40 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		return err
 	}
 
-	profile, err := manager.db.GetChannelProfile(manager.ID)
-	if err != nil {
-		log.Infof("manager.db cannot get channel profile: %s add block %d, %s",
-			manager.ID, block.Header.Number, err.Error())
-		return err
-	}
-	if profile.BlockPrice != 0 && isUserChannel(manager.ID) && !isGenesisBlock(block) {
-		acc, err := manager.db.GetOrCreateAccount(common.AddressFromChannelID(manager.ID))
+	if isUserChannel(manager.ID) && !isGenesisBlock(block) {
+		profile, err := manager.db.GetChannelProfile(manager.ID)
 		if err != nil {
-			return err
-		}
-		balance := acc.GetBalance()
-
-		storagePrice := uint64(len(block.Bytes())) * profile.BlockPrice
-		if balance < storagePrice {
-			manager.lock.Lock()
-			manager.insufficientBalance = true
-			manager.lock.Unlock()
-			acc.SubBalance(balance)
-			acc.AddDue(storagePrice - balance)
-			// zhq todo: am i doing it correct?
-		} else {
-			acc.SubBalance(storagePrice)
-		}
-		err = manager.db.SetAccount(acc)
-		if err != nil {
-			log.Infof("manager.db cannot set account: %s add block %d, %s",
+			log.Infof("manager.db cannot get channel profile: %s add block %d, %s",
 				manager.ID, block.Header.Number, err.Error())
 			return err
 		}
+		if profile.BlockPrice != 0 {
+			acc, err := manager.db.GetOrCreateAccount(common.AddressFromChannelID(manager.ID))
+			if err != nil {
+				return err
+			}
+			balance := acc.GetBalance()
+
+			storagePrice := uint64(len(block.Bytes())) * profile.BlockPrice
+			if balance < storagePrice {
+				manager.lock.Lock()
+				manager.insufficientBalance = true
+				manager.lock.Unlock()
+				acc.SubBalance(balance)
+				acc.AddDue(storagePrice - balance)
+				// zhq todo: am i doing it correct?
+			} else {
+				acc.SubBalance(storagePrice)
+			}
+			err = manager.db.SetAccount(acc)
+			if err != nil {
+				log.Infof("manager.db cannot set account: %s add block %d, %s",
+					manager.ID, block.Header.Number, err.Error())
+				return err
+			}
+		}
 	}
+
 	defer func() {
 		log.Infof("AddBlock %d in orderer channel %v success", block.GetNumber(), manager.ID)
 	}()
