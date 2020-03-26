@@ -211,6 +211,8 @@ func (manager *Manager) payDueAndTryWakeChannel(acc common.Account, value uint64
 	if value < due {
 		return 0, acc.SubDue(value)
 	}
-	manager.coordinator.WakeDueChannel(channelID)
-	return 0, acc.SubDue(value)
+	if err := manager.coordinator.WakeDueChannel(channelID); err != nil {
+		log.Warnf("channel awake error: %v", err)
+	}
+	return value - due, acc.SubDue(due)
 }

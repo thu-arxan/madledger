@@ -44,36 +44,6 @@ func (cache *Cache) Get(key []byte, couldBeEmpty bool) ([]byte, error) {
 	return val, nil
 }
 
-// GetGasParams returns channel specified gas info
-// todo: ab
-// could be empty?
-func (cache *Cache) GetGasParams(channelID string) (uint64, uint64, error) {
-	var maxGas, gasPrice uint64
-	var maxGasBytes, gasPriceBytes []byte
-	maxGasKey := util.BytesCombine([]byte(channelID), []byte("maxGas"))
-	gasPriceKey := util.BytesCombine([]byte(channelID), []byte("gasPrice"))
-	if _, ok := cache.kvs[string(maxGasKey)]; !ok {
-		maxGasBytes, err := cache.db.Get(maxGasKey, false)
-		if err != nil {
-			return 0, 0, err
-		}
-		cache.kvs[string(maxGasKey)] = maxGasBytes
-	}
-	maxGasBytes = cache.kvs[string(maxGasKey)]
-	maxGas = binary.BigEndian.Uint64(maxGasBytes)
-
-	if _, ok := cache.kvs[string(gasPriceKey)]; !ok {
-		gasPriceBytes, err := cache.db.Get(gasPriceKey, false)
-		if err != nil {
-			return 0, 0, err
-		}
-		cache.kvs[string(gasPriceKey)] = gasPriceBytes
-	}
-	gasPriceBytes = cache.kvs[string(gasPriceKey)]
-	gasPrice = binary.BigEndian.Uint64(gasPriceBytes)
-	return maxGas, gasPrice, nil
-}
-
 // GetToken return token sender has of channel
 func (cache *Cache) GetToken(channelID string, sender common.Address) (uint64, error) {
 	tokenKey := util.BytesCombine([]byte(channelID), []byte("token"), sender.Bytes())

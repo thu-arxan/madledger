@@ -155,7 +155,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 	}
 	wg.Wait()
 
-	maxGas, gasPrice, err := cache.GetGasParams(m.id)
+	profile, err := m.db.GetChannelProfile(m.id)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		// 用出来之后用前减后可得到具体消耗了多少gas
 		// 然后将token -= gas * gas price，存到cache中
 
-		gasLimit := maxGas
+		gasLimit := profile.MaxGas
 		if gasLimit > tx.Data.Gas {
 			gasLimit = tx.Data.Gas
 		}
@@ -210,7 +210,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			cache.SetTxStatus(tx, status)
 			continue
 		}
-		if tokenLeft < gasLimit*gasPrice {
+		if tokenLeft < gasLimit*profile.GasPrice {
 			status.Err = "Not enough token"
 			cache.SetTxStatus(tx, status)
 			continue
@@ -248,7 +248,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			cache.SetTxStatus(tx, status)
 		}
 		gasUsed := gasLimit - *context.BlockContext().Gas
-		tokenLeft -= gasUsed * gasPrice
+		tokenLeft -= gasUsed * profile.GasPrice
 		cache.SetToken(m.id, senderAddress, tokenLeft)
 	}
 	return cache.wb, nil

@@ -58,7 +58,7 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		case core.TransferContractrAddress:
 			err = manager.transfer(cache, sender, recipient, value)
 		case core.TokenExchangeAddress:
-			err = manager.exchangeToken(cache, sender, recipient, value)
+			err = manager.exchangeToken(cache, sender, recipient, value, payload.ChannelID)
 		default:
 			err = errors.New("Contract not support in _asset")
 		}
@@ -129,18 +129,15 @@ func (manager *Manager) transfer(cache Cache, sender, receiver common.Address, v
 	return cache.UpdateAccounts(senderAccount, receiverAccount)
 }
 
-func (manager *Manager) exchangeToken(cache Cache, sender, receiver common.Address, value uint64) error {
+func (manager *Manager) exchangeToken(cache Cache, sender, receiver common.Address, value uint64, channelID string) error {
 	if err := manager.transfer(cache, sender, receiver, value); err != nil {
 		return err
 	}
 
-	ratioKey := util.BytesCombine(receiver.Bytes(), []byte("ratio"))
-	ratioBytes, err := cache.Get(ratioKey, false)
+	profile, err := manager.db.GetChannelProfile(channelID)
 	if err != nil {
-		return err
+		return nil
 	}
-	ratio := uint64(binary.BigEndian.Uint64(ratioBytes))
-	log.Infof("exchangeToken get token / asset ratio %d", ratio)
 
 	tokenKey := util.BytesCombine(receiver.Bytes(), []byte("token"), sender.Bytes())
 	tokenBytes, err := cache.Get(tokenKey, true)
@@ -148,7 +145,7 @@ func (manager *Manager) exchangeToken(cache Cache, sender, receiver common.Addre
 	if tokenBytes != nil {
 		token = uint64(binary.BigEndian.Uint64(tokenBytes))
 	}
-	token += ratio * value
+	token += profile.AssetTokenRatio * value
 	val := make([]byte, 8)
 	binary.BigEndian.PutUint64(val, token)
 
@@ -165,5 +162,5 @@ func (manager *Manager) payDue(acc common.Account, value uint64) (uint64, error)
 	if value < due {
 		return 0, acc.SubDue(value)
 	}
-	return 0, acc.SubDue(value)
+	return value - due, acc.SubDue(due)
 }
