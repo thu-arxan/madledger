@@ -24,7 +24,8 @@ func (m *Manager) AddGlobalBlock(block *core.Block) error {
 		}
 		switch payload.ChannelID {
 		case core.CONFIGCHANNELID, core.ASSETCHANNELID:
-			manager.coordinator.Unlocks(map[string][]uint64{payload.ChannelID: pyaload.Num})
+			m.coordinator.Unlocks(map[string][]uint64{payload.ChannelID: []uint64{payload.Num}})
+			// zhq todo: am i doing it correct?
 		default:
 			nums[payload.ChannelID] = append(nums[payload.ChannelID], payload.Num)
 		}

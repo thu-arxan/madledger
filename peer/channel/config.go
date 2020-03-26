@@ -35,7 +35,7 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 			wb.SetTxStatus(tx, status)
 			continue
 		}
-		if len(payload.ChannelID == 0) {
+		if len(payload.ChannelID) == 0 {
 			log.Warnf("Fatal error! Nil channel id in config block, num: %d, index: %d", block.GetNumber(), i)
 			continue
 		}
@@ -74,9 +74,9 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 		}
 		// todo:
 		// in orderer this part does not use write batch
-		err := m.db.UpdateChannel(channelID, payload.Profile)
+		err = m.db.UpdateChannel(channelID, payload.Profile)
 		if err != nil {
-			status.Err = err
+			status.Err = err.Error()
 		}
 		wb.SetTxStatus(tx, status)
 	}

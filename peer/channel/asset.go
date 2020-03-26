@@ -159,8 +159,9 @@ func (manager *Manager) exchangeToken(cache Cache, sender, receiver common.Addre
 
 func (manager *Manager) payDue(acc common.Account, value uint64) (uint64, error) {
 	due := acc.GetDue()
-	if(due == 0)
+	if due == 0 {
 		return value, nil
+	}
 	if value < due {
 		return 0, acc.SubDue(value)
 	}

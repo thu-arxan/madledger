@@ -174,7 +174,8 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 			manager.insufficientBalance = true
 			manager.lock.Unlock()
 			acc.SubBalance(balance)
-			acc.AddDue(price - balance)
+			acc.AddDue(storagePrice - balance)
+			// zhq todo: am i doing it correct?
 		} else {
 			acc.SubBalance(storagePrice)
 		}
@@ -220,9 +221,11 @@ func (manager *Manager) AddTx(tx *core.Tx) error {
 	}
 
 	var insufficientBalance bool
-	c.lock.RLock()
+	// c.lock.RLock()
+	manager.lock.RLock()
 	insufficientBalance = manager.insufficientBalance
-	c.lock.RUnlock()
+	// c.lock.RUnlock()
+	manager.lock.RUnlock()
 	if insufficientBalance {
 		return errors.New("Not Enough Balance In User Channel To Generate New Block")
 	}

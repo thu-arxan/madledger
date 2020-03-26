@@ -344,6 +344,18 @@ func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, e
 	return *account, err
 }
 
+// GetChannelProfile by channel id
+func (db *LevelDB) GetChannelProfile(id string) (*cc.Profile, error) {
+	var key = getChannelProfileKey(id)
+	data, err := db.connect.Get(key, nil)
+	if err != nil {
+		return nil, err
+	}
+	var profile cc.Profile
+	err = json.Unmarshal(data, &profile)
+	return &profile, err
+}
+
 // WriteBatchWrapper is a wrapper of level.Batch
 type WriteBatchWrapper struct {
 	batch *leveldb.Batch

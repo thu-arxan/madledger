@@ -39,7 +39,7 @@ type WriteBatch interface {
 	RemoveAccountStorage(address common.Address)
 	AddChannel(channelID string)
 	DeleteChannel(channelID string)
-	UpdateChannel()
+	// UpdateChannel()
 	Sync() error
 
 	UpdateAccounts(accounts ...common.Account) error
@@ -75,4 +75,6 @@ type DB interface {
 	GetOrCreateAccount(address common.Address) (common.Account, error)
 	UpdateSystemAdmin(profile *cc.Profile) error
 	IsSystemAdmin(member *core.Member) bool
+
+	GetChannelProfile(id string) (*cc.Profile, error)
 }

@@ -107,8 +107,8 @@ func (db *LevelDB) GetChannelProfile(id string) (*cc.Profile, error) {
 		return nil, err
 	}
 	var profile cc.Profile
-	err := json.Unmarshal(data, &profile)
-	return profile, err
+	err = json.Unmarshal(data, &profile)
+	return &profile, err
 }
 
 // AddBlock will records all txs in the block to get rid of duplicated txs
@@ -292,7 +292,7 @@ func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, e
 //SetAccount can only be called when atomicity is at one account level
 func (db *LevelDB) SetAccount(account common.Account) error {
 	key := getAccountKey(account.GetAddress())
-	data, err := json.Marshal(acc)
+	data, err := json.Marshal(account)
 	if err != nil {
 		return err
 	}
@@ -346,9 +346,7 @@ func (wb *WriteBatchWrapper) UpdateAccounts(accounts ...common.Account) error {
 		if err != nil {
 			return err
 		}
-		if err = wb.Put(key, data); err != nil {
-			return err
-		}
+		wb.Put(key, data)
 	}
 	return nil
 }

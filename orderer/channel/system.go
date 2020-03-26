@@ -86,7 +86,7 @@ func (manager *Manager) AddGlobalBlock(block *core.Block) error {
 		}
 		switch payload.ChannelID {
 		case core.CONFIGCHANNELID, core.ASSETCHANNELID:
-			manager.coordinator.Unlocks(map[string][]uint64{payload.ChannelID: pyaload.Num})
+			manager.coordinator.Unlocks(map[string][]uint64{payload.ChannelID: []uint64{payload.Num}})
 		default:
 			nums[payload.ChannelID] = append(nums[payload.ChannelID], payload.Num)
 		}
@@ -104,7 +104,7 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 	cache := NewCache(manager.db)
 	var err error
 
-	for i, tx := range block.Transactions {
+	for _, tx := range block.Transactions {
 		receiver := tx.GetReceiver()
 		var payload ac.Payload
 		err = json.Unmarshal(tx.Data.Payload, &payload)
@@ -129,7 +129,7 @@ func (manager *Manager) AddAssetBlock(block *core.Block) error {
 		case core.TransferContractrAddress:
 			err = manager.transfer(cache, sender, recipient, value, payload.ChannelID)
 		case core.TokenExchangeAddress:
-			err = manager.exchangeToken(cache, sender, recipient, value)
+			err = manager.exchangeToken(cache, sender, recipient, value, payload.ChannelID)
 		default:
 			err = errors.New("Contract not support in _asset")
 		}
@@ -194,8 +194,8 @@ func (manager *Manager) transfer(cache Cache, sender, receiver common.Address, v
 	return cache.UpdateAccounts(senderAccount, receiverAccount)
 }
 
-func (manager *Manager) exchangeToken(cache Cache, sender, receiver common.Address, value uint64) error {
-	if err := manager.transfer(cache, sender, receiver, value); err != nil {
+func (manager *Manager) exchangeToken(cache Cache, sender, receiver common.Address, value uint64, channelID string) error {
+	if err := manager.transfer(cache, sender, receiver, value, channelID); err != nil {
 		return err
 	}
 
@@ -205,8 +205,9 @@ func (manager *Manager) exchangeToken(cache Cache, sender, receiver common.Addre
 
 func (manager *Manager) payDueAndTryWakeChannel(acc common.Account, value uint64, channelID string) (uint64, error) {
 	due := acc.GetDue()
-	if(due == 0)
+	if due == 0 {
 		return value, nil
+	}
 	if value < due {
 		return 0, acc.SubDue(value)
 	}

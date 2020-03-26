@@ -83,7 +83,7 @@ func (a *Account) AddDue(due uint64) error {
 }
 
 // SubDue sub due to channel account
-func (a *Account) AddDue(due uint64) error {
+func (a *Account) SubDue(due uint64) error {
 	if _, overflow := math.SafeSub(a.Due, due); overflow {
 		return errors.New("Overflow")
 	}

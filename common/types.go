@@ -163,6 +163,7 @@ func AddressFromBytes(bs []byte) (address Address, err error) {
 // encoded bytes would be truncated if encoded len is bigger than AddressLength
 func AddressFromChannelID(channelID string) Address {
 	var address Address
-	address.SetBytes(util.Hex(channelID[:]))
+	// address.SetBytes(util.Hex(channelID[:]))
+	address.SetBytes([]byte(util.Hex([]byte(channelID))))
 	return address
 }

@@ -12,7 +12,6 @@ package channel
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"madledger/common"
 	"madledger/common/crypto"
@@ -488,13 +487,14 @@ func (c *Coordinator) loadUserChannel() error {
 }
 
 func (c *Coordinator) WakeDueChannel(channelID string) error {
-	c.managerLock.lock()
+	c.managerLock.Lock()
 	manager, ok := c.Managers[channelID]
-	c.managerLock.Unlcok()
+	c.managerLock.Unlock()
 	if !ok {
-		return errors.New("channel %s info not contained in coordinator", channelID)
+		return fmt.Errorf("channel %s info not contained in coordinator", channelID)
 	}
 	manager.WakeWithSufficientBalance()
+	return nil
 }
 
 // setConsensus set consensus according to the consensus config

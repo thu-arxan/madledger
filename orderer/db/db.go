@@ -40,7 +40,7 @@ type DB interface {
 	ListChannel() []string
 	HasChannel(id string) bool
 	UpdateChannel(id string, profile *cc.Profile) error
-	GetChannelProfile(id string) (profile *cc.Profile, error)
+	GetChannelProfile(id string) (*cc.Profile, error)
 	// AddBlock will records all txs in the block to get rid of duplicated txs
 	AddBlock(block *core.Block) error
 	HasTx(tx *core.Tx) bool
