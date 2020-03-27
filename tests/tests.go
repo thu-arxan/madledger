@@ -288,7 +288,7 @@ func testAsset(t *testing.T, client *client.Client) {
 
 	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("success again"), 0, "", issuerKey)
 	_, err = client.AddTx(coreTx)
-	require.Error(t, err)
+	require.NoError(t, err)
 }
 
 func getAssetChannelTx(contract, addressInPayload common.Address, channelInPayload string, value uint64, privKey crypto.PrivateKey) *core.Tx {
