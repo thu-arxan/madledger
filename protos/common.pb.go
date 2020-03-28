@@ -30,7 +30,7 @@ func (m *StringList) Reset()         { *m = StringList{} }
 func (m *StringList) String() string { return proto.CompactTextString(m) }
 func (*StringList) ProtoMessage()    {}
 func (*StringList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_common_b55cbac9d88f6198, []int{0}
+	return fileDescriptor_common_b71b64c9e84d896a, []int{0}
 }
 func (m *StringList) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StringList.Unmarshal(m, b)
@@ -61,9 +61,9 @@ func init() {
 	proto.RegisterType((*StringList)(nil), "protos.StringList")
 }
 
-func init() { proto.RegisterFile("common.proto", fileDescriptor_common_b55cbac9d88f6198) }
+func init() { proto.RegisterFile("common.proto", fileDescriptor_common_b71b64c9e84d896a) }
 
-var fileDescriptor_common_b55cbac9d88f6198 = []byte{
+var fileDescriptor_common_b71b64c9e84d896a = []byte{
 	// 78 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x49, 0xce, 0xcf, 0xcd,
 	0xcd, 0xcf, 0xd3, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x03, 0x53, 0xc5, 0x4a, 0x4a, 0x5c,

@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package tests
 
 import (
@@ -37,6 +47,10 @@ var (
 	bftChannels []string
 )
 
+var (
+	bftClientsSet []*core.Member
+)
+
 func TestBFT(t *testing.T) {
 	require.NoError(t, initBFTEnvironment())
 }
@@ -54,6 +68,7 @@ func TestBFTPeersStart(t *testing.T) {
 		cfg, err := pc.LoadConfig(cfgPath)
 		require.NoError(t, err)
 		server, err := peer.NewServer(cfg)
+
 		require.NoError(t, err)
 		bftPeers[i] = server
 	}
@@ -80,26 +95,35 @@ func TestBFTLoadClients(t *testing.T) {
 		client, err := client.NewClientFromConfig(cfg)
 		require.NoError(t, err)
 		bftClients[i] = client
+
 	}
+	c0, _ := core.NewMember(bftClients[0].GetPrivKey().PubKey(), "admin")
+	c1, _ := core.NewMember(bftClients[1].GetPrivKey().PubKey(), "admin")
+	c2, _ := core.NewMember(bftClients[2].GetPrivKey().PubKey(), "admin")
+	c3, _ := core.NewMember(bftClients[3].GetPrivKey().PubKey(), "admin")
+	bftClientsSet = []*core.Member{c0, c1, c2, c3}
 }
 
 func TestBFTCreateChannels(t *testing.T) {
 	var wg sync.WaitGroup
 	var lock sync.RWMutex
 	var channels []string
+
 	for i := range bftClients {
 		// each client will create 5 channels
 		for m := 0; m < 5; m++ {
 			wg.Add(1)
 			go func(t *testing.T, i int) {
-				defer wg.Done()
+
 				client := bftClients[i]
 				channel := strings.ToLower(util.RandomString(16))
 				lock.Lock()
 				channels = append(channels, channel)
 				lock.Unlock()
-				err := client.CreateChannel(channel, true, nil, nil)
+
+				err := client.CreateChannel(channel, true, nil, nil, 0, 1, 10000000)
 				require.NoError(t, err)
+				defer wg.Done()
 			}(t, i)
 		}
 	}
@@ -138,7 +162,8 @@ func TestBFTReCreateChannels(t *testing.T) {
 	// Here we recreate 2 channels
 	for i := 0; i < 2; i++ {
 		channel := strings.ToLower(util.RandomString(16))
-		err := bftClients[0].CreateChannel(channel, true, nil, nil)
+
+		err := bftClients[i].CreateChannel(channel, true, nil, nil, 0, 1, 10000000)
 		require.NoError(t, err)
 	}
 	time.Sleep(2 * time.Second)
@@ -188,12 +213,18 @@ func TestBFTCreateTx(t *testing.T) {
 		require.NoError(t, err)
 		_, err = client1.AddTx(tx)
 		require.NoError(t, err)
+
 	}
 	time.Sleep(1000 * time.Millisecond)
 	for i := range bftOrderers {
 		require.True(t, util.IsDirSame(getBFTOrdererBlockPath(0), getBFTOrdererBlockPath(i)), fmt.Sprintf("Orderer %d is not same with 0", i))
 	}
 }
+
+func TestBFTAsset(t *testing.T) {
+	testAsset(t, bftClients[0])
+}
+
 func TestBFTEnd(t *testing.T) {
 	for i := range bftOrderers {
 		stopOrderer(bftOrderers[i])
@@ -321,7 +352,7 @@ func startOrderer(node int) string {
 		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("orderer start -c %s", getBFTOrdererConfigPath(node)))
 		_, err := cmd.Output()
 		if err != nil {
-			panic(fmt.Sprintf("Run orderer %d failed", node))
+			panic(fmt.Sprintf("Run orderer %d failed because %v", node, err))
 		}
 	}()
 

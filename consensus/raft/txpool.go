@@ -1,8 +1,17 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package raft
 
 import (
 	"errors"
-	"madledger/common/crypto"
 	"madledger/common/util"
 	"madledger/core"
 	"sync"
@@ -27,7 +36,7 @@ func (pool *txPool) addTx(tx []byte) error {
 	pool.lock.Lock()
 	defer pool.lock.Unlock()
 	// check if the tx is duplicated
-	var hash = util.Hex(crypto.Hash(tx))
+	var hash = util.Hex(Hash(tx))
 	if util.Contain(pool.hashes, hash) {
 		return errors.New("Transaction is already in the pool")
 	}

@@ -1,8 +1,17 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package tx
 
 import (
 	"errors"
-	eabi "evm/abi"
 	"madledger/client/lib"
 	"madledger/client/util"
 	"madledger/common"
@@ -34,6 +43,8 @@ func init() {
 	callViper.BindPFlag("channelID", callCmd.Flags().Lookup("channelID"))
 	callCmd.Flags().StringP("receiver", "r", "", "The contract address of the tx")
 	callViper.BindPFlag("receiver", callCmd.Flags().Lookup("receiver"))
+	callCmd.Flags().Int64P("value", "v", 0, "The value of the tx")
+	callViper.BindPFlag("value", callCmd.Flags().Lookup("value"))
 }
 
 func runCall(cmd *cobra.Command, args []string) error {
@@ -54,11 +65,12 @@ func runCall(cmd *cobra.Command, args []string) error {
 		return errors.New("The name of func can not be nil")
 	}
 	receiver := callViper.GetString("receiver")
+	value := uint64(callViper.GetInt64("value"))
 	if receiver == "" {
 		return errors.New("The address of receiver can not be nil")
 	}
 	inputs := callViper.GetStringSlice("inputs")
-	payloadBytes, err := eabi.Pack(abiPath, funcName, inputs...)
+	payloadBytes, err := abi.Pack(abiPath, funcName, inputs...)
 	if err != nil {
 		return err
 	}
@@ -68,7 +80,7 @@ func runCall(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	tx, err := core.NewTx(channelID, common.HexToAddress(receiver), payloadBytes, 0, "", client.GetPrivKey())
+	tx, err := core.NewTx(channelID, common.HexToAddress(receiver), payloadBytes, value, "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}
@@ -82,15 +94,11 @@ func runCall(cmd *cobra.Command, args []string) error {
 	if status.Err != "" {
 		table.AddRow(status.BlockNumber, status.BlockIndex, status.Err)
 	} else {
-		values, err := abi.Unpacker(abiPath, funcName, status.Output)
+		values, err := abi.Unpack(abiPath, funcName, status.Output)
 		if err != nil {
 			return err
 		}
-		var output []string
-		for _, value := range values {
-			output = append(output, value.Value)
-		}
-		table.AddRow(status.BlockNumber, status.BlockIndex, output)
+		table.AddRow(status.BlockNumber, status.BlockIndex, values)
 	}
 	table.Render()
 

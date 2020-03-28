@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package protos
 
 import (
@@ -43,9 +53,11 @@ func NewTxData(txData *core.TxData) *TxData {
 		Msg:       txData.Msg,
 		Version:   txData.Version,
 		Sig: &TxSig{
-			PK:  util.CopyBytes(txData.Sig.PK),
-			Sig: util.CopyBytes(txData.Sig.Sig),
+			PK:   util.CopyBytes(txData.Sig.PK),
+			Sig:  util.CopyBytes(txData.Sig.Sig),
+			Algo: txData.Sig.Algo,
 		},
+		Gas: txData.Gas,
 	}
 
 	return td
@@ -61,11 +73,13 @@ func (data *TxData) ToCore() *core.TxData {
 		Value:     data.Value,
 		Msg:       data.Msg,
 		Version:   data.Version,
+		Gas:       data.Gas,
 	}
 	if data.Sig != nil {
 		td.Sig = core.TxSig{
-			PK:  util.CopyBytes(data.Sig.PK),
-			Sig: util.CopyBytes(data.Sig.Sig),
+			PK:   util.CopyBytes(data.Sig.PK),
+			Sig:  util.CopyBytes(data.Sig.Sig),
+			Algo: data.Sig.Algo,
 		}
 	}
 	return td

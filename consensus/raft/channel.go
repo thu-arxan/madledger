@@ -1,10 +1,19 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package raft
 
 import (
 	"encoding/json"
 	"fmt"
 	"madledger/common"
-	"madledger/common/crypto"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
@@ -113,11 +122,13 @@ func (c *channel) addTx(tx []byte) error {
 		c.txs <- true
 	}()
 
-	hash := util.Hex(crypto.Hash(tx))
+	hash := util.Hex(Hash(tx))
 	log.Infof("[%d][%s] watch tx: %s", c.id, c.channelID, hash)
 	result := c.hub.Watch(hash, nil)
-
-	return result.Err
+	if result == nil {
+		return nil
+	}
+	return result.(*event.Result).Err
 }
 
 // Stop will block the work of channel
@@ -158,7 +169,7 @@ func (c *channel) blockDone(block *eraft.Block) error {
 	c.raft.PutBlock(block)
 
 	for _, tx := range block.Txs {
-		hash := util.Hex(crypto.Hash(tx))
+		hash := util.Hex(Hash(tx))
 		log.Infof("Node[%d] channel[%s] hub done tx %s", c.raft.GetID(), c.channelID, hash)
 		c.hub.Done(hash, nil)
 	}

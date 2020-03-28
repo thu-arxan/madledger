@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package config
 
 import (
@@ -25,6 +35,16 @@ type Profile struct {
 	// Note: If the public is true, Admins is still works and may not be contained in the
 	// Members. But if the public is false, Admins should be contained in the Members.
 	Admins []*core.Member
+
+	// GasPrice is the token needed per gas
+	GasPrice uint64
+	// number of tokens that one asset exchange
+	AssetTokenRatio uint64
+	// Maximum Gas spent in one evm execution
+	MaxGas uint64
+
+	// Block Storage Price
+	BlockPrice uint64
 }
 
 // Verify returns if a payload is packed well

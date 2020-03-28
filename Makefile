@@ -44,7 +44,6 @@ OS_NAME                := $(shell uname -s)
 # 					madledger/common/math \
 # 					madledger/common/hexutil \
 # 					madledger/common/crypto \
-# 					madledger/common/abi \
 # 					madledger/core \
 # 					madledger/protos \
 # 					madledger/blockchain/config \
@@ -83,7 +82,6 @@ test:
 	@$(GO_TEST_UNIT) madledger/common/event
 	@$(GO_TEST_UNIT) madledger/common/math
 	@$(GO_TEST_UNIT) madledger/common/crypto
-	@$(GO_TEST_UNIT) madledger/common/abi
 
 	@$(GO_TEST_UNIT) madledger/core
 
@@ -125,10 +123,6 @@ clean:
 	@cd tests/performance/raft && rm -rf .clients .orderer .peer
 	@cd tests/performance/solo && rm -rf .clients .orderer .peer
 	@cd tests/performance/bft && rm -rf .clients .orderer .peer
-
-syncevm:
-	@rm -rf vendor/evm
-	@cd ../evm && zip evm.zip $$(git ls-files) && unzip -d ../madledger/vendor/evm evm.zip && rm evm.zip
 
 raft:
 	@$(GO_TEST_UNIT) madledger/consensus/raft

@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package channel
 
 import (
@@ -10,12 +20,12 @@ import (
 	"madledger/common/crypto"
 	"madledger/consensus"
 	"madledger/core"
-	"madledger/orderer/db"
 )
 
 // AddConfigBlock add a config block
 // The block is formated, so there is no need to verify
 func (manager *Manager) AddConfigBlock(block *core.Block) error {
+	nums := make(map[string][]uint64)
 	if block.Header.Number == 0 {
 		return nil
 	}
@@ -40,6 +50,7 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 			// create genesis block here
 			// Note: the genesis block will contain no tx
 			genesisBlock := core.NewBlock(channelID, 0, core.GenesisBlockPrevHash, []*core.Tx{})
+
 			err = channel.AddBlock(genesisBlock)
 			if err != nil {
 				return err
@@ -51,121 +62,158 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 			}()
 			// 更新coordinator.Managers(map类型)
 			manager.coordinator.setChannel(channelID, channel)
+			nums[payload.ChannelID] = []uint64{0}
 		}
-		// 更新leveldb
+		//todo: ab update channel may modify blockPrice of user channel
+		//         may need authentication check
+		// also should this use write batch?
 		err := manager.db.UpdateChannel(channelID, payload.Profile)
 		if err != nil {
 			return err
 		}
 	}
+	manager.coordinator.Unlocks(nums)
+
 	return nil
 }
 
-// AddGlobalBlock add a global block
-// Note: It should not add block file again.
-// TODO: update something in the db
 func (manager *Manager) AddGlobalBlock(block *core.Block) error {
+	nums := make(map[string][]uint64)
+	for _, tx := range block.Transactions {
+		payload, err := tx.GetGlobalTxPayload()
+		if err != nil {
+			return err
+		}
+		switch payload.ChannelID {
+		case core.CONFIGCHANNELID, core.ASSETCHANNELID:
+			manager.coordinator.Unlocks(map[string][]uint64{payload.ChannelID: []uint64{payload.Num}})
+		default:
+			nums[payload.ChannelID] = append(nums[payload.ChannelID], payload.Num)
+		}
+	}
+	manager.coordinator.Unlocks(nums)
+
 	return nil
 }
 
-// AddAssetBlock add an account block
+// AddAssetBlock add an asset block
 func (manager *Manager) AddAssetBlock(block *core.Block) error {
 	if block.Header.Number == 0 {
 		return nil
 	}
-	wb := manager.db.NewWriteBatch()
+	cache := NewCache(manager.db)
 	var err error
 
 	for _, tx := range block.Transactions {
-		status := &db.TxStatus{
-			Executed: false,
-		}
-
+		receiver := tx.GetReceiver()
 		var payload ac.Payload
 		err = json.Unmarshal(tx.Data.Payload, &payload)
 		if err != nil {
-			log.Errorf("wrong tx format: %v", err)
-			wb.SetTxStatus(tx, status)
+			log.Infof("wrong tx format: %v", err)
 			continue
 		}
 		sender, err := tx.GetSender()
 		if err != nil {
-			log.Errorf("wrong sender address %v", sender)
-			wb.SetTxStatus(tx, status)
+			log.Infof("wrong sender address %v", sender)
 			continue
 		}
-		receiver := tx.GetReceiver()
 		//if receiver is not set, issue or transfer money to a channel
-		if receiver == common.ZeroAddress {
-			receiver = common.BytesToAddress([]byte(payload.ChannelID))
-			if receiver == common.ZeroAddress {
-				return errors.New("No specified receiver")
-			}
+		value := tx.Data.Value
+		recipient := payload.Address
+		if recipient == common.ZeroAddress {
+			recipient = common.AddressFromChannelID(payload.ChannelID)
 		}
-
-		switch payload.Action {
-		case "issue":
-			// avoid overflow
-			issueValue := tx.Data.Value
-			err = manager.issue(tx.Data.Sig.PK, receiver, issueValue)
-		case "transfer":
-			// if value < 0, sender get money from receiver ??
-			transferValue := tx.Data.Value
-			err = manager.transfer(sender, receiver, transferValue)
+		switch receiver {
+		case core.IssueContractAddress:
+			err = manager.issue(cache, tx.Data.Sig.PK, tx.Data.Sig.Algo, recipient, value, payload.ChannelID)
+		case core.TransferContractrAddress:
+			err = manager.transfer(cache, sender, recipient, value, payload.ChannelID)
+		case core.TokenExchangeAddress:
+			err = manager.exchangeToken(cache, sender, recipient, value, payload.ChannelID)
+		default:
+			err = errors.New("Contract not support in _asset")
 		}
-
-		if err != nil {
-			// 如果有错误，那么应该在db里加一条key为txid的错误，如果正确，那么key为txid为ok
-			log.Errorf("err when execute account block tx %v : %v", tx, err)
-			wb.SetTxStatus(tx, status)
-			continue
-		}
-		status.Executed = true
-		wb.SetTxStatus(tx, status)
 	}
-	wb.Sync()
-	return nil
+	return cache.Sync()
 }
 
-func (manager *Manager) issue(senderPKBytes []byte, receiver common.Address, value uint64) error {
-	pk, err := crypto.NewPublicKey(senderPKBytes)
-	if !manager.db.IsAssetAdmin(pk) && manager.db.SetAssetAdmin(pk) != nil {
+func (manager *Manager) issue(cache Cache, senderPKBytes []byte, pkAlgo crypto.Algorithm, receiver common.Address, value uint64, channelID string) error {
+	pk, err := crypto.NewPublicKey(senderPKBytes, pkAlgo)
+	if !cache.IsAssetAdmin(pk, pkAlgo) && cache.SetAssetAdmin(pk, pkAlgo) != nil {
 		return fmt.Errorf("issue authentication failed: %v", err)
 	}
 	if value == 0 {
 		return nil
 	}
 
-	receiverAccount, err := manager.db.GetOrCreateAccount(receiver)
+	receiverAccount, err := cache.GetOrCreateAccount(receiver)
 	if err != nil {
-		return nil
+		return err
 	}
-	err = receiverAccount.AddBalance(value)
+
+	valueLeft, err := manager.payDueAndTryWakeChannel(receiverAccount, value, channelID)
 	if err != nil {
-		return nil
+		return err
 	}
-	return manager.db.UpdateAccounts(receiverAccount)
+
+	err = receiverAccount.AddBalance(valueLeft)
+	if err != nil {
+		return err
+	}
+	return cache.UpdateAccounts(receiverAccount)
 }
 
-func (manager *Manager) transfer(sender, receiver common.Address, value uint64) error {
+func (manager *Manager) transfer(cache Cache, sender, receiver common.Address, value uint64, channelID string) error {
 
 	if value == 0 {
 		return nil
 	}
-	senderAccount, err := manager.db.GetOrCreateAccount(sender)
+
+	senderAccount, err := cache.GetOrCreateAccount(sender)
 	if err != nil {
 		return err
 	}
 	if err = senderAccount.SubBalance(value); err != nil {
 		return err
 	}
-	receiverAccount, err := manager.db.GetOrCreateAccount(receiver)
+
+	receiverAccount, err := cache.GetOrCreateAccount(receiver)
 	if err != nil {
 		return err
 	}
-	if err = receiverAccount.AddBalance(value); err != nil {
+
+	valueLeft, err := manager.payDueAndTryWakeChannel(receiverAccount, value, channelID)
+	if err != nil {
 		return err
 	}
 
-	return manager.db.UpdateAccounts(senderAccount, receiverAccount)
+	if err = receiverAccount.AddBalance(valueLeft); err != nil {
+		return err
+	}
+
+	return cache.UpdateAccounts(senderAccount, receiverAccount)
+}
+
+func (manager *Manager) exchangeToken(cache Cache, sender, receiver common.Address, value uint64, channelID string) error {
+	if err := manager.transfer(cache, sender, receiver, value, channelID); err != nil {
+		return err
+	}
+
+	// orderer can't modify token because they don't know the exact value of token in every channel!!
+	return nil
+}
+
+func (manager *Manager) payDueAndTryWakeChannel(acc common.Account, value uint64, channelID string) (uint64, error) {
+	due := acc.GetDue()
+	if due == 0 {
+		return value, nil
+	}
+	if value < due {
+		return 0, acc.SubDue(value)
+	}
+	if err := manager.coordinator.WakeDueChannel(channelID); err != nil {
+		log.Warnf("channel awake error: %v", err)
+	}
+	log.Infof("wake channel %v", channelID)
+	return value - due, acc.SubDue(due)
 }

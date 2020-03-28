@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package event
 
 // Result is the result of event
@@ -10,22 +20,4 @@ func NewResult(err error) *Result {
 	return &Result{
 		Err: err,
 	}
-}
-
-// WatchConfig is the config of Watch
-type WatchConfig struct {
-	// 0 means no limit
-	maxWatchSize int
-}
-
-// NewWatchConfig is the constructor of WatchConfig
-func NewWatchConfig(maxWatchSize int) *WatchConfig {
-	return &WatchConfig{
-		maxWatchSize: maxWatchSize,
-	}
-}
-
-// DefaultWatchConfig return the default WatchConfig
-func DefaultWatchConfig() *WatchConfig {
-	return NewWatchConfig(0)
 }

@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package db
 
 import (
@@ -18,7 +28,7 @@ var (
 	secp256k1String      = "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"
 	rawSecp256k1Bytes, _ = hex.DecodeString(secp256k1String)
 	rawPrivKey           = rawSecp256k1Bytes
-	privKey, _           = crypto.NewPrivateKey(rawPrivKey)
+	privKey, _           = crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 )
 
 var (
@@ -77,6 +87,18 @@ func TestUpdateChannel(t *testing.T) {
 	if !util.Contain(channels, "test") {
 		t.Fatal(errors.New("Channel test is not contained"))
 	}
+
+	// add _asset
+	err = db.UpdateChannel("_asset", &cc.Profile{
+		Public: true,
+	})
+	require.NoError(t, err)
+
+	channels = db.ListChannel()
+	require.Len(t, channels, 4)
+	if !util.Contain(channels, "_asset") {
+		t.Fatal(errors.New("Channel _asset is not contained"))
+	}
 }
 
 func TestAddBlock(t *testing.T) {
@@ -107,9 +129,37 @@ func TestIsAdmin(t *testing.T) {
 	require.False(t, db.IsAdmin(core.GLOBALCHANNELID, member))
 }
 
-//todo: ab
-func TestAccountAdmin(t *testing.T) {
+func TestAssetAdmin(t *testing.T) {
+	wb := db.NewWriteBatch()
+	err := wb.SetAssetAdmin(privKey.PubKey())
+	require.NoError(t, err)
+	require.NoError(t, wb.Sync())
+	pk, err := crypto.NewPublicKey(db.GetAssetAdminPKBytes(), crypto.KeyAlgoSecp256k1)
+	require.NoError(t, err)
+	require.Equal(t, pk, privKey.PubKey())
+}
 
+func TestAccount(t *testing.T) {
+	wb := db.NewWriteBatch()
+	address := common.BytesToAddress([]byte("channelname"))
+	account, err := db.GetOrCreateAccount(address)
+	require.NoError(t, err)
+	require.Equal(t, account.GetBalance(), uint64(0))
+	require.NoError(t, account.AddBalance(10))
+	require.NoError(t, wb.UpdateAccounts(account))
+	require.NoError(t, wb.Sync())
+	account, err = db.GetOrCreateAccount(address)
+	require.NoError(t, err)
+	require.Equal(t, account.GetBalance(), uint64(10))
+
+}
+
+func TestGetAndPut(t *testing.T) {
+	testVal, err := db.Get([]byte("testVal"), true)
+	require.NoError(t, err)
+	require.NoError(t, db.Put([]byte("testVal"), testVal))
+	testVal, err = db.Get([]byte("testVal"), false)
+	require.NoError(t, err)
 }
 
 func TestEnd(t *testing.T) {

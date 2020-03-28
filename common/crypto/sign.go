@@ -1,28 +1,19 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package crypto
 
 import (
-	"encoding/hex"
-	"io"
-	"madledger/common"
+	"errors"
 	"math/big"
-	"os"
 )
-
-// PrivateKey is the interface of privateKey
-// It may support ecdsa or sm2
-type PrivateKey interface {
-	Sign(hash []byte) (Signature, error)
-	PubKey() PublicKey
-	Bytes() ([]byte, error)
-}
-
-// PublicKey is the interface of publicKey
-// It may support ecdsa or sm2
-type PublicKey interface {
-	Bytes() ([]byte, error)
-	// GetSerializeLength() int
-	Address() (common.Address, error)
-}
 
 // Signature interface is the interface of signature
 // It may support ecdsa or sm2
@@ -31,52 +22,17 @@ type Signature interface {
 	Bytes() ([]byte, error)
 }
 
-// NewPrivateKey return a PrivateKey
-// Only support ECDSAPrivateKey yet
-func NewPrivateKey(raw []byte) (PrivateKey, error) {
-	return toSECP256K1PrivateKey(raw)
-	// first try to parse
-	// ecPrivKey, err := x509.ParseECPrivateKey(raw)
-	// if err == nil {
-	// 	return (PrivateKey)((*ECDSAPrivateKey)(ecPrivKey)), nil
-	// }
-	// return nil, err
-}
-
-// GeneratePrivateKey try to generate a private key
-func GeneratePrivateKey() (PrivateKey, error) {
-	return GenerateSECP256K1PrivateKey()
-}
-
-// LoadPrivateKeyFromFile load private key from file
-func LoadPrivateKeyFromFile(file string) (PrivateKey, error) {
-	buf := make([]byte, 64)
-	fd, err := os.Open(file)
-	if err != nil {
-		return nil, err
-	}
-	defer fd.Close()
-	if _, err := io.ReadFull(fd, buf); err != nil {
-		return nil, err
-	}
-
-	key, err := hex.DecodeString(string(buf))
-	if err != nil {
-		return nil, err
-	}
-	return NewPrivateKey(key)
-}
-
-// NewPublicKey return a PublicKey from []byte
-func NewPublicKey(raw []byte) (PublicKey, error) {
-	// return parseECDSAPublicKey(raw)
-	return newSECP256K1PublicKey(raw)
-}
-
 // NewSignature return a signature from []byte
-func NewSignature(raw []byte) (Signature, error) {
+func NewSignature(raw []byte, algo Algorithm) (Signature, error) {
 	// return parseECDSASignature(raw)
-	return newSECP256K1Signature(raw)
+	switch algo {
+	case KeyAlgoSM2:
+		return newSM2Signature(raw)
+	case KeyAlgoSecp256k1:
+		return newSECP256K1Signature(raw)
+	default:
+		return nil, errors.New("unsupport algo")
+	}
 }
 
 func isOdd(a *big.Int) bool {

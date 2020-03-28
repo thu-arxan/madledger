@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package server
 
 import (
@@ -54,7 +64,7 @@ func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus,
 	// get tx type according to recipient
 	txType, err := core.GetTxType(common.BytesToAddress(tx.Data.Recipient).String())
 	if err == nil && (txType == core.VALIDATOR || txType == core.NODE) {
-		pk, err := crypto.NewPublicKey(req.Tx.Data.Sig.PK)
+		pk, err := crypto.NewPublicKey(req.Tx.Data.Sig.PK, req.Tx.Data.Sig.Algo)
 		if err != nil {
 			return &status, err
 		}

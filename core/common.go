@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package core
 
 import (
@@ -28,7 +38,12 @@ var (
 	CfgTendermintAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffe")
 	// Config the raft cluster
 	CfgRaftAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffd")
-
+	// issue
+	IssueContractAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffc")
+	// transfer
+	TransferContractrAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffb")
+	// exchange token
+	TokenExchangeAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffa")
 )
 
 // GetTxType return tx type
@@ -39,6 +54,12 @@ func GetTxType(recipient string) (TxType, error) {
 		return VALIDATOR, nil
 	} else if strings.Compare(recipient, CfgRaftAddress.String()) == 0 {
 		return NODE, nil
+	} else if strings.Compare(recipient, IssueContractAddress.String()) == 0 {
+		return ISSUE, nil
+	} else if strings.Compare(recipient, TransferContractrAddress.String()) == 0 {
+		return TRANSFER, nil
+	} else if strings.Compare(recipient, TokenExchangeAddress.String()) == 0 {
+		return TOKEN, nil
 	} else {
 		return 0, errors.New("unknown tx type")
 	}

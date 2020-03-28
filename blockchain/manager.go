@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package blockchain
 
 import (
@@ -86,8 +96,10 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 	if block.Header.Number != manager.expect {
 		return fmt.Errorf("Channel %s expect block %d while receive block %d", manager.id, manager.expect, block.Header.Number)
 	}
-	log.Infof("Channel %s add block %d", manager.id, manager.expect)
 	var err error
+	defer func() {
+		log.Infof("Channel %s add block %d, err: %v", manager.id, manager.expect, err)
+	}()
 
 	err = manager.storeBlock(block)
 	if err != nil {

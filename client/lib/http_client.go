@@ -36,10 +36,6 @@ func NewHTTPClient(cfgFile string) (*HTTPClient, error) {
 
 // NewHTTPClientFromConfig will construct http client from cfg
 func NewHTTPClientFromConfig(cfg *config.Config) (*HTTPClient, error) {
-	keyStore, err := cfg.GetKeyStoreConfig()
-	if err != nil {
-		return nil, err
-	}
 	// get clients
 	ordererClients, err := getOrdererHTTPClients(cfg)
 	if err != nil {
@@ -53,7 +49,7 @@ func NewHTTPClientFromConfig(cfg *config.Config) (*HTTPClient, error) {
 	return &HTTPClient{
 		ordererHTTPClients: ordererClients,
 		peerHTTPClients:    peerClients,
-		privKey:            keyStore.Keys[0],
+		privKey:            cfg.KeyStore.Privs[0],
 	}, nil
 }
 

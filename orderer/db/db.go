@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package db
 
 import (
@@ -7,14 +17,21 @@ import (
 	"madledger/core"
 )
 
-// TxStatus ...
+// TxStatus return the status of tx
 type TxStatus struct {
-	Executed bool
+	Err             string
+	BlockNumber     uint64
+	BlockIndex      int
+	Output          []byte
+	ContractAddress string
 }
 
 // WriteBatch ...
 type WriteBatch interface {
-	SetTxStatus(tx *core.Tx, status *TxStatus) error
+	UpdateAccounts(accounts ...common.Account) error
+	//SetAssetAdmin only succeed at the first time it is called
+	SetAssetAdmin(pk crypto.PublicKey) error
+	Put(key, value []byte)
 	Sync() error
 }
 
@@ -23,6 +40,7 @@ type DB interface {
 	ListChannel() []string
 	HasChannel(id string) bool
 	UpdateChannel(id string, profile *cc.Profile) error
+	GetChannelProfile(id string) (*cc.Profile, error)
 	// AddBlock will records all txs in the block to get rid of duplicated txs
 	AddBlock(block *core.Block) error
 	HasTx(tx *core.Tx) bool
@@ -35,14 +53,16 @@ type DB interface {
 	UpdateSystemAdmin(profile *cc.Profile) error
 	IsSystemAdmin(member *core.Member) bool
 
-	//IsAssetAdmin return true if pk is the public key of account channel admin
-	IsAssetAdmin(pk crypto.PublicKey) bool
-	//SetAssetAdmin only succeed at the first time it is called
-	SetAssetAdmin(pk crypto.PublicKey) error
+	Put(key, value []byte) error
+	// if couldBeEmpty set to true and error is ErrNotFound
+	// return no error
+	Get(key []byte, couldBeEmpty bool) ([]byte, error)
+	//GetAssetAdminPKBytes return nil is not exist
+	GetAssetAdminPKBytes() []byte
 	//GetOrCreateAccount return default account if not exist
 	GetOrCreateAccount(address common.Address) (common.Account, error)
-	UpdateAccounts(accounts ...common.Account) error
-
+	//SetAccount can only be called when atomicity is at one account level
+	SetAccount(account common.Account) error
+	//NewWriteBatch new a write batch
 	NewWriteBatch() WriteBatch
-	GetTxStatus(channelID, txID string) (*TxStatus, error)
 }

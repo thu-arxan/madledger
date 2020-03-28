@@ -1,7 +1,19 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package db
 
 import (
+	cc "madledger/blockchain/config"
 	"madledger/common"
+	"madledger/common/crypto"
 	"madledger/core"
 )
 
@@ -25,7 +37,14 @@ type WriteBatch interface {
 	// Put stores (key, value) into batch, the caller is responsible to avoid duplicate key
 	Put(key, value []byte)
 	RemoveAccountStorage(address common.Address)
+	AddChannel(channelID string)
+	DeleteChannel(channelID string)
+	// UpdateChannel()
 	Sync() error
+
+	UpdateAccounts(accounts ...common.Account) error
+	//SetAssetAdmin only succeed at the first time it is called
+	SetAssetAdmin(pk crypto.PublicKey) error
 }
 
 // DB provide a interface for peer to access the global state
@@ -40,13 +59,22 @@ type DB interface {
 	GetTxStatus(channelID, txID string) (*TxStatus, error)
 	GetTxStatusAsync(channelID, txID string) (*TxStatus, error)
 	BelongChannel(channelID string) bool
-	AddChannel(channelID string)
-	// TODO: This function should in WriteBatch?
-	DeleteChannel(channelID string)
 	GetChannels() []string
-	ListTxHistory(address []byte) map[string][]string
+	HasChannel(id string) bool
+	UpdateChannel(id string, profile *cc.Profile) error
+	GetTxHistory(address []byte) map[string][]string
 	NewWriteBatch() WriteBatch
 	// GetBlock gets block by block.num from db
 	GetBlock(num uint64) (*core.Block, error)
 	Close()
+
+	Get(key []byte, couldBeEmpty bool) ([]byte, error)
+	//GetAssetAdminPKBytes return nil is not exist
+	GetAssetAdminPKBytes() []byte
+	//GetOrCreateAccount return default account if not exist
+	GetOrCreateAccount(address common.Address) (common.Account, error)
+	UpdateSystemAdmin(profile *cc.Profile) error
+	IsSystemAdmin(member *core.Member) bool
+
+	GetChannelProfile(id string) (*cc.Profile, error)
 }

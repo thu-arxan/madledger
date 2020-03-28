@@ -1,8 +1,17 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package performance
 
 import (
 	"fmt"
-	"log"
 	"madledger/core"
 	"madledger/tests/performance/bft"
 	"os"
@@ -30,7 +39,7 @@ var (
 
 func init() {
 	go func() {
-		log.Println(http.ListenAndServe("127.0.0.1:6666", nil))
+		log.Info(http.ListenAndServe("127.0.0.1:6666", nil))
 	}()
 }
 
@@ -58,7 +67,7 @@ func TestInit(t *testing.T) {
 func TestCreateChannel(t *testing.T) {
 	var clients = getClients()
 	for i := 0; i < channelSize; i++ {
-		require.NoError(t, clients[0].CreateChannel(fmt.Sprintf("test%d", i), true, nil, nil))
+		require.NoError(t, clients[0].CreateChannel(fmt.Sprintf("test%d", i), true, nil, nil, 1, 1, 10000000))
 	}
 }
 
@@ -101,12 +110,12 @@ func TestEnd(t *testing.T) {
 	fmt.Println(time.Now(), "end")
 	switch consensus {
 	case "solo":
-		solo.StopOrderers()
 		solo.StopPeers()
+		solo.StopOrderers()
 		solo.Clean()
 	case "raft":
-		raft.StopOrderers()
 		raft.StopPeers()
+		raft.StopOrderers()
 		raft.Clean()
 	case "bft":
 		bft.Clean()

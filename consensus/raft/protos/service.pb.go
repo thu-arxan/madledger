@@ -36,7 +36,7 @@ func (m *RaftTX) Reset()         { *m = RaftTX{} }
 func (m *RaftTX) String() string { return proto.CompactTextString(m) }
 func (*RaftTX) ProtoMessage()    {}
 func (*RaftTX) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_30fd548e4f58606d, []int{0}
+	return fileDescriptor_service_ade95908e916ae21, []int{0}
 }
 func (m *RaftTX) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RaftTX.Unmarshal(m, b)
@@ -87,7 +87,7 @@ func (m *None) Reset()         { *m = None{} }
 func (m *None) String() string { return proto.CompactTextString(m) }
 func (*None) ProtoMessage()    {}
 func (*None) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_30fd548e4f58606d, []int{1}
+	return fileDescriptor_service_ade95908e916ae21, []int{1}
 }
 func (m *None) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_None.Unmarshal(m, b)
@@ -184,9 +184,9 @@ var _BlockChain_serviceDesc = grpc.ServiceDesc{
 	Metadata: "service.proto",
 }
 
-func init() { proto.RegisterFile("service.proto", fileDescriptor_service_30fd548e4f58606d) }
+func init() { proto.RegisterFile("service.proto", fileDescriptor_service_ade95908e916ae21) }
 
-var fileDescriptor_service_30fd548e4f58606d = []byte{
+var fileDescriptor_service_ade95908e916ae21 = []byte{
 	// 159 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2d, 0x4e, 0x2d, 0x2a,
 	0xcb, 0x4c, 0x4e, 0xd5, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x03, 0x53, 0xc5, 0x4a, 0x5e,

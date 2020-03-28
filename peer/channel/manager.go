@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package channel
 
 import (
@@ -23,6 +33,7 @@ var (
 type Manager struct {
 	signalCh chan bool
 	stopCh   chan bool
+
 	identity *core.Member
 	// id is the id of channel
 	id string
@@ -54,17 +65,17 @@ func NewManager(id, dir string, identity *core.Member, db db.DB, clients []*orde
 
 // Start start the manager.
 func (m *Manager) Start() {
-	log.Infof("%s is starting...", m.id)
+	log.Infof("channel %s is starting...", m.id)
 	for {
 		block, err := m.fetchBlock()
-		// fmt.Println("Succeed to fetch block", m.id, ":", block.Header.Number)
 		if err == nil {
+			// fmt.Println("Succeed to fetch block", m.id, ":", block.Header.Number)
 			m.AddBlock(block)
 		} else if err.Error() == "Stop" {
 			m.stopCh <- true
 			return
 		} else {
-			log.Infof("failed to fetch block: %d, err: %v", m.cm.GetExpect(), err)
+			log.Warnf("failed to fetch block: %d, err: %v", m.cm.GetExpect(), err)
 		}
 	}
 }
@@ -83,18 +94,19 @@ func (m *Manager) AddBlock(block *core.Block) error {
 	if err != nil {
 		return err
 	}
-	// Note: PutBlock in writebatch
-	// TODO: Review @zsh
 	switch block.Header.ChannelID {
 	case core.GLOBALCHANNELID:
-		m.AddGlobalBlock(block)
-		log.Infof("Add global block %d", block.Header.Number)
+		return m.AddGlobalBlock(block)
 	case core.CONFIGCHANNELID:
-		m.AddConfigBlock(block)
-		log.Infof("Add config block %d", block.Header.Number)
+		if !isGenesisBlock(block) && !m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
+			m.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
+		}
+		return m.AddConfigBlock(block)
 	case core.ASSETCHANNELID:
-		m.AddAssetBlock(block)
-		log.Infof("Add account block %d", block.Header.Number)
+		if !isGenesisBlock(block) && !m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
+			m.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
+		}
+		return m.AddAssetBlock(block)
 	default:
 		if !m.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
 			m.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
@@ -108,17 +120,18 @@ func (m *Manager) AddBlock(block *core.Block) error {
 		wb.PutBlock(block)
 		return wb.Sync()
 	}
+}
 
-	return nil
+func isGenesisBlock(block *core.Block) bool {
+	return block.GetNumber() == 0
 }
 
 // RunBlock will carry out all txs in the block.
 // It will return after the block is runned.
 // In the future, this will contains chains which rely on something or nothing
-// TODO: transfer is not implementation yet
 func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
-	wb := m.db.NewWriteBatch()
-	context := evm.NewContext(block, m.db, wb)
+	cache := NewCache(m.db)
+	context := evm.NewContext(block, cache.db, cache.wb)
 	defer context.BlockFinalize()
 	// first parallel get sender to speed up
 	threadSize := runtime.NumCPU()
@@ -141,6 +154,11 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 	}
 	wg.Wait()
 
+	profile, err := m.db.GetChannelProfile(m.id)
+	if err != nil {
+		return nil, err
+	}
+
 	for i, tx := range block.Transactions {
 		senderAddress, err := tx.GetSender()
 		status := &db.TxStatus{
@@ -151,7 +169,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		}
 		if err != nil {
 			status.Err = err.Error()
-			wb.SetTxStatus(tx, status)
+			cache.SetTxStatus(tx, status)
 			continue
 		}
 		receiverAddress := tx.GetReceiver()
@@ -159,37 +177,58 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 		sender, err := m.db.GetAccount(senderAddress)
 		if err != nil {
 			status.Err = err.Error()
-			//m.db.SetTxStatus(tx, status)
-			wb.SetTxStatus(tx, status)
+			cache.SetTxStatus(tx, status)
 			continue
 		}
 
 		if receiverAddress.String() == core.CfgTendermintAddress.String() {
-			wb.SetTxStatus(tx, status)
+			cache.SetTxStatus(tx, status)
 			continue
 		}
 
 		if receiverAddress.String() == core.CfgRaftAddress.String() {
-			wb.SetTxStatus(tx, status)
+			cache.SetTxStatus(tx, status)
 			continue
 		}
-		log.Debugf(" %v, %v, %v", sender, context, tx)
-		gas := uint64(10000000)
-		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, gas, m.db, wb)
+
+		// 用户的参数：tx.Data.Gas (user gas limit)
+		// 通道的参数：maxGas (channel gas limit), gasPrice
+		// gas limit = min (user, channel)
+		// 获取sender的token，如果比gas limit * gas price 小，那么不能执行，直接下一个tx
+		// 记录进入evm前的gas limit
+		// 用出来之后用前减后可得到具体消耗了多少gas
+		// 然后将token -= gas * gas price，存到cache中
+
+		gasLimit := profile.MaxGas
+		if gasLimit > tx.Data.Gas {
+			gasLimit = tx.Data.Gas
+		}
+		tokenLeft, err := cache.GetToken(m.id, senderAddress)
+		if err != nil {
+			status.Err = err.Error()
+			cache.SetTxStatus(tx, status)
+			continue
+		}
+		if tokenLeft < gasLimit*profile.GasPrice {
+			status.Err = "Not enough token"
+			cache.SetTxStatus(tx, status)
+			continue
+		}
+
+		evm := evm.NewEVM(context, senderAddress, tx.Data.Payload, tx.Data.Value, gasLimit, cache.db, cache.wb)
+
 		if receiverAddress.String() != common.ZeroAddress.String() {
 			// if the length of payload is not zero, this is a contract call
 			if len(tx.Data.Payload) != 0 && !m.db.AccountExist(receiverAddress) {
 				status.Err = "Invalid Address"
-				//m.db.SetTxStatus(tx, status)
-				wb.SetTxStatus(tx, status)
+				cache.SetTxStatus(tx, status)
 				continue
 			}
 
 			receiver, err := m.db.GetAccount(receiverAddress)
 			if err != nil {
 				status.Err = err.Error()
-				//m.db.SetTxStatus(tx, status)
-				wb.SetTxStatus(tx, status)
+				cache.SetTxStatus(tx, status)
 				continue
 			}
 			output, err := evm.Call(sender, receiver, receiver.GetCode())
@@ -197,8 +236,7 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			if err != nil {
 				status.Err = err.Error()
 			}
-			//m.db.SetTxStatus(tx, status)
-			wb.SetTxStatus(tx, status)
+			cache.SetTxStatus(tx, status)
 		} else {
 			output, addr, err := evm.Create(sender)
 			status.Output = output
@@ -206,12 +244,13 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			if err != nil {
 				status.Err = err.Error()
 			}
-			//m.db.SetTxStatus(tx, status)
-			wb.SetTxStatus(tx, status)
+			cache.SetTxStatus(tx, status)
 		}
+		gasUsed := gasLimit - *context.BlockContext().Gas
+		tokenLeft -= gasUsed * profile.GasPrice
+		cache.SetToken(m.id, senderAddress, tokenLeft)
 	}
-	// wb.PersistLog([]byte(fmt.Sprintf("block_log_%d", block.GetNumber())))
-	return wb, nil
+	return cache.wb, nil
 }
 
 // todo: here we should support evil orderer

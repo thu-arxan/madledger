@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 syntax = "proto3";
 
 package protos;
@@ -19,6 +29,7 @@ message txData {
 	string Msg = 6;
 	int32 Version = 7;  
 	txSig Sig = 8;
+	uint64 Gas = 9;
 }
 
 // txSig is the sig of tx
@@ -27,4 +38,5 @@ message txData {
 message txSig {
 	bytes PK = 1;
     bytes Sig = 2;
+	int32 Algo = 3;
 }

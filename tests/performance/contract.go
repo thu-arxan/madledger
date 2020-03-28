@@ -1,13 +1,24 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package performance
 
 import (
+	"madledger/common/abi"
 	client "madledger/client/lib"
 	"madledger/common"
-	"madledger/common/abi"
 	"madledger/core"
 	"sync"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,6 +30,7 @@ var (
 	// ContractAddress is the address of contract
 	ContractAddress = make(map[string]common.Address, 0)
 	mapLock         sync.Mutex
+	log             = logrus.WithFields(logrus.Fields{"app": "performance", "package": "tests"})
 )
 
 // CreateContract will create a channel by the client
@@ -38,7 +50,7 @@ func CreateContract(t *testing.T, channelID string, client *client.Client) {
 // CreateCallContractTx will create tx
 func CreateCallContractTx(channelID string, client *client.Client, size int) []*core.Tx {
 	var payload []byte
-	payload, _ = abi.GetPayloadBytes(BalanceAbi, "get", nil)
+	payload, _ = abi.Pack(BalanceAbi, "get")
 	var txs []*core.Tx
 	for i := 0; i < size; i++ {
 		tx, _ := core.NewTx(channelID, getContractAddress(channelID), payload, 0, "", client.GetPrivKey())
@@ -51,7 +63,7 @@ func CreateCallContractTx(channelID string, client *client.Client, size int) []*
 // CallContract will call a contract of a channel
 func CallContract(t *testing.T, channelID string, client *client.Client, times int) {
 	var payload []byte
-	payload, _ = abi.GetPayloadBytes(BalanceAbi, "get", nil)
+	payload, _ = abi.Pack(BalanceAbi, "get")
 	var wg sync.WaitGroup
 	for i := 0; i < times; i++ {
 		wg.Add(1)

@@ -1,15 +1,27 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package evm
 
 import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"evm"
-	"evm/util"
+	"github.com/thu-arxan/evm"
+	"github.com/thu-arxan/evm/util"
 	"fmt"
 	"madledger/common"
 	"madledger/core"
 	"madledger/peer/db"
+
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 // DefaultContext is the default implementation for Context
@@ -174,7 +186,7 @@ func (ctx *DefaultContext) getStorage(addr, key []byte) []byte {
 
 	// query from db
 	value, err := ctx.queryEngine.GetStorage(bytesToCommonAddress(addr), bytesToCommomWord256(key))
-	if err != nil {
+	if err != nil && err != leveldb.ErrNotFound {
 		log.Errorf("Fatal error! Failed to query value to %s for addr(%s), err: %v", hex.EncodeToString(key), hex.EncodeToString(addr), err)
 	}
 

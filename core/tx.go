@@ -1,10 +1,22 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package core
 
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"madledger/common"
 	"madledger/common/crypto"
+	"madledger/common/crypto/hash"
 	"madledger/common/util"
 )
 
@@ -31,6 +43,12 @@ const (
 	VALIDATOR
 	// NODE is the raft cfgChange tx
 	NODE
+	// ISSUE is the issue tx
+	ISSUE
+	// TRANSFER is the transfer tx
+	TRANSFER
+	// TOKEN
+	TOKEN
 )
 
 // TxData is the data of Tx
@@ -43,18 +61,31 @@ type TxData struct {
 	Msg       string `json:"msg,omitempty"`
 	Version   int32  `json:"version,omitempty"`
 	Sig       TxSig  `json:"sig,omitempty"`
+	Gas       uint64 `json:"gas,omitempty"`
 }
+
+const (
+	// GLOBALGASLIMIT is user default gas limit
+	GLOBALGASLIMIT = 10000000
+)
 
 // TxSig is the sig of tx
 type TxSig struct {
-	PK  []byte `json:"pk,omitemtpy"`
-	Sig []byte `json:"sig,omitempty"`
+	PK   []byte           `json:"pk,omitempty"`
+	Sig  []byte           `json:"sig,omitempty"`
+	Algo crypto.Algorithm `json:"algo,omitempty"`
 }
 
 // NewTx is the constructor of Tx
 func NewTx(channelID string, recipient common.Address, payload []byte, value uint64, msg string, privKey crypto.PrivateKey) (*Tx, error) {
 	if payload == nil || len(payload) == 0 {
 		return nil, errors.New("The payload can not be empty")
+	}
+	switch privKey.Algo() {
+	case crypto.KeyAlgoSecp256k1, crypto.KeyAlgoSM2:
+		// do nothing
+	default:
+		return nil, fmt.Errorf("unsupported key algo:%v", privKey.Algo())
 	}
 	var tx = &Tx{
 		Data: TxData{
@@ -65,10 +96,11 @@ func NewTx(channelID string, recipient common.Address, payload []byte, value uin
 			Value:     value,
 			Msg:       msg,
 			Version:   1,
+			Gas:       GLOBALGASLIMIT,
 		},
 		Time: util.Now(),
 	}
-	hash := tx.HashWithoutSig()
+	hash := tx.hashWithoutSig(privKey.Algo())
 	sig, err := privKey.Sign(hash)
 	if err != nil {
 		return nil, err
@@ -82,10 +114,11 @@ func NewTx(channelID string, recipient common.Address, payload []byte, value uin
 		return nil, err
 	}
 	tx.Data.Sig = TxSig{
-		PK:  pkBytes,
-		Sig: sigBytes,
+		PK:   pkBytes,
+		Sig:  sigBytes,
+		Algo: privKey.Algo(),
 	}
-	tx.ID = util.Hex(tx.Hash())
+	tx.ID = util.Hex(tx.Hash(privKey.Algo()))
 	return tx, nil
 }
 
@@ -99,24 +132,32 @@ func NewTxWithoutSig(channelID string, payload []byte, nonce uint64) *Tx {
 			Recipient: common.ZeroAddress.Bytes(),
 			Payload:   payload,
 			Version:   1,
+			Gas:       GLOBALGASLIMIT,
 		},
 		Time: util.Now(),
 	}
-	tx.ID = util.Hex(tx.Hash())
+	tx.ID = util.Hex(tx.Hash(crypto.KeyAlgoSM2))
 	return tx
 }
 
 // Verify return true if a tx is packed well, else return false
 func (tx *Tx) Verify() bool {
-	if util.Hex(tx.Hash()) != tx.ID {
+	var algo = tx.Data.Sig.Algo
+	switch algo {
+	case crypto.KeyAlgoSM2, crypto.KeyAlgoSecp256k1:
+		// do nothing
+	default:
 		return false
 	}
-	hash := tx.HashWithoutSig()
-	pk, err := crypto.NewPublicKey(tx.Data.Sig.PK)
+	if util.Hex(tx.Hash(algo)) != tx.ID {
+		return false
+	}
+	hash := tx.hashWithoutSig(algo)
+	pk, err := crypto.NewPublicKey(tx.Data.Sig.PK, algo)
 	if err != nil {
 		return false
 	}
-	sig, err := crypto.NewSignature(tx.Data.Sig.Sig)
+	sig, err := crypto.NewSignature(tx.Data.Sig.Sig, algo)
 	if err != nil {
 		return false
 	}
@@ -132,7 +173,14 @@ func (tx *Tx) GetSender() (common.Address, error) {
 	if tx.sender != nil {
 		return *(tx.sender), nil
 	}
-	pk, err := crypto.NewPublicKey(tx.Data.Sig.PK)
+	var algo = tx.Data.Sig.Algo
+	switch algo {
+	case crypto.KeyAlgoSecp256k1, crypto.KeyAlgoSM2:
+		// do nothing
+	default:
+		return common.ZeroAddress, fmt.Errorf("unsupport algo:%v", algo)
+	}
+	pk, err := crypto.NewPublicKey(tx.Data.Sig.PK, algo)
 	if err != nil {
 		return common.ZeroAddress, err
 	}
@@ -149,17 +197,22 @@ func (tx *Tx) GetReceiver() common.Address {
 }
 
 // Hash return the hash of tx
-func (tx *Tx) Hash() []byte {
-	return tx.hash(true)
+// Note: Be careful to make sure tx.Data.Sig.Algo right
+func (tx *Tx) Hash(algo ...crypto.Algorithm) []byte {
+	if len(algo) != 0 {
+		return tx.hash(true, algo[0])
+	}
+	return tx.hash(true, tx.Data.Sig.Algo)
 }
 
-// HashWithoutSig return the hash of tx without sig
-func (tx *Tx) HashWithoutSig() []byte {
-	return tx.hash(false)
+// hashWithoutSig return the hash of tx without sig
+func (tx *Tx) hashWithoutSig(algo crypto.Algorithm) []byte {
+	return tx.hash(false, algo)
 }
 
 // hash implementation different hash
-func (tx *Tx) hash(withSig bool) []byte {
+// Note: is algo is not secp256k1, regard it as sm3
+func (tx *Tx) hash(withSig bool, algo crypto.Algorithm) []byte {
 	var sig = tx.Data.Sig
 	if !withSig {
 		tx.Data.Sig = TxSig{}
@@ -168,7 +221,12 @@ func (tx *Tx) hash(withSig bool) []byte {
 	bytes, _ := json.Marshal(tx.Data)
 	tx.Data.Sig = sig
 
-	return crypto.Hash(bytes)
+	switch algo {
+	case crypto.KeyAlgoSecp256k1:
+		return hash.SHA256(bytes)
+	default:
+		return hash.SM3(bytes)
+	}
 }
 
 // Bytes return the bytes of tx, which is the wrapper of json.Marshal

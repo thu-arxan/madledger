@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package common
 
 import (
@@ -7,32 +17,13 @@ import (
 	"madledger/common/math"
 )
 
-// Account is the account of madledger
-// type Account interface {
-// 	// These functions will be remained.
-// 	GetAddress() Address
-// 	GetBalance() uint64
-// 	AddBalance(balance uint64) error
-// 	SubBalance(balance uint64) error
-// 	GetCode() []byte
-// 	SetCode(code []byte)
-// 	// GetNonce() uint64
-// 	// SetNonce(nonce uint64)
-// 	Bytes() ([]byte, error)
-// 	// GetCodeHash return the hash of account code, please return [32]byte,
-// 	// and return [32]byte{0, ..., 0} if code is empty
-// 	GetCodeHash() []byte
-// 	GetNonce() uint64
-// 	SetNonce(nonce uint64)
-// 	// Suicide will suicide an account
-// 	Suicide()
-// 	HasSuicide() bool
-// }
-
-// Account is the default implementation of Account
+// Account is the Account of Madledger
 type Account struct {
-	Address     Address
-	Balance     uint64
+	Address Address
+	Balance uint64
+	// storage debt a user channel owe to our system
+	// if not zero, the channel should be halted till it pays off
+	Due         uint64
 	Code        []byte
 	Nonce       uint64
 	SuicideMark bool
@@ -43,6 +34,7 @@ func NewAccount(addr Address) *Account {
 	return &Account{
 		Address: addr,
 		Balance: 0,
+		Due:     0,
 		Code:    []byte{},
 		Nonce:   0,
 	}
@@ -69,10 +61,33 @@ func (a *Account) AddBalance(balance uint64) error {
 
 // SubBalance is the implementation of Account
 func (a *Account) SubBalance(balance uint64) error {
-	if _, overflow := math.SafeSub(a.Balance, balance); !overflow {
+	if _, overflow := math.SafeSub(a.Balance, balance); overflow {
 		return errors.New("Overflow")
 	}
 	a.Balance -= balance
+	return nil
+}
+
+// GetDue return due of an account
+func (a *Account) GetDue() uint64 {
+	return a.Due
+}
+
+// AddDue add due to channel account
+func (a *Account) AddDue(due uint64) error {
+	if _, overflow := math.SafeAdd(a.Due, due); overflow {
+		return errors.New("Overflow")
+	}
+	a.Due += due
+	return nil
+}
+
+// SubDue sub due to channel account
+func (a *Account) SubDue(due uint64) error {
+	if _, overflow := math.SafeSub(a.Due, due); overflow {
+		return errors.New("Overflow")
+	}
+	a.Due -= due
 	return nil
 }
 
@@ -98,7 +113,8 @@ func (a *Account) GetCodeHash() []byte {
 	if len(a.Code) == 0 {
 		return bytes
 	}
-	return hash.Hash(a.Code)
+	// TODO: Should we replace it with sm3?
+	return hash.SHA256(a.Code)
 }
 
 // GetNonce ...

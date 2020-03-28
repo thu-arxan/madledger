@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package common
 
 import (
@@ -8,7 +18,7 @@ import (
 	"github.com/tmthrgd/go-hex"
 )
 
-// his is copied from ethereum.
+// This is copied from ethereum.
 // However, there maybe many things is missed like
 // how to support different kind of encrypted functions.
 
@@ -126,7 +136,6 @@ func (a *Address) SetBytes(b []byte) {
 }
 
 // String return the upper 0x
-// Maybe lower is better
 func (a Address) String() string {
 	// return hex.EncodeUpperToString(a[:])
 	return "0x" + util.Hex(a[:])
@@ -148,4 +157,13 @@ func AddressFromBytes(bs []byte) (address Address, err error) {
 	}
 	copy(address[:], bs)
 	return
+}
+
+// AddressFromChannelID return a hex encoded version of channelid
+// encoded bytes would be truncated if encoded len is bigger than AddressLength
+func AddressFromChannelID(channelID string) Address {
+	var address Address
+	// address.SetBytes(util.Hex(channelID[:]))
+	address.SetBytes([]byte(util.Hex([]byte(channelID))))
+	return address
 }

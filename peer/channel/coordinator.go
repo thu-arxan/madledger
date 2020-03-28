@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package channel
 
 import (
@@ -79,23 +89,37 @@ func (c *Coordinator) Locks() {
 }
 
 // Unlocks will unlock some channels
-func (c *Coordinator) Unlocks(nums map[string]uint64) {
+func (c *Coordinator) Unlocks(channelNums map[string][]uint64) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	for channel, num := range nums {
-		if util.Contain(c.states, channel) {
-			state := c.states[channel]
-			if num >= state.num {
+	for channel, nums := range channelNums {
+		for _, num := range nums {
+			if util.Contain(c.states, channel) {
+				state := c.states[channel]
+				if num >= state.num {
+					state.num = num
+					state.code = Runable
+				}
+			} else {
+				state := new(State)
 				state.num = num
 				state.code = Runable
+				c.states[channel] = state
 			}
-		} else {
-			state := new(State)
-			state.num = num
-			state.code = Runable
-			c.states[channel] = state
+			c.hub.Done(fmt.Sprintf("%s:%d", channel, num), nil)
 		}
-		c.hub.Done(fmt.Sprintf("%s:%d", channel, num), nil)
 	}
+}
+
+// Update is the channel update info
+type Update struct {
+	ID     string
+	Remove bool
+}
+
+// RegisterUpdate register channel update
+func (c *Coordinator) RegisterUpdate() chan interface{} {
+	ch, _ := c.hub.Register("update")
+	return ch
 }

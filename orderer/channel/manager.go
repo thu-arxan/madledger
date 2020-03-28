@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package channel
 
 import (
@@ -11,6 +21,7 @@ import (
 	"madledger/consensus/raft"
 	"madledger/core"
 	"madledger/orderer/db"
+	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -34,6 +45,9 @@ type Manager struct {
 	stop        chan bool
 	hub         *event.Hub
 	coordinator *Coordinator
+
+	lock                sync.RWMutex
+	insufficientBalance bool
 }
 
 // NewManager is the constructor of Manager
@@ -43,14 +57,15 @@ func NewManager(id string, coordinator *Coordinator) (*Manager, error) {
 		return nil, err
 	}
 	return &Manager{
-		ID:          id,
-		db:          coordinator.db,
-		cm:          cm,
-		cbc:         make(chan consensus.Block, 1024),
-		init:        false,
-		stop:        make(chan bool),
-		hub:         event.NewHub(),
-		coordinator: coordinator,
+		ID:                  id,
+		db:                  coordinator.db,
+		cm:                  cm,
+		cbc:                 make(chan consensus.Block, 1024),
+		init:                false,
+		stop:                make(chan bool),
+		hub:                 event.NewHub(),
+		coordinator:         coordinator,
+		insufficientBalance: false,
 	}, nil
 }
 
@@ -79,8 +94,7 @@ func (manager *Manager) Start() {
 				if manager.ID != core.GLOBALCHANNELID {
 					tx := core.NewGlobalTx(manager.ID, block.Header.Number, block.Hash())
 					// 打印非config通道向global通道中添加的tx信息
-					log.Debugf("Channel %s add tx %s to global channel.", manager.ID, tx.ID)
-
+					log.Debugf("Channel %s add tx %s to global channel, num: %d", manager.ID, tx.ID, block.Header.Number)
 					if err := manager.coordinator.GM.AddTx(tx); err != nil {
 						// todo: This is temporary fix
 						if err.Error() != "The tx exist in the blockchain aleardy" && raft.GetError(err) != raft.TxInPool {
@@ -93,7 +107,7 @@ func (manager *Manager) Start() {
 					log.Fatalf("Channel %s failed to run because of %s", manager.ID, err)
 					return
 				}
-				log.Debugf("Channel %s has %d block now", manager.ID, block.Header.Number+1)
+				log.Debugf("Channel %s has %d block now", manager.ID, block.Header.Number)
 				manager.hub.Done(string(block.Header.Number), nil)
 				for _, tx := range block.Transactions {
 					manager.hub.Done(util.Hex(tx.Hash()), nil)
@@ -128,6 +142,7 @@ func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
 
 // AddBlock add a block
 func (manager *Manager) AddBlock(block *core.Block) error {
+	log.Infof("start adding block %d in channel %v", block.GetNumber(), manager.ID)
 	// first update db
 	if err := manager.db.AddBlock(block); err != nil {
 		log.Infof("manager.db.AddBlock error: %s add block %d, %s",
@@ -139,13 +154,59 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 			manager.ID, block.Header.Number, err.Error())
 		return err
 	}
+
+	if isUserChannel(manager.ID) && !isGenesisBlock(block) {
+		profile, err := manager.db.GetChannelProfile(manager.ID)
+		if err != nil {
+			log.Infof("manager.db cannot get channel profile: %s add block %d, %s",
+				manager.ID, block.Header.Number, err.Error())
+			return err
+		}
+		if profile.BlockPrice != 0 {
+			acc, err := manager.db.GetOrCreateAccount(common.AddressFromChannelID(manager.ID))
+			if err != nil {
+				return err
+			}
+			balance := acc.GetBalance()
+
+			storagePrice := uint64(len(block.Bytes())) * profile.BlockPrice
+			if balance < storagePrice {
+				manager.lock.Lock()
+				manager.insufficientBalance = true
+				manager.lock.Unlock()
+				acc.SubBalance(balance)
+				acc.AddDue(storagePrice - balance)
+				// zhq todo: am i doing it correct?
+			} else {
+				acc.SubBalance(storagePrice)
+			}
+			log.Infof("channel %s need pay %d due to continue", manager.ID, acc.GetDue())
+			err = manager.db.SetAccount(acc)
+			if err != nil {
+				log.Infof("manager.db cannot set account: %s add block %d, %s",
+					manager.ID, block.Header.Number, err.Error())
+				return err
+			}
+		}
+	}
+
+	defer func() {
+		log.Infof("AddBlock %d in orderer channel %v success", block.GetNumber(), manager.ID)
+	}()
+
 	// check is there is any need to update local state of orderer
 	switch manager.ID {
 	case core.CONFIGCHANNELID:
+		if !isGenesisBlock(block) && !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
+			manager.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
+		}
 		return manager.AddConfigBlock(block)
 	case core.GLOBALCHANNELID:
 		return manager.AddGlobalBlock(block)
 	case core.ASSETCHANNELID:
+		if !isGenesisBlock(block) && !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
+			manager.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
+		}
 		return manager.AddAssetBlock(block)
 	default:
 		return nil
@@ -163,35 +224,29 @@ func (manager *Manager) AddTx(tx *core.Tx) error {
 		return errors.New("The tx exist in the blockchain aleardy")
 	}
 
+	var insufficientBalance bool
+	// c.lock.RLock()
+	manager.lock.RLock()
+	insufficientBalance = manager.insufficientBalance
+	// c.lock.RUnlock()
+	manager.lock.RUnlock()
+	if insufficientBalance {
+		return errors.New("Not Enough Balance In User Channel To Generate New Block")
+	}
+
 	hash := tx.Hash()
 	err := manager.coordinator.Consensus.AddTx(tx)
 	if err != nil {
 		return err
 	}
 
-	// err = manager.coordinator.Consensus.AddTx(manager.ID, txBytes)
-	// if err != nil {
-	// 	return err
-	// }
-
 	// Note: The reason why we must do this is because we must make sure we return the result after we store the block
 	// However, we may find a better way to do this if we allow there are more interactive between the consensus and orderer.
 	result := manager.hub.Watch(util.Hex(hash), nil)
-
-	if result.Err != nil {
-		return result.Err
+	if result == nil {
+		return nil
 	}
-
-	if tx.Data.ChannelID == "_asset" {
-		status, err := manager.db.GetTxStatus(tx.Data.ChannelID, tx.ID)
-		if err != nil {
-			return err
-		}
-		if !status.Executed {
-			return errors.New("tx failed to execute due to overflow")
-		}
-	}
-	return nil
+	return result.(*event.Result).Err
 }
 
 // FetchBlock return the block if exist
@@ -217,6 +272,12 @@ func (manager *Manager) IsSystemAdmin(member *core.Member) bool {
 // GetAccount return requested account
 func (manager *Manager) GetAccount(address common.Address) (common.Account, error) {
 	return manager.db.GetOrCreateAccount(address)
+}
+
+func (manager *Manager) WakeFromSufficientBalance() {
+	manager.lock.Lock()
+	manager.insufficientBalance = false
+	manager.lock.Unlock()
 }
 
 // FetchBlockAsync will fetch book async.
@@ -260,11 +321,19 @@ func (manager *Manager) getTxsFromConsensusBlock(block consensus.Block) (legal, 
 		if !util.Contain(count, tx.ID) && !manager.db.HasTx(tx) {
 			count[tx.ID] = true
 			legal = append(legal, tx)
-			log.Infof("getTxsFromConsensusBlock: block %d in %s add tx %s",
-				block.GetNumber(), manager.ID, tx.ID)
+			// log.Infof("getTxsFromConsensusBlock: block %d in %s add tx %s",
+			// 	block.GetNumber(), manager.ID, tx.ID)
 		} else {
 			duplicate = append(duplicate, tx)
 		}
 	}
 	return
+}
+
+func isGenesisBlock(block *core.Block) bool {
+	return block.GetNumber() == 0
+}
+
+func isUserChannel(id string) bool {
+	return id != core.GLOBALCHANNELID && id != core.CONFIGCHANNELID && id != core.ASSETCHANNELID
 }

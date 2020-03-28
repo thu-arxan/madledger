@@ -1,10 +1,23 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package db
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	cc "madledger/blockchain/config"
 	"madledger/common"
+	"madledger/common/crypto"
+	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/core"
 	"sync"
@@ -26,7 +39,7 @@ type LevelDB struct {
 	dir     string
 	connect *leveldb.DB
 	lock    sync.Mutex
-	hub     *Hub
+	hub     *event.Hub
 }
 
 var (
@@ -42,8 +55,113 @@ func NewLevelDB(dir string) (DB, error) {
 		return nil, err
 	}
 	db.connect = connect
-	db.hub = NewHub()
+	db.hub = event.NewHub()
 	return db, nil
+}
+
+// HasChannel is the implementation of DB
+func (db *LevelDB) HasChannel(id string) bool {
+	exist, _ := db.connect.Has(getChannelProfileKey(id), nil)
+	return exist
+}
+
+// UpdateChannel is the implementation of DB
+func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
+	var key = getChannelProfileKey(id)
+	if !db.HasChannel(id) {
+		// 更新key为_config的记录，简单记录所有的test通道。 _config,  ["test11","test10","test21","test20"]
+		err := db.addChannel(id)
+		if err != nil {
+			return err
+		}
+	}
+	data, err := json.Marshal(profile)
+	if err != nil {
+		return err
+	}
+	//更新key为_config@id的记录, 具体内容示例如下：
+	// _config@test30 ,  {"Public":true,"Dependencies":null,"Members":[],
+	// "Admins":[{"PK":"BN2PLBpBd5BrSLfTY7QEBYQT0h6lFvWlZyuAVt3/bfEz1g5QJ2lIEXP2Zk15B6E2MWpA/Q4Yxnl+XjFGObvAKTY=","Name":"admin"}]
+	// "gasPrice": 1, "ratio": 1, "maxGas": 1000000 }
+	err = db.connect.Put(key, data, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getChannelProfileKey(id string) []byte {
+	return []byte(fmt.Sprintf("%s@%s", core.CONFIGCHANNELID, id))
+}
+
+// addChannel add a record into key core.CONFIGCHANNELID
+func (db *LevelDB) addChannel(id string) error {
+	var key = []byte(core.CONFIGCHANNELID)
+	exist, _ := db.connect.Has(key, nil)
+	var ids []string
+	if exist {
+		data, err := db.connect.Get(key, nil)
+		if err != nil {
+			return err
+		}
+		err = json.Unmarshal(data, &ids)
+		if err != nil {
+			return err
+		}
+	}
+	if !util.Contain(ids, id) {
+		ids = append(ids, id)
+	}
+	data, err := json.Marshal(ids)
+	if err != nil {
+		return err
+	}
+	err = db.connect.Put(key, data, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// UpdateSystemAdmin update system admin
+func (db *LevelDB) UpdateSystemAdmin(profile *cc.Profile) error {
+	var key = getSystemAdminKey()
+	data, err := json.Marshal(profile)
+	if err != nil {
+		return err
+	}
+	//更新key为_config$admin的记录, 具体内容示例如下：
+	//(_config$admin, {"Public":true,"Dependencies":null,"Members":null,"Admins":
+	// [{"PK":"BGXcjZ3bhemsoLP4HgBwnQ5gsc8VM91b3y8bW0b6knkWu8xCSKO2qiJXARMHcbtZtvU7Jos2A5kFCD1haJ/hLdg=","Name":"SystemAdmin"}]})
+	err = db.connect.Put(key, data, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// IsSystemAdmin return if the member is the system admin
+func (db *LevelDB) IsSystemAdmin(member *core.Member) bool {
+	var p cc.Profile
+	var key = getSystemAdminKey()
+	data, err := db.connect.Get(key, nil)
+	if err != nil {
+		return false
+	}
+	err = json.Unmarshal(data, &p)
+	if err != nil {
+		return false
+	}
+	for i := range p.Admins {
+		if p.Admins[i].Equal(member) {
+			return true
+		}
+	}
+	return false
+}
+
+func getSystemAdminKey() []byte {
+	return []byte(fmt.Sprintf("%s$admin", core.CONFIGCHANNELID))
 }
 
 // AccountExist is the implementation of the interface
@@ -120,7 +238,7 @@ func (db *LevelDB) GetTxStatusAsync(channelID, txID string) (*TxStatus, error) {
 		}
 		return &status, nil
 	}
-	status := db.hub.Watch(txID, func() { db.lock.Unlock() })
+	status := db.hub.Watch(txID, func() { db.lock.Unlock() }).(*TxStatus)
 	return status, nil
 }
 
@@ -131,27 +249,6 @@ func (db *LevelDB) BelongChannel(channelID string) bool {
 		return true
 	}
 	return false
-}
-
-// AddChannel is the implementation of interface
-func (db *LevelDB) AddChannel(channelID string) {
-	channels := db.GetChannels()
-	if !util.Contain(channels, channelID) {
-		channels = append(channels, channelID)
-	}
-	db.setChannels(channels)
-}
-
-// DeleteChannel is the implementation of interface
-func (db *LevelDB) DeleteChannel(channelID string) {
-	oldChannels := db.GetChannels()
-	var newChannels []string
-	for i := range oldChannels {
-		if channelID != oldChannels[i] {
-			newChannels = append(newChannels, oldChannels[i])
-		}
-	}
-	db.setChannels(newChannels)
 }
 
 // GetChannels is the implementation of interface
@@ -166,11 +263,14 @@ func (db *LevelDB) GetChannels() []string {
 		return channels
 	}
 	json.Unmarshal(value, &channels)
+	if channels == nil {
+		channels = make([]string, 0)
+	}
 	return channels
 }
 
-// ListTxHistory is the implementation of interface
-func (db *LevelDB) ListTxHistory(address []byte) map[string][]string {
+// GetTxHistory is the implementation of interface
+func (db *LevelDB) GetTxHistory(address []byte) map[string][]string {
 	var txs = make(map[string][]string)
 	if ok, _ := db.connect.Has(address, nil); ok {
 		value, _ := db.connect.Get(address, nil)
@@ -178,12 +278,6 @@ func (db *LevelDB) ListTxHistory(address []byte) map[string][]string {
 	}
 
 	return txs
-}
-
-func (db *LevelDB) setChannels(channels []string) {
-	var key = []byte("channels")
-	value, _ := json.Marshal(channels)
-	db.connect.Put(key, value, nil)
 }
 
 // NewWriteBatch implement the interface, WriteBatch is a wrapper of leveldb.Batch
@@ -213,12 +307,62 @@ func (db *LevelDB) Close() {
 	}
 }
 
+// Get get the value by key
+func (db *LevelDB) Get(key []byte, couldBeEmpty bool) ([]byte, error) {
+	val, err := db.connect.Get(key, nil)
+	if err == leveldb.ErrNotFound && couldBeEmpty {
+		err = nil
+	}
+	return val, err
+}
+
+// GetAssetAdminPKBytes returns public key bytes of _asset admin or nil if not exists
+func (db *LevelDB) GetAssetAdminPKBytes() []byte {
+	var key = getAssetAdminKey()
+	admin, err := db.connect.Get(key, nil)
+	if err != nil {
+		return nil
+	}
+	return admin
+}
+
+//GetOrCreateAccount return default account if not existx in leveldb
+func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, error) {
+	db.lock.Lock()
+	account := common.NewAccount(address)
+	key := getAccountKey(address)
+	data, err := db.connect.Get(key, nil)
+	if err != nil {
+		if err == leveldb.ErrNotFound {
+			err = nil
+		}
+		db.lock.Unlock()
+		return *account, err
+	}
+	err = json.Unmarshal(data, &account)
+	db.lock.Unlock()
+	return *account, err
+}
+
+// GetChannelProfile by channel id
+func (db *LevelDB) GetChannelProfile(id string) (*cc.Profile, error) {
+	var key = getChannelProfileKey(id)
+	data, err := db.connect.Get(key, nil)
+	if err != nil {
+		return nil, err
+	}
+	var profile cc.Profile
+	err = json.Unmarshal(data, &profile)
+	return &profile, err
+}
+
 // WriteBatchWrapper is a wrapper of level.Batch
 type WriteBatchWrapper struct {
 	batch *leveldb.Batch
 	db    *LevelDB
 
 	histories map[string]map[string][]string
+	channels  []string
 }
 
 // SetAccount is the implementation of interface
@@ -322,7 +466,76 @@ func (wb *WriteBatchWrapper) PutBlock(block *core.Block) error {
 	return nil
 }
 
+// AddChannel is the implementation of interface
+func (wb *WriteBatchWrapper) AddChannel(channelID string) {
+	if wb.channels == nil {
+		wb.channels = wb.db.GetChannels()
+	}
+
+	if !util.Contain(wb.channels, channelID) {
+		wb.channels = append(wb.channels, channelID)
+	}
+	wb.updateChannels()
+}
+
+// DeleteChannel is the implementation of interface
+func (wb *WriteBatchWrapper) DeleteChannel(channelID string) {
+	if wb.channels == nil {
+		wb.channels = wb.db.GetChannels()
+	}
+	var channels = make([]string, 0)
+	for _, channel := range wb.channels {
+		if channelID != channel {
+			channels = append(channels, channel)
+		}
+	}
+	wb.channels = channels
+	wb.updateChannels()
+}
+
 // Sync sync batch to database
 func (wb *WriteBatchWrapper) Sync() error {
 	return wb.db.connect.Write(wb.batch, nil)
+}
+
+func (wb *WriteBatchWrapper) updateChannels() {
+	var key = []byte("channels")
+	value, _ := json.Marshal(wb.channels)
+	wb.batch.Put(key, value)
+}
+
+//UpdateAccounts update asset
+func (wb *WriteBatchWrapper) UpdateAccounts(accounts ...common.Account) error {
+	for _, acc := range accounts {
+		key := getAccountKey(acc.GetAddress())
+		data, err := json.Marshal(acc)
+		if err != nil {
+			return err
+		}
+		wb.Put(key, data)
+	}
+	return nil
+}
+
+//SetAssetAdmin only succeed at the first time it is called
+func (wb *WriteBatchWrapper) SetAssetAdmin(pk crypto.PublicKey) error {
+	var key = getAssetAdminKey()
+	exists, _ := wb.db.connect.Has(key, nil)
+	if exists {
+		return fmt.Errorf("account admin already set")
+	}
+	pkBytes, err := pk.Bytes()
+	if err != nil {
+		return err
+	}
+	wb.Put(key, pkBytes)
+	return nil
+}
+
+func getAccountKey(address common.Address) []byte {
+	return []byte(fmt.Sprintf("%s@%s", core.ASSETCHANNELID, address.String()))
+}
+
+func getAssetAdminKey() []byte {
+	return []byte("_asset_admin")
 }

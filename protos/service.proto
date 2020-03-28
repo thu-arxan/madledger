@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 syntax = "proto3";
 
 package protos;
@@ -44,6 +54,7 @@ message ListChannelsRequest {
     // If system channel are included
     bool System = 1;
     bytes PK = 2;
+    int32 Algo = 3;
 }
 
 // ChannelInfos contains ChannelInfo
@@ -55,7 +66,10 @@ message ChannelInfos {
 message ChannelInfo {
     string ChannelID = 1;
     uint64 BlockSize = 2;
-    Identity Identity = 3; 
+    Identity Identity = 3;
+    uint64 MaxGas = 4;
+    uint64 GasPrice = 5;
+    uint64 AssetTokenRatio = 6; 
 }
 
 // CreateChannelRequest include a special tx which create a channel.
@@ -85,7 +99,8 @@ message TxStatus {
 service Peer {
     rpc GetTxStatus(GetTxStatusRequest) returns (TxStatus){}
     rpc ListTxHistory(ListTxHistoryRequest) returns(TxHistory){}
-}
+    rpc GetTokenInfo(GetTokenInfoRequest) returns(TokenInfo){}
+ }
 
 message GetTxStatusRequest {
     string ChannelID = 1;
@@ -108,5 +123,14 @@ message GetAccountInfoRequest {
 }
 
 message AccountInfo {
+    uint64 Balance = 1;
+}
+
+message GetTokenInfoRequest {
+    bytes Address = 1;
+    bytes ChannelID = 2;
+}
+
+message TokenInfo {
     uint64 Balance = 1;
 }

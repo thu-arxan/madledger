@@ -1,9 +1,20 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package cmd
 
 import (
 	"errors"
 	"io/ioutil"
 	cutil "madledger/client/util"
+	"madledger/common/crypto"
 	"madledger/common/util"
 	"os"
 	"strings"
@@ -23,6 +34,8 @@ func init() {
 	initCmd.RunE = runInit
 	initCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
 	initViper.BindPFlag("config", initCmd.Flags().Lookup("config"))
+	initCmd.Flags().StringP("keyAlgo", "k", "sm2", "Crypto of private key, secp256k1 or sm2")
+	initViper.BindPFlag("keyAlgo", initCmd.Flags().Lookup("keyAlgo"))
 	rootCmd.AddCommand(initCmd)
 }
 
@@ -37,7 +50,14 @@ func runInit(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	keyPath, err := cutil.GeneratePrivateKey(keyStorePath)
+	var algo crypto.Algorithm
+	switch initViper.GetString("keyAlgo") {
+	case "secp256k1":
+		algo = crypto.KeyAlgoSecp256k1
+	default:
+		algo = crypto.KeyAlgoSM2
+	}
+	keyPath, err := cutil.GeneratePrivateKey(keyStorePath, algo)
 	if err != nil {
 		return err
 	}

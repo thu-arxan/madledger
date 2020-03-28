@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package db
 
 import (
@@ -19,7 +29,7 @@ var (
 	secp256k1String      = "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"
 	rawSecp256k1Bytes, _ = hex.DecodeString(secp256k1String)
 	rawPrivKey           = rawSecp256k1Bytes
-	privKey, _           = crypto.NewPrivateKey(rawPrivKey)
+	privKey, _           = crypto.NewPrivateKey(rawPrivKey, crypto.KeyAlgoSecp256k1)
 	benckmark            = false
 )
 
@@ -176,7 +186,7 @@ func testHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	history := db.ListTxHistory(address.Bytes())
+	history := db.GetTxHistory(address.Bytes())
 	exceptHistory := make(map[string][]string)
 	exceptHistory["test"] = []string{tx1.ID, tx2.ID}
 	exceptHistory["test"] = append(exceptHistory["test"], txs...)

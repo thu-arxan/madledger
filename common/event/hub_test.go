@@ -1,153 +1,72 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package event
 
 import (
 	"fmt"
 	"madledger/common/util"
-	"sync"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/require"
-)
-
-var (
-	eventSize   = 2048
-	eventLength = 32
-	chLimit     = 5000
 )
 
 func TestWatch(t *testing.T) {
-	hub := NewHub()
-	events := make([]string, eventSize)
-	// initial events
-	for i := range events {
-		events[i] = util.RandomString(eventLength)
+	var hub = NewHub()
+	var id = util.RandomString(10)
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		hub.Done(id, 1)
+	}()
+	var finish = make(chan bool, 1)
+	go func() {
+		num := hub.Watch(id, nil).(int)
+		if num != 1 {
+			t.Fatal()
+		}
+		finish <- true
+	}()
+	num := hub.Watch(id, nil).(int)
+	if num != 1 {
+		t.Fatal()
 	}
-
-	var wg sync.WaitGroup
-	ch := make(chan bool, chLimit)
-	// register events
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for i := 0; i < eventSize*10; i++ {
-			event := events[i%eventSize]
-			wg.Add(1)
-			ch <- true
-			go func(i int) {
-				defer func() {
-					wg.Done()
-					<-ch
-				}()
-				result := hub.Watch(event, nil)
-				require.EqualError(t, result.Err, fmt.Sprintf("Error is %d", i%eventSize))
-			}(i)
-		}
-	}()
-
-	// finish events
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for i := 0; i < eventSize; i++ {
-			event := events[i]
-			wg.Add(1)
-			ch <- true
-			go func(i int) {
-				defer func() {
-					wg.Done()
-					<-ch
-				}()
-				hub.Done(event, &Result{
-					Err: fmt.Errorf("Error is %d", i),
-				})
-			}(i)
-		}
-	}()
-
-	wg.Wait()
-	// test if all events is clean
-	for event := range hub.events {
-		require.Len(t, hub.events[event], 0)
+	<-finish
+	hub.Done(id, 2)
+	num = hub.Watch(id, nil).(int)
+	if num != 1 {
+		t.Fatal()
 	}
 }
 
-func TestWatches(t *testing.T) {
-	hub := NewHub()
-	events := make([]string, eventSize)
-	// initial events
-	for i := range events {
-		events[i] = util.RandomString(eventLength)
-	}
-
-	var wg sync.WaitGroup
-	ch := make(chan bool, chLimit)
-	// register events
-	wg.Add(1)
+func TestRegister(t *testing.T) {
+	var hub = NewHub()
+	var topic = util.RandomString(10)
+	var finish = make(chan bool, 1)
 	go func() {
-		defer wg.Done()
-		for i := 0; i < eventSize*10; i++ {
-			event := events[i%eventSize]
-			var es []string
-			es = append(es, events[i%eventSize])
-			// only watch succeed event if i%2=0
-			if i%2 == 0 {
-				es = append(es, events[(i+2)%eventSize])
-			} else {
-				es = append(es, events[(i+1)%eventSize])
+		ch, token := hub.Register(topic)
+		for {
+			select {
+			case msg := <-ch:
+				s := msg.(string)
+				if s == "5" {
+					hub.UnRegister(topic, token)
+					finish <- true
+					return
+				}
 			}
-			wg.Add(1)
-			ch <- true
-			go func(i int) {
-				defer func() {
-					wg.Done()
-					<-ch
-				}()
-				randomSleep()
-				result := hub.Watch(event, nil)
-				if i%2 == 0 {
-					require.NoError(t, result.Err)
-				} else {
-					require.EqualError(t, result.Err, fmt.Sprintf("Error is %d", i%eventSize))
-				}
-			}(i)
 		}
 	}()
-
-	// finish events
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
-		for i := 0; i < eventSize; i++ {
-			event := events[i]
-			wg.Add(1)
-			ch <- true
-			go func(i int) {
-				defer func() {
-					wg.Done()
-					<-ch
-				}()
-				randomSleep()
-				if i%2 == 0 {
-					hub.Done(event, &Result{
-						Err: nil,
-					})
-				} else {
-					hub.Done(event, &Result{
-						Err: fmt.Errorf("Error is %d", i),
-					})
-				}
-			}(i)
+		for i := 0; i <= 5; i++ {
+			time.Sleep(100 * time.Millisecond)
+			hub.Broadcast(topic, fmt.Sprintf("%d", i))
 		}
 	}()
-
-	wg.Wait()
-	// test if all events is clean
-	for event := range hub.events {
-		require.Len(t, hub.events[event], 0)
-	}
-}
-
-func randomSleep() {
-	time.Sleep(time.Duration(util.RandNum(500)) * time.Millisecond)
+	<-finish
 }

@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 // +build rocksdb
 
 package db
@@ -7,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"madledger/common"
+	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/core"
 	"os"
@@ -21,7 +32,7 @@ type RocksDB struct {
 	dir string
 
 	lock sync.Mutex
-	hub  *Hub
+	hub  *event.Hub
 
 	connect      *gorocksdb.DB
 	ro           *gorocksdb.ReadOptions
@@ -65,7 +76,7 @@ func NewRocksDB(dir string) (DB, error) {
 	db.ro = ro
 	db.wo = wo
 
-	db.hub = NewHub()
+	db.hub = event.NewHub()
 	return db, nil
 }
 
@@ -92,9 +103,9 @@ func (db *RocksDB) GetAccount(address common.Address) (*common.Account, error) {
 	}
 	defer data.Free()
 	if data.Size() == 0 {
-		return common.NewDefaultAccount(address), nil
+		return common.NewAccount(address), nil
 	}
-	var account common.DefaultAccount
+	var account common.Account
 	err = json.Unmarshal(data.Data(), &account)
 	if err != nil {
 		return nil, err
@@ -153,7 +164,7 @@ func (db *RocksDB) GetTxStatusAsync(channelID, txID string) (*TxStatus, error) {
 			}
 			return &status, nil
 		}
-		status := db.hub.Watch(txID, func() {})
+		status := db.hub.Watch(txID, func() {}).(*TxStatus)
 		return status, nil
 	}
 	return nil, err
@@ -166,27 +177,6 @@ func (db *RocksDB) BelongChannel(channelID string) bool {
 		return true
 	}
 	return false
-}
-
-// AddChannel is the implementation of interface
-func (db *RocksDB) AddChannel(channelID string) {
-	channels := db.GetChannels()
-	if !util.Contain(channels, channelID) {
-		channels = append(channels, channelID)
-	}
-	db.setChannels(channels)
-}
-
-// DeleteChannel is the implementation of interface
-func (db *RocksDB) DeleteChannel(channelID string) {
-	oldChannels := db.GetChannels()
-	var newChannels []string
-	for i := range oldChannels {
-		if channelID != oldChannels[i] {
-			newChannels = append(newChannels, oldChannels[i])
-		}
-	}
-	db.setChannels(newChannels)
 }
 
 // GetChannels is the implementation of interface
@@ -202,8 +192,8 @@ func (db *RocksDB) GetChannels() []string {
 	return channels
 }
 
-// ListTxHistory is the implementation of interface
-func (db *RocksDB) ListTxHistory(address []byte) map[string][]string {
+// GetTxHistory is the implementation of interface
+func (db *RocksDB) GetTxHistory(address []byte) map[string][]string {
 	var result = make(map[string][]string)
 	iter := db.connect.NewIteratorCF(db.ro, db.historyCFHdl)
 	defer iter.Close()
@@ -225,12 +215,6 @@ func (db *RocksDB) ListTxHistory(address []byte) map[string][]string {
 		iter.Key().Free()
 	}
 	return result
-}
-
-func (db *RocksDB) setChannels(channels []string) {
-	var key = []byte("channels")
-	value, _ := json.Marshal(channels)
-	db.connect.Put(db.wo, key, value)
 }
 
 // GetBlock gets block by block.num from db
@@ -267,6 +251,7 @@ type RocksDBWriteBatchWrapper struct {
 	db    *RocksDB
 
 	histories map[string][]string
+	channels  []string
 }
 
 // SetAccount is the implementation of interface
@@ -365,7 +350,40 @@ func (wb *RocksDBWriteBatchWrapper) PutBlock(block *core.Block) error {
 	return nil
 }
 
+// AddChannel is the implementation of interface
+func (wb *RocksDBWriteBatchWrapper) AddChannel(channelID string) {
+	if wb.channels == nil {
+		wb.channels = wb.db.GetChannels()
+	}
+
+	if !util.Contain(wb.channels, channelID) {
+		wb.channels = append(wb.channels, channelID)
+	}
+	wb.updateChannels()
+}
+
+// DeleteChannel is the implementation of interface
+func (wb *RocksDBWriteBatchWrapper) DeleteChannel(channelID string) {
+	if wb.channels == nil {
+		wb.channels = wb.db.GetChannels()
+	}
+	var channels = make([]string, 0)
+	for _, channel := range wb.channels {
+		if channelID != channel {
+			channels = append(channels, channel)
+		}
+	}
+	wb.channels = channels
+	wb.updateChannels()
+}
+
 // Sync sync change to db
 func (wb *RocksDBWriteBatchWrapper) Sync() error {
 	return wb.db.connect.Write(wb.db.wo, wb.batch)
+}
+
+func (wb *RocksDBWriteBatchWrapper) updateChannels() {
+	var key = []byte("channels")
+	value, _ := json.Marshal(wb.channels)
+	wb.batch.Put(key, value)
 }

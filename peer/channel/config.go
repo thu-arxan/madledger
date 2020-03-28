@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package channel
 
 import (
@@ -10,8 +20,8 @@ import (
 
 // AddConfigBlock add a config block
 func (m *Manager) AddConfigBlock(block *core.Block) error {
-	nums := make(map[string]uint64)
 	wb := m.db.NewWriteBatch()
+	nums := make(map[string][]uint64)
 	for i, tx := range block.Transactions {
 		status := &db.TxStatus{
 			Err:         "",
@@ -20,30 +30,52 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 			Output:      nil,
 		}
 		payload, err := getConfigPayload(tx)
-		if err == nil {
-			switch len(payload.ChannelID) {
-			case 0:
-				log.Warnf("Fatal error! Nil channel id in config block, num: %d, index: %d", block.GetNumber(), i)
-			default:
-				channelID := payload.ChannelID
-				if payload.Profile.Public {
-					m.db.AddChannel(channelID)
-				} else {
-					var remove = true
-					for _, member := range payload.Profile.Members {
-						if member.Equal(m.identity) {
-							m.db.AddChannel(channelID)
-							remove = false
-							break
-						}
-					}
-					if remove && m.db.BelongChannel(channelID) {
-						m.db.DeleteChannel(channelID)
+		if err != nil {
+			status.Err = err.Error()
+			wb.SetTxStatus(tx, status)
+			continue
+		}
+		if len(payload.ChannelID) == 0 {
+			log.Warnf("Fatal error! Nil channel id in config block, num: %d, index: %d", block.GetNumber(), i)
+			continue
+		}
+
+		channelID := payload.ChannelID
+		if tx.GetReceiver().String() == core.CreateChannelContractAddress.String() {
+
+			if payload.Profile.Public {
+				wb.AddChannel(channelID)
+				m.coordinator.hub.Broadcast("update", Update{
+					ID:     channelID,
+					Remove: false,
+				})
+			} else {
+				var remove = true
+				for _, member := range payload.Profile.Members {
+					if member.Equal(m.identity) {
+						wb.AddChannel(channelID)
+						m.coordinator.hub.Broadcast("update", Update{
+							ID:     channelID,
+							Remove: false,
+						})
+						remove = false
+						break
 					}
 				}
-				nums[payload.ChannelID] = 0
+				if remove && m.db.BelongChannel(channelID) {
+					wb.DeleteChannel(channelID)
+					m.coordinator.hub.Broadcast("update", Update{
+						ID:     channelID,
+						Remove: true,
+					})
+				}
 			}
-		} else {
+			nums[payload.ChannelID] = []uint64{0}
+		}
+		// todo:
+		// in orderer this part does not use write batch
+		err = m.db.UpdateChannel(channelID, payload.Profile)
+		if err != nil {
 			status.Err = err.Error()
 		}
 		wb.SetTxStatus(tx, status)
@@ -56,7 +88,7 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 
 func getConfigPayload(tx *core.Tx) (*cc.Payload, error) {
 	if tx.Data.ChannelID != core.CONFIGCHANNELID {
-		return nil, errors.New("The tx does not belog to global channel")
+		return nil, errors.New("The tx does not belong to config channel")
 	}
 	var payload cc.Payload
 	err := json.Unmarshal(tx.Data.Payload, &payload)

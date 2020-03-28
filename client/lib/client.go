@@ -1,9 +1,20 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package lib
 
 import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/core"
@@ -44,10 +55,6 @@ func NewClient(cfgFile string) (*Client, error) {
 
 // NewClientFromConfig will construct client from cfg
 func NewClientFromConfig(cfg *config.Config) (*Client, error) {
-	keyStore, err := cfg.GetKeyStoreConfig()
-	if err != nil {
-		return nil, err
-	}
 	// get clients
 	ordererClients, err := getOrdererClients(cfg)
 	if err != nil {
@@ -61,7 +68,7 @@ func NewClientFromConfig(cfg *config.Config) (*Client, error) {
 	return &Client{
 		ordererClients: ordererClients,
 		peerClients:    peerClients,
-		privKey:        keyStore.Keys[0],
+		privKey:        cfg.KeyStore.Privs[0],
 	}, nil
 }
 
@@ -124,16 +131,19 @@ func getPeerClients(cfg *config.Config) ([]pb.PeerClient, error) {
 // ListChannel list the info of channel
 func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 	var channelInfos []ChannelInfo
-	pk, err := c.GetPrivKey().PubKey().Bytes()
+	pubKey := c.GetPrivKey().PubKey()
+	pk, err := pubKey.Bytes()
 	if err != nil {
 		return channelInfos, err
 	}
 	var infos *pb.ChannelInfos
 
 	for i, ordererClient := range c.ordererClients {
+		fmt.Printf(">>list channel")
 		infos, err = ordererClient.ListChannels(context.Background(), &pb.ListChannelsRequest{
 			System: system,
 			PK:     pk,
+			Algo:   pubKey.Algo(),
 		})
 		times := i + 1
 		if err != nil {
@@ -172,7 +182,8 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 }
 
 // CreateChannel create a channel
-func (c *Client) CreateChannel(channelID string, public bool, admins, members []*core.Member) error {
+func (c *Client) CreateChannel(channelID string, public bool, admins, members []*core.Member,
+	gasPrice uint64, ratio uint64, maxGas uint64) error {
 	// log.Infof("Create channel %s", channelID)
 	self, err := core.NewMember(c.GetPrivKey().PubKey(), "admin")
 	if err != nil {
@@ -188,9 +199,12 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 	payload, _ := json.Marshal(cc.Payload{
 		ChannelID: channelID,
 		Profile: &cc.Profile{
-			Public:  public,
-			Admins:  admins,
-			Members: members,
+			Public:          public,
+			Admins:          admins,
+			Members:         members,
+			GasPrice:        gasPrice,
+			AssetTokenRatio: ratio,
+			MaxGas:          maxGas,
 		},
 		Version: 1,
 	})
@@ -242,19 +256,22 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 			}
 		} else {
 			// add tx successfully and exit the loop
-			log.Info("add tx success")
+			// log.Info("add tx success")
 			break
 		}
 	}
 
 	collector := NewCollector(len(c.peerClients), 1)
 	for i := range c.peerClients {
+
 		go func(i int) {
+			log.Info("get tx status begin")
 			status, err := c.peerClients[i].GetTxStatus(context.Background(), &pb.GetTxStatusRequest{
 				ChannelID: tx.Data.ChannelID,
 				TxID:      tx.ID,
 				Behavior:  pb.Behavior_RETURN_UNTIL_READY,
 			})
+			log.Infof("get status %v, err : %v", status, err)
 			if err != nil {
 				collector.AddError(err)
 			} else {
@@ -269,39 +286,6 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 		return nil, err
 	}
 	return result.(*pb.TxStatus), nil
-}
-
-// AddTx try to add a tx
-// TODO: Support bft
-func (c *Client) AddTxInOrderer(tx *core.Tx) (*pb.TxStatus, error) {
-	pbTx, err := pb.NewTx(tx)
-	if err != nil {
-		return nil, err
-	}
-	var result *pb.TxStatus
-	for i, ordererClient := range c.ordererClients {
-		log.Info("add tx begin")
-		result, err = ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
-			Tx: pbTx,
-		})
-
-		times := i + 1
-		if err != nil {
-			// if the client is not system admin, just exit the loop
-			if strings.Contains(err.Error(), "the client is not system admin and can not update validator") {
-				return nil, err
-			}
-			// try to use other ordererClients until the last one still returns an error
-			if times == len(c.ordererClients) {
-				return nil, err
-			}
-		} else {
-			// add tx successfully and exit the loop
-			log.Info("add tx success")
-			break
-		}
-	}
-	return result, nil
 }
 
 // GetHistory return the history of address
@@ -354,6 +338,7 @@ func (c *Client) GetPrivKey() crypto.PrivateKey {
 	return c.privKey
 }
 
+// GetAccountBalance return balance of account
 func (c *Client) GetAccountBalance(address common.Address) (uint64, error) {
 	var times int
 	var acc *pb.AccountInfo
@@ -373,4 +358,28 @@ func (c *Client) GetAccountBalance(address common.Address) (uint64, error) {
 		}
 	}
 	return acc.GetBalance(), nil
+}
+
+// GetTokenInfo return balance of account
+func (c *Client) GetTokenInfo(address common.Address, channelID []byte) (uint64, error) {
+	var err error
+	collector := NewCollector(len(c.peerClients), 1)
+	for i := range c.peerClients {
+		go func(i int) {
+			token, err := c.peerClients[i].GetTokenInfo(context.Background(), &pb.GetTokenInfoRequest{
+				Address:   address.Bytes(),
+				ChannelID: channelID,
+			})
+			if err != nil {
+				collector.AddError(err)
+			} else {
+				collector.Add(token)
+			}
+		}(i)
+	}
+	result, err := collector.Wait()
+	if err != nil {
+		return 0, err
+	}
+	return result.(*pb.TokenInfo).GetBalance(), err
 }

@@ -26,7 +26,7 @@ func (hs *Server) GetTxStatusByHTTP(c *gin.Context) {
 	txID := j.TxID
 
 	log.Infof("before get tx status %s", txID)
-	status, err := hs.ChannelManager.GetTxStatus(chID, txID, true)
+	status, err := hs.cm.GetTxStatus(chID, txID, true)
 	log.Infof("after get tx status %s, %v", txID, err)
 
 	if err != nil {
@@ -60,7 +60,7 @@ func (hs *Server) ListTxHistoryByHTTP(c *gin.Context) {
 
 	addr, _ := hex.DecodeString(j.Addr)
 	log.Info("addr is ", hex.EncodeToString(addr))
-	history := hs.ChannelManager.ListTxHistory(addr)
+	history := hs.cm.GetTxHistory(addr)
 	log.Info("get history is ", history)
 	var pbHistory = make(map[string]*pb.StringList)
 	for channelID, ids := range history {
