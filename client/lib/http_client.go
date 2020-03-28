@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	cc "madledger/blockchain/config"
 	"madledger/client/config"
+	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/core"
 	pb "madledger/protos"
@@ -105,7 +106,6 @@ func (c *HTTPClient) ListChannelByHTTP(system bool) ([]ChannelInfo, error) {
 			break
 		}
 	}
-	log.Info(infos.ChannelInfos.Channels)
 	for i, channel := range infos.ChannelInfos.Channels {
 		channelInfos = append(channelInfos, ChannelInfo{
 			Name:      channel.ChannelID,
@@ -136,7 +136,8 @@ type CreateChannelResp struct {
 }
 
 // CreateChannelByHTTP create a channel
-func (c *HTTPClient) CreateChannelByHTTP(channelID string, public bool, admins, members []*core.Member) error {
+func (c *HTTPClient) CreateChannelByHTTP(channelID string, public bool, admins, members []*core.Member,
+	gasPrice uint64, ratio uint64, maxGas uint64) error {
 	// log.Infof("Create channel %s", channelID)
 	self, err := core.NewMember(c.privKey.PubKey(), "admin")
 	if err != nil {
@@ -152,9 +153,12 @@ func (c *HTTPClient) CreateChannelByHTTP(channelID string, public bool, admins, 
 	payload, _ := json.Marshal(cc.Payload{
 		ChannelID: channelID,
 		Profile: &cc.Profile{
-			Public:  public,
-			Admins:  admins,
-			Members: members,
+			Public:          public,
+			Admins:          admins,
+			Members:         members,
+			GasPrice:        gasPrice,
+			AssetTokenRatio: ratio,
+			MaxGas:          maxGas,
 		},
 		Version: 1,
 	})
@@ -173,7 +177,6 @@ func (c *HTTPClient) CreateChannelByHTTP(channelID string, public bool, admins, 
 		}
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
-		log.Infof("create resp is: %s", string(body))
 		err = json.Unmarshal(body, &info)
 		if info.Error != "" {
 			return errors.New(info.Error)
@@ -192,10 +195,12 @@ func (c *HTTPClient) CreateChannelByHTTP(channelID string, public bool, admins, 
 	return nil
 }
 
+// AddTxResp ...
 type AddTxResp struct {
 	Error string `json:"error"`
 }
 
+// GetTxStatusResp ...
 type GetTxStatusResp struct {
 	Error  string       `json:"error"`
 	Status *pb.TxStatus `json:"status"`
@@ -273,6 +278,7 @@ func (c *HTTPClient) AddTxByHTTP(tx *core.Tx) (*pb.TxStatus, error) {
 	return result.(*pb.TxStatus), nil
 }
 
+// GetTxHistoryResp ...
 type GetTxHistoryResp struct {
 	Error     string        `json:"error"`
 	TxHistory *pb.TxHistory `json:"txhistory"`
@@ -316,4 +322,85 @@ func (c *HTTPClient) GetHistoryByHTTP(address []byte) (*pb.TxHistory, error) {
 // GetPrivKey return the private key
 func (c *HTTPClient) GetPrivKey() crypto.PrivateKey {
 	return c.privKey
+}
+
+//GetAccountBalanceResp ...
+type GetAccountBalanceResp struct {
+	Error   string         `json:"error"`
+	Account pb.AccountInfo `json:"accountinfo"`
+}
+
+//GetAccountBalanceByHTTP Get Account Balance By HTTP
+func (c *HTTPClient) GetAccountBalanceByHTTP(address common.Address) (uint64, error) {
+	var times int
+	var info GetAccountBalanceResp
+	for i := range c.ordererHTTPClients {
+		requestBody, _ := json.Marshal(map[string]string{
+			"address": address.String(),
+		})
+		resp, err := http.Post("http://"+c.ordererHTTPClients[i]+"/v1/getaccountinfo", "application/json", bytes.NewBuffer(requestBody))
+		if err != nil {
+			return 0, err
+		}
+
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return 0, err
+		}
+		defer resp.Body.Close()
+		err = json.Unmarshal(body, &info)
+		if err != nil {
+			return 0, err
+		}
+		times = i + 1
+		if err != nil {
+			// try to use other ordererClients until the last one still returns an error
+			if times == len(c.ordererHTTPClients) {
+				return 0, err
+			}
+		} else {
+			break
+		}
+
+	}
+	return info.Account.GetBalance(), nil
+}
+
+// GetTokenInfoResp ...
+type GetTokenInfoResp struct {
+	Error string       `json:"error"`
+	Token pb.TokenInfo `json:"tokeninfo"`
+}
+
+// GetTokenInfoByHTTP Get Token Info By HTTP
+func (c *HTTPClient) GetTokenInfoByHTTP(address common.Address, channelID []byte) (uint64, error) {
+	collector := NewCollector(len(c.peerHTTPClients), 1)
+	var info GetTokenInfoResp
+	for i := range c.peerHTTPClients {
+		go func(i int) {
+			requestBody, _ := json.Marshal(map[string]string{
+				"address":   address.String(),
+				"channelid": string(channelID),
+			})
+			resp, err := http.Post("http://"+c.peerHTTPClients[i]+"/v1/gettokeninfo", "application/json", bytes.NewBuffer(requestBody))
+			if err != nil {
+				collector.AddError(err)
+			}
+			body, err := ioutil.ReadAll(resp.Body)
+			defer resp.Body.Close()
+			json.Unmarshal(body, &info)
+
+			if err != nil || info.Error != "" {
+				collector.AddError(errors.New(info.Error))
+			} else {
+				collector.Add(info.Token)
+			}
+		}(i)
+	}
+	result, err := collector.Wait()
+	if err != nil {
+		return 0, err
+	}
+	return result.(*pb.TokenInfo).GetBalance(), err
+
 }
