@@ -65,6 +65,11 @@ func TestSoloOrdererTxHistoryByHTTP(t *testing.T) {
 	require.NoError(t, err)
 	testTxHistoryByHTTP(t, client)
 }
+func TestSoloOrdererAssetByHTTP(t *testing.T) {
+	client, err := getSoloHTTPClient()
+	require.NoError(t, err)
+	testAssetByHTTP(t, client)
+}
 func TestSoloOrdererHTTPEnd(t *testing.T) {
 	stopSoloOrderer()
 	stopPeers(3)

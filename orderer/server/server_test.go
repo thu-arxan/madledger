@@ -497,8 +497,8 @@ func TestAsset(t *testing.T) {
 	//change BlockPrice of test channel's
 
 	payload, err := json.Marshal(cc.Payload{
-		ChannelID:  "test",
-		Profile:	&cc.Profile{
+		ChannelID: "test",
+		Profile: &cc.Profile{
 			BlockPrice: 100,
 		},
 	})

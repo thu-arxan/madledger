@@ -78,10 +78,11 @@ func testCreateChannelByHTTP(t *testing.T, client *client.HTTPClient, peers []*c
 	}
 	require.Contains(t, channels, core.GLOBALCHANNELID)
 	require.Contains(t, channels, core.CONFIGCHANNELID)
+	require.Contains(t, channels, core.ASSETCHANNELID)
 	require.NotContains(t, channels, "public")
 
 	// then add a channel
-	err = client.CreateChannelByHTTP("public", true, nil, nil)
+	err = client.CreateChannelByHTTP("public", true, nil, nil, 0, 1, 10000000)
 	require.NoError(t, err)
 	// then query channels
 	infos, err = client.ListChannelByHTTP(true)
@@ -92,12 +93,13 @@ func testCreateChannelByHTTP(t *testing.T, client *client.HTTPClient, peers []*c
 	}
 	require.Contains(t, channels, core.GLOBALCHANNELID)
 	require.Contains(t, channels, core.CONFIGCHANNELID)
+	require.Contains(t, channels, core.ASSETCHANNELID)
 	require.Contains(t, channels, "public")
 	// create channel test again
-	err = client.CreateChannelByHTTP("public", true, nil, nil)
+	err = client.CreateChannelByHTTP("public", true, nil, nil, 0, 1, 10000000)
 	require.Error(t, err)
 	// create private channel
-	err = client.CreateChannelByHTTP("private", false, nil, peers)
+	err = client.CreateChannelByHTTP("private", false, nil, peers, 0, 1, 10000000)
 	require.NoError(t, err)
 }
 
@@ -154,7 +156,7 @@ func createContractByHTTP(t *testing.T, channelID string, client *client.HTTPCli
 
 	status, err = client.AddTxByHTTP(tx)
 	require.NoError(t, err)
-	require.Equal(t, status.Err, "Duplicate address")
+	require.Equal(t, status.Err, "")
 }
 func testCallContract(t *testing.T, client *client.Client) {
 	callContract(t, "public", client)
@@ -420,6 +422,121 @@ func testAsset(t *testing.T, client *client.Client) {
 
 	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("success again"), 0, "", issuerKey)
 	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+}
+
+func testAssetByHTTP(t *testing.T, client *client.HTTPClient) {
+	algo := crypto.KeyAlgoSecp256k1
+
+	issuerKey, err := crypto.GeneratePrivateKey(algo)
+	require.NoError(t, err)
+	falseIssuerKey, err := crypto.GeneratePrivateKey(algo)
+	require.NoError(t, err)
+	require.NotEqual(t, issuerKey, falseIssuerKey)
+	receiverKey, err := crypto.GeneratePrivateKey(algo)
+	require.NoError(t, err)
+
+	issuer, err := issuerKey.PubKey().Address()
+	require.NoError(t, err)
+	falseIssuer, err := falseIssuerKey.PubKey().Address()
+	require.NoError(t, err)
+	receiver, err := receiverKey.PubKey().Address()
+	require.NoError(t, err)
+
+	err = client.CreateChannelByHTTP("test", true, nil, nil, 0, 1, 10000000)
+	require.NoError(t, err)
+
+	//issue to issuer itself
+	coreTx := getAssetChannelTx(core.IssueContractAddress, issuer, "", uint64(10), issuerKey)
+	_, err = client.AddTxByHTTP(coreTx)
+	require.NoError(t, err)
+
+	balance, err := client.GetAccountBalanceByHTTP(issuer)
+	require.NoError(t, err)
+	require.Equal(t, uint64(10), balance)
+
+	//falseissuer issue fail
+	coreTx = getAssetChannelTx(core.IssueContractAddress, falseIssuer, "", uint64(10), falseIssuerKey)
+	_, err = client.AddTxByHTTP(coreTx)
+	require.NoError(t, err)
+
+	balance, err = client.GetAccountBalanceByHTTP(falseIssuer)
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), balance)
+
+	//test issue to channel
+	coreTx = getAssetChannelTx(core.IssueContractAddress, common.ZeroAddress, "test", uint64(10), issuerKey)
+	// question, what if test is not created?
+	_, err = client.AddTxByHTTP(coreTx)
+	require.NoError(t, err)
+	balance, err = client.GetAccountBalanceByHTTP(common.AddressFromChannelID("test"))
+	require.NoError(t, err)
+	require.Equal(t, uint64(10), balance)
+
+	//test transfer
+	coreTx = getAssetChannelTx(core.TransferContractrAddress, receiver, "", uint64(5), issuerKey)
+	_, err = client.AddTxByHTTP(coreTx)
+	require.NoError(t, err)
+	balance, err = client.GetAccountBalanceByHTTP(receiver)
+	require.NoError(t, err)
+	require.Equal(t, uint64(5), balance)
+
+	//test transfer fail
+	coreTx = getAssetChannelTx(core.TransferContractrAddress, receiver, "", uint64(5), falseIssuerKey)
+	_, err = client.AddTxByHTTP(coreTx)
+	require.NoError(t, err)
+	balance, err = client.GetAccountBalanceByHTTP(receiver)
+	require.NoError(t, err)
+	require.Equal(t, uint64(5), balance)
+
+	//4.test exchangeToken a.k.a transfer to channel in orderer execution
+	coreTx = getAssetChannelTx(core.TokenExchangeAddress, common.ZeroAddress, "test", uint64(5), receiverKey)
+	_, err = client.AddTxByHTTP(coreTx)
+	require.NoError(t, err)
+
+	balance, err = client.GetAccountBalanceByHTTP(common.AddressFromChannelID("test"))
+	require.NoError(t, err)
+	require.Equal(t, uint64(15), balance)
+
+	token, err := client.GetTokenInfoByHTTP(receiver, []byte("test"))
+	require.NoError(t, err)
+	require.Equal(t, uint64(5), token)
+
+	//test Block Price
+	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("success"), 0, "", issuerKey)
+	_, err = client.AddTxByHTTP(coreTx)
+	require.NoError(t, err)
+
+	//change BlockPrice of test channel's
+
+	payload, err := json.Marshal(cc.Payload{
+		ChannelID: "test",
+		Profile: &cc.Profile{
+			BlockPrice: 100,
+		},
+	})
+	require.NoError(t, err)
+	coreTx, err = core.NewTx(core.CONFIGCHANNELID, common.ZeroAddress, payload, 0, "", issuerKey)
+	_, err = client.AddTxByHTTP(coreTx)
+	require.NoError(t, err)
+
+	//now add tx that cause due
+	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("cause due but pass"), 0, "", issuerKey)
+	_, err = client.AddTxByHTTP(coreTx)
+	require.NoError(t, err)
+
+	//this one should fail
+	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("fail"), 0, "", issuerKey)
+	_, err = client.AddTxByHTTP(coreTx)
+	require.Error(t, err)
+
+	//now issue money to channel account to wake it
+	coreTx = getAssetChannelTx(core.IssueContractAddress, common.ZeroAddress, "test", uint64(1000000), issuerKey)
+	_, err = client.AddTxByHTTP(coreTx)
+	require.NoError(t, err)
+
+	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("success again"), 0, "", issuerKey)
+	_, err = client.AddTxByHTTP(coreTx)
 	require.NoError(t, err)
 }
 
