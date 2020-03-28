@@ -41,10 +41,11 @@ const (
 
 // These define api for gin
 const (
-	ActionFetchBlock    = "fetchblock"
-	ActionListChannels  = "listchannels"
-	ActionCreateChannel = "createchannel"
-	ActionAddTx         = "addtx"
+	// ActionFetchBlock     = "fetchblock"
+	ActionListChannels   = "listchannels"
+	ActionCreateChannel  = "createchannel"
+	ActionAddTx          = "addtx"
+	ActionGetAccountInfo = "getaccountinfo"
 )
 
 // Server provide the serve of orderer
@@ -92,10 +93,10 @@ func NewServer(cfg *config.Config) (*Server, error) {
 func (s *Server) initServer(engine *gin.Engine) error {
 	v1 := engine.Group(Version)
 	{
-		v1.POST(ActionFetchBlock, s.FetchBlockByHTTP)
 		v1.POST(ActionListChannels, s.ListChannelsByHTTP)
 		v1.POST(ActionCreateChannel, s.CreateChannelByHTTP)
 		v1.POST(ActionAddTx, s.AddTxByHTTP)
+		v1.POST(ActionGetAccountInfo, s.GetAccountInfoByHTTP)
 	}
 	return nil
 }
@@ -129,7 +130,7 @@ func (s *Server) Start() error {
 	s.Unlock()
 
 	err = s.rpcServer.Serve(lis)
-	
+
 	// TODO: TLS support not implemented
 	haddr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100)
 	router := gin.Default()

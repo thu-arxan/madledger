@@ -1,7 +1,10 @@
 package server
 
 import (
+	"encoding/binary"
 	"encoding/hex"
+	"madledger/common"
+	"madledger/common/util"
 	pb "madledger/protos"
 	"net/http"
 
@@ -16,7 +19,6 @@ type GetTxStatusReq struct {
 
 // GetTxStatusByHTTP gets tx status by http
 func (hs *Server) GetTxStatusByHTTP(c *gin.Context) {
-	log.Info("start get tx status")
 	var j GetTxStatusReq
 	if err := c.ShouldBindJSON(&j); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -25,9 +27,7 @@ func (hs *Server) GetTxStatusByHTTP(c *gin.Context) {
 	chID := j.ChannelID
 	txID := j.TxID
 
-	log.Infof("before get tx status %s", txID)
 	status, err := hs.cm.GetTxStatus(chID, txID, true)
-	log.Infof("after get tx status %s, %v", txID, err)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -41,7 +41,6 @@ func (hs *Server) GetTxStatusByHTTP(c *gin.Context) {
 		ContractAddress: status.ContractAddress,
 	}
 	c.JSON(http.StatusOK, gin.H{"status": result})
-	log.Info("finish get tx status")
 	return
 }
 
@@ -59,9 +58,7 @@ func (hs *Server) ListTxHistoryByHTTP(c *gin.Context) {
 	}
 
 	addr, _ := hex.DecodeString(j.Addr)
-	log.Info("addr is ", hex.EncodeToString(addr))
 	history := hs.cm.GetTxHistory(addr)
-	log.Info("get history is ", history)
 	var pbHistory = make(map[string]*pb.StringList)
 	for channelID, ids := range history {
 		value := new(pb.StringList)
@@ -74,5 +71,36 @@ func (hs *Server) ListTxHistoryByHTTP(c *gin.Context) {
 		Txs: pbHistory,
 	}
 	c.JSON(http.StatusOK, gin.H{"txhistory": res})
+	return
+}
+
+// GetTokenInfoReq ...
+type GetTokenInfoReq struct {
+	Addr      string `json:"address"`
+	ChannelID string `json:"channelid"`
+}
+
+// GetTokenInfoByHTTP Get Token Info By HTTP
+func (hs *Server) GetTokenInfoByHTTP(c *gin.Context) {
+	var j GetTokenInfoReq
+	if err := c.ShouldBindJSON(&j); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	var info pb.TokenInfo
+	channelID := j.ChannelID
+	addr := j.Addr
+	key := util.BytesCombine(common.AddressFromChannelID(channelID).Bytes(), []byte("token"), []byte(addr))
+	tokenBytes, err := hs.cm.db.Get(key, false)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	var token uint64
+	if tokenBytes != nil {
+		token = uint64(binary.BigEndian.Uint64(tokenBytes))
+	}
+	info.Balance = token
+	c.JSON(http.StatusOK, gin.H{"tokeninfo": info})
 	return
 }

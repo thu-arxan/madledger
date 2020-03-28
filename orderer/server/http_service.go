@@ -13,21 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// FetchBlockByHTTP gets block by http
-func (hs *Server) FetchBlockByHTTP(c *gin.Context) {
-	channelID := c.Query("channelID")
-	number, _ := strconv.ParseUint(c.Query("number"), 0, 64)
-	//TODO: behavior is not a bool, defined in pb
-	behavior, _ := strconv.ParseBool(c.Query("behavior"))
-	block, err := hs.cc.FetchBlock(channelID, uint64(number), bool(behavior))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"block": block.Bytes})
-	return
-}
-
 // ListChannelReq Binding from JSON
 type ListChannelReq struct {
 	System string `form:"system" json:"system" xml:"system"  binding:"required"`
@@ -128,5 +113,28 @@ func (hs *Server) AddTxByHTTP(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"txstatus": status})
+	return
+}
+
+type AccountInfoReq struct {
+	Addr string `json:"address"`
+}
+
+// GetAccountInfoByHTTP get account info by http
+func (hs *Server) GetAccountInfoByHTTP(c *gin.Context) {
+	var j AccountInfoReq
+	if err := c.ShouldBindJSON(&j); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	var accountInfo pb.AccountInfo
+	addr := common.BytesToAddress([]byte(j.Addr))
+	account, err := hs.cc.AM.GetAccount(addr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	accountInfo.Balance = account.GetBalance()
+	c.JSON(http.StatusOK, gin.H{"accountinfo": accountInfo})
 	return
 }
