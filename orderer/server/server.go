@@ -55,6 +55,8 @@ type Server struct {
 	rpcServer *grpc.Server
 	srv       *http.Server
 	cc        *channel.Coordinator
+	ln        net.Listener
+	engine    *gin.Engine
 }
 
 // NewServer is the constructor of server
@@ -88,6 +90,15 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	}
 	server.cc = cc
 
+	server.engine = gin.New()
+	server.engine.Use(gin.Recovery())
+	server.initServer(server.engine)
+	server.srv = &http.Server{
+		Handler:      server.engine,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+	}
+
 	return server, nil
 }
 func (s *Server) initServer(engine *gin.Engine) error {
@@ -103,13 +114,14 @@ func (s *Server) initServer(engine *gin.Engine) error {
 
 // Start starts the server
 func (s *Server) Start() error {
+	fmt.Println("begin start the orderer")
 	s.Lock()
 	addr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port)
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("Failed to start the orderer server because %s", err.Error())
 	}
-	log.Infof("Start the orderer at %s", addr)
+	fmt.Printf("Start the orderer at %s\n", addr)
 	err = s.cc.Start()
 	if err != nil {
 		return err
@@ -131,24 +143,50 @@ func (s *Server) Start() error {
 
 	err = s.rpcServer.Serve(lis)
 
-	// TODO: TLS support not implemented
-	haddr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100)
-	router := gin.Default()
-	err = s.initServer(router)
-	if err != nil {
-		log.Error("Init router failed: ", err)
-		return err
+	var ln net.Listener
+	if s.config.TLS.Enable && s.config.TLS.Cert != nil {
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{*s.config.TLS.Cert},
+		}
+
+		ln, err = tls.Listen("tcp", fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100), tlsConfig)
+		if err != nil {
+			log.Error("HTTPS listen failed")
+			return err
+		}
+	} else {
+		ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100))
+		if err != nil {
+			log.Error("HTTP listen failed")
+			return err
+		}
 	}
-	s.srv = &http.Server{
-		Addr:    haddr,
-		Handler: router,
-	}
+	s.ln = ln
 	go func() {
-		// service connections
-		if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
+		err := s.srv.Serve(s.ln)
+		if err != nil && err != http.ErrServerClosed {
+			log.Error("Http Serve failed: ", err)
 		}
 	}()
+
+	// TODO: TLS support not implemented
+	// haddr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100)
+	// router := gin.Default()
+	// err = s.initServer(router)
+	// if err != nil {
+	// 	log.Error("Init router failed: ", err)
+	// 	return err
+	// }
+	// s.srv = &http.Server{
+	// 	Addr:    haddr,
+	// 	Handler: router,
+	// }
+	// go func() {
+	// 	// service connections
+	// 	if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	// 		log.Fatalf("listen: %s\n", err)
+	// 	}
+	// }()
 
 	return nil
 }
@@ -169,10 +207,11 @@ func (s *Server) Stop() {
 	if err := s.srv.Shutdown(ctx); err != nil {
 		log.Fatal("Server Shutdown:", err)
 	}
-	// catching ctx.Done(). timeout of 5 seconds.
+	// catching ctx.Done(). timeout of 1 seconds.
 	select {
 	case <-ctx.Done():
-		log.Println("timeout of 5 seconds.")
+		log.Println("timeout of 1 seconds.")
 	}
+	s.ln.Close()
 	log.Println("Server exiting")
 }

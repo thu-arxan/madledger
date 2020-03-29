@@ -115,14 +115,11 @@ func (s *Server) Start() error {
 	s.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterPeerServer(s.rpcServer, s)
 
-	go func() {
-		log.Infof("Start the peer server at %s", addr)
-		err = s.rpcServer.Serve(lis)
-		if err != nil {
-			log.Error("gRPC Serve error: ", err)
-			return
-		}
-	}()
+	err = s.rpcServer.Serve(lis)
+	if err != nil {
+		log.Error("gRPC Serve error: ", err)
+		return err
+	}
 
 	haddr := fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100)
 	router := gin.Default()
@@ -157,7 +154,7 @@ func (s *Server) Stop() {
 	if err := s.srv.Shutdown(ctx); err != nil {
 		log.Fatal("Server Shutdown:", err)
 	}
-	// catching ctx.Done(). timeout of 5 seconds.
+	// catching ctx.Done(). timeout of 1 seconds.
 	select {
 	case <-ctx.Done():
 		log.Println("timeout after 1 second.")

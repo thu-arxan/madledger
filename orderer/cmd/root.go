@@ -70,3 +70,14 @@ func registerStop(s *server.Server, finish chan bool) {
 	finish <- true
 	return
 }
+
+// func registerStop(s *server.Server) {
+// 	if s == nil {
+// 		return
+// 	}
+// 	sigs := make(chan os.Signal, 1)
+// 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+// 	<-sigs
+// 	s.Stop()
+// 	return
+// }
