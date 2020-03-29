@@ -42,6 +42,7 @@ func (hs *Server) ListChannelsByHTTP(c *gin.Context) {
 	return
 }
 
+// CreateChannelReq ...
 type CreateChannelReq struct {
 	Tx string `json:"tx"`
 }
@@ -73,6 +74,7 @@ func (hs *Server) CreateChannelByHTTP(c *gin.Context) {
 	return
 }
 
+// AddTxReq ...
 type AddTxReq struct {
 	Tx string `json:"tx"`
 }
@@ -116,6 +118,7 @@ func (hs *Server) AddTxByHTTP(c *gin.Context) {
 	return
 }
 
+// AccountInfoReq ...
 type AccountInfoReq struct {
 	Addr string `json:"address"`
 }

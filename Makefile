@@ -78,31 +78,31 @@ proto:
 
 # test:
 test:
-	@$(GO_TEST_UNIT) madledger/common/util
-	@$(GO_TEST_UNIT) madledger/common/event
-	@$(GO_TEST_UNIT) madledger/common/math
-	@$(GO_TEST_UNIT) madledger/common/crypto
+	# @$(GO_TEST_UNIT) madledger/common/util
+	# @$(GO_TEST_UNIT) madledger/common/event
+	# @$(GO_TEST_UNIT) madledger/common/math
+	# @$(GO_TEST_UNIT) madledger/common/crypto
 
-	@$(GO_TEST_UNIT) madledger/core
+	# @$(GO_TEST_UNIT) madledger/core
 
-	@$(GO_TEST_UNIT) madledger/protos
+	# @$(GO_TEST_UNIT) madledger/protos
 
-	@$(GO_TEST_UNIT) madledger/blockchain/config
+	# @$(GO_TEST_UNIT) madledger/blockchain/config
 
-	@$(GO_TEST_UNIT) madledger/consensus/solo
-	@$(GO_TEST_UNIT) madledger/consensus/raft
-	@$(GO_TEST_UNIT) madledger/consensus/raft/eraft
-	@$(GO_TEST_UNIT) madledger/consensus/tendermint
+	# @$(GO_TEST_UNIT) madledger/consensus/solo
+	# @$(GO_TEST_UNIT) madledger/consensus/raft
+	# @$(GO_TEST_UNIT) madledger/consensus/raft/eraft
+	# @$(GO_TEST_UNIT) madledger/consensus/tendermint
 
-	@$(GO_TEST_UNIT) madledger/orderer/config
-	@$(GO_TEST_UNIT) madledger/orderer/db
-	@$(GO_TEST_UNIT) madledger/orderer/server
+	# @$(GO_TEST_UNIT) madledger/orderer/config
+	# @$(GO_TEST_UNIT) madledger/orderer/db
+	# @$(GO_TEST_UNIT) madledger/orderer/server
 
-	@$(GO_TEST_UNIT) madledger/peer/db
-	@$(GO_TEST_UNIT) madledger/peer/config
+	# @$(GO_TEST_UNIT) madledger/peer/db
+	# @$(GO_TEST_UNIT) madledger/peer/config
 
 	@echo "Next test may cost 1 minutes ..."
-	@$(GO_TEST_UNIT) madledger/tests
+	@$(GO_TEST_UNIT) madledger/tests -v
 
 performance:
 	@$(GO_TEST) madledger/tests/performance
