@@ -72,7 +72,6 @@ func TestBFTPeersStart(t *testing.T) {
 		require.NoError(t, err)
 		bftPeers[i] = server
 	}
-
 	for i := range bftPeers {
 		go func(t *testing.T, i int) {
 			err := bftPeers[i].Start()
@@ -226,6 +225,7 @@ func TestBFTAsset(t *testing.T) {
 }
 
 func TestBFTEnd(t *testing.T) {
+	// stopPeer()
 	for i := range bftOrderers {
 		stopOrderer(bftOrderers[i])
 	}
@@ -384,6 +384,16 @@ func getOrderersPid() []string {
 func stopOrderer(pid string) {
 	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("kill -TERM %s", pid))
 	cmd.Output()
+}
+
+func stopPeer() {
+	cmd := exec.Command("/bin/sh", "-c", "pidof peer")
+	output, _ := cmd.Output()
+	pids := strings.Split(string(output), " ")
+	for _, pid := range pids {
+		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("kill -TERM %s", pid))
+		cmd.Output()
+	}
 }
 
 func getBFTOrdererPath(node int) string {

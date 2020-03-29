@@ -53,6 +53,8 @@ type Server struct {
 	rpcServer *grpc.Server
 	cm        *ChannelManager
 	srv       *http.Server
+	ln        net.Listener
+	engine    *gin.Engine
 }
 
 // NewServer is the constructor of server
@@ -64,6 +66,15 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	server.cm, err = NewChannelManager(cfg)
 	if err != nil {
 		return nil, err
+	}
+
+	server.engine = gin.New()
+	server.engine.Use(gin.Recovery())
+	server.initServer(server.engine)
+	server.srv = &http.Server{
+		Handler:      server.engine,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
 	}
 
 	return server, nil
@@ -121,24 +132,51 @@ func (s *Server) Start() error {
 		return err
 	}
 
-	haddr := fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100)
-	router := gin.Default()
-	err = s.initServer(router)
-	if err != nil {
-		log.Error("Init router failed: ", err)
-		return err
+	var ln net.Listener
+
+	if s.cfg.TLS.Enable && s.cfg.TLS.Cert != nil {
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{*s.cfg.TLS.Cert},
+		}
+
+		ln, err = tls.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100), tlsConfig)
+		if err != nil {
+			log.Error("HTTPS listen failed")
+			return err
+		}
+	} else {
+		ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100))
+		if err != nil {
+			log.Error("HTTP listen failed")
+			return err
+		}
 	}
-	s.srv = &http.Server{
-		Addr:    haddr,
-		Handler: router,
-	}
+	s.ln = ln
 	go func() {
-		// service connections
-		log.Infof("Start the peer server at %s", haddr)
-		if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
+		err := s.srv.Serve(s.ln)
+		if err != nil && err != http.ErrServerClosed {
+			log.Error("Http Serve failed: ", err)
 		}
 	}()
+
+	// haddr := fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100)
+	// router := gin.Default()
+	// err = s.initServer(router)
+	// if err != nil {
+	// 	log.Error("Init router failed: ", err)
+	// 	return err
+	// }
+	// s.srv = &http.Server{
+	// 	Addr:    haddr,
+	// 	Handler: router,
+	// }
+	// go func() {
+	// 	// service connections
+	// 	log.Infof("Start the peer server at %s", haddr)
+	// 	if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	// 		log.Fatalf("listen: %s\n", err)
+	// 	}
+	// }()
 	return nil
 }
 
@@ -159,5 +197,6 @@ func (s *Server) Stop() {
 	case <-ctx.Done():
 		log.Println("timeout after 1 second.")
 	}
+	s.ln.Close()
 	log.Println("Server exiting")
 }

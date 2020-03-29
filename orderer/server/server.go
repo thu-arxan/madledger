@@ -114,7 +114,6 @@ func (s *Server) initServer(engine *gin.Engine) error {
 
 // Start starts the server
 func (s *Server) Start() error {
-	fmt.Println("begin start the orderer")
 	s.Lock()
 	addr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port)
 	lis, err := net.Listen("tcp", addr)
@@ -164,6 +163,7 @@ func (s *Server) Start() error {
 	s.ln = ln
 	go func() {
 		err := s.srv.Serve(s.ln)
+		fmt.Println("orderer listen at ", s.ln.Addr().String())
 		if err != nil && err != http.ErrServerClosed {
 			log.Error("Http Serve failed: ", err)
 		}
