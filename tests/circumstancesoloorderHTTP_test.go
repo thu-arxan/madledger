@@ -71,8 +71,9 @@ func TestSoloOrdererAssetByHTTP(t *testing.T) {
 	testAssetByHTTP(t, client)
 }
 func TestSoloOrdererHTTPEnd(t *testing.T) {
-	stopSoloOrderer()
 	stopPeers(3)
+	stopSoloOrderer()
+
 	os.RemoveAll(".orderer")
 	os.RemoveAll(".peer0")
 	os.RemoveAll(".peer1")

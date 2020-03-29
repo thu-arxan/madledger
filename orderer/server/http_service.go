@@ -17,6 +17,7 @@ import (
 type ListChannelReq struct {
 	System string `form:"system" json:"system" xml:"system"  binding:"required"`
 	PK     string `form:"pk" json:"pk" xml:"pk" binding:"required"`
+	Algo   string `form:"algo" json:"algo" xml:"algo" binding:"required"`
 }
 
 // ListChannelsByHTTP list channels by http
@@ -28,11 +29,13 @@ func (hs *Server) ListChannelsByHTTP(c *gin.Context) {
 	}
 	system, _ := strconv.ParseBool(json.System)
 	pk, _ := hex.DecodeString(json.PK)
-	log.Info(json.PK)
+	algo, _ := strconv.ParseInt(json.Algo, 16, 64)
 	req := &pb.ListChannelsRequest{
 		System: system,
 		PK:     pk,
+		Algo:   int32(algo),
 	}
+	log.Infof("orderer receive pk is %v", json.PK)
 	info, err := hs.cc.ListChannels(req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -131,7 +134,8 @@ func (hs *Server) GetAccountInfoByHTTP(c *gin.Context) {
 		return
 	}
 	var accountInfo pb.AccountInfo
-	addr := common.BytesToAddress([]byte(j.Addr))
+	str, err := hex.DecodeString(j.Addr)
+	addr := common.BytesToAddress(str)
 	account, err := hs.cc.AM.GetAccount(addr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

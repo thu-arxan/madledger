@@ -70,6 +70,7 @@ func getPeerHTTPClients(cfg *config.Config) ([]string, error) {
 	return clients, nil
 }
 
+//ListChannelResp ...
 type ListChannelResp struct {
 	ChannelInfos *pb.ChannelInfos `json:"channelinfo"`
 }
@@ -77,7 +78,8 @@ type ListChannelResp struct {
 // ListChannelByHTTP list the info of channel
 func (c *HTTPClient) ListChannelByHTTP(system bool) ([]ChannelInfo, error) {
 	var channelInfos []ChannelInfo
-	pk, err := c.privKey.PubKey().Bytes()
+	pubKey := c.GetPrivKey().PubKey()
+	pk, err := pubKey.Bytes()
 	if err != nil {
 		return channelInfos, err
 	}
@@ -87,7 +89,9 @@ func (c *HTTPClient) ListChannelByHTTP(system bool) ([]ChannelInfo, error) {
 		requestBody, _ := json.Marshal(map[string]string{
 			"system": strconv.FormatBool(system),
 			"pk":     hex.EncodeToString(pk),
+			"algo":   strconv.FormatInt(int64(pubKey.Algo()), 16),
 		})
+		log.Infof("client send pk is %v", hex.EncodeToString(pk))
 
 		resp, err := http.Post("http://"+ordererHTTPClient+"/v1/listchannels", "application/json", bytes.NewBuffer(requestBody))
 		if err != nil {
@@ -131,6 +135,7 @@ func (c *HTTPClient) ListChannelByHTTP(system bool) ([]ChannelInfo, error) {
 	return channelInfos, nil
 }
 
+//CreateChannelResp ...
 type CreateChannelResp struct {
 	Error string `json:"error"`
 }
@@ -336,7 +341,7 @@ func (c *HTTPClient) GetAccountBalanceByHTTP(address common.Address) (uint64, er
 	var info GetAccountBalanceResp
 	for i := range c.ordererHTTPClients {
 		requestBody, _ := json.Marshal(map[string]string{
-			"address": address.String(),
+			"address": hex.EncodeToString(address.Bytes()),
 		})
 		resp, err := http.Post("http://"+c.ordererHTTPClients[i]+"/v1/getaccountinfo", "application/json", bytes.NewBuffer(requestBody))
 		if err != nil {
@@ -368,8 +373,8 @@ func (c *HTTPClient) GetAccountBalanceByHTTP(address common.Address) (uint64, er
 
 // GetTokenInfoResp ...
 type GetTokenInfoResp struct {
-	Error string       `json:"error"`
-	Token pb.TokenInfo `json:"tokeninfo"`
+	Error string        `json:"error"`
+	Token *pb.TokenInfo `json:"tokeninfo"`
 }
 
 // GetTokenInfoByHTTP Get Token Info By HTTP
@@ -379,7 +384,7 @@ func (c *HTTPClient) GetTokenInfoByHTTP(address common.Address, channelID []byte
 	for i := range c.peerHTTPClients {
 		go func(i int) {
 			requestBody, _ := json.Marshal(map[string]string{
-				"address":   address.String(),
+				"address":   hex.EncodeToString(address.Bytes()),
 				"channelid": string(channelID),
 			})
 			resp, err := http.Post("http://"+c.peerHTTPClients[i]+"/v1/gettokeninfo", "application/json", bytes.NewBuffer(requestBody))

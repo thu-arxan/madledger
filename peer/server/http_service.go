@@ -87,10 +87,9 @@ func (hs *Server) GetTokenInfoByHTTP(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	var info pb.TokenInfo
 	channelID := j.ChannelID
-	addr := j.Addr
-	key := util.BytesCombine(common.AddressFromChannelID(channelID).Bytes(), []byte("token"), []byte(addr))
+	addr, err := hex.DecodeString(j.Addr)
+	key := util.BytesCombine(common.AddressFromChannelID(channelID).Bytes(), []byte("token"), addr)
 	tokenBytes, err := hs.cm.db.Get(key, false)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -100,7 +99,9 @@ func (hs *Server) GetTokenInfoByHTTP(c *gin.Context) {
 	if tokenBytes != nil {
 		token = uint64(binary.BigEndian.Uint64(tokenBytes))
 	}
-	info.Balance = token
+	info := &pb.TokenInfo{
+		Balance: token,
+	}
 	c.JSON(http.StatusOK, gin.H{"tokeninfo": info})
 	return
 }
