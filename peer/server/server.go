@@ -126,12 +126,6 @@ func (s *Server) Start() error {
 	s.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterPeerServer(s.rpcServer, s)
 
-	err = s.rpcServer.Serve(lis)
-	if err != nil {
-		log.Error("gRPC Serve error: ", err)
-		return err
-	}
-
 	var ln net.Listener
 
 	if s.cfg.TLS.Enable && s.cfg.TLS.Cert != nil {
@@ -159,6 +153,11 @@ func (s *Server) Start() error {
 		}
 	}()
 
+	err = s.rpcServer.Serve(lis)
+	if err != nil {
+		log.Error("gRPC Serve error: ", err)
+		return err
+	}
 	// haddr := fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100)
 	// router := gin.Default()
 	// err = s.initServer(router)

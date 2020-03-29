@@ -140,8 +140,6 @@ func (s *Server) Start() error {
 
 	s.Unlock()
 
-	err = s.rpcServer.Serve(lis)
-
 	var ln net.Listener
 	if s.config.TLS.Enable && s.config.TLS.Cert != nil {
 		tlsConfig := &tls.Config{
@@ -168,6 +166,8 @@ func (s *Server) Start() error {
 			log.Error("Http Serve failed: ", err)
 		}
 	}()
+
+	err = s.rpcServer.Serve(lis)
 
 	// TODO: TLS support not implemented
 	// haddr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100)
