@@ -15,6 +15,7 @@ import (
 	"io/ioutil"
 	client "madledger/client/lib"
 	cutil "madledger/client/util"
+	"madledger/common/crypto"
 	"madledger/common/util"
 	"os"
 	"strings"
@@ -83,7 +84,7 @@ func newClient(path string) error {
 	keyStorePath, _ := util.MakeFileAbs(".keystore", path)
 	os.MkdirAll(keyStorePath, os.ModePerm)
 
-	keyPath, err := cutil.GeneratePrivateKey(keyStorePath)
+	keyPath, err := cutil.GeneratePrivateKey(keyStorePath, crypto.KeyAlgoSM2)
 	if err != nil {
 		return err
 	}

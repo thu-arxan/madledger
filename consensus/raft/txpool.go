@@ -12,7 +12,6 @@ package raft
 
 import (
 	"errors"
-	"madledger/common/crypto"
 	"madledger/common/util"
 	"madledger/core"
 	"sync"
@@ -37,7 +36,7 @@ func (pool *txPool) addTx(tx []byte) error {
 	pool.lock.Lock()
 	defer pool.lock.Unlock()
 	// check if the tx is duplicated
-	var hash = util.Hex(crypto.Hash(tx))
+	var hash = util.Hex(Hash(tx))
 	if util.Contain(pool.hashes, hash) {
 		return errors.New("Transaction is already in the pool")
 	}

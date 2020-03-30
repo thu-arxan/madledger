@@ -11,6 +11,7 @@
 package eraft
 
 import (
+	"madledger/common/crypto/hash"
 	"madledger/common/util"
 )
 
@@ -31,6 +32,11 @@ func randNode(cluster map[uint64]string) string {
 		i--
 	}
 	return ""
+}
+
+// Hash is a wrapper of sha256
+func Hash(data []byte) []byte {
+	return hash.SHA256(data)
 }
 
 // getLeaderFromError try to parse leader address from error

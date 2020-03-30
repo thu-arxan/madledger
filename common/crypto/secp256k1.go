@@ -44,9 +44,9 @@ func (p SECP256K1PrivateKey) PubKey() PublicKey {
 }
 
 // Bytes is the implementation of interface
-func (p SECP256K1PrivateKey) Bytes() ([]byte, error) {
+func (p SECP256K1PrivateKey) Bytes() []byte {
 	var privKey = (secp256k1.PrivateKey)(p)
-	return privKey.Serialize(), nil
+	return privKey.Serialize()
 }
 
 // Sign sign the data using the privateKey
@@ -59,6 +59,11 @@ func (p SECP256K1PrivateKey) Sign(hash []byte) (Signature, error) {
 	return (SECP256K1Signature)(*sig), nil
 }
 
+// Algo return Algo of private key
+func (p SECP256K1PrivateKey) Algo() Algorithm {
+	return KeyAlgoSecp256k1
+}
+
 // Bytes returns the bytes of Public key
 func (p SECP256K1PublicKey) Bytes() ([]byte, error) {
 	var pubKey = (secp256k1.PublicKey)(p)
@@ -67,14 +72,16 @@ func (p SECP256K1PublicKey) Bytes() ([]byte, error) {
 
 // Address is the implementation of interface
 func (p SECP256K1PublicKey) Address() (common.Address, error) {
-	bytes, err := p.Bytes()
-	if err != nil {
-		return common.ZeroAddress, nil
-	}
-
+	var pubKey = (secp256k1.PublicKey)(p)
+	bytes := pubKey.SerializeUncompressed()
 	hash := LegacyKeccak256(bytes[1:])
 	addrBytes := hash[12:]
 	return common.AddressFromBytes(addrBytes)
+}
+
+// Algo return Algo of public key
+func (p SECP256K1PublicKey) Algo() Algorithm {
+	return KeyAlgoSecp256k1
 }
 
 // Verify is the implementation of interface

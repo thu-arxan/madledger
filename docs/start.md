@@ -2,7 +2,30 @@
 
 ## 1. Requirement
 
-- Go 环境
+### 1.1. Go 环境
+
+Go语言的安装请自行搜索，版本不小于1.10。
+
+### 1.2. OpenSSL1.1.1
+
+```sh
+sudo apt install build-essential
+wget https://www.openssl.org/source/openssl-1.1.1.tar.gz
+tar -xzf openssl-1.1.1.tar.gz
+cd openssl-1.1.1
+./config --prefix=/usr/local/openssl --openssldir=/usr/local/openssl --shared
+make
+sudo make install
+```
+
+然后设置环境变量。
+
+```bash
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/openssl/lib
+```
+
+### 1.3. solcjs
+
 - solcjs: [Solidity编译器](https://github.com/ethereum/solc-js), 用于编译用户自己编写的智能合约(测试文件中给出了部分示例，可以先直接使用该示例)
   - solcjs --bin *.sol
   - solcjs --abi *.sol

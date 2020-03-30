@@ -18,7 +18,8 @@ import (
 // Member is the member in the system
 type Member struct {
 	// PK is the public key, which defines what the member is
-	PK []byte
+	PK   []byte
+	Algo crypto.Algorithm
 	// Name is used to present the member
 	Name string
 }
@@ -31,6 +32,7 @@ func NewMember(pk crypto.PublicKey, name string) (*Member, error) {
 	}
 	return &Member{
 		PK:   pkBytes,
+		Algo: pk.Algo(),
 		Name: name,
 	}, nil
 }
