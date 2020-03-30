@@ -25,13 +25,11 @@ import (
 var (
 	runCmd = &cobra.Command{
 		Use:   "run",
-		Short: "A brief description of your command",
-		Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+		Short: "Start a blockchain server here.",
+		Long: `Start a blockchain server. Two mode are supported:
+server : This will start a client process in the server side. All operation was execute in the backend.
+explorer : This will only provide a static website, All operation will be execute in user's explorer
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			host := runViper.GetString("host")
 			port := runViper.GetInt("port")

@@ -5,6 +5,11 @@ import (
 )
 
 func AccountList(c *gin.Context) {
+	Client, err := GetClient(c)
+	if err != nil {
+		c.AbortWithError(500, err)
+		return
+	}
 	address, err := Client.GetPrivKey().PubKey().Address()
 	if err != nil {
 		c.AbortWithError(500, err)

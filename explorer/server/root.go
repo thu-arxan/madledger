@@ -3,20 +3,19 @@ package server
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	clib "madledger/client/lib"
 )
 
-var Client *clib.Client = nil
+var SessionPool = make(map[string] *Session)
+var defaultConfig = ""
 
 func RunServer(host string, port int, config string) error {
-	var err error
+	defaultConfig = config
 	fmt.Printf("Server run on %s:%d\n", host, port)
-	Client, err = clib.NewClient(config)
-	if err != nil {
-		return err
-	}
 	r := gin.Default()
 	r.GET("/api/client/account/list", AccountList)
+	r.GET("/api/client/channel/list", ChannelList)
+	r.GET("/api/client/tx/history", TxHistory)
+	r.GET("/api/client/network/info", NetworkInfo)
 	r.Run(fmt.Sprintf("%s:%d", host, port))
 	return nil
 }
