@@ -12,7 +12,6 @@ package tests
 
 import (
 	"encoding/json"
-	"fmt"
 	"madledger/blockchain/asset"
 	cc "madledger/blockchain/config"
 	client "madledger/client/lib"
@@ -557,7 +556,6 @@ func testAssetOld(t *testing.T, client *client.Client) {
 	receiverAddress, err := receiverPrivKey.PubKey().Address()
 	require.NoError(t, err)
 	require.NotEqual(t, receiverAddress, address)
-	fmt.Printf("first issue")
 
 	payload, err := json.Marshal(asset.Payload{
 		//Action:    "person",
