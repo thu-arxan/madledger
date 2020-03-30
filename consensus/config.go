@@ -24,7 +24,8 @@ type Config struct {
 	TLS     TLSConfig
 }
 
-// TLSConfig ...
+// TLSConfig is the config of TLS
+// TODO: May we remove CA, RawCert and Key in TLSConfig?
 type TLSConfig struct {
 	Enable  bool
 	CA      string
