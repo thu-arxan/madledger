@@ -239,7 +239,6 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 	}
 
 	for i, ordererClient := range c.ordererClients {
-		log.Info("add tx begin")
 		_, err = ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
 			Tx: pbTx,
 		})
@@ -265,13 +264,11 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 	for i := range c.peerClients {
 
 		go func(i int) {
-			log.Info("get tx status begin")
 			status, err := c.peerClients[i].GetTxStatus(context.Background(), &pb.GetTxStatusRequest{
 				ChannelID: tx.Data.ChannelID,
 				TxID:      tx.ID,
 				Behavior:  pb.Behavior_RETURN_UNTIL_READY,
 			})
-			log.Infof("get status %v, err : %v", status, err)
 			if err != nil {
 				collector.AddError(err)
 			} else {

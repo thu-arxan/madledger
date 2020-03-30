@@ -12,7 +12,6 @@ package tests
 
 import (
 	"encoding/json"
-	"fmt"
 	"madledger/blockchain/asset"
 	cc "madledger/blockchain/config"
 	client "madledger/client/lib"
@@ -252,7 +251,6 @@ func testAsset(t *testing.T, client *client.Client) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(5), token)
 
-
 	//test Block Price
 	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("success"), 0, "", issuerKey)
 	_, err = client.AddTx(coreTx)
@@ -261,8 +259,8 @@ func testAsset(t *testing.T, client *client.Client) {
 	//change BlockPrice of test channel's
 
 	payload, err := json.Marshal(cc.Payload{
-		ChannelID:  "test",
-		Profile:	&cc.Profile{
+		ChannelID: "test",
+		Profile: &cc.Profile{
 			BlockPrice: 100,
 		},
 	})
@@ -308,7 +306,6 @@ func testAssetOld(t *testing.T, client *client.Client) {
 	receiverAddress, err := receiverPrivKey.PubKey().Address()
 	require.NoError(t, err)
 	require.NotEqual(t, receiverAddress, address)
-	fmt.Printf("first issue")
 
 	payload, err := json.Marshal(asset.Payload{
 		//Action:    "person",
