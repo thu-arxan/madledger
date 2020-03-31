@@ -150,6 +150,7 @@ func TestBFTCreateChannels(t *testing.T) {
 func TestBFTOrdererRestart(t *testing.T) {
 	stopOrderer(bftOrderers[1])
 	os.RemoveAll(getBFTOrdererDataPath(1))
+	time.Sleep(2000 * time.Millisecond)
 	bftOrderers[1] = startOrderer(1)
 	time.Sleep(2000 * time.Millisecond)
 	for i := range bftOrderers {
@@ -350,9 +351,9 @@ func startOrderer(node int) string {
 	before := getOrderersPid()
 	go func() {
 		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("orderer start -c %s", getBFTOrdererConfigPath(node)))
-		_, err := cmd.Output()
+		data, err := cmd.Output()
 		if err != nil {
-			panic(fmt.Sprintf("Run orderer %d failed because %v", node, err))
+			panic(fmt.Sprintf("Run orderer %d failed because %v, %s", node, err, string(data)))
 		}
 	}()
 
@@ -383,7 +384,10 @@ func getOrderersPid() []string {
 // stopOrderer stop an orderer
 func stopOrderer(pid string) {
 	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("kill -TERM %s", pid))
-	cmd.Output()
+	data, err := cmd.Output()
+	if err != nil {
+		panic(fmt.Sprintf("stop orderer %s failed: %v, %s", pid, err, string(data)))
+	}
 }
 
 func stopPeer() {

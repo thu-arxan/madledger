@@ -135,13 +135,13 @@ func (s *Server) Start() error {
 
 		ln, err = tls.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100), tlsConfig)
 		if err != nil {
-			log.Error("HTTPS listen failed")
+			log.Errorf("HTTPS listen failed: %v", err)
 			return err
 		}
 	} else {
 		ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100))
 		if err != nil {
-			log.Error("HTTP listen failed")
+			log.Errorf("HTTP listen failed: %v", err)
 			return err
 		}
 	}
