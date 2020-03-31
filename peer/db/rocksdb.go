@@ -218,8 +218,8 @@ func (db *RocksDB) GetTxHistory(address []byte) map[string][]string {
 }
 
 // GetBlock gets block by block.num from db
-func (db *RocksDB) GetBlock(num uint64) (*core.Block, error) {
-	key := fmt.Sprintf("bc_data_%d", num)
+func (db *RocksDB) GetBlock(channelID string, num uint64) (*core.Block, error) {
+	key := fmt.Sprintf("bc_data_%s_%d", channelID, num)
 	data, err := db.connect.Get(db.ro, []byte(key))
 	if err != nil {
 		return nil, err
@@ -345,7 +345,7 @@ func (wb *RocksDBWriteBatchWrapper) Put(key, value []byte) {
 // PutBlock stores block into db
 func (wb *RocksDBWriteBatchWrapper) PutBlock(block *core.Block) error {
 	data := block.Bytes()
-	key := fmt.Sprintf("bc_data_%d", block.GetNumber())
+	key := fmt.Sprintf("bc_data_%s_%d", block.Header.ChannelID, block.GetNumber())
 	wb.batch.Put([]byte(key), data)
 	return nil
 }

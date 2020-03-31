@@ -65,7 +65,7 @@ type DB interface {
 	GetTxHistory(address []byte) map[string][]string
 	NewWriteBatch() WriteBatch
 	// GetBlock gets block by block.num from db
-	GetBlock(num uint64) (*core.Block, error)
+	GetBlock(channelID string, num uint64) (*core.Block, error)
 	Close()
 
 	Get(key []byte, couldBeEmpty bool) ([]byte, error)
