@@ -45,6 +45,7 @@ const (
 	ActionGetTxStatus   = "gettxstatus"
 	ActionListTxHistory = "listtxhistory"
 	ActionGetTokenInfo  = "gettokeninfo"
+	ActionGetBlock      = "getblock"
 )
 
 // Server provide the serve of peer
@@ -98,6 +99,8 @@ func (s *Server) initServer(engine *gin.Engine) error {
 		v1.POST(ActionGetTxStatus, s.GetTxStatusByHTTP)
 		v1.POST(ActionListTxHistory, s.ListTxHistoryByHTTP)
 		v1.POST(ActionGetTokenInfo, s.GetTokenInfoByHTTP)
+		v1.POST(ActionGetBlock, s.GetBlockByHTTP)
+
 	}
 	return nil
 }

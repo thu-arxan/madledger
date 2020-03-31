@@ -7,6 +7,7 @@ import (
 	"madledger/common/util"
 	pb "madledger/protos"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -103,5 +104,33 @@ func (hs *Server) GetTokenInfoByHTTP(c *gin.Context) {
 		Balance: token,
 	}
 	c.JSON(http.StatusOK, gin.H{"tokeninfo": info})
+	return
+}
+
+//GetBlockReq ...
+type GetBlockReq struct {
+	ChannelID string `json:"channelid"`
+	Num       string `json:"num"`
+}
+
+//GetBlockByHTTP Get Block By HTTP
+func (hs *Server) GetBlockByHTTP(c *gin.Context) {
+	var j GetBlockReq
+	if err := c.ShouldBindJSON(&j); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	channelID := j.ChannelID
+	num, err := strconv.ParseUint(j.Num, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	block, err := hs.cm.db.GetBlock(channelID, num)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"block": block})
 	return
 }

@@ -242,7 +242,9 @@ func initBFTEnvironment() error {
 	if err == nil {
 		pids := strings.Split(string(output), " ")
 		for _, pid := range pids {
-			stopOrderer(pid)
+			if pid != "" {
+				stopOrderer(pid)
+			}
 		}
 	}
 
