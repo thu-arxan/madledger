@@ -355,7 +355,7 @@ func startOrderer(node int) string {
 		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("orderer start -c %s", getBFTOrdererConfigPath(node)))
 		data, err := cmd.Output()
 		if err != nil {
-			panic(fmt.Sprintf("Run orderer %d failed because %v, %s", node, err, string(data)))
+			panic(fmt.Sprintf("Run orderer %d failed because %v, %s\nend", node, err, string(data)))
 		}
 	}()
 
@@ -378,17 +378,35 @@ func getOrderersPid() []string {
 	if err != nil {
 		return nil
 	}
-
-	pids := strings.Split(string(output), " ")
+	strOutput := strings.TrimSpace(string(output))
+	pids := strings.Split(strOutput, " ")
 	return pids
 }
 
 // stopOrderer stop an orderer
 func stopOrderer(pid string) {
+	before := getOrderersPid()
+	if len(before) == 0 {
+		panic("no orderer running")
+	}
 	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("kill -TERM %s", pid))
 	data, err := cmd.Output()
 	if err != nil {
 		panic(fmt.Sprintf("stop orderer %s failed: %v, %s", pid, err, string(data)))
+	}
+
+	i := 0
+	for {
+		if i > 100 {
+			panic(fmt.Sprintf("timeout to wait for orderer %s stop", pid))
+		}
+		after := getOrderersPid()
+		if len(after) < len(before) {
+			fmt.Printf("stopped orderer %s after %d attempts\n", pid, i)
+			break
+		}
+		i++
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
