@@ -45,6 +45,7 @@ const (
 	ActionGetTxStatus   = "gettxstatus"
 	ActionListTxHistory = "listtxhistory"
 	ActionGetTokenInfo  = "gettokeninfo"
+	ActionGetBlock      = "getblock"
 )
 
 // Server provide the serve of peer
@@ -98,6 +99,8 @@ func (s *Server) initServer(engine *gin.Engine) error {
 		v1.POST(ActionGetTxStatus, s.GetTxStatusByHTTP)
 		v1.POST(ActionListTxHistory, s.ListTxHistoryByHTTP)
 		v1.POST(ActionGetTokenInfo, s.GetTokenInfoByHTTP)
+		v1.POST(ActionGetBlock, s.GetBlockByHTTP)
+
 	}
 	return nil
 }
@@ -135,13 +138,13 @@ func (s *Server) Start() error {
 
 		ln, err = tls.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100), tlsConfig)
 		if err != nil {
-			log.Error("HTTPS listen failed")
+			log.Errorf("HTTPS listen failed: %v", err)
 			return err
 		}
 	} else {
 		ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100))
 		if err != nil {
-			log.Error("HTTP listen failed")
+			log.Errorf("HTTP listen failed: %v", err)
 			return err
 		}
 	}
@@ -183,7 +186,7 @@ func (s *Server) Start() error {
 // TODO: The channel manager failed to stop
 func (s *Server) Stop() {
 	s.rpcServer.Stop()
-	s.cm.stop()
+
 	log.Info("Succeed to stop the peer service")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -197,5 +200,7 @@ func (s *Server) Stop() {
 		log.Println("timeout after 1 second.")
 	}
 	s.ln.Close()
+
+	s.cm.stop()
 	log.Println("Server exiting")
 }

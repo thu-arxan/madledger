@@ -148,13 +148,13 @@ func (s *Server) Start() error {
 
 		ln, err = tls.Listen("tcp", fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100), tlsConfig)
 		if err != nil {
-			log.Error("HTTPS listen failed")
+			log.Errorf("HTTPS listen failed: %v", err)
 			return err
 		}
 	} else {
 		ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100))
 		if err != nil {
-			log.Error("HTTP listen failed")
+			log.Errorf("HTTP listen failed: %v", err)
 			return err
 		}
 	}
@@ -198,9 +198,6 @@ func (s *Server) Stop() {
 	// if s.rpcServer != nil {
 	s.rpcServer.Stop()
 	// }
-	s.cc.Stop()
-	time.Sleep(500 * time.Millisecond)
-	log.Info("Succeed to stop the orderer service")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -213,5 +210,8 @@ func (s *Server) Stop() {
 		log.Println("timeout of 1 seconds.")
 	}
 	s.ln.Close()
-	log.Println("Server exiting")
+
+	s.cc.Stop()
+	time.Sleep(500 * time.Millisecond)
+	log.Info("Succeed to stop the orderer service")
 }

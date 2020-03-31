@@ -409,3 +409,42 @@ func (c *HTTPClient) GetTokenInfoByHTTP(address common.Address, channelID []byte
 	return result.(*pb.TokenInfo).GetBalance(), err
 
 }
+
+// GetBlockResp ...
+type GetBlockResp struct {
+	Error string      `json:"error"`
+	Block *core.Block `json:"block"`
+}
+
+//GetBlockByHTTP ...
+func (c *HTTPClient) GetBlockByHTTP(num uint64, channelID string) (*core.Block, error) {
+	collector := NewCollector(len(c.peerHTTPClients), 1)
+	var info GetBlockResp
+	for i := range c.peerHTTPClients {
+		go func(i int) {
+			requestBody, _ := json.Marshal(map[string]string{
+				"num":       string(num),
+				"channelid": channelID,
+			})
+			resp, err := http.Post("http://"+c.peerHTTPClients[i]+"/v1/getblock", "application/json", bytes.NewBuffer(requestBody))
+			if err != nil {
+				collector.AddError(err)
+			}
+			body, err := ioutil.ReadAll(resp.Body)
+			defer resp.Body.Close()
+			json.Unmarshal(body, &info)
+
+			if err != nil || info.Error != "" {
+				collector.AddError(errors.New(info.Error))
+			} else {
+				collector.Add(info.Block)
+			}
+		}(i)
+	}
+	result, err := collector.Wait()
+	if err != nil {
+		return nil, err
+	}
+	return result.(*core.Block), err
+
+}

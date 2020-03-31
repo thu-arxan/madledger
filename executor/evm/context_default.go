@@ -14,12 +14,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"github.com/thu-arxan/evm"
-	"github.com/thu-arxan/evm/util"
 	"fmt"
 	"madledger/common"
 	"madledger/core"
 	"madledger/peer/db"
+
+	"github.com/thu-arxan/evm"
+	"github.com/thu-arxan/evm/util"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -28,6 +29,8 @@ import (
 type DefaultContext struct {
 	queryEngine db.DB         // queryEngine used to query data from db
 	wb          db.WriteBatch // wb used to put data into db after finishing block
+
+	channelID string
 
 	// evm.Context
 	block  *core.Block
@@ -54,6 +57,7 @@ func NewContext(block *core.Block, engine db.DB, wb db.WriteBatch) Context {
 		queryEngine: engine,
 		wb:          wb,
 		block:       block,
+		channelID:   block.Header.ChannelID,
 		evmCtx: &evm.Context{
 			BlockHeight: block.GetNumber(),
 			BlockTime:   block.Header.Time,
@@ -74,7 +78,7 @@ func (ctx *DefaultContext) BlockFinalize() error {
 		if err != nil {
 			return err
 		}
-		ctx.wb.Put([]byte(fmt.Sprintf("block_log_%d", ctx.block.GetNumber())), logs)
+		ctx.wb.Put([]byte(fmt.Sprintf("block_log_%s_%d", ctx.channelID, ctx.block.GetNumber())), logs)
 	}
 
 	for addr, acc := range ctx.accounts {
@@ -110,7 +114,7 @@ func (ctx *DefaultContext) BlockContext() *evm.Context {
 
 // NewBlockchain creates blockchain for evm.EVM
 func (ctx *DefaultContext) NewBlockchain() evm.Blockchain {
-	return NewBlockchain(ctx.queryEngine)
+	return NewBlockchain(ctx.queryEngine, ctx.channelID)
 }
 
 // NewDatabase creates db for evm.EVM, caches data between txs in block
