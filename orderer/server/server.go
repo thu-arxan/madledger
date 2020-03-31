@@ -198,9 +198,6 @@ func (s *Server) Stop() {
 	// if s.rpcServer != nil {
 	s.rpcServer.Stop()
 	// }
-	s.cc.Stop()
-	time.Sleep(500 * time.Millisecond)
-	log.Info("Succeed to stop the orderer service")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -213,5 +210,8 @@ func (s *Server) Stop() {
 		log.Println("timeout of 1 seconds.")
 	}
 	s.ln.Close()
-	log.Println("Server exiting")
+
+	s.cc.Stop()
+	time.Sleep(500 * time.Millisecond)
+	log.Info("Succeed to stop the orderer service")
 }

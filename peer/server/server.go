@@ -186,7 +186,7 @@ func (s *Server) Start() error {
 // TODO: The channel manager failed to stop
 func (s *Server) Stop() {
 	s.rpcServer.Stop()
-	s.cm.stop()
+
 	log.Info("Succeed to stop the peer service")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -200,5 +200,7 @@ func (s *Server) Stop() {
 		log.Println("timeout after 1 second.")
 	}
 	s.ln.Close()
+
+	s.cm.stop()
 	log.Println("Server exiting")
 }
