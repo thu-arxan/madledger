@@ -119,6 +119,8 @@ httptest:
 	@tail log.out
 	
 clean:
+	@-kill -9 `pidof orderer`
+	@-kill -9 `pidof peer`
 	@rm -rf tests/.bft
 	@cd tests/performance/raft && rm -rf .clients .orderer .peer
 	@cd tests/performance/solo && rm -rf .clients .orderer .peer
