@@ -67,7 +67,7 @@ func TestInit(t *testing.T) {
 func TestCreateChannel(t *testing.T) {
 	var clients = getClients()
 	for i := 0; i < channelSize; i++ {
-		require.NoError(t, clients[0].CreateChannel(fmt.Sprintf("test%d", i), true, nil, nil))
+		require.NoError(t, clients[0].CreateChannel(fmt.Sprintf("test%d", i), true, nil, nil, 0, 1, 10000000))
 	}
 }
 

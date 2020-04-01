@@ -54,11 +54,13 @@ func runStart(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	// go registerStop(s)
+
+	var finish = make(chan bool, 1)
+	go registerStop(s, finish)
 	err = s.Start()
 	if err != nil {
 		return err
 	}
-
+	<-finish
 	return nil
 }

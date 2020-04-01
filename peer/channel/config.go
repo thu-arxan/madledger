@@ -30,42 +30,52 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 			Output:      nil,
 		}
 		payload, err := getConfigPayload(tx)
-		if err == nil {
-			switch len(payload.ChannelID) {
-			case 0:
-				log.Warnf("Fatal error! Nil channel id in config block, num: %d, index: %d", block.GetNumber(), i)
-			default:
-				channelID := payload.ChannelID
-				if payload.Profile.Public {
-					wb.AddChannel(channelID)
-					m.coordinator.hub.Broadcast("update", Update{
-						ID:     channelID,
-						Remove: false,
-					})
-				} else {
-					var remove = true
-					for _, member := range payload.Profile.Members {
-						if member.Equal(m.identity) {
-							wb.AddChannel(channelID)
-							m.coordinator.hub.Broadcast("update", Update{
-								ID:     channelID,
-								Remove: false,
-							})
-							remove = false
-							break
-						}
-					}
-					if remove && m.db.BelongChannel(channelID) {
-						wb.DeleteChannel(channelID)
+		if err != nil {
+			status.Err = err.Error()
+			wb.SetTxStatus(tx, status)
+			continue
+		}
+		if len(payload.ChannelID) == 0 {
+			log.Warnf("Fatal error! Nil channel id in config block, num: %d, index: %d", block.GetNumber(), i)
+			continue
+		}
+
+		channelID := payload.ChannelID
+		if tx.GetReceiver().String() == core.CreateChannelContractAddress.String() {
+
+			if payload.Profile.Public {
+				wb.AddChannel(channelID)
+				m.coordinator.hub.Broadcast("update", Update{
+					ID:     channelID,
+					Remove: false,
+				})
+			} else {
+				var remove = true
+				for _, member := range payload.Profile.Members {
+					if member.Equal(m.identity) {
+						wb.AddChannel(channelID)
 						m.coordinator.hub.Broadcast("update", Update{
 							ID:     channelID,
-							Remove: true,
+							Remove: false,
 						})
+						remove = false
+						break
 					}
 				}
-				nums[payload.ChannelID] = []uint64{0}
+				if remove && m.db.BelongChannel(channelID) {
+					wb.DeleteChannel(channelID)
+					m.coordinator.hub.Broadcast("update", Update{
+						ID:     channelID,
+						Remove: true,
+					})
+				}
 			}
-		} else {
+			nums[payload.ChannelID] = []uint64{0}
+		}
+		// todo:
+		// in orderer this part does not use write batch
+		err = m.db.UpdateChannel(channelID, payload.Profile)
+		if err != nil {
 			status.Err = err.Error()
 		}
 		wb.SetTxStatus(tx, status)
@@ -78,7 +88,7 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 
 func getConfigPayload(tx *core.Tx) (*cc.Payload, error) {
 	if tx.Data.ChannelID != core.CONFIGCHANNELID {
-		return nil, errors.New("The tx does not belong to global channel")
+		return nil, errors.New("The tx does not belong to config channel")
 	}
 	var payload cc.Payload
 	err := json.Unmarshal(tx.Data.Payload, &payload)

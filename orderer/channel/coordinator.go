@@ -13,7 +13,9 @@ package channel
 import (
 	"encoding/json"
 	"fmt"
+	"madledger/common"
 	"madledger/common/crypto"
+	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/consensus"
 	raft "madledger/consensus/raft"
@@ -50,6 +52,27 @@ type Coordinator struct {
 	AM *Manager
 
 	Consensus consensus.Consensus
+
+	hub       *event.Hub
+	stateLock sync.RWMutex
+	states    map[string]*State
+}
+
+// StateCode represent the code of state
+type StateCode int
+
+// All States
+const (
+	Waitting StateCode = iota
+	Runable
+)
+
+// State represents the state of channel
+type State struct {
+	num  uint64
+	code StateCode
+	// hashes is not working now
+	hashes map[uint64][]byte
 }
 
 // NewCoordinator is the constructor of Coordinator
@@ -57,6 +80,8 @@ func NewCoordinator(dbDir string, chainCfg *config.BlockChainConfig, consensusCf
 	var err error
 
 	c := new(Coordinator)
+	c.hub = event.NewHub()
+	c.states = make(map[string]*State)
 	c.Managers = make(map[string]*Manager)
 	c.chainCfg = chainCfg
 	// set db
@@ -83,6 +108,53 @@ func NewCoordinator(dbDir string, chainCfg *config.BlockChainConfig, consensusCf
 	return c, nil
 }
 
+// CanRun return runable
+func (c *Coordinator) CanRun(channelID string, num uint64) bool {
+	c.stateLock.Lock()
+	defer c.stateLock.Unlock()
+
+	if util.Contain(c.states, channelID) {
+		state := c.states[channelID]
+		if num < state.num {
+			return true
+		}
+		if num > state.num {
+			return false
+		}
+		return state.code == Runable
+	}
+	return false
+}
+
+// Watch watch on the channel event
+func (c *Coordinator) Watch(channelID string, num uint64) {
+	c.hub.Watch(fmt.Sprintf("%s:%d", channelID, num), nil)
+}
+
+// Unlocks will unlock some channels
+func (c *Coordinator) Unlocks(channelNums map[string][]uint64) {
+	c.stateLock.Lock()
+	defer c.stateLock.Unlock()
+
+	for channel, nums := range channelNums {
+		for _, num := range nums {
+			if util.Contain(c.states, channel) {
+				state := c.states[channel]
+				if num >= state.num {
+					state.num = num
+					state.code = Runable
+				}
+			} else {
+				state := new(State)
+				state.num = num
+				state.code = Runable
+				c.states[channel] = state
+			}
+			c.hub.Done(fmt.Sprintf("%s:%d", channel, num), nil)
+		}
+	}
+}
+
 // Start the coordinator
 func (c *Coordinator) Start() error {
 	// start consensus
@@ -104,6 +176,7 @@ func (c *Coordinator) Start() error {
 			go channelManager.Start()
 		}
 	}
+
 	time.Sleep(10 * time.Millisecond)
 	return nil
 }
@@ -141,23 +214,23 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 	if req.System {
 		if c.GM != nil {
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
-				ChannelID: core.GLOBALCHANNELID,
-				BlockSize: c.GM.GetBlockSize(),
-				Identity:  pb.Identity_MEMBER,
+				ChannelID:       core.GLOBALCHANNELID,
+				BlockSize:       c.GM.GetBlockSize(),
+				Identity:        pb.Identity_MEMBER,
 			})
 		}
 		if c.CM != nil {
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
-				ChannelID: core.CONFIGCHANNELID,
-				BlockSize: c.CM.GetBlockSize(),
-				Identity:  pb.Identity_MEMBER,
+				ChannelID:       core.CONFIGCHANNELID,
+				BlockSize:       c.CM.GetBlockSize(),
+				Identity:        pb.Identity_MEMBER,
 			})
 		}
 		if c.AM != nil {
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
-				ChannelID: core.ASSETCHANNELID,
-				BlockSize: c.AM.GetBlockSize(),
-				Identity:  pb.Identity_MEMBER,
+				ChannelID:       core.ASSETCHANNELID,
+				BlockSize:       c.AM.GetBlockSize(),
+				Identity:        pb.Identity_MEMBER,
 			})
 		}
 	}
@@ -175,9 +248,9 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 				identity = pb.Identity_ADMIN
 			}
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
-				ChannelID: channel,
-				BlockSize: channelManager.GetBlockSize(),
-				Identity:  identity,
+				ChannelID:       channel,
+				BlockSize:       channelManager.GetBlockSize(),
+				Identity:        identity,
 			})
 		}
 	}
@@ -272,6 +345,7 @@ func (c *Coordinator) getChannelManager(channelID string) (*Manager, error) {
 
 // loadSystemChannel will load config channel and global channel
 func (c *Coordinator) loadSystemChannel() error {
+
 	if err := c.loadConfigChannel(); err != nil {
 		return err
 	}
@@ -361,7 +435,6 @@ func (c *Coordinator) loadAssetChannel() error {
 	}
 	if !c.AM.HasGenesisBlock() {
 		log.Infof("Creating genesis block of channel _asset")
-		// todo: ab empty payload in asset genesis block?
 		// agb: asset channel genesis block
 		agb, err := ac.CreateGenesisBlock([]*ac.Payload{&ac.Payload{}})
 		if err != nil {
@@ -387,9 +460,28 @@ func (c *Coordinator) loadUserChannel() error {
 			c.managerLock.Lock()
 			c.Managers[channelID] = manager
 			c.managerLock.Unlock()
+
+			account, err := c.db.GetOrCreateAccount(common.AddressFromChannelID(channelID))
+			if err != nil {
+				return err
+			}
+			if account.GetDue() > 0 {
+				manager.insufficientBalance = true
+			}
 			log.Infof("loadUserChannel: load channel %s from leveldb", channelID)
 		}
 	}
+	return nil
+}
+
+func (c *Coordinator) WakeDueChannel(channelID string) error {
+	c.managerLock.Lock()
+	manager, ok := c.Managers[channelID]
+	c.managerLock.Unlock()
+	if !ok {
+		return fmt.Errorf("channel %s info not contained in coordinator", channelID)
+	}
+	manager.WakeFromSufficientBalance()
 	return nil
 }
 

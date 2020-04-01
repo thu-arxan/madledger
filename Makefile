@@ -101,7 +101,7 @@ test:
 	@$(GO_TEST_UNIT) madledger/peer/db
 	@$(GO_TEST_UNIT) madledger/peer/config
 
-	@echo "Next test may cost 1 minutes ..."
+	@echo "Next test may cost 2 minutes ..."
 	@$(GO_TEST_UNIT) madledger/tests
 
 performance:
@@ -112,7 +112,15 @@ performance:
 docker:
 	@docker build -t madledger:alpha .
 
+httptest:
+	@-kill -9 `pidof orderer`
+	@-kill -9 `pidof peer`
+	@go test madledger/tests -v -count=1 > log.out
+	@tail log.out
+	
 clean:
+	@-kill -9 `pidof orderer`
+	@-kill -9 `pidof peer`
 	@rm -rf tests/.bft
 	@cd tests/performance/raft && rm -rf .clients .orderer .peer
 	@cd tests/performance/solo && rm -rf .clients .orderer .peer

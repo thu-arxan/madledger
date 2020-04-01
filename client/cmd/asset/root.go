@@ -27,5 +27,6 @@ var (
 func Cmd() *cobra.Command {
 	assetCmd.AddCommand(issueCmd)
 	assetCmd.AddCommand(transferCmd)
+	assetCmd.AddCommand(tokenCmd)
 	return assetCmd
 }

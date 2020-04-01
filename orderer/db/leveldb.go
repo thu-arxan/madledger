@@ -12,15 +12,14 @@ package db
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	cc "madledger/blockchain/config"
 	"madledger/common"
+
+	cc "madledger/blockchain/config"
 	"madledger/common/crypto"
 	"madledger/common/event"
 	"madledger/common/util"
 	"madledger/core"
-	"reflect"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -91,13 +90,25 @@ func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
 	}
 	//更新key为_config@id的记录, 具体内容示例如下：
 	// _config@test30 ,  {"Public":true,"Dependencies":null,"Members":[],
-	// "Admins":[{"PK":"BN2PLBpBd5BrSLfTY7QEBYQT0h6lFvWlZyuAVt3/bfEz1g5QJ2lIEXP2Zk15B6E2MWpA/Q4Yxnl+XjFGObvAKTY=","Name":"admin"}]}
+	// "Admins":[{"PK":"BN2PLBpBd5BrSLfTY7QEBYQT0h6lFvWlZyuAVt3/bfEz1g5QJ2lIEXP2Zk15B6E2MWpA/Q4Yxnl+XjFGObvAKTY=","Name":"admin"}]
+	// "gasPrice": 1, "ratio": 1, "maxGas": 1000000 }
 	err = db.connect.Put(key, data, nil)
 	if err != nil {
 		return err
 	}
 	db.hub.Done(id, nil)
 	return nil
+}
+
+func (db *LevelDB) GetChannelProfile(id string) (*cc.Profile, error) {
+	var key = getChannelProfileKey(id)
+	data, err := db.connect.Get(key, nil)
+	if err != nil {
+		return nil, err
+	}
+	var profile cc.Profile
+	err = json.Unmarshal(data, &profile)
+	return &profile, err
 }
 
 // AddBlock will records all txs in the block to get rid of duplicated txs
@@ -253,52 +264,82 @@ func getSystemAdminKey() []byte {
 	return []byte(fmt.Sprintf("%s$admin", core.CONFIGCHANNELID))
 }
 
-// IsAssetAdmin determines whether input pk belonged to account that has the right to issue
-func (db *LevelDB) IsAssetAdmin(pk crypto.PublicKey) bool {
-	var key = []byte("_account_admin")
+// GetAssetAdminPKBytes returns public key bytes of _asset admin or nil if not exists
+func (db *LevelDB) GetAssetAdminPKBytes() []byte {
+	var key = getAssetAdminKey()
 	admin, err := db.connect.Get(key, nil)
 	if err != nil {
-		return false
+		return nil
 	}
-	pkBytes, err := pk.Bytes()
-	if err != nil {
-		return false
-	}
-	return reflect.DeepEqual(admin, pkBytes)
+	return admin
 }
 
-// SetAssetAdmin only succeed at the first time it is called
-func (db *LevelDB) SetAssetAdmin(pk crypto.PublicKey) error {
-	var key = []byte("_account_admin")
-	exists, _ := db.connect.Has(key, nil)
-	if exists {
-		return fmt.Errorf("account admin already set")
+//GetOrCreateAccount return default account if not existx in leveldb
+func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, error) {
+	account := common.NewAccount(address)
+	key := getAccountKey(address)
+	data, err := db.connect.Get(key, nil)
+	if err != nil {
+		if err == leveldb.ErrNotFound {
+			err = nil
+		}
+		return *account, err
 	}
-	pkBytes, err := pk.Bytes()
+	err = json.Unmarshal(data, &account)
+	return *account, err
+}
+
+//SetAccount can only be called when atomicity is at one account level
+func (db *LevelDB) SetAccount(account common.Account) error {
+	key := getAccountKey(account.GetAddress())
+	data, err := json.Marshal(account)
 	if err != nil {
 		return err
 	}
-	return db.connect.Put(key, pkBytes, nil)
+	return db.Put(key, data)
 }
 
-// GetOrCreateAccount return default account if account does not exist in leveldb
-func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, error) {
-	key := getAccountKey(address)
-	var account common.Account
-	data, err := db.connect.Get(key, nil)
-	if err != nil {
-		if err != leveldb.ErrNotFound {
-			return account, err
-		}
-		return *common.NewAccount(address), nil
+// Get get the value by key
+func (db *LevelDB) Get(key []byte, couldBeEmpty bool) ([]byte, error) {
+	val, err := db.connect.Get(key, nil)
+	if err == leveldb.ErrNotFound && couldBeEmpty {
+		err = nil
 	}
-	err = json.Unmarshal(data, &account)
-	return account, err
+	return val, err
 }
 
-// UpdateAccounts update asset
-func (db *LevelDB) UpdateAccounts(accounts ...common.Account) error {
-	wb := &leveldb.Batch{}
+// Put put the kv pair
+func (db *LevelDB) Put(key, val []byte) error {
+	return db.connect.Put(key, val, nil)
+}
+
+// NewWriteBatch implement the interface, WriteBatch is a wrapper of leveldb.Batch
+func (db *LevelDB) NewWriteBatch() WriteBatch {
+	batch := new(leveldb.Batch)
+	return &WriteBatchWrapper{
+		batch: batch,
+		db:    db,
+	}
+}
+
+// WriteBatchWrapper is a wrapper of level.Batch
+type WriteBatchWrapper struct {
+	batch *leveldb.Batch
+	db    *LevelDB
+}
+
+// Put put updated value in writebatch
+func (wb *WriteBatchWrapper) Put(key, value []byte) {
+	wb.batch.Put(key, value)
+}
+
+// Sync sync batch to database
+func (wb *WriteBatchWrapper) Sync() error {
+	return wb.db.connect.Write(wb.batch, nil)
+}
+
+//UpdateAccounts update asset
+func (wb *WriteBatchWrapper) UpdateAccounts(accounts ...common.Account) error {
 	for _, acc := range accounts {
 		key := getAccountKey(acc.GetAddress())
 		data, err := json.Marshal(acc)
@@ -307,65 +348,28 @@ func (db *LevelDB) UpdateAccounts(accounts ...common.Account) error {
 		}
 		wb.Put(key, data)
 	}
-	return db.connect.Write(wb, nil)
+	return nil
+}
+
+//SetAssetAdmin only succeed at the first time it is called
+func (wb *WriteBatchWrapper) SetAssetAdmin(pk crypto.PublicKey) error {
+	var key = getAssetAdminKey()
+	exists, _ := wb.db.connect.Has(key, nil)
+	if exists {
+		return fmt.Errorf("account admin already set")
+	}
+	pkBytes, err := pk.Bytes()
+	if err != nil {
+		return err
+	}
+	wb.Put(key, pkBytes)
+	return nil
 }
 
 func getAccountKey(address common.Address) []byte {
 	return []byte(fmt.Sprintf("%s@%s", core.ASSETCHANNELID, address.String()))
 }
 
-// GetTxStatus is the implementation of interface
-func (db *LevelDB) GetTxStatus(channelID, txID string) (*TxStatus, error) {
-	var key = util.BytesCombine([]byte(channelID), []byte(txID))
-	// TODO: Read twice is not necessary
-	if ok, _ := db.connect.Has(key, nil); !ok {
-		return nil, errors.New("not exist")
-	}
-	value, err := db.connect.Get(key, nil)
-	if err != nil {
-		return nil, err
-	}
-	var status TxStatus
-	err = json.Unmarshal(value, &status)
-	if err != nil {
-		return nil, err
-	}
-	return &status, nil
-}
-
-// NewWriteBatch implement the interface, WriteBatch is a wrapper of leveldb.Batch
-func (db *LevelDB) NewWriteBatch() WriteBatch {
-	batch := new(leveldb.Batch)
-	return &WriteBatchWrapper{
-		batch:     batch,
-		db:        db,
-		histories: make(map[string]map[string][]string),
-	}
-}
-
-// WriteBatchWrapper is a wrapper of level.Batch
-type WriteBatchWrapper struct {
-	batch *leveldb.Batch
-	db    *LevelDB
-
-	histories map[string]map[string][]string
-}
-
-// Sync sync batch to database
-func (wb *WriteBatchWrapper) Sync() error {
-	return wb.db.connect.Write(wb.batch, nil)
-}
-
-// SetTxStatus set tx status
-func (wb *WriteBatchWrapper) SetTxStatus(tx *core.Tx, status *TxStatus) error {
-	value, err := json.Marshal(status)
-	if err != nil {
-		return err
-	}
-	var key = util.BytesCombine([]byte(tx.Data.ChannelID), []byte(tx.ID))
-	wb.batch.Put(key, value)
-	if err != nil {
-		return err
-	}
-	return nil
+func getAssetAdminKey() []byte {
+	return []byte("_asset_admin")
 }

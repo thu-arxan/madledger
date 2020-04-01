@@ -37,10 +37,11 @@ type ChannelManager struct {
 	GlobalChannel *channel.Manager
 	// ConfigChannel is the config channel manager
 	ConfigChannel *channel.Manager
-	// Channels manager all user channels
-	Channels map[string]*channel.Manager
 	// AssetChannel is the asset channel manager
 	AssetChannel   *channel.Manager
+	// Channels manager all user channels
+	Channels map[string]*channel.Manager
+
 	coordinator    *channel.Coordinator
 	ordererClients []*orderer.Client
 }
@@ -94,8 +95,8 @@ func (m *ChannelManager) start() error {
 	go m.GlobalChannel.Start()
 	go m.ConfigChannel.Start()
 	go m.AssetChannel.Start()
-	for _, manage := range m.Channels {
-		go manage.Start()
+	for _, manager := range m.Channels {
+		go manager.Start()
 	}
 
 	go func() {

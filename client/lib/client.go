@@ -182,7 +182,8 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 }
 
 // CreateChannel create a channel
-func (c *Client) CreateChannel(channelID string, public bool, admins, members []*core.Member) error {
+func (c *Client) CreateChannel(channelID string, public bool, admins, members []*core.Member,
+	gasPrice uint64, ratio uint64, maxGas uint64) error {
 	// log.Infof("Create channel %s", channelID)
 	self, err := core.NewMember(c.GetPrivKey().PubKey(), "admin")
 	if err != nil {
@@ -198,9 +199,12 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 	payload, _ := json.Marshal(cc.Payload{
 		ChannelID: channelID,
 		Profile: &cc.Profile{
-			Public:  public,
-			Admins:  admins,
-			Members: members,
+			Public:          public,
+			Admins:          admins,
+			Members:         members,
+			GasPrice:        gasPrice,
+			AssetTokenRatio: ratio,
+			MaxGas:          maxGas,
 		},
 		Version: 1,
 	})
@@ -235,7 +239,6 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 	}
 
 	for i, ordererClient := range c.ordererClients {
-		// log.Info("add tx begin")
 		_, err = ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
 			Tx: pbTx,
 		})
@@ -259,6 +262,7 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 
 	collector := NewCollector(len(c.peerClients), 1)
 	for i := range c.peerClients {
+
 		go func(i int) {
 			status, err := c.peerClients[i].GetTxStatus(context.Background(), &pb.GetTxStatusRequest{
 				ChannelID: tx.Data.ChannelID,
@@ -279,39 +283,6 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 		return nil, err
 	}
 	return result.(*pb.TxStatus), nil
-}
-
-// AddTxInOrderer try to add a tx into orderer and get tx result in orderer also
-// TODO: Support bft
-func (c *Client) AddTxInOrderer(tx *core.Tx) (*pb.TxStatus, error) {
-	pbTx, err := pb.NewTx(tx)
-	if err != nil {
-		return nil, err
-	}
-	var result *pb.TxStatus
-	for i, ordererClient := range c.ordererClients {
-		// log.Info("add tx begin")
-		result, err = ordererClient.AddTx(context.Background(), &pb.AddTxRequest{
-			Tx: pbTx,
-		})
-
-		times := i + 1
-		if err != nil {
-			// if the client is not system admin, just exit the loop
-			if strings.Contains(err.Error(), "the client is not system admin and can not update validator") {
-				return nil, err
-			}
-			// try to use other ordererClients until the last one still returns an error
-			if times == len(c.ordererClients) {
-				return nil, err
-			}
-		} else {
-			// add tx successfully and exit the loop
-			// log.Info("add tx success")
-			break
-		}
-	}
-	return result, nil
 }
 
 // GetHistory return the history of address
@@ -384,4 +355,28 @@ func (c *Client) GetAccountBalance(address common.Address) (uint64, error) {
 		}
 	}
 	return acc.GetBalance(), nil
+}
+
+// GetTokenInfo return balance of account
+func (c *Client) GetTokenInfo(address common.Address, channelID []byte) (uint64, error) {
+	var err error
+	collector := NewCollector(len(c.peerClients), 1)
+	for i := range c.peerClients {
+		go func(i int) {
+			token, err := c.peerClients[i].GetTokenInfo(context.Background(), &pb.GetTokenInfoRequest{
+				Address:   address.Bytes(),
+				ChannelID: channelID,
+			})
+			if err != nil {
+				collector.AddError(err)
+			} else {
+				collector.Add(token)
+			}
+		}(i)
+	}
+	result, err := collector.Wait()
+	if err != nil {
+		return 0, err
+	}
+	return result.(*pb.TokenInfo).GetBalance(), err
 }

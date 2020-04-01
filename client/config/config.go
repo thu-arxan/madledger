@@ -98,7 +98,8 @@ func (cfg *Config) loadTLSConfig() error {
 
 // OrdererConfig is the config of orderer
 type OrdererConfig struct {
-	Address []string `yaml:"Address"`
+	Address     []string `yaml:"Address"`
+	HTTPAddress []string `yaml:"HTTPAddress"`
 }
 
 // loadOrdererConfig load the orderer config
@@ -111,7 +112,8 @@ func (cfg *Config) loadOrdererConfig() error {
 
 // PeerConfig is the config of peer
 type PeerConfig struct {
-	Address []string `yaml:"Address"`
+	Address     []string `yaml:"Address"`
+	HTTPAddress []string `yaml:"HTTPAddress"`
 }
 
 // loadPeerConfig load the peer config

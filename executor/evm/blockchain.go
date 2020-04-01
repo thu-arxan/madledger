@@ -11,22 +11,25 @@
 package evm
 
 import (
-	"github.com/thu-arxan/evm"
 	"madledger/core"
 	"madledger/peer/db"
+
+	"github.com/thu-arxan/evm"
 )
 
 // Blockchain is the implementation of blockchain
 type Blockchain struct {
-	db     db.DB
-	blocks map[uint64]*core.Block
+	db        db.DB
+	blocks    map[uint64]*core.Block
+	channelID string
 }
 
 // NewBlockchain is the constructor of Blockchain
-func NewBlockchain(engine db.DB) *Blockchain {
+func NewBlockchain(engine db.DB, channelID string) *Blockchain {
 	return &Blockchain{
-		db:     engine,
-		blocks: make(map[uint64]*core.Block),
+		db:        engine,
+		blocks:    make(map[uint64]*core.Block),
+		channelID: channelID,
 	}
 }
 
@@ -36,7 +39,7 @@ func (bc *Blockchain) GetBlockHash(num uint64) []byte {
 	var err error
 	block := bc.blocks[num]
 	if block == nil {
-		block, err = bc.db.GetBlock(num)
+		block, err = bc.db.GetBlock(bc.channelID, num)
 		if err == nil {
 			blockHash := block.Hash()
 			hash = blockHash[:]

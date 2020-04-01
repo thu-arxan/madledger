@@ -11,7 +11,9 @@
 package db
 
 import (
+	cc "madledger/blockchain/config"
 	"madledger/common"
+	"madledger/common/crypto"
 	"madledger/core"
 )
 
@@ -37,7 +39,12 @@ type WriteBatch interface {
 	RemoveAccountStorage(address common.Address)
 	AddChannel(channelID string)
 	DeleteChannel(channelID string)
+	// UpdateChannel()
 	Sync() error
+
+	UpdateAccounts(accounts ...common.Account) error
+	//SetAssetAdmin only succeed at the first time it is called
+	SetAssetAdmin(pk crypto.PublicKey) error
 }
 
 // DB provide a interface for peer to access the global state
@@ -53,9 +60,21 @@ type DB interface {
 	GetTxStatusAsync(channelID, txID string) (*TxStatus, error)
 	BelongChannel(channelID string) bool
 	GetChannels() []string
+	HasChannel(id string) bool
+	UpdateChannel(id string, profile *cc.Profile) error
 	GetTxHistory(address []byte) map[string][]string
 	NewWriteBatch() WriteBatch
 	// GetBlock gets block by block.num from db
-	GetBlock(num uint64) (*core.Block, error)
+	GetBlock(channelID string, num uint64) (*core.Block, error)
 	Close()
+
+	Get(key []byte, couldBeEmpty bool) ([]byte, error)
+	//GetAssetAdminPKBytes return nil is not exist
+	GetAssetAdminPKBytes() []byte
+	//GetOrCreateAccount return default account if not exist
+	GetOrCreateAccount(address common.Address) (common.Account, error)
+	UpdateSystemAdmin(profile *cc.Profile) error
+	IsSystemAdmin(member *core.Member) bool
+
+	GetChannelProfile(id string) (*cc.Profile, error)
 }

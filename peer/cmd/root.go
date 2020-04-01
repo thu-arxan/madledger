@@ -11,6 +11,7 @@
 package cmd
 
 import (
+	"madledger/peer/server"
 	"os"
 	"os/signal"
 	"syscall"
@@ -54,9 +55,14 @@ func setLog(debug bool) error {
 	return nil
 }
 
-func registerStop() {
+func registerStop(s *server.Server, finish chan bool) {
+	if s == nil {
+		return
+	}
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	<-sigs
+	s.Stop()
+	finish <- true
 	return
 }

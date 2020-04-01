@@ -47,6 +47,10 @@ var (
 	bftChannels []string
 )
 
+var (
+	bftClientsSet []*core.Member
+)
+
 func TestBFT(t *testing.T) {
 	require.NoError(t, initBFTEnvironment())
 }
@@ -64,10 +68,10 @@ func TestBFTPeersStart(t *testing.T) {
 		cfg, err := pc.LoadConfig(cfgPath)
 		require.NoError(t, err)
 		server, err := peer.NewServer(cfg)
+
 		require.NoError(t, err)
 		bftPeers[i] = server
 	}
-
 	for i := range bftPeers {
 		go func(t *testing.T, i int) {
 			err := bftPeers[i].Start()
@@ -90,26 +94,35 @@ func TestBFTLoadClients(t *testing.T) {
 		client, err := client.NewClientFromConfig(cfg)
 		require.NoError(t, err)
 		bftClients[i] = client
+
 	}
+	c0, _ := core.NewMember(bftClients[0].GetPrivKey().PubKey(), "admin")
+	c1, _ := core.NewMember(bftClients[1].GetPrivKey().PubKey(), "admin")
+	c2, _ := core.NewMember(bftClients[2].GetPrivKey().PubKey(), "admin")
+	c3, _ := core.NewMember(bftClients[3].GetPrivKey().PubKey(), "admin")
+	bftClientsSet = []*core.Member{c0, c1, c2, c3}
 }
 
 func TestBFTCreateChannels(t *testing.T) {
 	var wg sync.WaitGroup
 	var lock sync.RWMutex
 	var channels []string
+
 	for i := range bftClients {
 		// each client will create 5 channels
 		for m := 0; m < 5; m++ {
 			wg.Add(1)
 			go func(t *testing.T, i int) {
-				defer wg.Done()
+
 				client := bftClients[i]
 				channel := strings.ToLower(util.RandomString(16))
 				lock.Lock()
 				channels = append(channels, channel)
 				lock.Unlock()
-				err := client.CreateChannel(channel, true, nil, nil)
+
+				err := client.CreateChannel(channel, true, nil, nil, 0, 1, 10000000)
 				require.NoError(t, err)
+				defer wg.Done()
 			}(t, i)
 		}
 	}
@@ -137,6 +150,7 @@ func TestBFTCreateChannels(t *testing.T) {
 func TestBFTOrdererRestart(t *testing.T) {
 	stopOrderer(bftOrderers[1])
 	os.RemoveAll(getBFTOrdererDataPath(1))
+	time.Sleep(2000 * time.Millisecond)
 	bftOrderers[1] = startOrderer(1)
 	time.Sleep(2000 * time.Millisecond)
 	for i := range bftOrderers {
@@ -148,7 +162,8 @@ func TestBFTReCreateChannels(t *testing.T) {
 	// Here we recreate 2 channels
 	for i := 0; i < 2; i++ {
 		channel := strings.ToLower(util.RandomString(16))
-		err := bftClients[0].CreateChannel(channel, true, nil, nil)
+
+		err := bftClients[i].CreateChannel(channel, true, nil, nil, 0, 1, 10000000)
 		require.NoError(t, err)
 	}
 	time.Sleep(2 * time.Second)
@@ -198,13 +213,20 @@ func TestBFTCreateTx(t *testing.T) {
 		require.NoError(t, err)
 		_, err = client1.AddTx(tx)
 		require.NoError(t, err)
+
 	}
 	time.Sleep(1000 * time.Millisecond)
 	for i := range bftOrderers {
 		require.True(t, util.IsDirSame(getBFTOrdererBlockPath(0), getBFTOrdererBlockPath(i)), fmt.Sprintf("Orderer %d is not same with 0", i))
 	}
 }
+
+func TestBFTAsset(t *testing.T) {
+	testAsset(t, bftClients[0])
+}
+
 func TestBFTEnd(t *testing.T) {
+	// stopPeer()
 	for i := range bftOrderers {
 		stopOrderer(bftOrderers[i])
 	}
@@ -220,7 +242,9 @@ func initBFTEnvironment() error {
 	if err == nil {
 		pids := strings.Split(string(output), " ")
 		for _, pid := range pids {
-			stopOrderer(pid)
+			if pid != "" {
+				stopOrderer(pid)
+			}
 		}
 	}
 
@@ -329,9 +353,9 @@ func startOrderer(node int) string {
 	before := getOrderersPid()
 	go func() {
 		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("orderer start -c %s", getBFTOrdererConfigPath(node)))
-		_, err := cmd.Output()
+		data, err := cmd.Output()
 		if err != nil {
-			panic(fmt.Sprintf("Run orderer %d failed because %v", node, err))
+			panic(fmt.Sprintf("Run orderer %d failed because %v, %s\nend", node, err, string(data)))
 		}
 	}()
 
@@ -354,15 +378,46 @@ func getOrderersPid() []string {
 	if err != nil {
 		return nil
 	}
-
-	pids := strings.Split(string(output), " ")
+	strOutput := strings.TrimSpace(string(output))
+	pids := strings.Split(strOutput, " ")
 	return pids
 }
 
 // stopOrderer stop an orderer
 func stopOrderer(pid string) {
+	before := getOrderersPid()
+	if len(before) == 0 {
+		panic("no orderer running")
+	}
 	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("kill -TERM %s", pid))
-	cmd.Output()
+	data, err := cmd.Output()
+	if err != nil {
+		panic(fmt.Sprintf("stop orderer %s failed: %v, %s", pid, err, string(data)))
+	}
+
+	i := 0
+	for {
+		if i > 100 {
+			panic(fmt.Sprintf("timeout to wait for orderer %s stop", pid))
+		}
+		after := getOrderersPid()
+		if len(after) < len(before) {
+			fmt.Printf("stopped orderer %s after %d attempts\n", pid, i)
+			break
+		}
+		i++
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func stopPeer() {
+	cmd := exec.Command("/bin/sh", "-c", "pidof peer")
+	output, _ := cmd.Output()
+	pids := strings.Split(string(output), " ")
+	for _, pid := range pids {
+		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("kill -TERM %s", pid))
+		cmd.Output()
+	}
 }
 
 func getBFTOrdererPath(node int) string {

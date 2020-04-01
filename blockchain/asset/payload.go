@@ -10,8 +10,13 @@
 
 package asset
 
-// todo: what is payload
+import "madledger/common"
+
+// Payload specify contract receiver
 type Payload struct {
+	// if address == common.ZeroAddress
+	// This is an op to channel
+
+	Address   common.Address
 	ChannelID string
-	Action string // transfer or issue
 }
