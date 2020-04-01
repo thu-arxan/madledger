@@ -139,12 +139,19 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 	var infos *pb.ChannelInfos
 
 	for i, ordererClient := range c.ordererClients {
-		fmt.Printf(">>list channel")
-		infos, err = ordererClient.ListChannels(context.Background(), &pb.ListChannelsRequest{
+		fmt.Println(">>list channel ", system, pk, len(pk), pubKey.Algo(), crypto.KeyAlgoSecp256k1)
+		fmt.Println("priv ", c.GetPrivKey().Bytes())
+		fmt.Println("publ", pk)
+		fmt.Println("keylen ", len(c.GetPrivKey().Bytes()), len(pk))
+		req := &pb.ListChannelsRequest{
 			System: system,
 			PK:     pk,
 			Algo:   pubKey.Algo(),
-		})
+		}
+		buffer := make([]byte, 0)
+		t, err := req.XXX_Marshal(buffer, false);
+		fmt.Println("Marshal", t, len(t))
+		infos, err = ordererClient.ListChannels(context.Background(), req)
 		times := i + 1
 		if err != nil {
 			if times == len(c.ordererClients) {

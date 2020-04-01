@@ -24,6 +24,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/grpclog"
 )
 
 var (
@@ -71,8 +72,86 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	return server, nil
 }
 
+
+type ZapLogger struct {
+}
+
+// NewZapLogger 创建封装了zap的对象，该对象是对LoggerV2接口的实现
+func NewZapLogger() *ZapLogger {
+	return &ZapLogger{
+	}
+}
+
+// Info returns
+func (zl *ZapLogger) Info(args ...interface{}) {
+	fmt.Println(args...)
+}
+
+// Infoln returns
+func (zl *ZapLogger) Infoln(args ...interface{}) {
+	fmt.Println(args...)
+}
+
+// Infof returns
+func (zl *ZapLogger) Infof(format string, args ...interface{}) {
+	fmt.Printf(format, args...)
+}
+
+// Warning returns
+func (zl *ZapLogger) Warning(args ...interface{}) {
+	fmt.Println(args...)
+}
+
+// Warningln returns
+func (zl *ZapLogger) Warningln(args ...interface{}) {
+	fmt.Println(args...)
+}
+
+// Warningf returns
+func (zl *ZapLogger) Warningf(format string, args ...interface{}) {
+	fmt.Printf(format, args...)
+}
+
+// Error returns
+func (zl *ZapLogger) Error(args ...interface{}) {
+	fmt.Println(args...)
+}
+
+// Errorln returns
+func (zl *ZapLogger) Errorln(args ...interface{}) {
+	fmt.Println(args...)
+}
+
+// Errorf returns
+func (zl *ZapLogger) Errorf(format string, args ...interface{}) {
+	fmt.Printf(format, args...)
+}
+
+// Fatal returns
+func (zl *ZapLogger) Fatal(args ...interface{}) {
+	fmt.Println(args...)
+}
+
+// Fatalln returns
+func (zl *ZapLogger) Fatalln(args ...interface{}) {
+	fmt.Println(args...)
+}
+
+// Fatalf logs to fatal level
+func (zl *ZapLogger) Fatalf(format string, args ...interface{}) {
+	fmt.Printf(format, args...)
+}
+
+// V reports whether verbosity level l is at least the requested verbose level.
+func (zl *ZapLogger) V(v int) bool {
+	return false
+}
+
+
 // Start starts the server
 func (s *Server) Start() error {
+	var logger = NewZapLogger()
+	grpclog.SetLoggerV2(logger);
 	s.Lock()
 	addr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port)
 	lis, err := net.Listen("tcp", addr)

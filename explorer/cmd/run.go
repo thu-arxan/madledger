@@ -48,7 +48,7 @@ func init() {
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
 	// runCmd.PersistentFlags().String("foo", "", "A help for foo")
-	runCmd.Flags().StringP("config", "c", "./config/explorer-client.yaml", "config file path")
+	runCmd.Flags().StringP("config", "c", "./config/client.yaml", "config file path")
 	runViper.BindPFlag("config", runCmd.Flags().Lookup("config"))
 
 	// Cobra supports local flags which will only run when this command
