@@ -101,7 +101,7 @@ test:
 	@$(GO_TEST_UNIT) madledger/peer/db
 	@$(GO_TEST_UNIT) madledger/peer/config
 
-	@echo "Next test may cost 1 minutes ..."
+	@echo "Next test may cost 2 minutes ..."
 	@$(GO_TEST_UNIT) madledger/tests
 
 performance:
