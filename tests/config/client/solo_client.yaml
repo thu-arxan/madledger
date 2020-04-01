@@ -19,11 +19,15 @@ Debug: true
 Orderer:
   Address:
     - localhost:12345
+  HTTPAddress:
+    - localhost:12245
   
 # Address of peers
 Peer:
   Address:
     - localhost:23456
+  HTTPAddress:
+    - localhost:23356
 
 # KeyStore manage some private keys
 KeyStore:

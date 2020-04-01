@@ -11,7 +11,6 @@
 package solo
 
 import (
-	"fmt"
 	client "madledger/client/lib"
 	"madledger/common/util"
 	"os"
@@ -56,7 +55,6 @@ func StartOrderers() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(cfg)
 	go func() {
 		ordererServer.Start()
 	}()

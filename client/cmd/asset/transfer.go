@@ -34,11 +34,14 @@ func init() {
 	transferCmd.RunE = runTransfer
 	transferCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
 	transferViper.BindPFlag("config", transferCmd.Flags().Lookup("config"))
+
 	transferCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
 	transferViper.BindPFlag("channelID", transferCmd.Flags().Lookup("channelID"))
+
 	transferCmd.Flags().StringP("value", "v", "0", "value to be transfered")
 	transferViper.BindPFlag("value", transferCmd.Flags().Lookup("value"))
-	transferCmd.Flags().StringP("address", "a", "0", "receiver's hex address to be transfered")
+
+	transferCmd.Flags().StringP("address", "a", "", "receiver's hex address to be transfered")
 	transferViper.BindPFlag("address", transferCmd.Flags().Lookup("address"))
 }
 
@@ -53,31 +56,37 @@ func runTransfer(cmd *cobra.Command, args []string) error {
 
 	value := transferViper.GetInt("value")
 	if value < 0 {
-		return errors.New("cannot issue negative value")
+		return errors.New("cannot transfer negative value")
 	}
-
-	receiver := transferViper.GetString("address")
-	recipient := common.HexToAddress(receiver)
 
 	client, err := lib.NewClient(cfgFile)
 	if err != nil {
 		return err
 	}
+	receiver := transferViper.GetString("address")
+	recipient := common.ZeroAddress
+	if receiver != "" {
+		recipient = common.HexToAddress(receiver)
+	}
+
+	if channelID == "" && recipient == common.ZeroAddress {
+		return errors.New("Specify transferd account")
+	}
 
 	payload, err := json.Marshal(asset.Payload{
-		Action:    "transfer",
 		ChannelID: channelID,
+		Address:   recipient,
 	})
 	if err != nil {
 		return err
 	}
 
-	tx, err := coreTypes.NewTx(coreTypes.ASSETCHANNELID, recipient, payload, uint64(value), "", client.GetPrivKey())
+	tx, err := coreTypes.NewTx(coreTypes.ASSETCHANNELID, coreTypes.TransferContractrAddress, payload, uint64(value), "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}
 
-	status, err := client.AddTxInOrderer(tx)
+	status, err := client.AddTx(tx)
 	table := util.NewTable()
 	table.SetHeader("Status", "Error")
 

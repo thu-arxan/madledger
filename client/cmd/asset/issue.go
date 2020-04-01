@@ -32,13 +32,17 @@ var (
 
 func init() {
 	issueCmd.RunE = runIssue
+
 	issueCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
 	issueViper.BindPFlag("config", issueCmd.Flags().Lookup("config"))
+
 	issueCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
 	issueViper.BindPFlag("channelID", issueCmd.Flags().Lookup("channelID"))
+
 	issueCmd.Flags().StringP("value", "v", "0",
 		"value to be issued")
 	issueViper.BindPFlag("value", issueCmd.Flags().Lookup("value"))
+
 	issueCmd.Flags().StringP("address", "a", "0",
 		"receiver's hex address to be issued in asset channel")
 	issueViper.BindPFlag("address", issueCmd.Flags().Lookup("address"))
@@ -48,6 +52,10 @@ func runIssue(cmd *cobra.Command, args []string) error {
 	cfgFile := issueViper.GetString("config")
 	if cfgFile == "" {
 		return errors.New("The config file of client can not be nil")
+	}
+	client, err := lib.NewClient(cfgFile)
+	if err != nil {
+		return err
 	}
 
 	//channelID can be empty
@@ -59,27 +67,29 @@ func runIssue(cmd *cobra.Command, args []string) error {
 	}
 
 	receiver := issueViper.GetString("address")
-	recipient := common.HexToAddress(receiver)
+	recipient := common.ZeroAddress
+	if receiver != "" {
+		recipient = common.HexToAddress(receiver)
+	}
 
-	client, err := lib.NewClient(cfgFile)
-	if err != nil {
-		return err
+	if channelID == "" && recipient == common.ZeroAddress {
+		return errors.New("Specify issued account")
 	}
 
 	payload, err := json.Marshal(asset.Payload{
-		Action:    "issue",
 		ChannelID: channelID,
+		Address:   recipient,
 	})
 	if err != nil {
 		return err
 	}
 
-	tx, err := coreTypes.NewTx(coreTypes.ASSETCHANNELID, recipient, payload, uint64(value), "", client.GetPrivKey())
+	tx, err := coreTypes.NewTx(coreTypes.ASSETCHANNELID, coreTypes.IssueContractAddress, payload, uint64(value), "", client.GetPrivKey())
 	if err != nil {
 		return err
 	}
 
-	status, err := client.AddTxInOrderer(tx)
+	status, err := client.AddTx(tx)
 	table := util.NewTable()
 	table.SetHeader("Status", "Error")
 

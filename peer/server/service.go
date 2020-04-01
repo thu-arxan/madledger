@@ -12,13 +12,15 @@ package server
 
 import (
 	"context"
+	"encoding/binary"
+	"madledger/common"
+	"madledger/common/util"
 	pb "madledger/protos"
 )
 
 // GetTxStatus is the implementation of protos
 func (s *Server) GetTxStatus(ctx context.Context, req *pb.GetTxStatusRequest) (*pb.TxStatus, error) {
 	status, err := s.cm.GetTxStatus(req.ChannelID, req.TxID, true)
-	log.Debugf("get tx %s status of channel %s", req.TxID, req.ChannelID)
 	if err != nil {
 		return &pb.TxStatus{}, err
 	}
@@ -47,4 +49,22 @@ func (s *Server) ListTxHistory(ctx context.Context, req *pb.ListTxHistoryRequest
 	return &pb.TxHistory{
 		Txs: pbHistory,
 	}, nil
+}
+
+// GetTokenInfo is the implementation of protos
+func (s *Server) GetTokenInfo(ctx context.Context, req *pb.GetTokenInfoRequest) (*pb.TokenInfo, error) {
+	var info pb.TokenInfo
+
+	channelID := string(req.GetChannelID())
+	key := util.BytesCombine(common.AddressFromChannelID(channelID).Bytes(), []byte("token"), req.GetAddress())
+	tokenBytes, err := s.cm.db.Get(key, false)
+	if err != nil {
+		return &info, err
+	}
+	var token uint64
+	if tokenBytes != nil {
+		token = uint64(binary.BigEndian.Uint64(tokenBytes))
+	}
+	info.Balance = token
+	return &info, nil
 }

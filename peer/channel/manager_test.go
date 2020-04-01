@@ -217,6 +217,10 @@ func (o *fakeOrderer) GetAccountInfo(ctx context.Context, req *pb.GetAccountInfo
 	return nil, nil
 }
 
+func (o *fakeOrderer) GetTxStatus(ctx context.Context, req *pb.GetTxStatusRequest) (*pb.TxStatus, error) {
+	return nil, nil
+}
+
 func generateBlocks() {
 	// first generate test blocks
 	testGenesisBlock := core.NewBlock("test", 0, core.GenesisBlockPrevHash, nil)

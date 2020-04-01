@@ -77,6 +77,12 @@ func TestAllSoloTxHistory(t *testing.T) {
 	testTxHistory(t, client)
 }
 
+func TestAllSoloAsset(t *testing.T) {
+	client, err := getSoloClient()
+	require.NoError(t, err)
+	testAsset(t, client)
+}
+
 func TestAllSoloEnd(t *testing.T) {
 	stopSoloOrderer()
 	stopSoloPeer()

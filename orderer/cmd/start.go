@@ -49,14 +49,20 @@ func runStart(cmd *cobra.Command, args []string) error {
 	}
 	// set the log
 	setLog(cfg.Debug)
+
 	s, err := server.NewServer(cfg)
 	if err != nil {
 		return err
 	}
-	go registerStop(s)
+
+	var finish = make(chan bool, 1)
+	go registerStop(s, finish)
+
+	// go registerStop(s)
 	err = s.Start()
 	if err != nil {
 		return err
 	}
+	<-finish
 	return nil
 }

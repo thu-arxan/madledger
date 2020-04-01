@@ -97,3 +97,12 @@ func getSoloClient() (*client.Client, error) {
 	}
 	return c, nil
 }
+
+func getSoloHTTPClient() (*client.HTTPClient, error) {
+	cfgFilePath, _ := util.MakeFileAbs("src/madledger/tests/config/client/solo_client.yaml", gopath)
+	c, err := client.NewHTTPClient(cfgFilePath)
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
+}

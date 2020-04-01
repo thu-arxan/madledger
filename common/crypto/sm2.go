@@ -71,6 +71,8 @@ func (p SM2PrivateKey) Algo() Algorithm {
 func (p SM2PublicKey) Bytes() ([]byte, error) {
 	var pubKey = (sm2.PublicKey)(p)
 	// return sm2.CompressPubKey(&pubKey)
+	// todo: fix the bug that pk.Bytes may panic
+	// defer return error ???
 	return pubKey.SerializeUncompressed()
 }
 

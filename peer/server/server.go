@@ -11,14 +11,19 @@
 package server
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
 	"madledger/peer/config"
 	"madledger/peer/orderer"
 	"net"
+	"net/http"
+	"time"
 
 	"google.golang.org/grpc/credentials"
+
+	"github.com/gin-gonic/gin"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -30,11 +35,27 @@ var (
 	log = logrus.WithFields(logrus.Fields{"app": "peer", "package": "server"})
 )
 
+// Here defines some consts
+const (
+	Version = "v1"
+)
+
+// These define api for gin
+const (
+	ActionGetTxStatus   = "gettxstatus"
+	ActionListTxHistory = "listtxhistory"
+	ActionGetTokenInfo  = "gettokeninfo"
+	ActionGetBlock      = "getblock"
+)
+
 // Server provide the serve of peer
 type Server struct {
 	cfg       *config.Config
 	rpcServer *grpc.Server
 	cm        *ChannelManager
+	srv       *http.Server
+	ln        net.Listener
+	engine    *gin.Engine
 }
 
 // NewServer is the constructor of server
@@ -46,6 +67,15 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	server.cm, err = NewChannelManager(cfg)
 	if err != nil {
 		return nil, err
+	}
+
+	server.engine = gin.New()
+	server.engine.Use(gin.Recovery())
+	server.initServer(server.engine)
+	server.srv = &http.Server{
+		Handler:      server.engine,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
 	}
 
 	return server, nil
@@ -62,6 +92,17 @@ func getOrdererClients(cfg *config.Config) ([]*orderer.Client, error) {
 	}
 
 	return clients, nil
+}
+func (s *Server) initServer(engine *gin.Engine) error {
+	v1 := engine.Group(Version)
+	{
+		v1.POST(ActionGetTxStatus, s.GetTxStatusByHTTP)
+		v1.POST(ActionListTxHistory, s.ListTxHistoryByHTTP)
+		v1.POST(ActionGetTokenInfo, s.GetTokenInfoByHTTP)
+		v1.POST(ActionGetBlock, s.GetBlockByHTTP)
+
+	}
+	return nil
 }
 
 // Start starts the server
@@ -87,19 +128,79 @@ func (s *Server) Start() error {
 	}
 	s.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterPeerServer(s.rpcServer, s)
+
+	var ln net.Listener
+
+	if s.cfg.TLS.Enable && s.cfg.TLS.Cert != nil {
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{*s.cfg.TLS.Cert},
+		}
+
+		ln, err = tls.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100), tlsConfig)
+		if err != nil {
+			log.Errorf("HTTPS listen failed: %v", err)
+			return err
+		}
+	} else {
+		ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100))
+		if err != nil {
+			log.Errorf("HTTP listen failed: %v", err)
+			return err
+		}
+	}
+	s.ln = ln
+	go func() {
+		err := s.srv.Serve(s.ln)
+		if err != nil && err != http.ErrServerClosed {
+			log.Error("Http Serve failed: ", err)
+		}
+	}()
+
 	err = s.rpcServer.Serve(lis)
 	if err != nil {
+		log.Error("gRPC Serve error: ", err)
 		return err
 	}
-
+	// haddr := fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100)
+	// router := gin.Default()
+	// err = s.initServer(router)
+	// if err != nil {
+	// 	log.Error("Init router failed: ", err)
+	// 	return err
+	// }
+	// s.srv = &http.Server{
+	// 	Addr:    haddr,
+	// 	Handler: router,
+	// }
+	// go func() {
+	// 	// service connections
+	// 	log.Infof("Start the peer server at %s", haddr)
+	// 	if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	// 		log.Fatalf("listen: %s\n", err)
+	// 	}
+	// }()
 	return nil
 }
 
 // Stop stops the server
 // TODO: The channel manager failed to stop
-func (s *Server) Stop() error {
+func (s *Server) Stop() {
 	s.rpcServer.Stop()
-	s.cm.stop()
+
 	log.Info("Succeed to stop the peer service")
-	return nil
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := s.srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server Shutdown:", err)
+	}
+	// catching ctx.Done(). timeout of 1 seconds.
+	select {
+	case <-ctx.Done():
+		log.Println("timeout after 1 second.")
+	}
+	s.ln.Close()
+
+	s.cm.stop()
+	log.Println("Server exiting")
 }

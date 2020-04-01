@@ -19,8 +19,11 @@ import (
 
 // Account is the Account of Madledger
 type Account struct {
-	Address     Address
-	Balance     uint64
+	Address Address
+	Balance uint64
+	// storage debt a user channel owe to our system
+	// if not zero, the channel should be halted till it pays off
+	Due         uint64
 	Code        []byte
 	Nonce       uint64
 	SuicideMark bool
@@ -31,6 +34,7 @@ func NewAccount(addr Address) *Account {
 	return &Account{
 		Address: addr,
 		Balance: 0,
+		Due:     0,
 		Code:    []byte{},
 		Nonce:   0,
 	}
@@ -57,10 +61,33 @@ func (a *Account) AddBalance(balance uint64) error {
 
 // SubBalance is the implementation of Account
 func (a *Account) SubBalance(balance uint64) error {
-	if _, overflow := math.SafeSub(a.Balance, balance); !overflow {
+	if _, overflow := math.SafeSub(a.Balance, balance); overflow {
 		return errors.New("Overflow")
 	}
 	a.Balance -= balance
+	return nil
+}
+
+// GetDue return due of an account
+func (a *Account) GetDue() uint64 {
+	return a.Due
+}
+
+// AddDue add due to channel account
+func (a *Account) AddDue(due uint64) error {
+	if _, overflow := math.SafeAdd(a.Due, due); overflow {
+		return errors.New("Overflow")
+	}
+	a.Due += due
+	return nil
+}
+
+// SubDue sub due to channel account
+func (a *Account) SubDue(due uint64) error {
+	if _, overflow := math.SafeSub(a.Due, due); overflow {
+		return errors.New("Overflow")
+	}
+	a.Due -= due
 	return nil
 }
 
