@@ -12,6 +12,7 @@ package tests
 
 import (
 	"encoding/json"
+	"fmt"
 	"madledger/blockchain/asset"
 	cc "madledger/blockchain/config"
 	client "madledger/client/lib"
@@ -408,6 +409,12 @@ func testAsset(t *testing.T, client *client.Client) {
 	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("cause due but pass"), 0, "", issuerKey)
 	_, err = client.AddTx(coreTx)
 	require.NoError(t, err)
+
+	// now add multiple txs to ensure that orderers have executed prev tx and stopped receiving tx
+	for i:= 0; i < 10; i++ {
+		coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("multiple tx"), 0, fmt.Sprintln(i), issuerKey)
+		_, _ = client.AddTx(coreTx)
+	}
 
 	//this one should fail
 	coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("fail"), 0, "", issuerKey)
