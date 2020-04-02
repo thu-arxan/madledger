@@ -14,6 +14,8 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"google.golang.org/grpc/credentials"
 	"madledger/orderer/channel"
 	"madledger/orderer/config"
 	pb "madledger/protos"
@@ -21,8 +23,6 @@ import (
 	"net/http"
 	"sync"
 	"time"
-
-	"google.golang.org/grpc/credentials"
 
 	"github.com/gin-gonic/gin"
 
@@ -52,12 +52,13 @@ const (
 // Server provide the serve of orderer
 type Server struct {
 	sync.RWMutex
-	config    *config.ServerConfig
-	rpcServer *grpc.Server
-	srv       *http.Server
-	cc        *channel.Coordinator
-	ln        net.Listener
-	engine    *gin.Engine
+	config       *config.ServerConfig
+	rpcServer    *grpc.Server
+	rpcWebServer *grpcweb.WrappedGrpcServer
+	srv          *http.Server
+	cc           *channel.Coordinator
+	ln           net.Listener
+	engine       *gin.Engine
 }
 
 // NewServer is the constructor of server
@@ -113,98 +114,30 @@ func (s *Server) initServer(engine *gin.Engine) error {
 	return nil
 }
 
+// Wrapper to provide log for GRPC
+type GrpcLogger struct {
+	*logrus.Entry
+};
 
-type ZapLogger struct {
-}
-
-// NewZapLogger 创建封装了zap的对象，该对象是对LoggerV2接口的实现
-func NewZapLogger() *ZapLogger {
-	return &ZapLogger{
+func NewGrpcLogger() *GrpcLogger {
+	return &GrpcLogger{
+		logrus.WithFields(logrus.Fields{"app": "orderer", "package": "server/grpc"}),
 	}
 }
 
-// Info returns
-func (zl *ZapLogger) Info(args ...interface{}) {
-	fmt.Println(args...)
-}
-
-// Infoln returns
-func (zl *ZapLogger) Infoln(args ...interface{}) {
-	fmt.Println(args...)
-}
-
-// Infof returns
-func (zl *ZapLogger) Infof(format string, args ...interface{}) {
-	fmt.Printf(format, args...)
-}
-
-// Warning returns
-func (zl *ZapLogger) Warning(args ...interface{}) {
-	fmt.Println(args...)
-}
-
-// Warningln returns
-func (zl *ZapLogger) Warningln(args ...interface{}) {
-	fmt.Println(args...)
-}
-
-// Warningf returns
-func (zl *ZapLogger) Warningf(format string, args ...interface{}) {
-	fmt.Printf(format, args...)
-}
-
-// Error returns
-func (zl *ZapLogger) Error(args ...interface{}) {
-	fmt.Println(args...)
-}
-
-// Errorln returns
-func (zl *ZapLogger) Errorln(args ...interface{}) {
-	fmt.Println(args...)
-}
-
-// Errorf returns
-func (zl *ZapLogger) Errorf(format string, args ...interface{}) {
-	fmt.Printf(format, args...)
-}
-
-// Fatal returns
-func (zl *ZapLogger) Fatal(args ...interface{}) {
-	fmt.Println(args...)
-}
-
-// Fatalln returns
-func (zl *ZapLogger) Fatalln(args ...interface{}) {
-	fmt.Println(args...)
-}
-
-// Fatalf logs to fatal level
-func (zl *ZapLogger) Fatalf(format string, args ...interface{}) {
-	fmt.Printf(format, args...)
-}
-
-// V reports whether verbosity level l is at least the requested verbose level.
-func (zl *ZapLogger) V(v int) bool {
+func (_ *GrpcLogger) V(_ int) bool {
 	return false
 }
 
-
 // Start starts the server
 func (s *Server) Start() error {
-	var logger = NewZapLogger()
-	grpclog.SetLoggerV2(logger);
+	grpclog.SetLoggerV2(NewGrpcLogger()) // Export GRPC's log
+
 	s.Lock()
-	addr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port)
-	lis, err := net.Listen("tcp", addr)
-	if err != nil {
-		return fmt.Errorf("Failed to start the orderer server because %s", err.Error())
-	}
-	fmt.Printf("Start the orderer at %s\n", addr)
-	err = s.cc.Start()
+	err := s.cc.Start()
 	if err != nil {
 		return err
 	}
-
 	var opts []grpc.ServerOption
 	if s.config.TLS.Enable {
 		creds := credentials.NewTLS(&tls.Config{
@@ -217,26 +150,73 @@ func (s *Server) Start() error {
 	s.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterOrdererServer(s.rpcServer, s)
 
+	go func() { // Start Native GRPC Server at Address:Port
+		lis, err := net.Listen("tcp",  fmt.Sprintf("%s:%d", s.config.Address, s.config.Port))
+		if err != nil {
+			log.Fatalf("Failed to start the orderer server because %s", err.Error())
+		}
+		fmt.Printf("Start the orderer at %s:%d\n", s.config.Address, s.config.Port)
+
+		log.Infof("rpcServer serve at %s:%d", s.config.Address, s.config.Port)
+		err = s.rpcServer.Serve(lis)
+	}()
+
+	s.rpcWebServer = grpcweb.WrapServer(s.rpcServer)
+
+	go func() { // Start GRPC-WEB Server at Address:(Port+11)
+		handler := func(resp http.ResponseWriter, req *http.Request) {
+			grpclog.Infof("Handle grpc request : %v", req)
+			s.rpcWebServer.ServeHTTP(resp, req)
+		}
+
+		httpServer := http.Server{
+			Addr:    fmt.Sprintf(":%d", s.config.Port + 11),
+			Handler: http.HandlerFunc(handler),
+		}
+
+		if s.config.TLS.Enable {
+			/* ENABLE THIS WILL CAUSE LOCAL.crt ALSO FAILED TO WORK.
+			httpServer.TLSConfig = &tls.Config{
+				ClientAuth:   tls.RequireAndVerifyClientCert,
+				Certificates: []tls.Certificate{*(s.config.TLS.Cert)},
+				ClientCAs:    s.config.TLS.Pool,
+			}*/
+			grpclog.Infof("Start tls rpc-web server at %d", s.config.Port + 11)
+			grpclog.Infof("tls config : ca = %s, key = %s", s.config.TLS.RawCert, s.config.TLS.Key)
+			if err := httpServer.ListenAndServeTLS(s.config.TLS.RawCert, s.config.TLS.Key); err != nil {
+				grpclog.Fatalf("failed starting rpc-web server: %v", err)
+			}
+		} else {
+			grpclog.Infof("Start insecure rpc-web server at %d", s.config.Port + 11)
+			if err := httpServer.ListenAndServe(); err != nil {
+				grpclog.Fatalf("failed starting rpc-web server: %v", err)
+			}
+		}
+	}()
+	// MHY ADD END
+
+
 	s.Unlock()
 
+	/*
 	var ln net.Listener
-	if s.config.TLS.Enable && s.config.TLS.Cert != nil {
-		tlsConfig := &tls.Config{
-			Certificates: []tls.Certificate{*s.config.TLS.Cert},
-		}
+	go func() {
+		if s.config.TLS.Enable && s.config.TLS.Cert != nil {
+			tlsConfig := &tls.Config{
+				Certificates: []tls.Certificate{*s.config.TLS.Cert},
+			}
 
-		ln, err = tls.Listen("tcp", fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100), tlsConfig)
-		if err != nil {
-			log.Errorf("HTTPS listen failed: %v", err)
-			return err
+			ln, err = tls.Listen("tcp", fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100), tlsConfig)
+			if err != nil {
+				log.Errorf("HTTPS listen failed: %v", err)
+			}
+		} else {
+			ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100))
+			if err != nil {
+				log.Errorf("HTTP listen failed: %v", err)
+			}
 		}
-	} else {
-		ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100))
-		if err != nil {
-			log.Errorf("HTTP listen failed: %v", err)
-			return err
-		}
-	}
+	}()
 	s.ln = ln
 	go func() {
 		err := s.srv.Serve(s.ln)
@@ -245,8 +225,8 @@ func (s *Server) Start() error {
 			log.Error("Http Serve failed: ", err)
 		}
 	}()
+	*/
 
-	err = s.rpcServer.Serve(lis)
 
 	// TODO: TLS support not implemented
 	// haddr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100)

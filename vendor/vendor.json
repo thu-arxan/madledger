@@ -13,6 +13,12 @@
 			"path": "golang.org/x/sync/errgroup",
 			"revision": "37e7f081c4d4c64e13b10787722085407fe5d15f",
 			"revisionTime": "2018-09-24T18:15:43Z"
+		},
+		{
+			"checksumSHA1": "++dgs2cGs1KF4GG4zKNosO3zSac=",
+			"path": "google.golang.org/grpc",
+			"revision": "508cf42036bc2cb62ad32861a57adaa780556edf",
+			"revisionTime": "2020-04-02T04:19:11Z"
 		}
 	],
 	"rootPath": "madledger"

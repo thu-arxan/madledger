@@ -18,5 +18,16 @@
 
 package grpc
 
-// Version is the current grpc version.
-const Version = "1.29.0-dev"
+import (
+	"testing"
+
+	"google.golang.org/grpc/internal/grpctest"
+)
+
+type s struct {
+	grpctest.Tester
+}
+
+func Test(t *testing.T) {
+	grpctest.RunSubTests(t, s{})
+}
