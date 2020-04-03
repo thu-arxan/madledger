@@ -30,6 +30,11 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 		return nil
 	}
 	for _, tx := range block.Transactions {
+		// this kind of tx is about consensus configuration change
+		// will have different kind of payload
+		if txType, err := core.GetTxType(common.BytesToAddress(tx.Data.Recipient).String()); err == nil && txType == core.CONSENSUS {
+			continue
+		}
 		var payload cc.Payload
 		json.Unmarshal(tx.Data.Payload, &payload)
 		var channelID = payload.ChannelID

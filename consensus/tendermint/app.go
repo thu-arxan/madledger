@@ -319,7 +319,7 @@ func (g *Glue) updateValidator(tx []byte) types.ResponseDeliverTx {
 	}
 	// get tx type according to recipient
 	txType, err := core.GetTxType(common.BytesToAddress(coreTx.Data.Recipient).String())
-	if err == nil && txType == core.VALIDATOR {
+	if err == nil && txType == core.CONSENSUS {
 		var validatorUpdate types.ValidatorUpdate
 		err = json.Unmarshal(coreTx.Data.Payload, &validatorUpdate)
 		if err != nil {

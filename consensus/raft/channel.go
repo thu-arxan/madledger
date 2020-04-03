@@ -223,7 +223,7 @@ func getConfChange(tx []byte) *raftpb.ConfChange {
 	if err != nil {
 		return nil
 	}
-	if txType != core.NODE {
+	if txType != core.CONSENSUS {
 		return nil
 	}
 	err = json.Unmarshal(coreTx.Data.Payload, &cfgChange)

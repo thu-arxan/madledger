@@ -11,10 +11,14 @@
 package node
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"github.com/tendermint/tendermint/abci/types"
+	//"google.golang.org/grpc/status"
 	"madledger/client/lib"
 	"madledger/client/util"
+	"madledger/common/crypto"
 	coreTypes "madledger/core"
 	"strconv"
 	"strings"
@@ -39,31 +43,29 @@ func init() {
 	addCmd.Flags().StringP("url", "u", "127.0.0.1:45680",
 		"The url of node joining the exiting cluster")
 	addViper.BindPFlag("url", addCmd.Flags().Lookup("url"))
+	addCmd.Flags().StringP("pubkey", "k", "", "The pubkey of validator")
+	addViper.BindPFlag("pubkey", addCmd.Flags().Lookup("pubkey"))
+	addCmd.Flags().StringP("power", "p", "10", "The power of validator")
+	addViper.BindPFlag("power", addCmd.Flags().Lookup("power"))
 	addCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
 	addViper.BindPFlag("config", addCmd.Flags().Lookup("config"))
-	addCmd.Flags().StringP("channelID", "n", "", "The channelID of the tx")
-	addViper.BindPFlag("channelID", addCmd.Flags().Lookup("channelID"))
 }
 
 func runAdd(cmd *cobra.Command, args []string) error {
-	nodeID, err := strconv.ParseUint(addViper.GetString("nodeID"), 10, 64)
-	if err != nil {
-		return err
+	isRaft := false
+	isTendermint := false
+	if addViper.GetString("pubkey") != "" {
+		isTendermint = true
 	}
-	if nodeID <= 0 {
-		return errors.New("The ID must be bigger than zero")
+	if addViper.GetString("nodeID") != "" {
+		isRaft = true
 	}
 
-	urlRaw := addViper.GetString("url")
-	if !strings.Contains(urlRaw, ":") {
-		return errors.New("The url of node must contains ip and port like 127.0.0.1:12345")
+	if isRaft && isTendermint {
+		return errors.New("Too many arguments. Please specify consensus type.")
 	}
-	port, err := strconv.ParseUint(strings.Split(urlRaw, ":")[1], 10, 64)
-	if err != nil {
-		return err
-	}
-	if port > 65535 {
-		return errors.New("The port can not be bigger than 65535")
+	if !isRaft && !isTendermint {
+		return errors.New("Too few arguments. Please specify consensus type.")
 	}
 
 	cfgFile := addViper.GetString("config")
@@ -71,26 +73,17 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return errors.New("The config file of client can not be nil")
 	}
 
-	channelID := addViper.GetString("channelID")
-	if channelID == "" {
-		return errors.New("The channelID of tx can not be nil")
-	}
-
-	// construct ConfChange
-	cc, err := json.Marshal(raftpb.ConfChange{
-		Type:    raftpb.ConfChangeAddNode,
-		NodeID:  nodeID,
-		Context: []byte(urlRaw),
-	})
-	if err != nil {
-		return err
-	}
-
 	client, err := lib.NewClient(cfgFile)
 	if err != nil {
 		return err
 	}
-	tx, err := coreTypes.NewTx(channelID, coreTypes.CfgRaftAddress, cc, 0, "", client.GetPrivKey())
+
+	var tx *coreTypes.Tx
+	if isRaft {
+		tx, err = getRaftConfChangeTx(client.GetPrivKey())
+	} else {
+		tx, err = getTendermintConfChangeTx(client.GetPrivKey())
+	}
 	if err != nil {
 		return err
 	}
@@ -108,4 +101,73 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	}
 	table.Render()
 	return nil
+}
+
+func getRaftConfChangeTx(privkey crypto.PrivateKey) (*coreTypes.Tx, error){
+	nodeID, err := strconv.ParseUint(addViper.GetString("nodeID"), 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	if nodeID <= 0 {
+		return nil, errors.New("The ID must be bigger than zero")
+	}
+
+	urlRaw := addViper.GetString("url")
+	if !strings.Contains(urlRaw, ":") {
+		return nil, errors.New("The url of node must contains ip and port like 127.0.0.1:12345")
+	}
+	port, err := strconv.ParseUint(strings.Split(urlRaw, ":")[1], 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	if port > 65535 {
+		return nil, errors.New("The port can not be bigger than 65535")
+	}
+
+	// construct ConfChange
+	cc, err := json.Marshal(raftpb.ConfChange{
+		Type:    raftpb.ConfChangeAddNode,
+		NodeID:  nodeID,
+		Context: []byte(urlRaw),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := coreTypes.NewTx(coreTypes.CONFIGCHANNELID, coreTypes.CfgConsensusAddress, cc, 0, "", privkey)
+	return tx, err
+}
+
+func getTendermintConfChangeTx(privKey crypto.PrivateKey) (*coreTypes.Tx, error){
+	dataS := addViper.GetString("pubkey")
+	if dataS == "" {
+		return nil, errors.New("Tendermint pubkey cannot be empty")
+	}
+	// construct PubKey
+	data, err := base64.StdEncoding.DecodeString(dataS)
+	if err != nil {
+		return nil, err
+	}
+
+	pubkey := types.PubKey{
+		Type: "ed25519",
+		Data: data,
+	}
+
+	power := addViper.GetInt64("power")
+	if power < 0 {
+		return nil, errors.New("The power of validator power must be non-negative")
+	}
+
+	// construct ValidatorUpdate
+	validatorUpdate, err := json.Marshal(types.ValidatorUpdate{
+		PubKey: pubkey,
+		Power:  power,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := coreTypes.NewTx(coreTypes.CONFIGCHANNELID, coreTypes.CfgConsensusAddress, validatorUpdate, 0, "", privKey)
+	return tx, err
 }
