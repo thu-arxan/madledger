@@ -24,3 +24,4 @@ env/raft/clients
 .vscode
 .raft
 samples
+.DS_Store
