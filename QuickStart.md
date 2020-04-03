@@ -6,14 +6,12 @@
 
 Go语言的安装请自行搜索，版本不小于1.10。
 
-这些包由于一些原因无法放在vendor环境中，需要单独安装
+本工程使用Go mod 维护安装包，使用下面的指令安装依赖包。
 
 ```bash
-go get -u google.golang.org/grpc
-go get -u github.com/prometheus/common/expfmt
-go get -u github.com/prometheus/client_golang/prometheus
-go get -u github.com/go-playground/universal-translator
-go get -u github.com/leodido/go-urn
+export GO111MODULE="on"
+export GOPROXY="https://goproxy.cn" 
+go mod download
 ```
 
 ### 1.2. OpenSSL1.1.1
