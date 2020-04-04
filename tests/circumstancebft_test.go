@@ -111,6 +111,7 @@ func TestBFTCreateChannels(t *testing.T) {
 	for i := range bftClients {
 		// each client will create 5 channels
 		for m := 0; m < 5; m++ {
+            fmt.Printf("BFT Create Channel %d-%d", i, m)
 			wg.Add(1)
 			go func(t *testing.T, i int) {
 

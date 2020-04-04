@@ -46,7 +46,7 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20190923125748-758128399b1d
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
 	github.com/tendermint/go-amino v0.15.1 // indirect
-	github.com/tendermint/tendermint v0.30.0
+	github.com/tendermint/tendermint v0.31.5
 	github.com/thu-arxan/evm v0.0.0-20200313070106-9cad9e1e6288
 	github.com/tjfoc/gmsm v1.2.4
 	github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc

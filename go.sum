@@ -510,6 +510,10 @@ github.com/tendermint/go-amino v0.15.1 h1:D2uk35eT4iTsvJd9jWIetzthE5C0/k2QmMFkCN
 github.com/tendermint/go-amino v0.15.1/go.mod h1:TQU0M1i/ImAo+tYpZi73AU3V/dKeCoMC9Sphe2ZwGME=
 github.com/tendermint/tendermint v0.30.0 h1:zPqxUcpS9A9+VN0osyvMYqO3KFfLdP6j98ncGUwfWRk=
 github.com/tendermint/tendermint v0.30.0/go.mod h1:ymcPyWblXCplCPQjbOYbrF1fWnpslATMVqiGgWbZrlc=
+github.com/tendermint/tendermint v0.31.4 h1:F/vZ/fMHZJriAkDLjf9ZrReJQsuELiTmJLqigmbE5NU=
+github.com/tendermint/tendermint v0.31.4/go.mod h1:ymcPyWblXCplCPQjbOYbrF1fWnpslATMVqiGgWbZrlc=
+github.com/tendermint/tendermint v0.31.5 h1:vTet8tCq3B9/J9Yo11dNZ8pOB7NtSy++bVSfkP4KzR4=
+github.com/tendermint/tendermint v0.31.5/go.mod h1:ymcPyWblXCplCPQjbOYbrF1fWnpslATMVqiGgWbZrlc=
 github.com/thu-arxan/evm v0.0.0-20200313070106-9cad9e1e6288 h1:+ZvAsX0lpSfpsvfJGFM+m7HgsKn96x72kwQVNL+dFQc=
 github.com/thu-arxan/evm v0.0.0-20200313070106-9cad9e1e6288/go.mod h1:v2ag93qRCtIi87XaBJv1ERsPZ66sIVAsu+98ivaLYys=
 github.com/tjfoc/gmsm v1.2.4 h1:fxiG/A2amPEYY/J7fOxmfDiDFxOFFYrCNHkINCunR+4=
