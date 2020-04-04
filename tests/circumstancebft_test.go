@@ -378,8 +378,8 @@ func getOrderersPid() []string {
 	if err != nil {
 		return nil
 	}
-	strOutput := strings.TrimSpace(string(output))
-	pids := strings.Split(strOutput, " ")
+	// strOutput := strings.TrimSpace(string(output))
+	pids := strings.Split(string(output), " ")
 	return pids
 }
 
