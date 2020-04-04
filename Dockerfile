@@ -56,3 +56,14 @@ ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/openssl/lib
 # copy code
 COPY . gopath/src/madledger
 
+# Enable GO MOD, set proxy to bypass GFW
+# Not that if you are using private github repositories, you may need to set GOPRIVATE env var.
+ENV GO111MODULE=on
+ENV GOPROXY="https://goproxy.cn"
+
+WORKDIR $GOPATH/src/madledger
+
+# Download GO dependencies
+RUN go mod download
+
+RUN make
