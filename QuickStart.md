@@ -6,6 +6,14 @@
 
 Go语言的安装请自行搜索，版本不小于1.10。
 
+本工程使用Go mod 维护安装包，使用下面的指令安装依赖包。
+
+```bash
+export GO111MODULE="on"
+export GOPROXY="https://goproxy.cn" 
+go mod download
+```
+
 ### 1.2. OpenSSL1.1.1
 
 ```sh
