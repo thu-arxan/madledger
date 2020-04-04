@@ -226,7 +226,7 @@ func TestBFTAsset(t *testing.T) {
 }
 
 func TestBFTEnd(t *testing.T) {
-	// stopPeer()
+	stopPeer()
 	for i := range bftOrderers {
 		stopOrderer(bftOrderers[i])
 	}
@@ -237,15 +237,10 @@ func TestBFTEnd(t *testing.T) {
 // initBFTEnvironment will remove old test folders and copy necessary folders, also it will stop orderers on running
 func initBFTEnvironment() error {
 	// kill all Orderers
-	cmd := exec.Command("/bin/sh", "-c", "pidof orderer")
-	output, err := cmd.Output()
-	if err == nil {
-		pids := strings.Split(string(output), " ")
-		for _, pid := range pids {
-			if pid != "" {
-				stopOrderer(pid)
-			}
-		}
+	pids := getProcessPid("orderer")
+	fmt.Println("pidof orderer returns ", pids)
+	for _, pid := range pids {
+			stopOrderer(pid)
 	}
 
 	gopath := os.Getenv("GOPATH")
@@ -350,7 +345,7 @@ func loadOrdererConfig(cfgPath string) (*oc.Config, error) {
 
 // startOrderer run orderer and return pid
 func startOrderer(node int) string {
-	before := getOrderersPid()
+	before := getProcessPid("orderer")
 	go func() {
 		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("orderer start -c %s", getBFTOrdererConfigPath(node)))
 		data, err := cmd.Output()
@@ -360,7 +355,7 @@ func startOrderer(node int) string {
 	}()
 
 	for {
-		after := getOrderersPid()
+		after := getProcessPid("orderer")
 		if len(after) != len(before) {
 			for _, pid := range after {
 				if !util.Contain(before, pid) {
@@ -372,20 +367,24 @@ func startOrderer(node int) string {
 	}
 }
 
-func getOrderersPid() []string {
-	cmd := exec.Command("/bin/sh", "-c", "pidof orderer")
+func getProcessPid(process string) []string {
+	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("pidof %s", process))
 	output, err := cmd.Output()
 	if err != nil {
 		return nil
 	}
 	strOutput := strings.TrimSpace(string(output))
-	pids := strings.Split(strOutput, " ")
-	return pids
+	if len(strOutput) == 0 {
+		return make([]string, 0)
+	} else {
+		pids := strings.Split(strOutput, " ")
+		return pids
+	}
 }
 
 // stopOrderer stop an orderer
 func stopOrderer(pid string) {
-	before := getOrderersPid()
+	before := getProcessPid("orderer")
 	if len(before) == 0 {
 		panic("no orderer running")
 	}
@@ -400,7 +399,7 @@ func stopOrderer(pid string) {
 		if i > 100 {
 			panic(fmt.Sprintf("timeout to wait for orderer %s stop", pid))
 		}
-		after := getOrderersPid()
+		after := getProcessPid("orderer")
 		if len(after) < len(before) {
 			fmt.Printf("stopped orderer %s after %d attempts\n", pid, i)
 			break
@@ -411,9 +410,7 @@ func stopOrderer(pid string) {
 }
 
 func stopPeer() {
-	cmd := exec.Command("/bin/sh", "-c", "pidof peer")
-	output, _ := cmd.Output()
-	pids := strings.Split(string(output), " ")
+	pids := getProcessPid("peer")
 	for _, pid := range pids {
 		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("kill -TERM %s", pid))
 		cmd.Output()

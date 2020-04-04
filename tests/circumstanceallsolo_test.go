@@ -84,8 +84,8 @@ func TestAllSoloAsset(t *testing.T) {
 }
 
 func TestAllSoloEnd(t *testing.T) {
-	stopSoloOrderer()
 	stopSoloPeer()
+	stopSoloOrderer()
 	os.RemoveAll(".orderer")
 	os.RemoveAll(".peer")
 	os.RemoveAll(".client")
