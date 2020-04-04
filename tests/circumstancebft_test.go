@@ -226,7 +226,9 @@ func TestBFTAsset(t *testing.T) {
 }
 
 func TestBFTEnd(t *testing.T) {
-	// stopPeer()
+	for i := range bftPeers {
+		bftPeers[i].Stop()
+	}
 	for i := range bftOrderers {
 		stopOrderer(bftOrderers[i])
 	}
@@ -378,8 +380,8 @@ func getOrderersPid() []string {
 	if err != nil {
 		return nil
 	}
-	strOutput := strings.TrimSpace(string(output))
-	pids := strings.Split(strOutput, " ")
+	// strOutput := strings.TrimSpace(string(output))
+	pids := strings.Split(string(output), " ")
 	return pids
 }
 
@@ -407,16 +409,6 @@ func stopOrderer(pid string) {
 		}
 		i++
 		time.Sleep(100 * time.Millisecond)
-	}
-}
-
-func stopPeer() {
-	cmd := exec.Command("/bin/sh", "-c", "pidof peer")
-	output, _ := cmd.Output()
-	pids := strings.Split(string(output), " ")
-	for _, pid := range pids {
-		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("kill -TERM %s", pid))
-		cmd.Output()
 	}
 }
 
