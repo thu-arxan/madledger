@@ -7,6 +7,7 @@ require (
 	github.com/btcsuite/btcd v0.20.1-beta.0.20200327205923-57d44d022ecb // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/decred/dcrd/dcrec/secp256k1 v1.0.3
+	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/ethereum/go-ethereum v1.9.12 // indirect
 	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c // indirect
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
@@ -20,12 +21,14 @@ require (
 	github.com/golang/snappy v0.0.2-0.20190904063534-ff6b7dc882cf // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/hashicorp/hcl v1.0.1-0.20191016231534-914dc3f8dd7c // indirect
+	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.2-0.20191019074931-a586bb8b7dea // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mitchellh/mapstructure v1.2.3-0.20200320070147-c1a340b00c8e // indirect
 	github.com/otiai10/copy v1.1.2-0.20200328070216-77876f1ea22d
 	github.com/pelletier/go-toml v1.6.1-0.20200317025147-a12e10221427 // indirect
+	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.5.1 // indirect
@@ -39,6 +42,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.6.3-0.20200219234104-97ee7adfef48
+	github.com/stretchr/objx v0.1.1 // indirect
 	github.com/stretchr/testify v1.5.2-0.20200402113425-012967472b95
 	github.com/subosito/gotenv v1.2.1-0.20190917103637-de67a6614a4d // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20190923125748-758128399b1d

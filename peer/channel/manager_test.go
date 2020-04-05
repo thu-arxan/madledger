@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/golang/protobuf/ptypes/empty"
 	"io"
 	"io/ioutil"
 	"madledger/common"
@@ -218,6 +219,10 @@ func (o *fakeOrderer) GetAccountInfo(ctx context.Context, req *pb.GetAccountInfo
 }
 
 func (o *fakeOrderer) GetTxStatus(ctx context.Context, req *pb.GetTxStatusRequest) (*pb.TxStatus, error) {
+	return nil, nil
+}
+
+func (o *fakeOrderer) Ping(ctx context.Context, req *empty.Empty) (*pb.PingRespond, error) {
 	return nil, nil
 }
 

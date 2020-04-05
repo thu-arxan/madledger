@@ -13,9 +13,9 @@ package server
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/grpclog"
 	"madledger/orderer/channel"
 	"madledger/orderer/config"
 	pb "madledger/protos"
@@ -26,9 +26,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/grpclog"
 )
 
 var (
@@ -92,6 +92,7 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	}
 	server.cc = cc
 
+	/*
 	server.engine = gin.New()
 	server.engine.Use(gin.Recovery())
 	server.initServer(server.engine)
@@ -99,7 +100,7 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		Handler:      server.engine,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
-	}
+	}*/
 
 	return server, nil
 }
@@ -117,7 +118,7 @@ func (s *Server) initServer(engine *gin.Engine) error {
 // Wrapper to provide log for GRPC
 type GrpcLogger struct {
 	*logrus.Entry
-};
+}
 
 func NewGrpcLogger() *GrpcLogger {
 	return &GrpcLogger{
@@ -131,6 +132,7 @@ func (_ *GrpcLogger) V(_ int) bool {
 
 // Start starts the server
 func (s *Server) Start() error {
+	log.Infof("Server start...")
 	grpclog.SetLoggerV2(NewGrpcLogger()) // Export GRPC's log
 
 	s.Lock()
@@ -162,34 +164,44 @@ func (s *Server) Start() error {
 	}()
 
 	s.rpcWebServer = grpcweb.WrapServer(s.rpcServer)
+	handler := func(resp http.ResponseWriter, req *http.Request) {
+		//These header are intentionally add to solve browsers' CORS problem.
+		resp.Header().Add("Access-Control-Allow-Origin","*")
+		resp.Header().Add("Access-Control-Allow-Headers", "x-grpc-web, content-type")
+		grpclog.Infof("Handle grpc request : %v", req)
+		s.rpcWebServer.ServeHTTP(resp, req)
+	}
+
+	httpServer := http.Server{
+		Addr:    fmt.Sprintf(":%d", s.config.Port + 11),
+		Handler: http.HandlerFunc(handler),
+	}
+	s.srv = &httpServer
 
 	go func() { // Start GRPC-WEB Server at Address:(Port+11)
-		handler := func(resp http.ResponseWriter, req *http.Request) {
-			grpclog.Infof("Handle grpc request : %v", req)
-			s.rpcWebServer.ServeHTTP(resp, req)
-		}
-
-		httpServer := http.Server{
-			Addr:    fmt.Sprintf(":%d", s.config.Port + 11),
-			Handler: http.HandlerFunc(handler),
-		}
-
 		if s.config.TLS.Enable {
-			/* ENABLE THIS WILL CAUSE LOCAL.crt ALSO FAILED TO WORK.
 			httpServer.TLSConfig = &tls.Config{
-				ClientAuth:   tls.RequireAndVerifyClientCert,
 				Certificates: []tls.Certificate{*(s.config.TLS.Cert)},
+				//RootCAs:    s.config.TLS.Pool,
 				ClientCAs:    s.config.TLS.Pool,
-			}*/
+			}
 			grpclog.Infof("Start tls rpc-web server at %d", s.config.Port + 11)
 			grpclog.Infof("tls config : ca = %s, key = %s", s.config.TLS.RawCert, s.config.TLS.Key)
 			if err := httpServer.ListenAndServeTLS(s.config.TLS.RawCert, s.config.TLS.Key); err != nil {
-				grpclog.Fatalf("failed starting rpc-web server: %v", err)
+				if err.Error() == "http: Server closed" {
+					grpclog.Infof("grpc-web server exit: %v")
+				} else {
+					grpclog.Fatalf("failed starting rpc-web server: %v", err.Error())
+				}
 			}
 		} else {
 			grpclog.Infof("Start insecure rpc-web server at %d", s.config.Port + 11)
 			if err := httpServer.ListenAndServe(); err != nil {
-				grpclog.Fatalf("failed starting rpc-web server: %v", err)
+				if err.Error() == "http: Server closed" {
+					grpclog.Infof("grpc-web server exit: %v")
+				} else {
+					grpclog.Fatalf("failed starting rpc-web server: %v", err)
+				}
 			}
 		}
 	}()
@@ -254,21 +266,16 @@ func (s *Server) Start() error {
 func (s *Server) Stop() {
 	s.Lock()
 	defer s.Unlock()
-	// if s.rpcServer != nil {
 	s.rpcServer.Stop()
-	// }
+
+	s.srv.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := s.srv.Shutdown(ctx); err != nil {
-		log.Fatal("Server Shutdown:", err)
-	}
-	// catching ctx.Done(). timeout of 1 seconds.
 	select {
 	case <-ctx.Done():
 		log.Println("timeout of 1 seconds.")
 	}
-	s.ln.Close()
 
 	s.cc.Stop()
 	time.Sleep(500 * time.Millisecond)

@@ -12,10 +12,12 @@ package server
 
 import (
 	"errors"
+	"github.com/golang/protobuf/ptypes/empty"
 	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/core"
 	pb "madledger/protos"
+	"madledger/version"
 
 	"golang.org/x/net/context"
 )
@@ -92,4 +94,10 @@ func (s *Server) GetAccountInfo(ctx context.Context, req *pb.GetAccountInfoReque
 	}
 	info.Balance = account.GetBalance()
 	return &info, err
+}
+
+func (s *Server) Ping(_ context.Context, _ *empty.Empty) (*pb.PingRespond, error) {
+	var resp pb.PingRespond
+	resp.Version = version.Version
+	return &resp, nil
 }
