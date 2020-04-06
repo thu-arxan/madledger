@@ -118,7 +118,7 @@ func getPeerConfig() *pc.Config {
 	dbPath, _ := util.MakeFileAbs("data/leveldb", getPeerPath())
 	cfg.BlockChain.Path = chainPath
 	cfg.DB.LevelDB.Dir = dbPath
-	key, _ := util.MakeFileAbs("src/madledger/tests/config/peer/.solo_peer.pem", gopath)
+	key, _ := util.MakeFileAbs("src/madledger/tests/config/peer/.solo_peer.crt", gopath)
 	cfg.KeyStore.Key = key
 	return cfg
 }

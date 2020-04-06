@@ -43,4 +43,4 @@ DB:
 
 # KeyStore manage some private keys
 KeyStore:
-  Key: config/peer/.solo_peer.pem
+  Key: config/peer/.solo_peer.crt
