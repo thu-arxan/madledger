@@ -36,6 +36,10 @@ LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/openssl/lib
 - solcjs: [Solidity编译器](https://github.com/ethereum/solc-js), 用于编译用户自己编写的智能合约(测试文件中给出了部分示例，可以先直接使用该示例)
   - solcjs --bin *.sol
   - solcjs --abi *.sol
+  
+### 1.4 证书生成
+
+见 [证书生成脚本](../madledger/explorer/misc/README.md)
 
 ## 2. 利用Makefile进行Quick start
 
