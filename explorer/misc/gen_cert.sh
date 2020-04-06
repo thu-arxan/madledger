@@ -22,6 +22,8 @@ if [ $1 = "ca" ]; then
     # Generate a root-certificate based on the root-key for importing to browsers.
     openssl req -x509 -new -nodes -key $CA_PATH/localhostCA.key -passin pass:$CA_PASSWORD -config $CONF_PATH/localhostCA.conf -sha256 -days 500 -out $CA_PATH/localhostCA.pem
 
+    exit
+
 fi
 
 rm -f "./*"
@@ -43,3 +45,7 @@ openssl req -new -key $NAME.key -out $NAME.csr -config $CONF_PATH/localhostCA.co
 # Create the certificate for the webserver to serve using the $NAME.conf config.
 openssl x509 -req -in $NAME.csr -CA $CA_PATH/localhostCA.pem -CAkey $CA_PATH/localhostCA.key -CAcreateserial \
 -out $NAME.crt -days 400 -sha256 -extfile $CONF_PATH/localhost.conf -passin pass:$CA_PASSWORD
+
+cat "./CA.pem" >> $NAME.crt
+
+#openssl x509 -text -noout -in localhostCA.pem

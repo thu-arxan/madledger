@@ -32,5 +32,5 @@ Peer:
 # KeyStore manage some private keys
 KeyStore:
   Keys:
-    - config/client/solo_client.crt
+    - config/client/solo_client.pem
 

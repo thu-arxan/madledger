@@ -22,7 +22,7 @@ TLS:
   # The path of CA cert, it should not be empty if Enable is true
   CA: cert/CA.pem
   # Cert of the Blockchain, it should not be empty if Enable is true
-  Cert: cert/admin.pem
+  Cert: cert/admin.crt
   # Key of the Blockchain, it should not be empty if Enable is true
   Key: cert/admin.key
 
