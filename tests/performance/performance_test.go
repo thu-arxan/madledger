@@ -65,14 +65,14 @@ func TestInit(t *testing.T) {
 }
 
 func TestCreateChannel(t *testing.T) {
-	var clients = getClients()
+	var clients = getClients(consensus)
 	for i := 0; i < channelSize; i++ {
 		require.NoError(t, clients[0].CreateChannel(fmt.Sprintf("test%d", i), true, nil, nil, 0, 1, 10000000))
 	}
 }
 
 func TestCreateContract(t *testing.T) {
-	var clients = getClients()
+	var clients = getClients(consensus)
 	for i := 0; i < channelSize; i++ {
 		CreateContract(t, fmt.Sprintf("test%d", i), clients[0])
 	}
@@ -81,7 +81,7 @@ func TestCreateContract(t *testing.T) {
 func TestPerformance(t *testing.T) {
 	var wg sync.WaitGroup
 	var callSize = 40
-	clients := getClients()
+	clients := getClients(consensus)
 	var txs = make([][]*core.Tx, clientSize)
 	// create txs
 	for i := range txs {
