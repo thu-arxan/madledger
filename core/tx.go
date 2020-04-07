@@ -32,6 +32,8 @@ type Tx struct {
 	sender *common.Address
 }
 
+// TODO 这个json的构造怎么一会儿是大写一会儿是小写？？？
+
 // TxType is the type of consensus
 type TxType int64
 
@@ -90,7 +92,7 @@ func NewTx(channelID string, recipient common.Address, payload []byte, value uin
 	var tx = &Tx{
 		Data: TxData{
 			ChannelID: channelID,
-			Nonce:     util.RandUint64(),
+			Nonce:     1, //TODO TEMPORARY MODIFICATION. -> util.RandUint64(),
 			Recipient: recipient.Bytes(),
 			Payload:   payload,
 			Value:     value,
@@ -98,7 +100,7 @@ func NewTx(channelID string, recipient common.Address, payload []byte, value uin
 			Version:   1,
 			Gas:       GLOBALGASLIMIT,
 		},
-		Time: util.Now(),
+		Time: 1, //TODO TEMPORARY MODIFICATION. -> util.Now(),
 	}
 	hash := tx.hashWithoutSig(privKey.Algo())
 	sig, err := privKey.Sign(hash)
