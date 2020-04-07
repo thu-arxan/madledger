@@ -13,10 +13,10 @@ package performance
 import (
 	"encoding/hex"
 	"errors"
-	"madledger/common/abi"
 	"fmt"
 	"io/ioutil"
 	client "madledger/client/lib"
+	"madledger/common/abi"
 	pb "madledger/protos"
 	"madledger/tests/performance/bft"
 	"madledger/tests/performance/raft"
@@ -86,7 +86,7 @@ func writeLog(log string) error {
 	return err
 }
 
-func getClients() []*client.Client {
+func getClients(consensus string) []*client.Client {
 	var clients []*client.Client
 	switch consensus {
 	case "solo":
