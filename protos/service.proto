@@ -107,7 +107,8 @@ service Peer {
     rpc GetTxStatus(GetTxStatusRequest) returns (TxStatus){}
     rpc ListTxHistory(ListTxHistoryRequest) returns(TxHistory){}
     rpc GetTokenInfo(GetTokenInfoRequest) returns(TokenInfo){}
- }
+    rpc Ping(google.protobuf.Empty) returns (PingRespond){}
+}
 
 message GetTxStatusRequest {
     string ChannelID = 1;

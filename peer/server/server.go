@@ -13,8 +13,10 @@ package server
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
+	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"google.golang.org/grpc/grpclog"
+	"madledger/common/util"
 	"madledger/peer/config"
 	"madledger/peer/orderer"
 	"net"
@@ -33,6 +35,7 @@ import (
 
 var (
 	log = logrus.WithFields(logrus.Fields{"app": "peer", "package": "server"})
+	glog = logrus.WithFields(logrus.Fields{"app": "peer", "package": "server/grpc"})
 )
 
 // Here defines some consts
@@ -50,18 +53,18 @@ const (
 
 // Server provide the serve of peer
 type Server struct {
-	cfg       *config.Config
-	rpcServer *grpc.Server
-	cm        *ChannelManager
-	srv       *http.Server
-	ln        net.Listener
-	engine    *gin.Engine
+	config       *config.Config
+	rpcServer    *grpc.Server
+	rpcWebServer *grpcweb.WrappedGrpcServer
+	cm           *ChannelManager
+	srv          *http.Server
+	engine       *gin.Engine
 }
 
 // NewServer is the constructor of server
 func NewServer(cfg *config.Config) (*Server, error) {
 	server := new(Server)
-	server.cfg = cfg
+	server.config = cfg
 	var err error
 	// set channel manager
 	server.cm, err = NewChannelManager(cfg)
@@ -107,99 +110,99 @@ func (s *Server) initServer(engine *gin.Engine) error {
 
 // Start starts the server
 func (s *Server) Start() error {
-	addr := fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port)
-	lis, err := net.Listen("tcp", addr)
-	if err != nil {
-		return errors.New("Failed to start the peer server")
-	}
-	log.Infof("Start the peer server at %s", addr)
-	err = s.cm.start()
+	log.Infof("Server start...")
+	grpclog.SetLoggerV2(&util.GrpcLogger{Entry: glog}) // Export GRPC's log
+
+	err := s.cm.start()
 	if err != nil {
 		return err
 	}
 	var opts []grpc.ServerOption
-	if s.cfg.TLS.Enable {
+	if s.config.TLS.Enable {
 		creds := credentials.NewTLS(&tls.Config{
 			ClientAuth:   tls.RequireAndVerifyClientCert,
-			Certificates: []tls.Certificate{*(s.cfg.TLS.Cert)},
-			ClientCAs:    s.cfg.TLS.Pool,
+			Certificates: []tls.Certificate{*(s.config.TLS.Cert)},
+			ClientCAs:    s.config.TLS.Pool,
 		})
 		opts = append(opts, grpc.Creds(creds))
 	}
 	s.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterPeerServer(s.rpcServer, s)
 
-	var ln net.Listener
-
-	if s.cfg.TLS.Enable && s.cfg.TLS.Cert != nil {
-		tlsConfig := &tls.Config{
-			Certificates: []tls.Certificate{*s.cfg.TLS.Cert},
-		}
-
-		ln, err = tls.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100), tlsConfig)
+	go func() { // Start Native GRPC Server at Address:Port
+		lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.config.Address, s.config.Port))
 		if err != nil {
-			log.Errorf("HTTPS listen failed: %v", err)
-			return err
+			log.Fatalf("Failed to start the peer server because %s", err.Error())
 		}
-	} else {
-		ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100))
-		if err != nil {
-			log.Errorf("HTTP listen failed: %v", err)
-			return err
-		}
+		log.Infof("rpcServer serve at %s:%d", s.config.Address, s.config.Port)
+		err = s.rpcServer.Serve(lis)
+	}()
+
+	s.rpcWebServer = grpcweb.WrapServer(s.rpcServer)
+	handler := func(resp http.ResponseWriter, req *http.Request) {
+		//These header are intentionally add to solve browsers' CORS problem.
+		resp.Header().Add("Access-Control-Allow-Origin","*")
+		resp.Header().Add("Access-Control-Allow-Headers", "x-grpc-web, content-type")
+		grpclog.Infof("Handle grpc request : %v", req)
+		s.rpcWebServer.ServeHTTP(resp, req)
 	}
-	s.ln = ln
-	go func() {
-		err := s.srv.Serve(s.ln)
-		if err != nil && err != http.ErrServerClosed {
-			log.Error("Http Serve failed: ", err)
+
+	httpServer := http.Server{
+		Addr:    fmt.Sprintf(":%d", s.config.Port + 11),
+		Handler: http.HandlerFunc(handler),
+	}
+	s.srv = &httpServer
+
+	go func() { // Start GRPC-WEB Server at Address:(Port+11)
+		if s.config.TLS.Enable {
+			httpServer.TLSConfig = &tls.Config{
+				Certificates: []tls.Certificate{*(s.config.TLS.Cert)},
+				ClientCAs:    s.config.TLS.Pool,
+			}
+			grpclog.Infof("Start tls rpc-web server at %d", s.config.Port + 11)
+			grpclog.Infof("tls config : ca = %s, key = %s", s.config.TLS.RawCert, s.config.TLS.Key)
+			if err := httpServer.ListenAndServeTLS(s.config.TLS.RawCert, s.config.TLS.Key); err != nil {
+				if err.Error() == "http: Server closed" {
+					grpclog.Infof("grpc-web server exit: %v")
+				} else {
+					grpclog.Fatalf("failed starting rpc-web server: %v", err.Error())
+				}
+			}
+		} else {
+			grpclog.Infof("Start insecure rpc-web server at %d", s.config.Port + 11)
+			if err := httpServer.ListenAndServe(); err != nil {
+				if err.Error() == "http: Server closed" {
+					grpclog.Infof("grpc-web server exit: %v")
+				} else {
+					grpclog.Fatalf("failed starting rpc-web server: %v", err)
+				}
+			}
 		}
 	}()
 
-	err = s.rpcServer.Serve(lis)
-	if err != nil {
-		log.Error("gRPC Serve error: ", err)
-		return err
-	}
-	// haddr := fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100)
-	// router := gin.Default()
-	// err = s.initServer(router)
-	// if err != nil {
-	// 	log.Error("Init router failed: ", err)
-	// 	return err
-	// }
-	// s.srv = &http.Server{
-	// 	Addr:    haddr,
-	// 	Handler: router,
-	// }
-	// go func() {
-	// 	// service connections
-	// 	log.Infof("Start the peer server at %s", haddr)
-	// 	if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-	// 		log.Fatalf("listen: %s\n", err)
-	// 	}
-	// }()
 	return nil
 }
 
 // Stop stops the server
 // TODO: The channel manager failed to stop
 func (s *Server) Stop() {
+	log.Info("Stop Server")
 	s.rpcServer.Stop()
 
 	log.Info("Succeed to stop the peer service")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+
 	if err := s.srv.Shutdown(ctx); err != nil {
 		log.Fatal("Server Shutdown:", err)
 	}
+
 	// catching ctx.Done(). timeout of 1 seconds.
 	select {
 	case <-ctx.Done():
 		log.Println("timeout after 1 second.")
 	}
-	s.ln.Close()
 
 	s.cm.stop()
 	log.Println("Server exiting")

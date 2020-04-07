@@ -16,6 +16,7 @@ import (
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
+	"madledger/common/util"
 	"madledger/orderer/channel"
 	"madledger/orderer/config"
 	pb "madledger/protos"
@@ -32,7 +33,8 @@ import (
 )
 
 var (
-	log = logrus.WithFields(logrus.Fields{"app": "orderer", "package": "server"})
+	log = logrus.WithFields(logrus.Fields{"app": "orderer", "package": "server"});
+	glog = logrus.WithFields(logrus.Fields{"app": "orderer", "package": "server/grpc"});
 )
 
 // Here defines some consts
@@ -57,7 +59,6 @@ type Server struct {
 	rpcWebServer *grpcweb.WrappedGrpcServer
 	srv          *http.Server
 	cc           *channel.Coordinator
-	ln           net.Listener
 	engine       *gin.Engine
 }
 
@@ -115,25 +116,10 @@ func (s *Server) initServer(engine *gin.Engine) error {
 	return nil
 }
 
-// Wrapper to provide log for GRPC
-type GrpcLogger struct {
-	*logrus.Entry
-}
-
-func NewGrpcLogger() *GrpcLogger {
-	return &GrpcLogger{
-		logrus.WithFields(logrus.Fields{"app": "orderer", "package": "server/grpc"}),
-	}
-}
-
-func (_ *GrpcLogger) V(_ int) bool {
-	return false
-}
-
 // Start starts the server
 func (s *Server) Start() error {
 	log.Infof("Server start...")
-	grpclog.SetLoggerV2(NewGrpcLogger()) // Export GRPC's log
+	grpclog.SetLoggerV2(&util.GrpcLogger{Entry: glog}) // Export GRPC's log
 
 	s.Lock()
 	err := s.cc.Start()
@@ -182,7 +168,6 @@ func (s *Server) Start() error {
 		if s.config.TLS.Enable {
 			httpServer.TLSConfig = &tls.Config{
 				Certificates: []tls.Certificate{*(s.config.TLS.Cert)},
-				//RootCAs:    s.config.TLS.Pool,
 				ClientCAs:    s.config.TLS.Pool,
 			}
 			grpclog.Infof("Start tls rpc-web server at %d", s.config.Port + 11)
@@ -210,68 +195,23 @@ func (s *Server) Start() error {
 
 	s.Unlock()
 
-	/*
-	var ln net.Listener
-	go func() {
-		if s.config.TLS.Enable && s.config.TLS.Cert != nil {
-			tlsConfig := &tls.Config{
-				Certificates: []tls.Certificate{*s.config.TLS.Cert},
-			}
-
-			ln, err = tls.Listen("tcp", fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100), tlsConfig)
-			if err != nil {
-				log.Errorf("HTTPS listen failed: %v", err)
-			}
-		} else {
-			ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100))
-			if err != nil {
-				log.Errorf("HTTP listen failed: %v", err)
-			}
-		}
-	}()
-	s.ln = ln
-	go func() {
-		err := s.srv.Serve(s.ln)
-		fmt.Println("orderer listen at ", s.ln.Addr().String())
-		if err != nil && err != http.ErrServerClosed {
-			log.Error("Http Serve failed: ", err)
-		}
-	}()
-	*/
-
-
-	// TODO: TLS support not implemented
-	// haddr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100)
-	// router := gin.Default()
-	// err = s.initServer(router)
-	// if err != nil {
-	// 	log.Error("Init router failed: ", err)
-	// 	return err
-	// }
-	// s.srv = &http.Server{
-	// 	Addr:    haddr,
-	// 	Handler: router,
-	// }
-	// go func() {
-	// 	// service connections
-	// 	if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-	// 		log.Fatalf("listen: %s\n", err)
-	// 	}
-	// }()
-
 	return nil
 }
 
 // Stop will stop the rpc service and the consensus service
 func (s *Server) Stop() {
+	log.Info("Stop Server")
 	s.Lock()
 	defer s.Unlock()
 	s.rpcServer.Stop()
 
-	s.srv.Close()
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+
+	if err := s.srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server Shutdown:", err)
+	}
+
 	select {
 	case <-ctx.Done():
 		log.Println("timeout of 1 seconds.")
