@@ -27,9 +27,9 @@ TLS:
   # Should be true of false (default: true)
   Enable: true
   # The path of CA cert, it should not be empty if Enable is true
-  CA: cert/ca.cer
+  CA: cert/CA.pem
   # Cert of the Blockchain, it should not be empty if Enable is true
-  Cert: cert/peer.pem
+  Cert: cert/peer.crt
   # Key of the Blockchain, it should not be empty if Enable is true
   Key: cert/peer.key
 
