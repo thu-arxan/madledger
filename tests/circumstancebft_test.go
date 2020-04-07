@@ -11,11 +11,15 @@
 package tests
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"github.com/tendermint/tendermint/abci/types"
 	"io/ioutil"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"madledger/common"
+	"madledger/common/crypto"
 	"madledger/common/util"
 	"madledger/core"
 	oc "madledger/orderer/config"
@@ -219,6 +223,37 @@ func TestBFTCreateTx(t *testing.T) {
 	for i := range bftOrderers {
 		require.True(t, util.IsDirSame(getBFTOrdererBlockPath(0), getBFTOrdererBlockPath(i)), fmt.Sprintf("Orderer %d is not same with 0", i))
 	}
+}
+
+func TestBFTNodeAdd(t *testing.T) {
+	// get system admin key
+	// TODO: Hard code in config/genesis.go, seems planning to remove
+	// get pubkey from string by base64 encoding
+	data, err := base64.StdEncoding.DecodeString("BGXcjZ3bhemsoLP4HgBwnQ5gsc8VM91b3y8bW0b6knkWu8x" +
+		"CSKO2qiJXARMHcbtZtvU7Jos2A5kFCD1haJ/hLdg=")
+	require.NoError(t, err)
+	privKey, err := crypto.NewPrivateKey(data, crypto.KeyAlgoSecp256k1)
+	require.NoError(t, err)
+
+	// add one orderer
+	ordererPrivKey, err := crypto.GeneratePrivateKey(crypto.KeyAlgoSecp256k1)
+	require.NoError(t, err)
+	ordererPKBytes, err := ordererPrivKey.PubKey().Bytes()
+	require.NoError(t, err)
+	payload, err := json.Marshal(types.ValidatorUpdate{
+		PubKey: types.PubKey{Data: ordererPKBytes,},
+		Power: 10,
+	})
+	tx, err := core.NewTx(core.CONFIGCHANNELID, core.CfgConsensusAddress, payload, 0, "", privKey)
+	require.NoError(t, err)
+	_, err = bftClients[0].AddTx(tx)
+	require.NoError(t, err)
+
+	// check if it's working
+	
+	// add duplicated pubkey should fail?
+
+
 }
 
 func TestBFTAsset(t *testing.T) {
