@@ -33,8 +33,9 @@ import (
 )
 
 var (
-	log = logrus.WithFields(logrus.Fields{"app": "orderer", "package": "server"});
-	glog = logrus.WithFields(logrus.Fields{"app": "orderer", "package": "server/grpc"});
+	log = logrus.WithFields(logrus.Fields{"app": "orderer", "package": "server"})
+	glog = logrus.WithFields(logrus.Fields{"app": "orderer", "package": "server/grpc"})
+	glog_flag = false
 )
 
 // Here defines some consts
@@ -119,8 +120,11 @@ func (s *Server) initServer(engine *gin.Engine) error {
 // Start starts the server
 func (s *Server) Start() error {
 	log.Infof("Server start...")
-	grpclog.SetLoggerV2(&util.GrpcLogger{Entry: glog}) // Export GRPC's log
-
+	if !glog_flag { // Export GRPC's log, execute only one time.
+		log.Infof("Mount GRPC logger...")
+		grpclog.SetLoggerV2(&util.GrpcLogger{Entry: glog})
+		glog_flag = true
+	}
 	s.Lock()
 	err := s.cc.Start()
 	if err != nil {
@@ -178,6 +182,8 @@ func (s *Server) Start() error {
 				} else {
 					grpclog.Fatalf("failed starting rpc-web server: %v", err.Error())
 				}
+				grpclog.SetLoggerV2(nil)
+				log.Info("grpcLogger shutdown...")
 			}
 		} else {
 			grpclog.Infof("Start insecure rpc-web server at %d", s.config.Port + 11)
