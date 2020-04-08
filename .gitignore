@@ -26,3 +26,4 @@ env/raft/clients
 samples
 *.swp
 .DS_Store
+logs

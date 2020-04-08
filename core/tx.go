@@ -25,14 +25,12 @@ import (
 // be included while cacluating the hash
 type Tx struct {
 	// ID is the hash of the tx while presented in hex
-	ID   string `json:"id,omitempty"`
-	Data TxData `json:"data,omitempty"`
-	Time int64  `json:"time,omitempty"`
+	ID   string `json:"ID,omitempty"`
+	Data TxData `json:"Data,omitempty"`
+	Time int64  `json:"Time,omitempty"`
 	// Below are some caches
 	sender *common.Address
 }
-
-// TODO 这个json的构造怎么一会儿是大写一会儿是小写？？？
 
 // TxType is the type of consensus
 type TxType int64
@@ -55,15 +53,15 @@ const (
 
 // TxData is the data of Tx
 type TxData struct {
-	ChannelID string `json:"channelID,omitempty"`
-	Nonce     uint64 `json:"nonce,omitempty"`
-	Recipient []byte `json:"recipient,omitempty"`
-	Payload   []byte `json:"payload,omitempty"`
-	Value     uint64 `json:"value,omitempty"`
-	Msg       string `json:"msg,omitempty"`
-	Version   int32  `json:"version,omitempty"`
-	Sig       TxSig  `json:"sig,omitempty"`
-	Gas       uint64 `json:"gas,omitempty"`
+	ChannelID string `json:"ChannelID,omitempty"`
+	Nonce     uint64 `json:"Nonce,omitempty"`
+	Recipient []byte `json:"Recipient,omitempty"`
+	Payload   []byte `json:"Payload,omitempty"`
+	Value     uint64 `json:"Value,omitempty"`
+	Msg       string `json:"Msg,omitempty"`
+	Version   int32  `json:"Version,omitempty"`
+	Sig       TxSig  `json:"Sig,omitempty"`
+	Gas       uint64 `json:"Gas,omitempty"`
 }
 
 const (
@@ -73,9 +71,9 @@ const (
 
 // TxSig is the sig of tx
 type TxSig struct {
-	PK   []byte           `json:"pk,omitempty"`
-	Sig  []byte           `json:"sig,omitempty"`
-	Algo crypto.Algorithm `json:"algo,omitempty"`
+	PK   []byte           `json:"PK,omitempty"`
+	Sig  []byte           `json:"Sig,omitempty"`
+	Algo crypto.Algorithm `json:"Algo,omitempty"`
 }
 
 // NewTx is the constructor of Tx
