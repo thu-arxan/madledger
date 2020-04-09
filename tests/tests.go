@@ -375,7 +375,7 @@ func testAsset(t *testing.T, client *client.Client) {
 	require.Equal(t, uint64(5), balance)
 
 	//test transfer to oneself
-	coreTx = getAssetChannelTx(core.TransferContractrAddress, receiver, "", uint64(5), issuerKey)
+	coreTx = getAssetChannelTx(core.TransferContractrAddress, receiver, "", uint64(5), receiverKey)
 	_, err = client.AddTx(coreTx)
 	require.NoError(t, err)
 	balance, err = client.GetAccountBalance(receiver)
