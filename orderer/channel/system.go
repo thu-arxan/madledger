@@ -20,6 +20,7 @@ import (
 	"madledger/common/crypto"
 	"madledger/consensus"
 	"madledger/core"
+	"reflect"
 )
 
 // AddConfigBlock add a config block
@@ -170,9 +171,10 @@ func (manager *Manager) issue(cache Cache, senderPKBytes []byte, pkAlgo crypto.A
 
 func (manager *Manager) transfer(cache Cache, sender, receiver common.Address, value uint64, channelID string) error {
 
-	if value == 0 {
+	if value == 0 || reflect.DeepEqual(sender, receiver){
 		return nil
 	}
+
 
 	senderAccount, err := cache.GetOrCreateAccount(sender)
 	if err != nil {

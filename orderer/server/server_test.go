@@ -470,6 +470,18 @@ func TestAsset(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(5), acc.GetBalance())
 
+	// test transfer to oneself
+	pbTx = getAssetChannelTx(core.TransferContractrAddress, receiver, "", uint64(5), issuerKey)
+	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
+		Tx: pbTx,
+	})
+	require.NoError(t, err)
+	acc, err = client.GetAccountInfo(context.Background(), &pb.GetAccountInfoRequest{
+		Address: receiver.Bytes(),
+	})
+	require.NoError(t, err)
+	require.Equal(t, uint64(5), acc.GetBalance())
+
 	//4.test exchangeToken a.k.a transfer to channel in orderer execution
 	pbTx = getAssetChannelTx(core.TokenExchangeAddress, common.ZeroAddress, "test", uint64(5), receiverKey)
 	_, err = client.AddTx(context.Background(), &pb.AddTxRequest{
