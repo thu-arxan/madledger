@@ -11,6 +11,7 @@ import (
 	"madledger/common/util"
 	"madledger/core"
 	"madledger/peer/db"
+	"reflect"
 )
 
 // AddAssetBlock add an asset block
@@ -103,7 +104,7 @@ func (manager *Manager) issue(cache Cache, senderPKBytes []byte, pkAlgo crypto.A
 
 func (manager *Manager) transfer(cache Cache, sender, receiver common.Address, value uint64) error {
 
-	if value == 0 {
+	if value == 0 || reflect.DeepEqual(sender, receiver){
 		return nil
 	}
 	senderAccount, err := cache.GetOrCreateAccount(sender)
