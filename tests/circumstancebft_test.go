@@ -11,15 +11,11 @@
 package tests
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"github.com/tendermint/tendermint/abci/types"
 	"io/ioutil"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"madledger/common"
-	"madledger/common/crypto"
 	"madledger/common/util"
 	"madledger/core"
 	oc "madledger/orderer/config"
@@ -115,7 +111,7 @@ func TestBFTCreateChannels(t *testing.T) {
 	for i := range bftClients {
 		// each client will create 5 channels
 		for m := 0; m < 5; m++ {
-            fmt.Printf("BFT Create Channel %d-%d", i, m)
+			fmt.Printf("BFT Create Channel %d-%d", i, m)
 			wg.Add(1)
 			go func(t *testing.T, i int) {
 
@@ -278,7 +274,7 @@ func initBFTEnvironment() error {
 	pids := getProcessPid("orderer")
 	fmt.Println("pidof orderer returns ", pids)
 	for _, pid := range pids {
-			stopOrderer(pid)
+		stopOrderer(pid)
 	}
 
 	gopath := os.Getenv("GOPATH")
