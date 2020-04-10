@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var SessionPool = make(map[string] *Session)
+var SessionPool = make(map[string]*Session)
 var defaultConfig = ""
 
 func CORSMiddleware() gin.HandlerFunc {
@@ -35,6 +35,7 @@ func RunServer(host string, port int, config string) error {
 	r.GET("/api/client/channel/list", ChannelList)
 	r.GET("/api/client/tx/history", TxHistory)
 	r.GET("/api/client/network/info", NetworkInfo)
+	r.GET("/api/client/channel/create", CreateChannel)
 	r.Run(fmt.Sprintf("%s:%d", host, port))
 	return nil
 }
