@@ -8,13 +8,13 @@ Debug: true
 # Configure for the TLS
 TLS:
   # Should be true of false (default: true)
-  Enable: false
+  Enable: true
   # The path of CA cert, it should not be empty if Enable is true
-  CA: cert/ca.cer
+  CA: config/cert/CA.pem
   # Cert of the Blockchain, it should not be empty if Enable is true
-  Cert: cert/client.pem
+  Cert: config/cert/client.crt
   # Key of the Blockchain, it should not be empty if Enable is true
-  Key: cert/client.key
+  Key: config/cert/client.key
 
 Orderer:
   Address:
