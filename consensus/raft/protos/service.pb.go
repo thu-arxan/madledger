@@ -3,14 +3,13 @@
 
 package protos
 
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+
 import (
-	context "context"
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
+	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -22,7 +21,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type RaftTX struct {
 	Tx                   []byte   `protobuf:"bytes,1,opt,name=Tx,proto3" json:"Tx,omitempty"`
@@ -37,17 +36,16 @@ func (m *RaftTX) Reset()         { *m = RaftTX{} }
 func (m *RaftTX) String() string { return proto.CompactTextString(m) }
 func (*RaftTX) ProtoMessage()    {}
 func (*RaftTX) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a0b84a42fa06f626, []int{0}
+	return fileDescriptor_service_ade95908e916ae21, []int{0}
 }
-
 func (m *RaftTX) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RaftTX.Unmarshal(m, b)
 }
 func (m *RaftTX) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RaftTX.Marshal(b, m, deterministic)
 }
-func (m *RaftTX) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RaftTX.Merge(m, src)
+func (dst *RaftTX) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RaftTX.Merge(dst, src)
 }
 func (m *RaftTX) XXX_Size() int {
 	return xxx_messageInfo_RaftTX.Size(m)
@@ -89,17 +87,16 @@ func (m *None) Reset()         { *m = None{} }
 func (m *None) String() string { return proto.CompactTextString(m) }
 func (*None) ProtoMessage()    {}
 func (*None) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a0b84a42fa06f626, []int{1}
+	return fileDescriptor_service_ade95908e916ae21, []int{1}
 }
-
 func (m *None) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_None.Unmarshal(m, b)
 }
 func (m *None) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_None.Marshal(b, m, deterministic)
 }
-func (m *None) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_None.Merge(m, src)
+func (dst *None) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_None.Merge(dst, src)
 }
 func (m *None) XXX_Size() int {
 	return xxx_messageInfo_None.Size(m)
@@ -115,31 +112,13 @@ func init() {
 	proto.RegisterType((*None)(nil), "protos.None")
 }
 
-func init() {
-	proto.RegisterFile("service.proto", fileDescriptor_a0b84a42fa06f626)
-}
-
-var fileDescriptor_a0b84a42fa06f626 = []byte{
-	// 159 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2d, 0x4e, 0x2d, 0x2a,
-	0xcb, 0x4c, 0x4e, 0xd5, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x03, 0x53, 0xc5, 0x4a, 0x5e,
-	0x5c, 0x6c, 0x41, 0x89, 0x69, 0x25, 0x21, 0x11, 0x42, 0x7c, 0x5c, 0x4c, 0x21, 0x15, 0x12, 0x8c,
-	0x0a, 0x8c, 0x1a, 0x3c, 0x41, 0x4c, 0x21, 0x15, 0x42, 0x62, 0x5c, 0x6c, 0xce, 0x89, 0x39, 0x39,
-	0xa9, 0x45, 0x12, 0x4c, 0x0a, 0x8c, 0x1a, 0x2c, 0x41, 0x50, 0x9e, 0x90, 0x04, 0x17, 0xbb, 0x73,
-	0x46, 0x62, 0x5e, 0x5e, 0x6a, 0x8e, 0x04, 0xb3, 0x02, 0xa3, 0x06, 0x67, 0x10, 0x8c, 0xab, 0xc4,
-	0xc6, 0xc5, 0xe2, 0x97, 0x9f, 0x97, 0x6a, 0x64, 0xca, 0xc5, 0xe5, 0x94, 0x93, 0x9f, 0x9c, 0xed,
-	0x9c, 0x91, 0x98, 0x99, 0x27, 0xa4, 0xce, 0xc5, 0xea, 0x98, 0x92, 0x12, 0x52, 0x21, 0xc4, 0x07,
-	0xb1, 0xba, 0x58, 0x0f, 0x62, 0xa1, 0x14, 0x0f, 0x8c, 0x0f, 0xd2, 0xa4, 0xc4, 0x90, 0x04, 0x71,
-	0x92, 0x31, 0x20, 0x00, 0x00, 0xff, 0xff, 0x5e, 0xff, 0x07, 0x55, 0xaa, 0x00, 0x00, 0x00,
-}
-
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConnInterface
+var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
+const _ = grpc.SupportPackageIsVersion4
 
 // BlockChainClient is the client API for BlockChain service.
 //
@@ -149,10 +128,10 @@ type BlockChainClient interface {
 }
 
 type blockChainClient struct {
-	cc grpc.ClientConnInterface
+	cc *grpc.ClientConn
 }
 
-func NewBlockChainClient(cc grpc.ClientConnInterface) BlockChainClient {
+func NewBlockChainClient(cc *grpc.ClientConn) BlockChainClient {
 	return &blockChainClient{cc}
 }
 
@@ -168,14 +147,6 @@ func (c *blockChainClient) AddTx(ctx context.Context, in *RaftTX, opts ...grpc.C
 // BlockChainServer is the server API for BlockChain service.
 type BlockChainServer interface {
 	AddTx(context.Context, *RaftTX) (*None, error)
-}
-
-// UnimplementedBlockChainServer can be embedded to have forward compatible implementations.
-type UnimplementedBlockChainServer struct {
-}
-
-func (*UnimplementedBlockChainServer) AddTx(ctx context.Context, req *RaftTX) (*None, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddTx not implemented")
 }
 
 func RegisterBlockChainServer(s *grpc.Server, srv BlockChainServer) {
@@ -211,4 +182,20 @@ var _BlockChain_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "service.proto",
+}
+
+func init() { proto.RegisterFile("service.proto", fileDescriptor_service_ade95908e916ae21) }
+
+var fileDescriptor_service_ade95908e916ae21 = []byte{
+	// 159 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2d, 0x4e, 0x2d, 0x2a,
+	0xcb, 0x4c, 0x4e, 0xd5, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x03, 0x53, 0xc5, 0x4a, 0x5e,
+	0x5c, 0x6c, 0x41, 0x89, 0x69, 0x25, 0x21, 0x11, 0x42, 0x7c, 0x5c, 0x4c, 0x21, 0x15, 0x12, 0x8c,
+	0x0a, 0x8c, 0x1a, 0x3c, 0x41, 0x4c, 0x21, 0x15, 0x42, 0x62, 0x5c, 0x6c, 0xce, 0x89, 0x39, 0x39,
+	0xa9, 0x45, 0x12, 0x4c, 0x0a, 0x8c, 0x1a, 0x2c, 0x41, 0x50, 0x9e, 0x90, 0x04, 0x17, 0xbb, 0x73,
+	0x46, 0x62, 0x5e, 0x5e, 0x6a, 0x8e, 0x04, 0xb3, 0x02, 0xa3, 0x06, 0x67, 0x10, 0x8c, 0xab, 0xc4,
+	0xc6, 0xc5, 0xe2, 0x97, 0x9f, 0x97, 0x6a, 0x64, 0xca, 0xc5, 0xe5, 0x94, 0x93, 0x9f, 0x9c, 0xed,
+	0x9c, 0x91, 0x98, 0x99, 0x27, 0xa4, 0xce, 0xc5, 0xea, 0x98, 0x92, 0x12, 0x52, 0x21, 0xc4, 0x07,
+	0xb1, 0xba, 0x58, 0x0f, 0x62, 0xa1, 0x14, 0x0f, 0x8c, 0x0f, 0xd2, 0xa4, 0xc4, 0x90, 0x04, 0x71,
+	0x92, 0x31, 0x20, 0x00, 0x00, 0xff, 0xff, 0x5e, 0xff, 0x07, 0x55, 0xaa, 0x00, 0x00, 0x00,
 }

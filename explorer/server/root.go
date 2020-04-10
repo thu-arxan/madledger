@@ -24,7 +24,6 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
-
 func RunServer(host string, port int, config string) error {
 	defaultConfig = config
 	fmt.Printf("Server run on %s:%d\n", host, port)
@@ -36,6 +35,7 @@ func RunServer(host string, port int, config string) error {
 	r.GET("/api/client/tx/history", TxHistory)
 	r.GET("/api/client/network/info", NetworkInfo)
 	r.GET("/api/client/channel/create", CreateChannel)
+	r.GET("api/client/block/get", GetBlock)
 	r.Run(fmt.Sprintf("%s:%d", host, port))
 	return nil
 }

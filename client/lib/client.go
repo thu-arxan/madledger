@@ -149,7 +149,7 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 			Algo:   pubKey.Algo(),
 		}
 		buffer := make([]byte, 0)
-		t, err := req.XXX_Marshal(buffer, false);
+		t, err := req.XXX_Marshal(buffer, false)
 		fmt.Println("Marshal", t, len(t))
 		infos, err = ordererClient.ListChannels(context.Background(), req)
 		times := i + 1
@@ -386,4 +386,28 @@ func (c *Client) GetTokenInfo(address common.Address, channelID []byte) (uint64,
 		return 0, err
 	}
 	return result.(*pb.TokenInfo).GetBalance(), err
+}
+
+//GetBlock ...
+func (c *Client) GetBlock(num uint64, channelID string) (*core.Block, error) {
+	collector := NewCollector(len(c.peerClients), 1)
+
+	for i := range c.peerClients {
+		go func(i int) {
+			block, err := c.peerClients[i].GetBlock(context.Background(), &pb.GetBlockRequest{
+				ChannelID:  []byte(channelID),
+				BlockIndex: num,
+			})
+			if err != nil {
+				collector.AddError(err)
+			} else {
+				collector.Add(block)
+			}
+		}(i)
+	}
+	result, err := collector.Wait()
+	if err != nil {
+		return nil, err
+	}
+	return result.(*pb.Block).ToCore()
 }
