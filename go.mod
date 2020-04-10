@@ -28,7 +28,6 @@ require (
 	github.com/mitchellh/mapstructure v1.2.3-0.20200320070147-c1a340b00c8e // indirect
 	github.com/otiai10/copy v1.1.2-0.20200328070216-77876f1ea22d
 	github.com/pelletier/go-toml v1.6.1-0.20200317025147-a12e10221427 // indirect
-	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.5.1 // indirect
@@ -42,7 +41,6 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.6.3-0.20200219234104-97ee7adfef48
-	github.com/stretchr/objx v0.1.1 // indirect
 	github.com/stretchr/testify v1.5.2-0.20200402113425-012967472b95
 	github.com/subosito/gotenv v1.2.1-0.20190917103637-de67a6614a4d // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20190923125748-758128399b1d
