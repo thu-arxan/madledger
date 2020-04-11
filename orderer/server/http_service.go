@@ -95,7 +95,7 @@ func (hs *Server) AddTxByHTTP(c *gin.Context) {
 	json.Unmarshal([]byte(j.Tx), &coreTx)
 
 	txType, err := core.GetTxType(common.BytesToAddress(coreTx.Data.Recipient).String())
-	if err == nil && (txType == core.VALIDATOR || txType == core.NODE) {
+	if err == nil && txType == core.CONSENSUS {
 		pk, err := crypto.NewPublicKey(coreTx.Data.Sig.PK, coreTx.Data.Sig.Algo)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

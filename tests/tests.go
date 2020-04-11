@@ -374,6 +374,14 @@ func testAsset(t *testing.T, client *client.Client) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(5), balance)
 
+	//test transfer to oneself
+	coreTx = getAssetChannelTx(core.TransferContractrAddress, receiver, "", uint64(5), receiverKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+	balance, err = client.GetAccountBalance(receiver)
+	require.NoError(t, err)
+	require.Equal(t, uint64(5), balance)
+
 	//4.test exchangeToken a.k.a transfer to channel in orderer execution
 	coreTx = getAssetChannelTx(core.TokenExchangeAddress, common.ZeroAddress, "test", uint64(5), receiverKey)
 	_, err = client.AddTx(coreTx)

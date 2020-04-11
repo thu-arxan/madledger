@@ -111,7 +111,7 @@ func TestBFTCreateChannels(t *testing.T) {
 	for i := range bftClients {
 		// each client will create 5 channels
 		for m := 0; m < 5; m++ {
-            fmt.Printf("BFT Create Channel %d-%d", i, m)
+			fmt.Printf("BFT Create Channel %d-%d", i, m)
 			wg.Add(1)
 			go func(t *testing.T, i int) {
 
@@ -222,6 +222,37 @@ func TestBFTCreateTx(t *testing.T) {
 	}
 }
 
+//func TestBFTNodeAdd(t *testing.T) {
+//	// get system admin key
+//	// TODO: Hard code in config/genesis.go, seems planning to remove
+//	// get pubkey from string by base64 encoding
+//	data, err := base64.StdEncoding.DecodeString("BGXcjZ3bhemsoLP4HgBwnQ5gsc8VM91b3y8bW0b6knkWu8x" +
+//		"CSKO2qiJXARMHcbtZtvU7Jos2A5kFCD1haJ/hLdg=")
+//	require.NoError(t, err)
+//	privKey, err := crypto.NewPrivateKey(data, crypto.KeyAlgoSecp256k1)
+//	require.NoError(t, err)
+//
+//	// add one orderer
+//	ordererPrivKey, err := crypto.GeneratePrivateKey(crypto.KeyAlgoSecp256k1)
+//	require.NoError(t, err)
+//	ordererPKBytes, err := ordererPrivKey.PubKey().Bytes()
+//	require.NoError(t, err)
+//	payload, err := json.Marshal(types.ValidatorUpdate{
+//		PubKey: types.PubKey{Data: ordererPKBytes,},
+//		Power: 10,
+//	})
+//	tx, err := core.NewTx(core.CONFIGCHANNELID, core.CfgConsensusAddress, payload, 0, "", privKey)
+//	require.NoError(t, err)
+//	_, err = bftClients[0].AddTx(tx)
+//	require.NoError(t, err)
+//
+//	// check if it's working
+//
+//	// add duplicated pubkey should fail?
+//
+//
+//}
+
 func TestBFTAsset(t *testing.T) {
 	testAsset(t, bftClients[0])
 }
@@ -243,7 +274,7 @@ func initBFTEnvironment() error {
 	pids := getProcessPid("orderer")
 	fmt.Println("pidof orderer returns ", pids)
 	for _, pid := range pids {
-			stopOrderer(pid)
+		stopOrderer(pid)
 	}
 
 	gopath := os.Getenv("GOPATH")

@@ -181,16 +181,6 @@ func (m *Manager) RunBlock(block *core.Block) (db.WriteBatch, error) {
 			continue
 		}
 
-		if receiverAddress.String() == core.CfgTendermintAddress.String() {
-			cache.SetTxStatus(tx, status)
-			continue
-		}
-
-		if receiverAddress.String() == core.CfgRaftAddress.String() {
-			cache.SetTxStatus(tx, status)
-			continue
-		}
-
 		// 用户的参数：tx.Data.Gas (user gas limit)
 		// 通道的参数：maxGas (channel gas limit), gasPrice
 		// gas limit = min (user, channel)

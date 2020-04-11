@@ -16,7 +16,6 @@ import (
 	"madledger/client/cmd/channel"
 	"madledger/client/cmd/node"
 	"madledger/client/cmd/tx"
-	"madledger/client/cmd/validator"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -45,7 +44,6 @@ func init() {
 	rootCmd.AddCommand(channel.Cmd())
 	rootCmd.AddCommand(tx.Cmd())
 	rootCmd.AddCommand(account.Cmd())
-	rootCmd.AddCommand(validator.Cmd())
 	rootCmd.AddCommand(node.Cmd())
 	rootCmd.AddCommand(asset.Cmd())
 }
