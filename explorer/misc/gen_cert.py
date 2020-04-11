@@ -28,6 +28,25 @@ def execute(cmd):
     if os.system(cmd):
         print('command failed.')
 
+def relative_path(a, b): 
+    a = os.path.abspath(a)
+    b = os.path.abspath(b)
+    a, b = a.split('/'), b.split('/')
+    intersection = 0
+    for index in range(min(len(a), len(b))):
+        m, n = a[index], b[index]
+        if m != n:
+            intersection = index
+            break
+    def backward():
+        return (len(a) - intersection) * '../'
+    
+    def forward():
+        return '/'.join(b[intersection:])
+    
+    out = backward() + forward()
+    return out
+
 def generate_ca(args):
     args = args_to_dict(args)
     args['ca_keyfile'] = os.path.join(args['ca_dir'], args['ca_filename'] + '.key')
@@ -49,10 +68,12 @@ def auth_client(args):
     args['ca_keyfile'] = os.path.join(args['ca_dir'], args['ca_filename'] + '.key')
     args['ca_pemfile'] = os.path.join(args['ca_dir'], args['ca_filename'] + '.pem')
     args['ca_pemfile_abs'] = os.path.abspath(args['ca_pemfile'])
+    args['ca_pemfile_rel'] = './'+os.path.join(relative_path(args['dir'], args['ca_dir']), args['ca_filename']+'.pem')
     args['keyfile'] = os.path.join(args['dir'], args['name'] + '.key')
     args['crtfile'] = os.path.join(args['dir'], args['name'] + '.crt')
     args['csrfile'] = os.path.join(args['dir'], args['name'] + '.csr')
     args['ca_pemlink'] = os.path.join(args['dir'], args['ca_link'])
+    print(args['ca_pemfile_rel'])
 
     assert(os.path.exists(args['dir']))
     check_file_not_exist(args['keyfile'])
@@ -61,7 +82,7 @@ def auth_client(args):
     check_file_not_exist(args['ca_pemlink'])
     check_file_not_exist(os.path.join(args['dir'], 'ca.cer'))
     check_file_not_exist(os.path.join(args['dir'], args['name']+'.pem'))
-    execute('ln -s {ca_pemfile_abs} {ca_pemlink}'.format(**args))
+    execute('ln -s {ca_pemfile_rel} {ca_pemlink}'.format(**args))
 
     if args['method'] == 'ecc':
         execute('openssl ecparam -out {keyfile} -name prime256v1 -genkey'.format(**args))
