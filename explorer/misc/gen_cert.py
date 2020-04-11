@@ -82,7 +82,7 @@ def auth_client(args):
     check_file_not_exist(args['ca_pemlink'])
     check_file_not_exist(os.path.join(args['dir'], 'ca.cer'))
     check_file_not_exist(os.path.join(args['dir'], args['name']+'.pem'))
-    execute('ln -s {ca_pemfile_rel} {ca_pemlink}'.format(**args))
+    execute('cp {ca_pemfile_abs} {ca_pemlink}'.format(**args))
 
     if args['method'] == 'ecc':
         execute('openssl ecparam -out {keyfile} -name prime256v1 -genkey'.format(**args))
