@@ -51,19 +51,10 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	gasPrice := createViper.GetUint64("gasPrice")
-	if gasPrice < 0 {
-		return errors.New("gasPrice cannot be negative")
-	}
 
 	maxGas := createViper.GetUint64("maxGas")
-	if maxGas < 0 {
-		return errors.New("maxGas cannot be negative")
-	}
 
 	ratio := createViper.GetUint64("ratio")
-	if ratio < 0 {
-		return errors.New("gasPrice cannot be negative")
-	}
 
 	client, err := lib.NewClient(cfgFile)
 	if err != nil {
