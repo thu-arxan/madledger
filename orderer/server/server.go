@@ -189,7 +189,7 @@ func (s *Server) Start() error {
 			grpclog.Infof("Start insecure rpc-web server at %d", s.config.Port + 11)
 			if err := httpServer.ListenAndServe(); err != nil {
 				if err.Error() == "http: Server closed" {
-					grpclog.Infof("grpc-web server exit: %v")
+					grpclog.Infof("grpc-web server exit: %v", err)
 				} else {
 					grpclog.Fatalf("failed starting rpc-web server: %v", err)
 				}

@@ -92,7 +92,7 @@ func NewTx(channelID string, recipient common.Address, payload []byte, value uin
 	var tx = &Tx{
 		Data: TxData{
 			ChannelID: channelID,
-			Nonce:     1, //TODO TEMPORARY MODIFICATION. -> util.RandUint64(),
+			Nonce:     util.RandUint64(),
 			Recipient: recipient.Bytes(),
 			Payload:   payload,
 			Value:     value,
@@ -100,7 +100,7 @@ func NewTx(channelID string, recipient common.Address, payload []byte, value uin
 			Version:   1,
 			Gas:       GLOBALGASLIMIT,
 		},
-		Time: 1, //TODO TEMPORARY MODIFICATION. -> util.Now(),
+		Time: util.Now(),
 	}
 	hash := tx.hashWithoutSig(privKey.Algo())
 	sig, err := privKey.Sign(hash)
