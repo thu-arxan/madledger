@@ -3,9 +3,11 @@
 
 package protos
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -16,7 +18,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // The definition of Block
 type Block struct {
@@ -33,16 +35,17 @@ func (m *Block) Reset()         { *m = Block{} }
 func (m *Block) String() string { return proto.CompactTextString(m) }
 func (*Block) ProtoMessage()    {}
 func (*Block) Descriptor() ([]byte, []int) {
-	return fileDescriptor_block_78bd13190ac2ba00, []int{0}
+	return fileDescriptor_8e550b1f5926e92d, []int{0}
 }
+
 func (m *Block) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Block.Unmarshal(m, b)
 }
 func (m *Block) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Block.Marshal(b, m, deterministic)
 }
-func (dst *Block) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Block.Merge(dst, src)
+func (m *Block) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Block.Merge(m, src)
 }
 func (m *Block) XXX_Size() int {
 	return xxx_messageInfo_Block.Size(m)
@@ -85,16 +88,17 @@ func (m *BlockHeader) Reset()         { *m = BlockHeader{} }
 func (m *BlockHeader) String() string { return proto.CompactTextString(m) }
 func (*BlockHeader) ProtoMessage()    {}
 func (*BlockHeader) Descriptor() ([]byte, []int) {
-	return fileDescriptor_block_78bd13190ac2ba00, []int{1}
+	return fileDescriptor_8e550b1f5926e92d, []int{1}
 }
+
 func (m *BlockHeader) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BlockHeader.Unmarshal(m, b)
 }
 func (m *BlockHeader) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BlockHeader.Marshal(b, m, deterministic)
 }
-func (dst *BlockHeader) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BlockHeader.Merge(dst, src)
+func (m *BlockHeader) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BlockHeader.Merge(m, src)
 }
 func (m *BlockHeader) XXX_Size() int {
 	return xxx_messageInfo_BlockHeader.Size(m)
@@ -152,9 +156,11 @@ func init() {
 	proto.RegisterType((*BlockHeader)(nil), "protos.BlockHeader")
 }
 
-func init() { proto.RegisterFile("block.proto", fileDescriptor_block_78bd13190ac2ba00) }
+func init() {
+	proto.RegisterFile("block.proto", fileDescriptor_8e550b1f5926e92d)
+}
 
-var fileDescriptor_block_78bd13190ac2ba00 = []byte{
+var fileDescriptor_8e550b1f5926e92d = []byte{
 	// 232 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x90, 0xcf, 0x4a, 0x03, 0x31,
 	0x10, 0xc6, 0x49, 0xf7, 0x8f, 0x76, 0xb6, 0xa7, 0x11, 0x64, 0x10, 0x91, 0xd0, 0x53, 0x40, 0xd8,

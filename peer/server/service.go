@@ -40,6 +40,7 @@ func (s *Server) GetTxStatus(ctx context.Context, req *pb.GetTxStatusRequest) (*
 // TODO: make sure the address is right and with signature
 func (s *Server) ListTxHistory(ctx context.Context, req *pb.ListTxHistoryRequest) (*pb.TxHistory, error) {
 	history := s.cm.GetTxHistory(req.Address)
+	log.Info("TxHistory = ", history)
 	var pbHistory = make(map[string]*pb.StringList)
 	for channelID, ids := range history {
 		value := new(pb.StringList)
