@@ -29,6 +29,11 @@ func (m *Manager) AddConfigBlock(block *core.Block) error {
 			BlockIndex:  i,
 			Output:      nil,
 		}
+		// this kind of tx will have different payload than regular _config tx
+		if tx.GetReceiver() == core.CfgConsensusAddress {
+			wb.SetTxStatus(tx, status)
+			continue
+		}
 		payload, err := getConfigPayload(tx)
 		if err != nil {
 			status.Err = err.Error()

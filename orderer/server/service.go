@@ -63,7 +63,7 @@ func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus,
 	// if tx is for confChange, we should check if the client is system admin
 	// get tx type according to recipient
 	txType, err := core.GetTxType(common.BytesToAddress(tx.Data.Recipient).String())
-	if err == nil && (txType == core.VALIDATOR || txType == core.NODE) {
+	if err == nil && txType == core.CONSENSUS {
 		pk, err := crypto.NewPublicKey(req.Tx.Data.Sig.PK, req.Tx.Data.Sig.Algo)
 		if err != nil {
 			return &status, err

@@ -34,26 +34,22 @@ var (
 var (
 	// Create a channel
 	CreateChannelContractAddress = common.HexToAddress("0xffffffffffffffffffffffffffffffffffffffff")
-	// Config the tendermint cluster
-	CfgTendermintAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffe")
-	// Config the raft cluster
-	CfgRaftAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffd")
+	// Config consensus cluster
+	CfgConsensusAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffe")
 	// issue
-	IssueContractAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffc")
+	IssueContractAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffd")
 	// transfer
-	TransferContractrAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffb")
+	TransferContractrAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffc")
 	// exchange token
-	TokenExchangeAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffa")
+	TokenExchangeAddress = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffb")
 )
 
 // GetTxType return tx type
 func GetTxType(recipient string) (TxType, error) {
 	if strings.Compare(recipient, CreateChannelContractAddress.String()) == 0 {
 		return CREATECHANNEL, nil
-	} else if strings.Compare(recipient, CfgTendermintAddress.String()) == 0 {
-		return VALIDATOR, nil
-	} else if strings.Compare(recipient, CfgRaftAddress.String()) == 0 {
-		return NODE, nil
+	} else if strings.Compare(recipient, CfgConsensusAddress.String()) == 0 {
+		return CONSENSUS, nil
 	} else if strings.Compare(recipient, IssueContractAddress.String()) == 0 {
 		return ISSUE, nil
 	} else if strings.Compare(recipient, TransferContractrAddress.String()) == 0 {

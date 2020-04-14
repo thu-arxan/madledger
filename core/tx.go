@@ -40,9 +40,11 @@ const (
 	_ TxType = iota
 	CREATECHANNEL
 	// VALIDATOR is the tendermint cfgChange tx
-	VALIDATOR
+	//VALIDATOR
 	// NODE is the raft cfgChange tx
-	NODE
+	//NODE
+	// CONSENSUS is consensus config tx
+	CONSENSUS
 	// ISSUE is the issue tx
 	ISSUE
 	// TRANSFER is the transfer tx
