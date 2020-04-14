@@ -57,6 +57,7 @@ func (s *Server) CreateChannel(ctx context.Context, req *pb.CreateChannelRequest
 
 // AddTx is the implementation of protos
 func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus, error) {
+	//TODO 检验签名合法性
 	var status pb.TxStatus
 	tx, err := req.Tx.ToCore()
 	if err != nil {
