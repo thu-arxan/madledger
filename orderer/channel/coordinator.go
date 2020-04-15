@@ -202,7 +202,6 @@ func (c *Coordinator) FetchBlock(channelID string, num uint64, async bool) (*cor
 // ListChannels return infos channels
 func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfos, error) {
 	pk, err := crypto.NewPublicKey(req.PK, req.Algo)
-	fmt.Printf(">>>algo is %v\n", req.Algo)
 	if err != nil {
 		return &pb.ChannelInfos{}, err
 	}

@@ -303,7 +303,6 @@ func (manager *Manager) syncBlock() {
 		cb, err := manager.coordinator.Consensus.GetBlock(manager.ID, num, true)
 		if err != nil {
 			log.Infof("Get block %d of channel %s from consensus failed, because %s", num, manager.ID, err.Error())
-			//fmt.Println(err)
 			continue
 		} else {
 			log.Infof("Get block %d of channel %s from consensus", num, manager.ID)
