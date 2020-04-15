@@ -28,7 +28,7 @@ $(error "invalid DB_TAG: {DB_TAG=rocksdb|leveldb}")
 endif
 
 # Go tools
-GO_TEST 		= $(GOCMD) test -tags "$(BUILD_TAGS)" -parallel=1 -count=$(GO_TEST_COUNT) -timeout=$(GO_TEST_TIMEOUT) $(GO_SYMBOL) -ldflags "$(GO_TEST_FLAGS)"
+GO_TEST 		= $(GOCMD) test -tags "$(BUILD_TAGS)" -parallel=1 -count=$(GO_TEST_COUNT) -timeout=$(GO_TEST_TIMEOUT) $(GO_SYMBOL) -ldflags "$(GO_TEST_FLAGS)" -v
 GO_TEST_UNIT	= $(GO_TEST) -cover -race
 GO_BUILD		= $(GOCMD) build -tags "$(BUILD_TAGS)"
 GO_INSTALL		= $(GOCMD) install -tags "$(BUILD_TAGS)"
@@ -78,6 +78,7 @@ proto:
 
 # test:
 test:
+	make install
 	@$(GO_TEST_UNIT) madledger/common/util
 	@$(GO_TEST_UNIT) madledger/common/event
 	@$(GO_TEST_UNIT) madledger/common/math

@@ -14,14 +14,15 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/improbable-eng/grpc-web/go/grpcweb"
-	"google.golang.org/grpc/grpclog"
 	"madledger/common/util"
 	"madledger/peer/config"
 	"madledger/peer/orderer"
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"google.golang.org/grpc/grpclog"
 
 	"google.golang.org/grpc/credentials"
 
@@ -34,8 +35,7 @@ import (
 )
 
 var (
-	log = logrus.WithFields(logrus.Fields{"app": "peer", "package": "server"})
-	glog = logrus.WithFields(logrus.Fields{"app": "peer", "package": "server/grpc"})
+	log  = logrus.WithFields(logrus.Fields{"app": "peer", "package": "server"})
 )
 
 // Here defines some consts
@@ -111,7 +111,7 @@ func (s *Server) initServer(engine *gin.Engine) error {
 // Start starts the server
 func (s *Server) Start() error {
 	log.Infof("Server start...")
-	grpclog.SetLoggerV2(&util.GrpcLogger{Entry: glog}) // Export GRPC's log
+	util.MountLogger()
 
 	err := s.cm.start()
 	if err != nil {
