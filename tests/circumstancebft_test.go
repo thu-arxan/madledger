@@ -60,6 +60,9 @@ func TestBFTRun(t *testing.T) {
 		pid := startOrderer(i)
 		bftOrderers[i] = pid
 	}
+	fmt.Println("We need 3sec to ensure Orderers has been run...")
+	time.Sleep(3 * time.Second)// wait until the orderer start
+	fmt.Println("Then continue")
 }
 
 func TestBFTPeersStart(t *testing.T) {
@@ -261,6 +264,7 @@ func TestBFTEnd(t *testing.T) {
 	for i := range bftPeers {
 		bftPeers[i].Stop()
 	}
+	time.Sleep(3 * time.Second)
 	for i := range bftOrderers {
 		stopOrderer(bftOrderers[i])
 	}

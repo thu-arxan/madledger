@@ -13,9 +13,11 @@ package server
 import (
 	"context"
 	"encoding/binary"
+	"github.com/golang/protobuf/ptypes/empty"
 	"madledger/common"
 	"madledger/common/util"
 	pb "madledger/protos"
+	"madledger/version"
 )
 
 // GetTxStatus is the implementation of protos
@@ -38,6 +40,7 @@ func (s *Server) GetTxStatus(ctx context.Context, req *pb.GetTxStatusRequest) (*
 // TODO: make sure the address is right and with signature
 func (s *Server) ListTxHistory(ctx context.Context, req *pb.ListTxHistoryRequest) (*pb.TxHistory, error) {
 	history := s.cm.GetTxHistory(req.Address)
+	log.Info("TxHistory = ", history)
 	var pbHistory = make(map[string]*pb.StringList)
 	for channelID, ids := range history {
 		value := new(pb.StringList)
@@ -67,4 +70,22 @@ func (s *Server) GetTokenInfo(ctx context.Context, req *pb.GetTokenInfoRequest) 
 	}
 	info.Balance = token
 	return &info, nil
+}
+
+// Ping ping
+func (s *Server) Ping(_ context.Context, _ *empty.Empty) (*pb.PingRespond, error) {
+	var resp pb.PingRespond
+	resp.Version = version.Version
+	return &resp, nil
+}
+
+// GetBlock get block
+func (s *Server) GetBlock(ctx context.Context, req *pb.GetBlockRequest) (*pb.Block, error) {
+	channelID := string(req.GetChannelID())
+	blockIndex := req.GetBlockIndex()
+	coreBlock, err := s.cm.db.GetBlock(channelID, blockIndex)
+	if err != nil {
+		return nil, err
+	}
+	return pb.NewBlock(coreBlock)
 }

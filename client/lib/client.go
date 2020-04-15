@@ -139,12 +139,19 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 	var infos *pb.ChannelInfos
 
 	for i, ordererClient := range c.ordererClients {
-		fmt.Printf(">>list channel")
-		infos, err = ordererClient.ListChannels(context.Background(), &pb.ListChannelsRequest{
+		fmt.Println(">>list channel ", system, pk, len(pk), pubKey.Algo(), crypto.KeyAlgoSecp256k1)
+		fmt.Println("priv ", c.GetPrivKey().Bytes())
+		fmt.Println("publ", pk)
+		fmt.Println("keylen ", len(c.GetPrivKey().Bytes()), len(pk))
+		req := &pb.ListChannelsRequest{
 			System: system,
 			PK:     pk,
 			Algo:   pubKey.Algo(),
-		})
+		}
+		buffer := make([]byte, 0)
+		t, err := req.XXX_Marshal(buffer, false)
+		fmt.Println("Marshal", t, len(t))
+		infos, err = ordererClient.ListChannels(context.Background(), req)
 		times := i + 1
 		if err != nil {
 			if times == len(c.ordererClients) {
@@ -379,4 +386,28 @@ func (c *Client) GetTokenInfo(address common.Address, channelID []byte) (uint64,
 		return 0, err
 	}
 	return result.(*pb.TokenInfo).GetBalance(), err
+}
+
+//GetBlock ...
+func (c *Client) GetBlock(num uint64, channelID string) (*core.Block, error) {
+	collector := NewCollector(len(c.peerClients), 1)
+
+	for i := range c.peerClients {
+		go func(i int) {
+			block, err := c.peerClients[i].GetBlock(context.Background(), &pb.GetBlockRequest{
+				ChannelID:  []byte(channelID),
+				BlockIndex: num,
+			})
+			if err != nil {
+				collector.AddError(err)
+			} else {
+				collector.Add(block)
+			}
+		}(i)
+	}
+	result, err := collector.Wait()
+	if err != nil {
+		return nil, err
+	}
+	return result.(*pb.Block).ToCore()
 }

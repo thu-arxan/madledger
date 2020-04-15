@@ -72,7 +72,7 @@ func getPeerHTTPClients(cfg *config.Config) ([]string, error) {
 
 //ListChannelResp ...
 type ListChannelResp struct {
-	ChannelInfos *pb.ChannelInfos `json:"channelinfo"`
+	ChannelInfos *pb.ChannelInfos `json:"Channelinfo"`
 }
 
 // ListChannelByHTTP list the info of channel
@@ -137,7 +137,7 @@ func (c *HTTPClient) ListChannelByHTTP(system bool) ([]ChannelInfo, error) {
 
 //CreateChannelResp ...
 type CreateChannelResp struct {
-	Error string `json:"error"`
+	Error string `json:"Error"`
 }
 
 // CreateChannelByHTTP create a channel
@@ -202,13 +202,13 @@ func (c *HTTPClient) CreateChannelByHTTP(channelID string, public bool, admins, 
 
 // AddTxResp ...
 type AddTxResp struct {
-	Error string `json:"error"`
+	Error string `json:"Error"`
 }
 
 // GetTxStatusResp ...
 type GetTxStatusResp struct {
-	Error  string       `json:"error"`
-	Status *pb.TxStatus `json:"status"`
+	Error  string       `json:"Error"`
+	Status *pb.TxStatus `json:"Status"`
 }
 
 // AddTxByHTTP try to add a tx
@@ -285,8 +285,8 @@ func (c *HTTPClient) AddTxByHTTP(tx *core.Tx) (*pb.TxStatus, error) {
 
 // GetTxHistoryResp ...
 type GetTxHistoryResp struct {
-	Error     string        `json:"error"`
-	TxHistory *pb.TxHistory `json:"txhistory"`
+	Error     string        `json:"Error"`
+	TxHistory *pb.TxHistory `json:"TxHistory"`
 }
 
 // GetHistoryByHTTP return the history of address
@@ -331,8 +331,8 @@ func (c *HTTPClient) GetPrivKey() crypto.PrivateKey {
 
 //GetAccountBalanceResp ...
 type GetAccountBalanceResp struct {
-	Error   string         `json:"error"`
-	Account pb.AccountInfo `json:"accountinfo"`
+	Error   string         `json:"Error"`
+	Account pb.AccountInfo `json:"Accountinfo"`
 }
 
 //GetAccountBalanceByHTTP Get Account Balance By HTTP
@@ -373,8 +373,8 @@ func (c *HTTPClient) GetAccountBalanceByHTTP(address common.Address) (uint64, er
 
 // GetTokenInfoResp ...
 type GetTokenInfoResp struct {
-	Error string        `json:"error"`
-	Token *pb.TokenInfo `json:"tokeninfo"`
+	Error string        `json:"Error"`
+	Token *pb.TokenInfo `json:"Tokeninfo"`
 }
 
 // GetTokenInfoByHTTP Get Token Info By HTTP
@@ -412,8 +412,8 @@ func (c *HTTPClient) GetTokenInfoByHTTP(address common.Address, channelID []byte
 
 // GetBlockResp ...
 type GetBlockResp struct {
-	Error string      `json:"error"`
-	Block *core.Block `json:"block"`
+	Error string      `json:"Error"`
+	Block *core.Block `json:"Block"`
 }
 
 //GetBlockByHTTP ...
