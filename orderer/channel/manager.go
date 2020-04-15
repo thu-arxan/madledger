@@ -273,6 +273,7 @@ func (manager *Manager) GetAccount(address common.Address) (common.Account, erro
 	return manager.db.GetOrCreateAccount(address)
 }
 
+// WakeFromSufficientBalance wake up the manager if balance is enough
 func (manager *Manager) WakeFromSufficientBalance() {
 	manager.lock.Lock()
 	manager.insufficientBalance = false
@@ -314,7 +315,7 @@ func (manager *Manager) syncBlock() {
 
 // getTxsFromConsensusBlock return txs which are legal and duplicate
 func (manager *Manager) getTxsFromConsensusBlock(block consensus.Block) (legal, duplicate []*core.Tx) {
-	txs := GetTxsFromConsensusBlock(block)
+	txs := block.GetTxs()
 	var count = make(map[string]bool)
 	for _, tx := range txs {
 		if !util.Contain(count, tx.ID) && !manager.db.HasTx(tx) {

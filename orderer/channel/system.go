@@ -83,6 +83,7 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 	return nil
 }
 
+// AddGlobalBlock add global block
 func (manager *Manager) AddGlobalBlock(block *core.Block) error {
 	nums := make(map[string][]uint64)
 	for _, tx := range block.Transactions {
@@ -171,10 +172,9 @@ func (manager *Manager) issue(cache Cache, senderPKBytes []byte, pkAlgo crypto.A
 
 func (manager *Manager) transfer(cache Cache, sender, receiver common.Address, value uint64, channelID string) error {
 
-	if value == 0 || reflect.DeepEqual(sender, receiver){
+	if value == 0 || reflect.DeepEqual(sender, receiver) {
 		return nil
 	}
-
 
 	senderAccount, err := cache.GetOrCreateAccount(sender)
 	if err != nil {
