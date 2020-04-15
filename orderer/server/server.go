@@ -33,9 +33,7 @@ import (
 )
 
 var (
-	log = logrus.WithFields(logrus.Fields{"app": "orderer", "package": "server"})
-	glog = logrus.WithFields(logrus.Fields{"app": "orderer", "package": "server/grpc"})
-	glog_flag = false
+	log      = logrus.WithFields(logrus.Fields{"app": "orderer", "package": "server"})
 )
 
 // Here defines some consts
@@ -119,13 +117,10 @@ func (s *Server) initServer(engine *gin.Engine) error {
 
 // Start starts the server
 func (s *Server) Start() error {
-	log.Infof("Server start...")
-	if !glog_flag { // Export GRPC's log, execute only one time.
-		log.Infof("Mount GRPC logger...")
-		grpclog.SetLoggerV2(&util.GrpcLogger{Entry: glog})
-		glog_flag = true
-	}
 	s.Lock()
+	log.Infof("Server start...")
+	util.MountLogger()
+
 	err := s.cc.Start()
 	if err != nil {
 		return err
