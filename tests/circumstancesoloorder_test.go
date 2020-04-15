@@ -14,6 +14,7 @@ import (
 	"madledger/core"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -41,6 +42,7 @@ func TestInitCircumstanceSoloOrderer(t *testing.T) {
 	// then start necessary orderer and peer
 	err = startSoloOrderer()
 	require.NoError(t, err)
+	time.Sleep(3* time.Second)
 	err = startPeers(3)
 	require.NoError(t, err)
 }
@@ -83,8 +85,9 @@ func TestSoloOrdererAsset(t *testing.T) {
 }
 
 func TestSoloOrdererEnd(t *testing.T) {
-	stopSoloOrderer()
 	stopPeers(3)
+	time.Sleep(3 * time.Second)
+	stopSoloOrderer()
 	os.RemoveAll(".orderer")
 	os.RemoveAll(".peer0")
 	os.RemoveAll(".peer1")

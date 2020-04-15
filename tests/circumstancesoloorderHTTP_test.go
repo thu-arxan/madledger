@@ -1,11 +1,6 @@
 package tests
 
 import (
-	"madledger/core"
-	"os"
-	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
 /*
@@ -16,6 +11,8 @@ import (
 * 3. Call the contract in different ways.
 * 4. During main operates, there are some necessary query to make sure everything is ok.
  */
+
+/*
 
 func TestInitCircumstanceSoloOrdererHTTP(t *testing.T) {
 	err := initDir(".orderer")
@@ -80,3 +77,5 @@ func TestSoloOrdererHTTPEnd(t *testing.T) {
 	os.RemoveAll(".peer2")
 	os.RemoveAll(".client")
 }
+
+ */

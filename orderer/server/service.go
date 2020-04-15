@@ -12,10 +12,12 @@ package server
 
 import (
 	"errors"
+	"github.com/golang/protobuf/ptypes/empty"
 	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/core"
 	pb "madledger/protos"
+	"madledger/version"
 
 	"golang.org/x/net/context"
 )
@@ -55,6 +57,7 @@ func (s *Server) CreateChannel(ctx context.Context, req *pb.CreateChannelRequest
 
 // AddTx is the implementation of protos
 func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus, error) {
+	//TODO 检验签名合法性
 	var status pb.TxStatus
 	tx, err := req.Tx.ToCore()
 	if err != nil {
@@ -92,4 +95,10 @@ func (s *Server) GetAccountInfo(ctx context.Context, req *pb.GetAccountInfoReque
 	}
 	info.Balance = account.GetBalance()
 	return &info, err
+}
+
+func (s *Server) Ping(_ context.Context, _ *empty.Empty) (*pb.PingRespond, error) {
+	var resp pb.PingRespond
+	resp.Version = version.Version
+	return &resp, nil
 }

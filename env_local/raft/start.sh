@@ -11,8 +11,17 @@
 
 set -e
 
+echo "Start orderers"
 for((i = 0; i <= 3; i++))
 do
     cd orderers/"$i" && orderer start -c orderer.yaml > $GOPATH/src/madledger/samples/orderer."$i".log 2>&1 &
+done
+echo "Wait 3 secs for orderers to start"
+sleep 3
+
+echo "Start peers"
+for((i = 0; i <= 3; i++))
+do
     cd peers/"$i" && peer start -c peer.yaml > $GOPATH/src/madledger/samples/peer."$i".log 2>&1 &
 done
+

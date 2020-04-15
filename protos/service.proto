@@ -12,6 +12,7 @@ syntax = "proto3";
 
 package protos;
 
+import "google/protobuf/empty.proto";
 import "common.proto";
 import "tx.proto";
 import "block.proto";
@@ -38,6 +39,12 @@ service Orderer{
     rpc CreateChannel(CreateChannelRequest) returns (ChannelInfo){}
     rpc AddTx(AddTxRequest) returns(TxStatus){}
     rpc GetAccountInfo(GetAccountInfoRequest) returns (AccountInfo) {}
+    rpc Ping(google.protobuf.Empty) returns (PingRespond){}
+}
+
+
+message PingRespond {
+    string Version = 1;
 }
 
 // However, this is not contains sig now, but this is necessary
@@ -100,7 +107,9 @@ service Peer {
     rpc GetTxStatus(GetTxStatusRequest) returns (TxStatus){}
     rpc ListTxHistory(ListTxHistoryRequest) returns(TxHistory){}
     rpc GetTokenInfo(GetTokenInfoRequest) returns(TokenInfo){}
- }
+    rpc Ping(google.protobuf.Empty) returns (PingRespond){}
+    rpc GetBlock(GetBlockRequest) returns (Block){}
+}
 
 message GetTxStatusRequest {
     string ChannelID = 1;
@@ -133,4 +142,9 @@ message GetTokenInfoRequest {
 
 message TokenInfo {
     uint64 Balance = 1;
+}
+
+message GetBlockRequest {
+    bytes ChannelID = 1;
+    uint64 BlockIndex = 2;
 }

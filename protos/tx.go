@@ -15,6 +15,8 @@ import (
 	"madledger/core"
 )
 
+//TODO 如果传过来的值（如tx）是nil，程序会崩溃
+
 // ToCore convert pb.Tx to core.Tx
 func (tx *Tx) ToCore() (*core.Tx, error) {
 	t := &core.Tx{
