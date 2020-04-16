@@ -118,9 +118,9 @@ type PeerConfig struct {
 
 // loadPeerConfig load the peer config
 func (cfg *Config) loadPeerConfig() error {
-	if len(cfg.Peer.Address) == 0 {
-		return errors.New("The address of peer should not be nil")
-	}
+	// if len(cfg.Peer.Address) == 0 {
+	// 	return errors.New("The address of peer should not be nil")
+	// }
 	return nil
 }
 

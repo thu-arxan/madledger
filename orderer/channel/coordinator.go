@@ -30,6 +30,7 @@ import (
 
 	ac "madledger/blockchain/asset"
 	bc "madledger/blockchain/config"
+	cc "madledger/blockchain/config"
 	gc "madledger/blockchain/global"
 	ct "madledger/consensus/tendermint"
 	pb "madledger/protos"
@@ -214,23 +215,23 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 	if req.System {
 		if c.GM != nil {
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
-				ChannelID:       core.GLOBALCHANNELID,
-				BlockSize:       c.GM.GetBlockSize(),
-				Identity:        pb.Identity_MEMBER,
+				ChannelID: core.GLOBALCHANNELID,
+				BlockSize: c.GM.GetBlockSize(),
+				Identity:  pb.Identity_MEMBER,
 			})
 		}
 		if c.CM != nil {
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
-				ChannelID:       core.CONFIGCHANNELID,
-				BlockSize:       c.CM.GetBlockSize(),
-				Identity:        pb.Identity_MEMBER,
+				ChannelID: core.CONFIGCHANNELID,
+				BlockSize: c.CM.GetBlockSize(),
+				Identity:  pb.Identity_MEMBER,
 			})
 		}
 		if c.AM != nil {
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
-				ChannelID:       core.ASSETCHANNELID,
-				BlockSize:       c.AM.GetBlockSize(),
-				Identity:        pb.Identity_MEMBER,
+				ChannelID: core.ASSETCHANNELID,
+				BlockSize: c.AM.GetBlockSize(),
+				Identity:  pb.Identity_MEMBER,
 			})
 		}
 	}
@@ -248,9 +249,9 @@ func (c *Coordinator) ListChannels(req *pb.ListChannelsRequest) (*pb.ChannelInfo
 				identity = pb.Identity_ADMIN
 			}
 			infos.Channels = append(infos.Channels, &pb.ChannelInfo{
-				ChannelID:       channel,
-				BlockSize:       channelManager.GetBlockSize(),
-				Identity:        identity,
+				ChannelID: channel,
+				BlockSize: channelManager.GetBlockSize(),
+				Identity:  identity,
 			})
 		}
 	}
@@ -273,6 +274,11 @@ func (c *Coordinator) AddTx(tx *core.Tx) error {
 		return err
 	}
 	return channel.AddTx(tx)
+}
+
+// GetChannelProfile .
+func (c *Coordinator) GetChannelProfile(channelID string) (*cc.Profile, error) {
+	return c.db.GetChannelProfile(channelID)
 }
 
 func (c *Coordinator) setChannel(channelID string, manager *Manager) {

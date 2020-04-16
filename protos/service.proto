@@ -40,11 +40,20 @@ service Orderer{
     rpc AddTx(AddTxRequest) returns(TxStatus){}
     rpc GetAccountInfo(GetAccountInfoRequest) returns (AccountInfo) {}
     rpc Ping(google.protobuf.Empty) returns (PingRespond){}
+    rpc GetPeerAddress(GetPeerAddressRequest) returns (PeerAddress) {}
 }
 
 
 message PingRespond {
     string Version = 1;
+}
+
+message GetPeerAddressRequest {
+    string ChannelID = 1;
+}
+
+message PeerAddress {
+    repeated string PeerAddresses = 1;
 }
 
 // However, this is not contains sig now, but this is necessary

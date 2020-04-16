@@ -12,6 +12,7 @@ package channel
 
 import (
 	"errors"
+	"madledger/client/config"
 	"madledger/client/lib"
 
 	"github.com/spf13/cobra"
@@ -37,7 +38,8 @@ func init() {
 	createViper.BindPFlag("maxGas", createCmd.Flags().Lookup("maxGas"))
 	createCmd.Flags().Uint64P("ratio", "r", 1, "Numbers of token exchanged from one asset")
 	createViper.BindPFlag("ratio", createCmd.Flags().Lookup("ratio"))
-
+	createCmd.Flags().StringP("peers", "p", "", "peer address for the channel")
+	createViper.BindPFlag("peers", createCmd.Flags().Lookup("peers"))
 }
 
 func runCreate(cmd *cobra.Command, args []string) error {
@@ -56,9 +58,19 @@ func runCreate(cmd *cobra.Command, args []string) error {
 
 	ratio := createViper.GetUint64("ratio")
 
+	peersFile := createViper.GetString("peers")
+	if peersFile == "" {
+		peersFile = cfgFile // find the peer address in client config, if not specified in some yaml file
+	}
+	cfg, err := config.LoadConfig(peersFile)
+	if err != nil {
+		return err
+	}
+	peers := cfg.Peer.Address
+
 	client, err := lib.NewClient(cfgFile)
 	if err != nil {
 		return err
 	}
-	return client.CreateChannel(name, true, nil, nil, gasPrice, ratio, maxGas)
+	return client.CreateChannel(name, true, nil, nil, gasPrice, ratio, maxGas, peers)
 }

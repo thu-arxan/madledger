@@ -190,7 +190,7 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 
 // CreateChannel create a channel
 func (c *Client) CreateChannel(channelID string, public bool, admins, members []*core.Member,
-	gasPrice uint64, ratio uint64, maxGas uint64) error {
+	gasPrice uint64, ratio uint64, maxGas uint64, peers []string) error {
 	// log.Infof("Create channel %s", channelID)
 	self, err := core.NewMember(c.GetPrivKey().PubKey(), "admin")
 	if err != nil {
@@ -212,6 +212,7 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 			GasPrice:        gasPrice,
 			AssetTokenRatio: ratio,
 			MaxGas:          maxGas,
+			PeerAddresses:   peers,
 		},
 		Version: 1,
 	})
@@ -264,6 +265,38 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 			// add tx successfully and exit the loop
 			// log.Info("add tx success")
 			break
+		}
+	}
+
+	if len(c.peerClients) == 0 {
+		var pbpeer *pb.PeerAddress
+		for i, ordererClient := range c.ordererClients {
+			pbpeer, err = ordererClient.GetPeerAddress(context.Background(), &pb.GetPeerAddressRequest{
+				ChannelID: tx.Data.ChannelID,
+			})
+			times := i + 1
+			if err != nil {
+				if times == len(c.ordererClients) {
+					return nil, err
+				}
+			} else {
+				break
+			}
+		}
+		peerList := pbpeer.GetPeerAddresses()
+		for _, address := range peerList {
+			var opts []grpc.DialOption
+			var conn *grpc.ClientConn
+			var err error
+			opts = append(opts, grpc.WithTimeout(2000*time.Millisecond))
+
+			conn, err = grpc.Dial(address, opts...)
+			if err != nil {
+				return nil, err
+			}
+
+			peerClient := pb.NewPeerClient(conn)
+			c.peerClients = append(c.peerClients, peerClient)
 		}
 	}
 

@@ -102,3 +102,14 @@ func (s *Server) Ping(_ context.Context, _ *empty.Empty) (*pb.PingRespond, error
 	resp.Version = version.Version
 	return &resp, nil
 }
+
+// GetPeerAddress .
+func (s *Server) GetPeerAddress(ctx context.Context, req *pb.GetPeerAddressRequest) (*pb.PeerAddress, error) {
+	channelID := req.GetChannelID()
+	//todo: get that fucking address list
+	profile, err := s.cc.GetChannelProfile(channelID)
+
+	return &pb.PeerAddress{
+		PeerAddresses: profile.PeerAddresses,
+	}, err
+}

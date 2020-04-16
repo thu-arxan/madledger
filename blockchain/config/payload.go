@@ -45,6 +45,9 @@ type Profile struct {
 
 	// Block Storage Price
 	BlockPrice uint64
+
+	// Peer address for this channel
+	PeerAddresses []string
 }
 
 // Verify returns if a payload is packed well
