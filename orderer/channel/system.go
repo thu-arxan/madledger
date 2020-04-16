@@ -95,7 +95,8 @@ func (manager *Manager) AddGlobalBlock(block *core.Block) error {
 		}
 		switch payload.ChannelID {
 		case core.CONFIGCHANNELID, core.ASSETCHANNELID:
-			manager.coordinator.Unlocks(map[string][]uint64{payload.ChannelID: []uint64{payload.Num}})
+			var payloadNum = []uint64{payload.Num}
+			manager.coordinator.Unlocks(map[string][]uint64{payload.ChannelID: payloadNum})
 		default:
 			nums[payload.ChannelID] = append(nums[payload.ChannelID], payload.Num)
 		}

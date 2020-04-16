@@ -412,11 +412,12 @@ func (c *Coordinator) loadGlobalChannel() error {
 			return err
 		}
 		// ggb: global channel genesis block
-		ggb, err := gc.CreateGenesisBlock([]*gc.Payload{&gc.Payload{
+		var payload = &gc.Payload{
 			ChannelID: core.CONFIGCHANNELID,
 			Number:    0,
 			Hash:      cgb.Hash(),
-		}})
+		}
+		ggb, err := gc.CreateGenesisBlock([]*gc.Payload{payload})
 		if err != nil {
 			return err
 		}
@@ -437,7 +438,8 @@ func (c *Coordinator) loadAssetChannel() error {
 	if !c.AM.HasGenesisBlock() {
 		log.Infof("Creating genesis block of channel _asset")
 		// agb: asset channel genesis block
-		agb, err := ac.CreateGenesisBlock([]*ac.Payload{&ac.Payload{}})
+		var payload = &ac.Payload{}
+		agb, err := ac.CreateGenesisBlock([]*ac.Payload{payload})
 		if err != nil {
 			return err
 		}
