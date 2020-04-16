@@ -56,32 +56,37 @@ func TestListChannel(t *testing.T) {
 }
 
 func TestUpdateChannel(t *testing.T) {
-	err := db.UpdateChannel("_config", &cc.Profile{
+	wb := db.NewWriteBatch()
+	err := wb.UpdateChannel("_config", &cc.Profile{
 		Public: true,
 	})
 	require.NoError(t, err)
+	require.NoError(t, wb.Sync())
 	var channels []string
 	channels = db.ListChannel()
 	require.Len(t, channels, 1)
 	require.Equal(t, channels[0], "_config")
 	// add _global
-	err = db.UpdateChannel("_global", &cc.Profile{
+	wb = db.NewWriteBatch()
+	err = wb.UpdateChannel("_global", &cc.Profile{
 		Public: true,
 	})
 	require.NoError(t, err)
-
+	require.NoError(t, wb.Sync())
 	channels = db.ListChannel()
 	require.Len(t, channels, 2)
 	if !util.Contain(channels, "_global") {
 		t.Fatal(errors.New("Channel _global is not contained"))
 	}
 	// add user channel
+	wb = db.NewWriteBatch()
 	admin, _ := core.NewMember(privKey.PubKey(), "admin")
-	err = db.UpdateChannel("test", &cc.Profile{
+	err = wb.UpdateChannel("test", &cc.Profile{
 		Public: true,
 		Admins: []*core.Member{admin},
 	})
 	require.NoError(t, err)
+	require.NoError(t, wb.Sync())
 	channels = db.ListChannel()
 	require.Len(t, channels, 3)
 	if !util.Contain(channels, "test") {
@@ -89,10 +94,12 @@ func TestUpdateChannel(t *testing.T) {
 	}
 
 	// add _asset
-	err = db.UpdateChannel("_asset", &cc.Profile{
+	wb = db.NewWriteBatch()
+	err = wb.UpdateChannel("_asset", &cc.Profile{
 		Public: true,
 	})
 	require.NoError(t, err)
+	require.NoError(t, wb.Sync())
 
 	channels = db.ListChannel()
 	require.Len(t, channels, 4)
@@ -105,12 +112,13 @@ func TestAddBlock(t *testing.T) {
 	tx1, _ := core.NewTx("test", common.ZeroAddress, []byte("1"), 0, "", privKey)
 	tx2, _ := core.NewTx("test", common.ZeroAddress, []byte("2"), 0, "", privKey)
 	block1 := core.NewBlock("test", 0, core.GenesisBlockPrevHash, []*core.Tx{tx1, tx2})
-	err := db.AddBlock(block1)
+	wb := db.NewWriteBatch()
+	err := wb.AddBlock(block1)
 	require.NoError(t, err)
-
+	require.NoError(t, wb.Sync())
 	block2 := core.NewBlock("test", 1, block1.Hash().Bytes(), []*core.Tx{tx1})
-	err = db.AddBlock(block2)
-	require.Error(t, err)
+	wb = db.NewWriteBatch()
+	require.Error(t, wb.AddBlock(block2))
 
 	if !db.HasTx(tx1) || !db.HasTx(tx2) {
 		t.Fatal()
@@ -152,14 +160,6 @@ func TestAccount(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, account.GetBalance(), uint64(10))
 
-}
-
-func TestGetAndPut(t *testing.T) {
-	testVal, err := db.Get([]byte("testVal"), true)
-	require.NoError(t, err)
-	require.NoError(t, db.Put([]byte("testVal"), testVal))
-	testVal, err = db.Get([]byte("testVal"), false)
-	require.NoError(t, err)
 }
 
 func TestEnd(t *testing.T) {

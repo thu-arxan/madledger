@@ -144,7 +144,8 @@ func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
 func (manager *Manager) AddBlock(block *core.Block) error {
 	log.Infof("start adding block %d in channel %v", block.GetNumber(), manager.ID)
 	// first update db
-	if err := manager.db.AddBlock(block); err != nil {
+	wb := manager.db.NewWriteBatch()
+	if err := wb.AddBlock(block); err != nil {
 		log.Infof("manager.db.AddBlock error: %s add block %d, %s",
 			manager.ID, block.Header.Number, err.Error())
 		return err
@@ -180,7 +181,7 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 			} else {
 				acc.SubBalance(storagePrice)
 			}
-			err = manager.db.SetAccount(acc)
+			err = wb.SetAccount(acc)
 			if err != nil {
 				log.Infof("manager.db cannot set account: %s add block %d, %s",
 					manager.ID, block.Header.Number, err.Error())
@@ -188,6 +189,8 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 			}
 		}
 	}
+	// TODO: Sync too early
+	wb.Sync()
 
 	defer func() {
 		log.Infof("AddBlock %d in orderer channel %v success", block.GetNumber(), manager.ID)

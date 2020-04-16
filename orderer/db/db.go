@@ -28,21 +28,25 @@ type TxStatus struct {
 
 // WriteBatch ...
 type WriteBatch interface {
+	// AddBlock will records all txs in the block to get rid of duplicated txs
+	AddBlock(block *core.Block) error
+	UpdateChannel(id string, profile *cc.Profile) error
 	UpdateAccounts(accounts ...common.Account) error
-	//SetAssetAdmin only succeed at the first time it is called
+	// SetAccount can only be called when atomicity is at one account level
+	SetAccount(account common.Account) error
+	UpdateSystemAdmin(profile *cc.Profile) error
+	// SetAssetAdmin only succeed at the first time it is called
 	SetAssetAdmin(pk crypto.PublicKey) error
 	Put(key, value []byte)
 	Sync() error
 }
 
 // DB is the interface of db, and it is the implementation of DB on orderer/.tendermint/.glue
+// TODO: We need reconsider all of these apis.
 type DB interface {
 	ListChannel() []string
 	HasChannel(id string) bool
-	UpdateChannel(id string, profile *cc.Profile) error
 	GetChannelProfile(id string) (*cc.Profile, error)
-	// AddBlock will records all txs in the block to get rid of duplicated txs
-	AddBlock(block *core.Block) error
 	HasTx(tx *core.Tx) bool
 	IsMember(channelID string, member *core.Member) bool
 	IsAdmin(channelID string, member *core.Member) bool
@@ -50,19 +54,14 @@ type DB interface {
 	// spy channel create operation.
 	WatchChannel(channelID string)
 	Close() error
-	UpdateSystemAdmin(profile *cc.Profile) error
 	IsSystemAdmin(member *core.Member) bool
-
-	Put(key, value []byte) error
 	// if couldBeEmpty set to true and error is ErrNotFound
 	// return no error
 	Get(key []byte, couldBeEmpty bool) ([]byte, error)
-	//GetAssetAdminPKBytes return nil is not exist
+	// GetAssetAdminPKBytes return nil is not exist
 	GetAssetAdminPKBytes() []byte
-	//GetOrCreateAccount return default account if not exist
+	// GetOrCreateAccount return default account if not exist
 	GetOrCreateAccount(address common.Address) (common.Account, error)
-	//SetAccount can only be called when atomicity is at one account level
-	SetAccount(account common.Account) error
-	//NewWriteBatch new a write batch
+	// NewWriteBatch new a write batch
 	NewWriteBatch() WriteBatch
 }

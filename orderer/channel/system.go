@@ -70,13 +70,15 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 			manager.coordinator.setChannel(channelID, channel)
 			nums[payload.ChannelID] = []uint64{0}
 		}
-		//todo: ab update channel may modify blockPrice of user channel
-		//         may need authentication check
-		// also should this use write batch?
-		err := manager.db.UpdateChannel(channelID, payload.Profile)
+		// todo: ab update channel may modify blockPrice of user channel
+		// may need authentication check
+		// TODO: We need a outer write batch
+		wb := manager.db.NewWriteBatch()
+		err := wb.UpdateChannel(channelID, payload.Profile)
 		if err != nil {
 			return err
 		}
+		wb.Sync()
 	}
 	manager.coordinator.Unlocks(nums)
 

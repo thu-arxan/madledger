@@ -74,32 +74,7 @@ func (db *LevelDB) HasChannel(id string) bool {
 	return exist
 }
 
-// UpdateChannel is the implementation of DB
-func (db *LevelDB) UpdateChannel(id string, profile *cc.Profile) error {
-	var key = getChannelProfileKey(id)
-	if !db.HasChannel(id) {
-		// 更新key为_config的记录，简单记录所有的test通道。 _config,  ["test11","test10","test21","test20"]
-		err := db.addChannel(id)
-		if err != nil {
-			return err
-		}
-	}
-	data, err := json.Marshal(profile)
-	if err != nil {
-		return err
-	}
-	//更新key为_config@id的记录, 具体内容示例如下：
-	// _config@test30 ,  {"Public":true,"Dependencies":null,"Members":[],
-	// "Admins":[{"PK":"BN2PLBpBd5BrSLfTY7QEBYQT0h6lFvWlZyuAVt3/bfEz1g5QJ2lIEXP2Zk15B6E2MWpA/Q4Yxnl+XjFGObvAKTY=","Name":"admin"}]
-	// "gasPrice": 1, "ratio": 1, "maxGas": 1000000 }
-	err = db.connect.Put(key, data, nil)
-	if err != nil {
-		return err
-	}
-	db.hub.Done(id, nil)
-	return nil
-}
-
+// GetChannelProfile return profile of channel
 func (db *LevelDB) GetChannelProfile(id string) (*cc.Profile, error) {
 	var key = getChannelProfileKey(id)
 	data, err := db.connect.Get(key, nil)
@@ -109,35 +84,6 @@ func (db *LevelDB) GetChannelProfile(id string) (*cc.Profile, error) {
 	var profile cc.Profile
 	err = json.Unmarshal(data, &profile)
 	return &profile, err
-}
-
-// AddBlock will records all txs in the block to get rid of duplicated txs
-func (db *LevelDB) AddBlock(block *core.Block) error {
-	for _, tx := range block.Transactions {
-		key := util.BytesCombine([]byte(block.Header.ChannelID), []byte(tx.ID))
-		if exist, _ := db.connect.Has(key, nil); exist {
-			return fmt.Errorf("The tx %s exists before", tx.ID)
-		}
-		db.connect.Put(key, []byte("true"), nil)
-	}
-	return nil
-}
-
-// UpdateSystemAdmin update system admin
-func (db *LevelDB) UpdateSystemAdmin(profile *cc.Profile) error {
-	var key = getSystemAdminKey()
-	data, err := json.Marshal(profile)
-	if err != nil {
-		return err
-	}
-	//更新key为_config$admin的记录, 具体内容示例如下：
-	//(_config$admin, {"Public":true,"Dependencies":null,"Members":null,"Admins":
-	// [{"PK":"BGXcjZ3bhemsoLP4HgBwnQ5gsc8VM91b3y8bW0b6knkWu8xCSKO2qiJXARMHcbtZtvU7Jos2A5kFCD1haJ/hLdg=","Name":"SystemAdmin"}]})
-	err = db.connect.Put(key, data, nil)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // HasTx return if the tx is contained
@@ -227,35 +173,6 @@ func (db *LevelDB) Close() error {
 	return db.connect.Close()
 }
 
-// addChannel add a record into key core.CONFIGCHANNELID
-func (db *LevelDB) addChannel(id string) error {
-	var key = []byte(core.CONFIGCHANNELID)
-	exist, _ := db.connect.Has(key, nil)
-	var ids []string
-	if exist {
-		data, err := db.connect.Get(key, nil)
-		if err != nil {
-			return err
-		}
-		err = json.Unmarshal(data, &ids)
-		if err != nil {
-			return err
-		}
-	}
-	if !util.Contain(ids, id) {
-		ids = append(ids, id)
-	}
-	data, err := json.Marshal(ids)
-	if err != nil {
-		return err
-	}
-	err = db.connect.Put(key, data, nil)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func getChannelProfileKey(id string) []byte {
 	return []byte(fmt.Sprintf("%s@%s", core.CONFIGCHANNELID, id))
 }
@@ -289,16 +206,6 @@ func (db *LevelDB) GetOrCreateAccount(address common.Address) (common.Account, e
 	return *account, err
 }
 
-//SetAccount can only be called when atomicity is at one account level
-func (db *LevelDB) SetAccount(account common.Account) error {
-	key := getAccountKey(account.GetAddress())
-	data, err := json.Marshal(account)
-	if err != nil {
-		return err
-	}
-	return db.Put(key, data)
-}
-
 // Get get the value by key
 func (db *LevelDB) Get(key []byte, couldBeEmpty bool) ([]byte, error) {
 	val, err := db.connect.Get(key, nil)
@@ -306,11 +213,6 @@ func (db *LevelDB) Get(key []byte, couldBeEmpty bool) ([]byte, error) {
 		err = nil
 	}
 	return val, err
-}
-
-// Put put the kv pair
-func (db *LevelDB) Put(key, val []byte) error {
-	return db.connect.Put(key, val, nil)
 }
 
 // NewWriteBatch implement the interface, WriteBatch is a wrapper of leveldb.Batch
@@ -328,6 +230,55 @@ type WriteBatchWrapper struct {
 	db    *LevelDB
 }
 
+// AddBlock will records all txs in the block to get rid of duplicated txs
+func (wb *WriteBatchWrapper) AddBlock(block *core.Block) error {
+	for _, tx := range block.Transactions {
+		key := util.BytesCombine([]byte(block.Header.ChannelID), []byte(tx.ID))
+		if exist, _ := wb.db.connect.Has(key, nil); exist {
+			return fmt.Errorf("The tx %s exists before", tx.ID)
+		}
+		wb.batch.Put(key, []byte{1})
+	}
+	return nil
+}
+
+// UpdateChannel is the implementation of DB
+func (wb *WriteBatchWrapper) UpdateChannel(id string, profile *cc.Profile) error {
+	var key = getChannelProfileKey(id)
+	if !wb.db.HasChannel(id) {
+		// 更新key为_config的记录，简单记录所有的test通道。 _config,  ["test11","test10","test21","test20"]
+		err := wb.addChannel(id)
+		if err != nil {
+			return err
+		}
+	}
+	data, err := json.Marshal(profile)
+	if err != nil {
+		return err
+	}
+	//更新key为_config@id的记录, 具体内容示例如下：
+	// _config@test30 ,  {"Public":true,"Dependencies":null,"Members":[],
+	// "Admins":[{"PK":"BN2PLBpBd5BrSLfTY7QEBYQT0h6lFvWlZyuAVt3/bfEz1g5QJ2lIEXP2Zk15B6E2MWpA/Q4Yxnl+XjFGObvAKTY=","Name":"admin"}]
+	// "gasPrice": 1, "ratio": 1, "maxGas": 1000000 }
+	wb.batch.Put(key, data)
+	wb.db.hub.Done(id, nil)
+	return nil
+}
+
+// UpdateSystemAdmin update system admin
+func (wb *WriteBatchWrapper) UpdateSystemAdmin(profile *cc.Profile) error {
+	var key = getSystemAdminKey()
+	data, err := json.Marshal(profile)
+	if err != nil {
+		return err
+	}
+	//更新key为_config$admin的记录, 具体内容示例如下：
+	//(_config$admin, {"Public":true,"Dependencies":null,"Members":null,"Admins":
+	// [{"PK":"BGXcjZ3bhemsoLP4HgBwnQ5gsc8VM91b3y8bW0b6knkWu8xCSKO2qiJXARMHcbtZtvU7Jos2A5kFCD1haJ/hLdg=","Name":"SystemAdmin"}]})
+	wb.batch.Put(key, data)
+	return nil
+}
+
 // Put put updated value in writebatch
 func (wb *WriteBatchWrapper) Put(key, value []byte) {
 	wb.batch.Put(key, value)
@@ -338,16 +289,24 @@ func (wb *WriteBatchWrapper) Sync() error {
 	return wb.db.connect.Write(wb.batch, nil)
 }
 
-//UpdateAccounts update asset
+// UpdateAccounts update asset
 func (wb *WriteBatchWrapper) UpdateAccounts(accounts ...common.Account) error {
 	for _, acc := range accounts {
-		key := getAccountKey(acc.GetAddress())
-		data, err := json.Marshal(acc)
-		if err != nil {
+		if err := wb.SetAccount(acc); err != nil {
 			return err
 		}
-		wb.Put(key, data)
 	}
+	return nil
+}
+
+// SetAccount can only be called when atomicity is at one account level
+func (wb *WriteBatchWrapper) SetAccount(account common.Account) error {
+	key := getAccountKey(account.GetAddress())
+	data, err := json.Marshal(account)
+	if err != nil {
+		return err
+	}
+	wb.Put(key, data)
 	return nil
 }
 
@@ -363,6 +322,32 @@ func (wb *WriteBatchWrapper) SetAssetAdmin(pk crypto.PublicKey) error {
 		return err
 	}
 	wb.Put(key, pkBytes)
+	return nil
+}
+
+// addChannel add a record into key core.CONFIGCHANNELID
+func (wb *WriteBatchWrapper) addChannel(id string) error {
+	var key = []byte(core.CONFIGCHANNELID)
+	exist, _ := wb.db.connect.Has(key, nil)
+	var ids []string
+	if exist {
+		data, err := wb.db.connect.Get(key, nil)
+		if err != nil {
+			return err
+		}
+		err = json.Unmarshal(data, &ids)
+		if err != nil {
+			return err
+		}
+	}
+	if !util.Contain(ids, id) {
+		ids = append(ids, id)
+	}
+	data, err := json.Marshal(ids)
+	if err != nil {
+		return err
+	}
+	wb.batch.Put(key, data)
 	return nil
 }
 

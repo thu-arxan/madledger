@@ -378,14 +378,16 @@ func (c *Coordinator) loadConfigChannel() error {
 		if err != nil {
 			return err
 		}
-		// put  admin's pubkey into leveldb
-		err = c.CM.db.UpdateSystemAdmin(&bc.Profile{
+		// put admin's pubkey into leveldb
+		wb := c.CM.db.NewWriteBatch()
+		err = wb.UpdateSystemAdmin(&bc.Profile{
 			Public: true,
 			Admins: admins,
 		})
 		if err != nil {
 			return err
 		}
+		wb.Sync()
 		err = c.CM.AddBlock(gb)
 		if err != nil {
 			return err
