@@ -12,11 +12,9 @@ package db
 
 import (
 	"encoding/hex"
-	"errors"
 	cc "madledger/blockchain/config"
 	"madledger/common"
 	"madledger/common/crypto"
-	"madledger/common/util"
 	"madledger/core"
 	"os"
 	"testing"
@@ -33,82 +31,70 @@ var (
 
 var (
 	dir = ".leveldb"
-	db  DB
 )
 
-func TestInit(t *testing.T) {
-	err := os.RemoveAll(dir)
-	require.NoError(t, err)
-
-	err = os.MkdirAll(dir, 0777)
-	require.NoError(t, err)
+func TestLevelDB(t *testing.T) {
+	db := initDB(t)
+	testChannel(t, db)
+	testAddBlock(t, db)
+	testIsMember(t, db)
+	testIsAdmin(t, db)
+	testAssetAdmin(t, db)
+	testAccount(t, db)
+	os.RemoveAll(dir)
 }
 
-func TestNewLevelDB(t *testing.T) {
-	var err error
-	db, err = NewLevelDB(dir)
+func initDB(t *testing.T) DB {
+	require.NoError(t, os.RemoveAll(dir))
+	require.NoError(t, os.MkdirAll(dir, 0777))
+	db, err := NewLevelDB(dir)
 	require.NoError(t, err)
+	return db
 }
 
-func TestListChannel(t *testing.T) {
-	channels := db.ListChannel()
-	require.Len(t, channels, 0)
-}
-
-func TestUpdateChannel(t *testing.T) {
+func testChannel(t *testing.T, db DB) {
+	// size should be 0
+	size := len(db.ListChannel())
+	require.Equal(t, 0, size)
+	// add _config channel
 	wb := db.NewWriteBatch()
-	err := wb.UpdateChannel("_config", &cc.Profile{
+	require.NoError(t, wb.UpdateChannel("_config", &cc.Profile{
 		Public: true,
-	})
-	require.NoError(t, err)
+	}))
 	require.NoError(t, wb.Sync())
-	var channels []string
-	channels = db.ListChannel()
-	require.Len(t, channels, 1)
-	require.Equal(t, channels[0], "_config")
-	// add _global
+	size++
+	// should contain _config
+	channels := db.ListChannel()
+	require.Len(t, channels, size)
+	require.Contains(t, channels, "_config")
+	// add _global and user channel
 	wb = db.NewWriteBatch()
-	err = wb.UpdateChannel("_global", &cc.Profile{
+	require.NoError(t, wb.UpdateChannel("_global", &cc.Profile{
 		Public: true,
-	})
-	require.NoError(t, err)
-	require.NoError(t, wb.Sync())
-	channels = db.ListChannel()
-	require.Len(t, channels, 2)
-	if !util.Contain(channels, "_global") {
-		t.Fatal(errors.New("Channel _global is not contained"))
-	}
-	// add user channel
-	wb = db.NewWriteBatch()
+	}))
 	admin, _ := core.NewMember(privKey.PubKey(), "admin")
-	err = wb.UpdateChannel("test", &cc.Profile{
+	// note: we add test twice, but different profile
+	require.NoError(t, wb.UpdateChannel("test", &cc.Profile{
 		Public: true,
 		Admins: []*core.Member{admin},
-	})
-	require.NoError(t, err)
+	}))
+	require.NoError(t, wb.UpdateChannel("test", &cc.Profile{
+		Public: false,
+		Admins: []*core.Member{admin},
+	}))
 	require.NoError(t, wb.Sync())
+	size += 2
 	channels = db.ListChannel()
-	require.Len(t, channels, 3)
-	if !util.Contain(channels, "test") {
-		t.Fatal(errors.New("Channel test is not contained"))
-	}
-
-	// add _asset
-	wb = db.NewWriteBatch()
-	err = wb.UpdateChannel("_asset", &cc.Profile{
-		Public: true,
-	})
+	require.Len(t, channels, size)
+	require.Contains(t, channels, "_global")
+	// test channel should be private
+	profile, err := db.GetChannelProfile("test")
 	require.NoError(t, err)
-	require.NoError(t, wb.Sync())
-
-	channels = db.ListChannel()
-	require.Len(t, channels, 4)
-	if !util.Contain(channels, "_asset") {
-		t.Fatal(errors.New("Channel _asset is not contained"))
-	}
+	require.False(t, profile.Public)
+	require.Len(t, profile.Admins, 1)
 }
 
-func TestAddBlock(t *testing.T) {
+func testAddBlock(t *testing.T, db DB) {
 	tx1, _ := core.NewTx("test", common.ZeroAddress, []byte("1"), 0, "", privKey)
 	tx2, _ := core.NewTx("test", common.ZeroAddress, []byte("2"), 0, "", privKey)
 	block1 := core.NewBlock("test", 0, core.GenesisBlockPrevHash, []*core.Tx{tx1, tx2})
@@ -119,25 +105,22 @@ func TestAddBlock(t *testing.T) {
 	block2 := core.NewBlock("test", 1, block1.Hash().Bytes(), []*core.Tx{tx1})
 	wb = db.NewWriteBatch()
 	require.Error(t, wb.AddBlock(block2))
-
-	if !db.HasTx(tx1) || !db.HasTx(tx2) {
-		t.Fatal()
-	}
+	require.True(t, db.HasTx(tx1) && db.HasTx(tx2))
 }
 
-func TestIsMember(t *testing.T) {
+func testIsMember(t *testing.T, db DB) {
 	member, _ := core.NewMember(privKey.PubKey(), "admin")
 	require.True(t, db.IsMember("test", member))
 	require.True(t, db.IsMember(core.GLOBALCHANNELID, member))
 }
 
-func TestIsAdmin(t *testing.T) {
+func testIsAdmin(t *testing.T, db DB) {
 	member, _ := core.NewMember(privKey.PubKey(), "admin")
 	require.True(t, db.IsAdmin("test", member))
 	require.False(t, db.IsAdmin(core.GLOBALCHANNELID, member))
 }
 
-func TestAssetAdmin(t *testing.T) {
+func testAssetAdmin(t *testing.T, db DB) {
 	wb := db.NewWriteBatch()
 	err := wb.SetAssetAdmin(privKey.PubKey())
 	require.NoError(t, err)
@@ -147,7 +130,7 @@ func TestAssetAdmin(t *testing.T) {
 	require.Equal(t, pk, privKey.PubKey())
 }
 
-func TestAccount(t *testing.T) {
+func testAccount(t *testing.T, db DB) {
 	wb := db.NewWriteBatch()
 	address := common.BytesToAddress([]byte("channelname"))
 	account, err := db.GetOrCreateAccount(address)
@@ -159,9 +142,4 @@ func TestAccount(t *testing.T) {
 	account, err = db.GetOrCreateAccount(address)
 	require.NoError(t, err)
 	require.Equal(t, account.GetBalance(), uint64(10))
-
-}
-
-func TestEnd(t *testing.T) {
-	os.RemoveAll(dir)
 }

@@ -112,6 +112,11 @@ func (db *LevelDB) IsMember(channelID string, member *core.Member) bool {
 		if p.Public {
 			return true
 		}
+		for i := range p.Admins {
+			if p.Admins[i].Equal(member) {
+				return true
+			}
+		}
 		for i := range p.Members {
 			if p.Members[i].Equal(member) {
 				return true
@@ -215,19 +220,21 @@ func (db *LevelDB) Get(key []byte, couldBeEmpty bool) ([]byte, error) {
 	return val, err
 }
 
+// WriteBatchWrapper is a wrapper of level.Batch
+type WriteBatchWrapper struct {
+	batch *leveldb.Batch
+	db    *LevelDB
+	kvs   map[string][]byte
+}
+
 // NewWriteBatch implement the interface, WriteBatch is a wrapper of leveldb.Batch
 func (db *LevelDB) NewWriteBatch() WriteBatch {
 	batch := new(leveldb.Batch)
 	return &WriteBatchWrapper{
 		batch: batch,
 		db:    db,
+		kvs:   make(map[string][]byte),
 	}
-}
-
-// WriteBatchWrapper is a wrapper of level.Batch
-type WriteBatchWrapper struct {
-	batch *leveldb.Batch
-	db    *LevelDB
 }
 
 // AddBlock will records all txs in the block to get rid of duplicated txs
@@ -286,6 +293,9 @@ func (wb *WriteBatchWrapper) Put(key, value []byte) {
 
 // Sync sync batch to database
 func (wb *WriteBatchWrapper) Sync() error {
+	for k, v := range wb.kvs {
+		wb.batch.Put([]byte(k), v)
+	}
 	return wb.db.connect.Write(wb.batch, nil)
 }
 
@@ -328,16 +338,20 @@ func (wb *WriteBatchWrapper) SetAssetAdmin(pk crypto.PublicKey) error {
 // addChannel add a record into key core.CONFIGCHANNELID
 func (wb *WriteBatchWrapper) addChannel(id string) error {
 	var key = []byte(core.CONFIGCHANNELID)
-	exist, _ := wb.db.connect.Has(key, nil)
 	var ids []string
-	if exist {
-		data, err := wb.db.connect.Get(key, nil)
-		if err != nil {
-			return err
-		}
-		err = json.Unmarshal(data, &ids)
-		if err != nil {
-			return err
+	if util.Contain(wb.kvs, string(key)) {
+		json.Unmarshal(wb.kvs[string(key)], &ids)
+	} else {
+		exist, _ := wb.db.connect.Has(key, nil)
+		if exist {
+			data, err := wb.db.connect.Get(key, nil)
+			if err != nil {
+				return err
+			}
+			err = json.Unmarshal(data, &ids)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	if !util.Contain(ids, id) {
@@ -347,7 +361,7 @@ func (wb *WriteBatchWrapper) addChannel(id string) error {
 	if err != nil {
 		return err
 	}
-	wb.batch.Put(key, data)
+	wb.kvs[string(key)] = data
 	return nil
 }
 

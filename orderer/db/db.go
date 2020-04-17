@@ -36,6 +36,7 @@ type WriteBatch interface {
 	SetAccount(account common.Account) error
 	UpdateSystemAdmin(profile *cc.Profile) error
 	// SetAssetAdmin only succeed at the first time it is called
+	// TODO: We need to change this function
 	SetAssetAdmin(pk crypto.PublicKey) error
 	Put(key, value []byte)
 	Sync() error
