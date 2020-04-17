@@ -86,6 +86,20 @@ func (db *LevelDB) GetChannelProfile(id string) (*cc.Profile, error) {
 	return &profile, err
 }
 
+// GetConsensusBlock return the consensus block number of channel
+func (db *LevelDB) GetConsensusBlock(id string) uint64 {
+	key := getConsensusBlockKey(id)
+	data, err := db.connect.Get(key, nil)
+	if err != nil || len(data) == 0 {
+		return 1
+	}
+	num, err := util.BytesToUint64(data)
+	if err != nil || num < 1 {
+		return 1
+	}
+	return num
+}
+
 // HasTx return if the tx is contained
 func (db *LevelDB) HasTx(tx *core.Tx) bool {
 	key := util.BytesCombine([]byte(tx.Data.ChannelID), []byte(tx.ID))
@@ -249,6 +263,15 @@ func (wb *WriteBatchWrapper) AddBlock(block *core.Block) error {
 	return nil
 }
 
+// SetConsensusBlock record consensus block
+// Note: ignore if num <= 1
+func (wb *WriteBatchWrapper) SetConsensusBlock(id string, num uint64) {
+	if num > 1 {
+		key := getConsensusBlockKey(id)
+		wb.batch.Put(key, util.Uint64ToBytes(num))
+	}
+}
+
 // UpdateChannel is the implementation of DB
 func (wb *WriteBatchWrapper) UpdateChannel(id string, profile *cc.Profile) error {
 	var key = getChannelProfileKey(id)
@@ -371,4 +394,8 @@ func getAccountKey(address common.Address) []byte {
 
 func getAssetAdminKey() []byte {
 	return []byte("_asset_admin")
+}
+
+func getConsensusBlockKey(id string) []byte {
+	return []byte(fmt.Sprintf("cbn:%s", id))
 }

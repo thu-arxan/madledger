@@ -28,8 +28,10 @@ type TxStatus struct {
 
 // WriteBatch ...
 type WriteBatch interface {
-	// AddBlock will records all txs in the block to get rid of duplicated txs
+	// AddBlock will records all txs in the block to get rid of duplicated txs, cbn block
 	AddBlock(block *core.Block) error
+	// SetConsensusBlock set the consensus block of channel
+	SetConsensusBlock(id string, num uint64)
 	UpdateChannel(id string, profile *cc.Profile) error
 	UpdateAccounts(accounts ...common.Account) error
 	// SetAccount can only be called when atomicity is at one account level
@@ -51,6 +53,7 @@ type DB interface {
 	HasTx(tx *core.Tx) bool
 	IsMember(channelID string, member *core.Member) bool
 	IsAdmin(channelID string, member *core.Member) bool
+	GetConsensusBlock(id string) uint64
 	// WatchChannel provide a way to spy channel change. Now it mainly used to
 	// spy channel create operation.
 	WatchChannel(channelID string)

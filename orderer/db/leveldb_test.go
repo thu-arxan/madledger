@@ -41,6 +41,7 @@ func TestLevelDB(t *testing.T) {
 	testIsAdmin(t, db)
 	testAssetAdmin(t, db)
 	testAccount(t, db)
+	testConsensusBlock(t, db)
 	os.RemoveAll(dir)
 }
 
@@ -142,4 +143,21 @@ func testAccount(t *testing.T, db DB) {
 	account, err = db.GetOrCreateAccount(address)
 	require.NoError(t, err)
 	require.Equal(t, account.GetBalance(), uint64(10))
+}
+
+func testConsensusBlock(t *testing.T, db DB) {
+	require.EqualValues(t, 1, db.GetConsensusBlock("test"))
+	wb := db.NewWriteBatch()
+	wb.SetConsensusBlock("test", 0)
+	require.NoError(t, wb.Sync())
+	require.EqualValues(t, 1, db.GetConsensusBlock("test"))
+	wb = db.NewWriteBatch()
+	wb.SetConsensusBlock("test", 2)
+	require.NoError(t, wb.Sync())
+	require.EqualValues(t, 2, db.GetConsensusBlock("test"))
+	wb = db.NewWriteBatch()
+	wb.SetConsensusBlock("test", 3)
+	wb.SetConsensusBlock("test", 4)
+	require.NoError(t, wb.Sync())
+	require.EqualValues(t, 4, db.GetConsensusBlock("test"))
 }
