@@ -25,4 +25,6 @@ type Consensus interface {
 	AddChannel(channelID string, cfg Config) error
 	// GetBlock return the block or error right away if async is false, else return block until the block is created.
 	GetBlock(channelID string, num uint64, async bool) (Block, error)
+	// Info return info of consensus like name
+	Info() string
 }

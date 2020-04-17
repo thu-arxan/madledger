@@ -158,14 +158,29 @@ func createContractByHTTP(t *testing.T, channelID string, client *client.HTTPCli
 	require.NoError(t, err)
 	require.Equal(t, status.Err, "")
 }
+
 func testCallContract(t *testing.T, client *client.Client) {
 	callContract(t, "public", client)
 	callContract(t, "private", client)
 }
+
 func testCallContractByHTTP(t *testing.T, client *client.HTTPClient) {
 	callContractByHTTP(t, "public", client)
 	callContractByHTTP(t, "private", client)
 }
+
+// testSendTx just send a tx on _asset channel
+func testSendTx(t *testing.T, client *client.Client) {
+	priv, err := crypto.GeneratePrivateKey()
+	require.NoError(t, err)
+	addr, err := priv.PubKey().Address()
+	require.NoError(t, err)
+	tx, err := core.NewTx(core.ASSETCHANNELID, addr, nil, 0, "", client.GetPrivKey())
+	require.NoError(t, err)
+	_, err = client.AddTx(tx)
+	require.NoError(t, err)
+}
+
 func callContract(t *testing.T, channelID string, client *client.Client) {
 	var contractAddress = contractAddress[channelID]
 	// then call the contract which is created before
@@ -223,6 +238,7 @@ func callContract(t *testing.T, channelID string, client *client.Client) {
 	require.NoError(t, err)
 	require.Equal(t, "Invalid Address", status.Err)
 }
+
 func callContractByHTTP(t *testing.T, channelID string, client *client.HTTPClient) {
 	var contractAddress = contractAddress[channelID]
 	// then call the contract which is created before
@@ -280,6 +296,7 @@ func callContractByHTTP(t *testing.T, channelID string, client *client.HTTPClien
 	require.NoError(t, err)
 	require.Equal(t, "Invalid Address", status.Err)
 }
+
 func testTxHistory(t *testing.T, client *client.Client) {
 	// then get the history of the client
 	address, _ := client.GetPrivKey().PubKey().Address()
@@ -295,6 +312,7 @@ func testTxHistory(t *testing.T, client *client.Client) {
 	require.Contains(t, history.Txs, core.CONFIGCHANNELID)
 	require.Len(t, history.Txs[core.CONFIGCHANNELID].Value, 2)
 }
+
 func testTxHistoryByHTTP(t *testing.T, client *client.HTTPClient) {
 	// then get the history of the client
 	address, _ := client.GetPrivKey().PubKey().Address()
@@ -310,6 +328,7 @@ func testTxHistoryByHTTP(t *testing.T, client *client.HTTPClient) {
 	require.Contains(t, history.Txs, core.CONFIGCHANNELID)
 	require.Len(t, history.Txs[core.CONFIGCHANNELID].Value, 2)
 }
+
 func testAsset(t *testing.T, client *client.Client) {
 	algo := crypto.KeyAlgoSecp256k1
 
@@ -419,7 +438,7 @@ func testAsset(t *testing.T, client *client.Client) {
 	require.NoError(t, err)
 
 	// now add multiple txs to ensure that orderers have executed prev tx and stopped receiving tx
-	for i:= 0; i < 10; i++ {
+	for i := 0; i < 10; i++ {
 		coreTx, err = core.NewTx("test", common.ZeroAddress, []byte("multiple tx"), 0, fmt.Sprintln(i), issuerKey)
 		_, _ = client.AddTx(coreTx)
 	}

@@ -150,3 +150,8 @@ func (c *Consensus) getLeader() uint64 {
 	}
 	return leader
 }
+
+// Info return info of consensus like name
+func (c *Consensus) Info() string {
+	return "raft"
+}

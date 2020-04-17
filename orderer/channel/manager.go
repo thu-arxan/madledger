@@ -300,7 +300,7 @@ func (manager *Manager) FetchBlockAsync(num uint64) (*core.Block, error) {
 // syncBlock is not safe and not efficiency
 // todo: the manager should not begin from 1 and should not using a channel to send block
 func (manager *Manager) syncBlock() {
-	var num uint64 = 1
+	var num = manager.db.GetConsensusBlock(manager.ID)
 	for {
 		log.Infof("Going to get block %d of channel %s from consensus", num, manager.ID)
 		cb, err := manager.coordinator.Consensus.GetBlock(manager.ID, num, true)
@@ -312,6 +312,11 @@ func (manager *Manager) syncBlock() {
 		}
 		num++
 		manager.cbc <- cb
+		if manager.coordinator.Consensus.Info() != "solo" {
+			wb := manager.db.NewWriteBatch()
+			wb.SetConsensusBlock(manager.ID, num)
+			wb.Sync()
+		}
 	}
 }
 

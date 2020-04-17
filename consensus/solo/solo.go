@@ -78,3 +78,8 @@ func (c *Consensus) GetBlock(channelID string, num uint64, async bool) (consensu
 func (c *Consensus) Stop() error {
 	return c.manager.stop()
 }
+
+// Info return info of consensus like name
+func (c *Consensus) Info() string {
+	return "solo"
+}

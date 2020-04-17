@@ -34,7 +34,18 @@ var (
 	allSoloContractAddress common.Address
 )
 
-func TestInitCircumstanceAllSolo(t *testing.T) {
+func TestAllSolo(t *testing.T) {
+	testInitAllSoloCircumstance(t)
+	testAllSoloCreateChannel(t)
+	testAllSoloCreateContract(t)
+	testAllSoloCallContract(t)
+	testAllSoloTxHistory(t)
+	testAllSoloAsset(t)
+	testAllSoloRestart(t)
+	testAllSoloEnd(t)
+}
+
+func testInitAllSoloCircumstance(t *testing.T) {
 	err := initDir(".orderer")
 	require.NoError(t, err)
 	err = initDir(".peer")
@@ -48,7 +59,7 @@ func TestInitCircumstanceAllSolo(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestAllSoloCreateChannel(t *testing.T) {
+func testAllSoloCreateChannel(t *testing.T) {
 	client, err := getSoloClient()
 	require.NoError(t, err)
 	// get identity of solo peer
@@ -59,31 +70,40 @@ func TestAllSoloCreateChannel(t *testing.T) {
 	testCreateChannel(t, client, []*core.Member{identity})
 }
 
-func TestAllSoloCreateContract(t *testing.T) {
+func testAllSoloCreateContract(t *testing.T) {
 	client, err := getSoloClient()
 	require.NoError(t, err)
 	testCreateContract(t, client)
 }
 
-func TestAllSoloCallContract(t *testing.T) {
+func testAllSoloCallContract(t *testing.T) {
 	client, err := getSoloClient()
 	require.NoError(t, err)
 	testCallContract(t, client)
 }
 
-func TestAllSoloTxHistory(t *testing.T) {
+func testAllSoloTxHistory(t *testing.T) {
 	client, err := getSoloClient()
 	require.NoError(t, err)
 	testTxHistory(t, client)
 }
 
-func TestAllSoloAsset(t *testing.T) {
+func testAllSoloAsset(t *testing.T) {
 	client, err := getSoloClient()
 	require.NoError(t, err)
 	testAsset(t, client)
 }
 
-func TestAllSoloEnd(t *testing.T) {
+func testAllSoloRestart(t *testing.T) {
+	stopSoloOrderer()
+	require.NoError(t, startSoloOrderer())
+	// then just send a tx
+	client, err := getSoloClient()
+	require.NoError(t, err)
+	testSendTx(t, client)
+}
+
+func testAllSoloEnd(t *testing.T) {
 	stopSoloPeer()
 	stopSoloOrderer()
 	os.RemoveAll(".orderer")

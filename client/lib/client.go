@@ -14,7 +14,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/core"
@@ -139,7 +138,6 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 	var infos *pb.ChannelInfos
 
 	for i, ordererClient := range c.ordererClients {
-		fmt.Printf(">>list channel")
 		infos, err = ordererClient.ListChannels(context.Background(), &pb.ListChannelsRequest{
 			System: system,
 			PK:     pk,

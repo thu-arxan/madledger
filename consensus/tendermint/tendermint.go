@@ -116,3 +116,8 @@ func (c *Consensus) Stop() error {
 func (c *Consensus) GetBlock(channelID string, num uint64, async bool) (consensus.Block, error) {
 	return c.app.GetBlock(channelID, num, async)
 }
+
+// Info return info of consensus like name
+func (c *Consensus) Info() string {
+	return "tendermint"
+}

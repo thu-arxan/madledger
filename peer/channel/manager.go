@@ -75,7 +75,8 @@ func (m *Manager) Start() {
 			m.stopCh <- true
 			return
 		} else {
-			log.Warnf("failed to fetch block: %d, err: %v", m.cm.GetExpect(), err)
+			// TODO: A better log to avoid too many warnings.
+			// log.Warnf("failed to fetch block: %d, err: %v", m.cm.GetExpect(), err)
 		}
 	}
 }
