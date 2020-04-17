@@ -12,7 +12,6 @@ package core
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"madledger/common"
 	"madledger/common/crypto"
@@ -80,9 +79,6 @@ type TxSig struct {
 
 // NewTx is the constructor of Tx
 func NewTx(channelID string, recipient common.Address, payload []byte, value uint64, msg string, privKey crypto.PrivateKey) (*Tx, error) {
-	if payload == nil || len(payload) == 0 {
-		return nil, errors.New("The payload can not be empty")
-	}
 	switch privKey.Algo() {
 	case crypto.KeyAlgoSecp256k1, crypto.KeyAlgoSM2:
 		// do nothing
