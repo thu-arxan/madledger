@@ -54,8 +54,12 @@ func (s *Server) CreateChannel(ctx context.Context, req *pb.CreateChannelRequest
 }
 
 // AddTx is the implementation of protos
+// TODO: Tx must be verified
 func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus, error) {
 	var status pb.TxStatus
+	if req.Tx == nil {
+		return &status, errors.New("wrong tx")
+	}
 	tx, err := req.Tx.ToCore()
 	if err != nil {
 		return &status, err
