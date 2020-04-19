@@ -145,3 +145,33 @@ func (cfg *Config) loadKeys() error {
 	cfg.KeyStore.Privs = keys
 	return nil
 }
+
+// LoadPeerAddress load config from the config file
+func LoadPeerAddress(cfgFile string) (*PeerConfig, error) {
+	cfgBytes, err := ioutil.ReadFile(cfgFile)
+	if err != nil {
+		return nil, err
+	}
+
+	var cfg PeerConfig
+	err = yaml.Unmarshal(cfgBytes, &cfg)
+	if err != nil {
+		return nil, err
+	}
+	if len(cfg.Address) == 0 {
+		return nil, errors.New("The address of peer is nil")
+	}
+	return &cfg, nil
+}
+
+// SavePeerCache .
+func SavePeerCache(name string, peers []string) error {
+	b, err := yaml.Marshal(&PeerConfig{
+		Address:     peers,
+		HTTPAddress: nil,
+	})
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(name+".yaml", b, 0777)
+}

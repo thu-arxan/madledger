@@ -59,14 +59,22 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	ratio := createViper.GetUint64("ratio")
 
 	peersFile := createViper.GetString("peers")
+	var peers []string
 	if peersFile == "" {
 		peersFile = cfgFile // find the peer address in client config, if not specified in some yaml file
+		cfg, err := config.LoadConfig(peersFile)
+		if err != nil {
+			return err
+		}
+		peers = cfg.Peer.Address
+	} else {
+		cfg, err := config.LoadPeerAddress(peersFile)
+		if err != nil {
+			return err
+		}
+		peers = cfg.Address
 	}
-	cfg, err := config.LoadConfig(peersFile)
-	if err != nil {
-		return err
-	}
-	peers := cfg.Peer.Address
+	config.SavePeerCache(name, peers)
 
 	client, err := lib.NewClient(cfgFile)
 	if err != nil {
