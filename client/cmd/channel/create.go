@@ -14,6 +14,7 @@ import (
 	"errors"
 	"madledger/client/config"
 	"madledger/client/lib"
+	"madledger/core"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -40,6 +41,8 @@ func init() {
 	createViper.BindPFlag("ratio", createCmd.Flags().Lookup("ratio"))
 	createCmd.Flags().StringP("peers", "p", "", "peer address for the channel")
 	createViper.BindPFlag("peers", createCmd.Flags().Lookup("peers"))
+	createCmd.Flags().StringP("members", "s", "", "config file for private channel")
+	createViper.BindPFlag("members", createCmd.Flags().Lookup("members"))
 }
 
 func runCreate(cmd *cobra.Command, args []string) error {
@@ -80,5 +83,19 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	return client.CreateChannel(name, true, nil, nil, gasPrice, ratio, maxGas, peers)
+
+	var system bool
+	var admins, members []*core.Member
+	membersFile := createViper.GetString("members")
+	if membersFile == "" {
+		system = true
+	} else {
+		system = false
+		admins, members, err = config.GetMembers(membersFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	return client.CreateChannel(name, system, admins, members, gasPrice, ratio, maxGas, peers)
 }

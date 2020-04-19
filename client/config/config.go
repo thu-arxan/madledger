@@ -13,10 +13,12 @@ package config
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"madledger/common/crypto"
+	"madledger/core"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -174,4 +176,57 @@ func SavePeerCache(name string, peers []string) error {
 		return err
 	}
 	return ioutil.WriteFile(name+".yaml", b, 0777)
+}
+
+// MemberConfig .
+type MemberConfig struct {
+	Admins  []string `yaml:"Admins"`
+	Members []string `yaml:"Members"`
+}
+
+// GetMembers .
+func GetMembers(file string) ([]*core.Member, []*core.Member, error) {
+	Bytes, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil, nil, err
+	}
+	var cfg MemberConfig
+	err = yaml.Unmarshal(Bytes, &cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	var admins, members []*core.Member
+	for _, adminstr := range cfg.Admins {
+		b, err := hex.DecodeString(adminstr)
+		if err != nil {
+			return nil, nil, err
+		}
+		pk, err := crypto.NewPublicKey(b, crypto.KeyAlgoSM2)
+		if err != nil {
+			return nil, nil, err
+		}
+		admin, err := core.NewMember(pk, "admin")
+		if err != nil {
+			return nil, nil, err
+		}
+		admins = append(admins, admin)
+	}
+
+	for _, memberstr := range cfg.Members {
+		b, err := hex.DecodeString(memberstr)
+		if err != nil {
+			return nil, nil, err
+		}
+		pk, err := crypto.NewPublicKey(b, crypto.KeyAlgoSM2)
+		if err != nil {
+			return nil, nil, err
+		}
+		member, err := core.NewMember(pk, "member")
+		if err != nil {
+			return nil, nil, err
+		}
+		members = append(members, member)
+	}
+
+	return admins, members, nil
 }
