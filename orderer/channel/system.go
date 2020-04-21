@@ -20,12 +20,13 @@ import (
 	"madledger/common/crypto"
 	"madledger/consensus"
 	"madledger/core"
+	"madledger/orderer/db"
 	"reflect"
 )
 
 // AddConfigBlock add a config block
 // The block is formated, so there is no need to verify
-func (manager *Manager) AddConfigBlock(block *core.Block) error {
+func (manager *Manager) AddConfigBlock(wb db.WriteBatch, block *core.Block) error {
 	nums := make(map[string][]uint64)
 	if block.Header.Number == 0 {
 		return nil
@@ -72,13 +73,10 @@ func (manager *Manager) AddConfigBlock(block *core.Block) error {
 		}
 		// todo: ab update channel may modify blockPrice of user channel
 		// may need authentication check
-		// TODO: We need a outer write batch
-		wb := manager.db.NewWriteBatch()
 		err := wb.UpdateChannel(channelID, payload.Profile)
 		if err != nil {
 			return err
 		}
-		wb.Sync()
 	}
 	manager.coordinator.Unlocks(nums)
 
@@ -107,11 +105,11 @@ func (manager *Manager) AddGlobalBlock(block *core.Block) error {
 }
 
 // AddAssetBlock add an asset block
-func (manager *Manager) AddAssetBlock(block *core.Block) error {
+func (manager *Manager) AddAssetBlock(wb db.WriteBatch, block *core.Block) error {
 	if block.Header.Number == 0 {
 		return nil
 	}
-	cache := NewCache(manager.db)
+	cache := NewCache(manager.db, wb)
 	var err error
 
 	for _, tx := range block.Transactions {

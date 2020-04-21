@@ -19,10 +19,10 @@ type Cache struct {
 }
 
 // NewCache new a cache for AddAssetBlock
-func NewCache(db db.DB) Cache {
+func NewCache(db db.DB, wb db.WriteBatch) Cache {
 	return Cache{
 		db:       db,
-		wb:       db.NewWriteBatch(),
+		wb:       wb,
 		accounts: make(map[common.Address]common.Account),
 		kvs:      make(map[string][]byte),
 	}

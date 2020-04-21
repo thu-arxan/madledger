@@ -45,7 +45,9 @@ type DB interface {
 	GetChannelProfile(channelID string) (*cc.Profile, error)
 	// HasTx return if a tx exist
 	HasTx(tx *core.Tx) bool
+	// IsMember return if member belong to channel
 	IsMember(channelID string, member *core.Member) bool
+	// IsAdmin return if member if the admin of channel
 	IsAdmin(channelID string, member *core.Member) bool
 	// GetConsensusBlock return the last consensus block num that db knows
 	GetConsensusBlock(channelID string) (num uint64)

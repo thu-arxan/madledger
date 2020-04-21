@@ -190,7 +190,6 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		}
 	}
 	// TODO: Sync too early
-	wb.Sync()
 
 	defer func() {
 		log.Infof("AddBlock %d in orderer channel %v success", block.GetNumber(), manager.ID)
@@ -202,15 +201,23 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		if !isGenesisBlock(block) && !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
 			manager.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
 		}
-		return manager.AddConfigBlock(block)
+		if err := manager.AddConfigBlock(wb, block); err != nil {
+			return err
+		}
+		return wb.Sync()
 	case core.GLOBALCHANNELID:
+		wb.Sync()
 		return manager.AddGlobalBlock(block)
 	case core.ASSETCHANNELID:
 		if !isGenesisBlock(block) && !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
 			manager.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
 		}
-		return manager.AddAssetBlock(block)
+		if err := manager.AddAssetBlock(wb, block); err != nil {
+			return err
+		}
+		return wb.Sync()
 	default:
+		wb.Sync()
 		return nil
 	}
 }
@@ -298,7 +305,7 @@ func (manager *Manager) FetchBlockAsync(num uint64) (*core.Block, error) {
 }
 
 // syncBlock is not safe and not efficiency
-// todo: the manager should not begin from 1 and should not using a channel to send block
+// todo: should not using a channel to send block
 func (manager *Manager) syncBlock() {
 	var num = manager.db.GetConsensusBlock(manager.ID)
 	for {
