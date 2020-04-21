@@ -268,7 +268,7 @@ func (manager *Manager) IsAdmin(member *core.Member) bool {
 
 // IsSystemAdmin return if the member is the system admin
 func (manager *Manager) IsSystemAdmin(member *core.Member) bool {
-	return manager.db.IsSystemAdmin(member)
+	return manager.db.IsAdmin(core.CONFIGCHANNELID, member)
 }
 
 // GetAccount return requested account

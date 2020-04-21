@@ -17,7 +17,7 @@ import (
 	"madledger/core"
 )
 
-// WriteBatch ...
+// WriteBatch provide an interface to update datas atomic
 type WriteBatch interface {
 	// AddBlock will records all txs in the block to get rid of duplicated txs, cbn block
 	AddBlock(block *core.Block) error
@@ -27,7 +27,6 @@ type WriteBatch interface {
 	UpdateAccounts(accounts ...common.Account) error
 	// SetAccount can only be called when atomicity is at one account level
 	SetAccount(account common.Account) error
-	UpdateSystemAdmin(profile *cc.Profile) error
 	// SetAssetAdmin only succeed at the first time it is called
 	// TODO: We need to change this function
 	SetAssetAdmin(pk crypto.PublicKey) error
@@ -38,13 +37,16 @@ type WriteBatch interface {
 // DB is the interface of db, and it is the implementation of DB on orderer/.tendermint/.glue
 // TODO: We need reconsider all of these apis.
 type DB interface {
+	// ListChannel list all channels that db knows, include system channel and user channel
 	ListChannel() []string
-	HasChannel(id string) bool
-	GetChannelProfile(id string) (*cc.Profile, error)
+	// HasChannel return if channel exist
+	HasChannel(channelID string) bool
+	// GetChannelProfile return profile of channel if exist, else return an error
+	GetChannelProfile(channelID string) (*cc.Profile, error)
+	// HasTx return if a tx exist
 	HasTx(tx *core.Tx) bool
 	IsMember(channelID string, member *core.Member) bool
 	IsAdmin(channelID string, member *core.Member) bool
-	IsSystemAdmin(member *core.Member) bool
 	// GetConsensusBlock return the last consensus block num that db knows
 	GetConsensusBlock(channelID string) (num uint64)
 	// WatchChannel provide a way to spy channel change. Now it mainly used to

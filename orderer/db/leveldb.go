@@ -12,6 +12,7 @@ package db
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"madledger/common"
 
@@ -25,9 +26,12 @@ import (
 )
 
 /*
-*  1. Channel profile: key is []byte("_config@" + channelID), value is the json.Marshal(profile)
-*  2. All channel ids: key is []byte("_config"), value is json.Marshl([]string{id1, id2, ...})
-*  3. Tx: key is combine of []byte(channelID) and []byte(txID), value is []byte("true")
+* Here will describe how the db store key/value.
+* 1. All channels: []byte("channelList") -> []string{}
+* 2. Channel Profile: []byte(channelID+"@profile") -> Profile
+* 3. Account: []byte(account.Address()) -> Account
+* 4. Consensus Block: []byte("cbn"+channelID) -> uint64
+* 5. Tx: []byte(tx.ChannelID+tx.ID) -> []byte{1}
  */
 
 // LevelDB is the implementation of DB on orderer/data/leveldb
@@ -55,28 +59,31 @@ func NewLevelDB(dir string) (DB, error) {
 
 // ListChannel is the implementation of DB
 func (db *LevelDB) ListChannel() []string {
-	var key = []byte(core.CONFIGCHANNELID)
+	var key = getChannelListKey()
 	var channels []string
 	data, err := db.connect.Get(key, nil)
 	if err != nil {
 		return channels
 	}
-	err = json.Unmarshal(data, &channels)
-	if err != nil {
-		return channels
-	}
+	json.Unmarshal(data, &channels)
 	return channels
 }
 
-// HasChannel is the implementation of DB
-func (db *LevelDB) HasChannel(id string) bool {
-	exist, _ := db.connect.Has(getChannelProfileKey(id), nil)
+// HasChannel return if channel exist
+func (db *LevelDB) HasChannel(channelID string) bool {
+	if channelID == "" {
+		return false
+	}
+	exist, _ := db.connect.Has(getChannelProfileKey(channelID), nil)
 	return exist
 }
 
 // GetChannelProfile return profile of channel
-func (db *LevelDB) GetChannelProfile(id string) (*cc.Profile, error) {
-	var key = getChannelProfileKey(id)
+func (db *LevelDB) GetChannelProfile(channelID string) (*cc.Profile, error) {
+	if channelID == "" {
+		return nil, errors.New("channel id should not be empty")
+	}
+	var key = getChannelProfileKey(channelID)
 	data, err := db.connect.Get(key, nil)
 	if err != nil {
 		return nil, err
@@ -162,26 +169,6 @@ func (db *LevelDB) IsAdmin(channelID string, member *core.Member) bool {
 	return false
 }
 
-// IsSystemAdmin return if the member is the system admin
-func (db *LevelDB) IsSystemAdmin(member *core.Member) bool {
-	var p cc.Profile
-	var key = getSystemAdminKey()
-	data, err := db.connect.Get(key, nil)
-	if err != nil {
-		return false
-	}
-	err = json.Unmarshal(data, &p)
-	if err != nil {
-		return false
-	}
-	for i := range p.Admins {
-		if p.Admins[i].Equal(member) {
-			return true
-		}
-	}
-	return false
-}
-
 // WatchChannel is the implementation of DB
 func (db *LevelDB) WatchChannel(channelID string) {
 	db.hub.Watch(channelID, nil)
@@ -193,7 +180,7 @@ func (db *LevelDB) Close() error {
 }
 
 func getChannelProfileKey(id string) []byte {
-	return []byte(fmt.Sprintf("%s@%s", core.CONFIGCHANNELID, id))
+	return []byte(fmt.Sprintf("%s@profile", id))
 }
 
 func getSystemAdminKey() []byte {
@@ -286,26 +273,8 @@ func (wb *WriteBatchWrapper) UpdateChannel(id string, profile *cc.Profile) error
 	if err != nil {
 		return err
 	}
-	//更新key为_config@id的记录, 具体内容示例如下：
-	// _config@test30 ,  {"Public":true,"Dependencies":null,"Members":[],
-	// "Admins":[{"PK":"BN2PLBpBd5BrSLfTY7QEBYQT0h6lFvWlZyuAVt3/bfEz1g5QJ2lIEXP2Zk15B6E2MWpA/Q4Yxnl+XjFGObvAKTY=","Name":"admin"}]
-	// "gasPrice": 1, "ratio": 1, "maxGas": 1000000 }
 	wb.batch.Put(key, data)
 	wb.db.hub.Done(id, nil)
-	return nil
-}
-
-// UpdateSystemAdmin update system admin
-func (wb *WriteBatchWrapper) UpdateSystemAdmin(profile *cc.Profile) error {
-	var key = getSystemAdminKey()
-	data, err := json.Marshal(profile)
-	if err != nil {
-		return err
-	}
-	//更新key为_config$admin的记录, 具体内容示例如下：
-	//(_config$admin, {"Public":true,"Dependencies":null,"Members":null,"Admins":
-	// [{"PK":"BGXcjZ3bhemsoLP4HgBwnQ5gsc8VM91b3y8bW0b6knkWu8xCSKO2qiJXARMHcbtZtvU7Jos2A5kFCD1haJ/hLdg=","Name":"SystemAdmin"}]})
-	wb.batch.Put(key, data)
 	return nil
 }
 
@@ -360,7 +329,7 @@ func (wb *WriteBatchWrapper) SetAssetAdmin(pk crypto.PublicKey) error {
 
 // addChannel add a record into key core.CONFIGCHANNELID
 func (wb *WriteBatchWrapper) addChannel(id string) error {
-	var key = []byte(core.CONFIGCHANNELID)
+	var key = getChannelListKey()
 	var ids []string
 	if util.Contain(wb.kvs, string(key)) {
 		json.Unmarshal(wb.kvs[string(key)], &ids)
@@ -389,7 +358,7 @@ func (wb *WriteBatchWrapper) addChannel(id string) error {
 }
 
 func getAccountKey(address common.Address) []byte {
-	return []byte(fmt.Sprintf("%s@%s", core.ASSETCHANNELID, address.String()))
+	return []byte(fmt.Sprintf("%s", address.String()))
 }
 
 func getAssetAdminKey() []byte {
@@ -398,4 +367,8 @@ func getAssetAdminKey() []byte {
 
 func getConsensusBlockKey(id string) []byte {
 	return []byte(fmt.Sprintf("cbn:%s", id))
+}
+
+func getChannelListKey() []byte {
+	return []byte("channelList")
 }

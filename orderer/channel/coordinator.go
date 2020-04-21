@@ -380,7 +380,7 @@ func (c *Coordinator) loadConfigChannel() error {
 		}
 		// put admin's pubkey into leveldb
 		wb := c.CM.db.NewWriteBatch()
-		err = wb.UpdateSystemAdmin(&bc.Profile{
+		err = wb.UpdateChannel(core.CONFIGCHANNELID, &bc.Profile{
 			Public: true,
 			Admins: admins,
 		})
