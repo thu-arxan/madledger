@@ -58,11 +58,14 @@ func (s *Server) CreateChannel(ctx context.Context, req *pb.CreateChannelRequest
 func (s *Server) AddTx(ctx context.Context, req *pb.AddTxRequest) (*pb.TxStatus, error) {
 	var status pb.TxStatus
 	if req.Tx == nil {
-		return &status, errors.New("wrong tx")
+		return &status, errors.New("tx should not be nil")
 	}
 	tx, err := req.Tx.ToCore()
 	if err != nil {
 		return &status, err
+	}
+	if !tx.Verify() {
+		return &status, errors.New("tx is not formatted")
 	}
 	// if tx is for confChange, we should check if the client is system admin
 	// get tx type according to recipient

@@ -12,6 +12,7 @@ package performance
 
 import (
 	"fmt"
+	"madledger/common/crypto"
 	"madledger/core"
 	"madledger/tests/performance/bft"
 	"os"
@@ -35,6 +36,7 @@ var (
 	peerNum     = 3
 	channelSize = 10
 	clientSize  = 200
+	cryptoAlgo  = crypto.KeyAlgoSM2
 )
 
 func init() {
@@ -47,11 +49,11 @@ func TestInit(t *testing.T) {
 	os.Remove(logPath)
 	switch consensus {
 	case "solo":
-		require.NoError(t, solo.Init(clientSize))
+		require.NoError(t, solo.Init(clientSize, cryptoAlgo))
 		require.NoError(t, solo.StartOrderers())
 		require.NoError(t, solo.StartPeers())
 	case "raft":
-		require.NoError(t, raft.Init(clientSize, peerNum))
+		require.NoError(t, raft.Init(clientSize, cryptoAlgo, peerNum))
 		require.NoError(t, raft.StartOrderers())
 		require.NoError(t, raft.StartPeers(peerNum))
 	case "bft":
@@ -100,8 +102,12 @@ func TestPerformance(t *testing.T) {
 	duration := (int64)(time.Since(begin)) / 1e6
 	tps := int64(callSize*len(clients)*1e3) / (duration)
 	table := cutil.NewTable()
-	table.SetHeader("Consensus", "Size", "Time", "TPS")
-	table.AddRow(consensus, callSize*len(clients), fmt.Sprintf("%v", time.Since(begin)), fmt.Sprintf("%d", tps))
+	table.SetHeader("Crypto", "Consensus", "Size", "Time", "TPS")
+	var algo = "sm2"
+	if cryptoAlgo == crypto.KeyAlgoSecp256k1 {
+		algo = "secp256k1"
+	}
+	table.AddRow(algo, consensus, callSize*len(clients), fmt.Sprintf("%v", time.Since(begin)), fmt.Sprintf("%d", tps))
 	require.NoError(t, writeLog(table.ToString()))
 }
 

@@ -12,6 +12,7 @@ package solo
 
 import (
 	client "madledger/client/lib"
+	"madledger/common/crypto"
 	"madledger/common/util"
 	"os"
 	"time"
@@ -26,15 +27,17 @@ import (
 var (
 	ordererServer *orderer.Server
 	peerServer    *peer.Server
+	cryptoAlgo    = crypto.KeyAlgoSM2
 )
 
 // Init will init environment
-func Init(clientSize int) error {
+func Init(clientSize int, algo crypto.Algorithm) error {
 	Clean()
 	os.MkdirAll(getOrdererPath(), os.ModePerm)
 	os.MkdirAll(getPeerPath(), os.ModePerm)
 	os.MkdirAll(getClientsPath(), os.ModePerm)
 	clients = make([]*client.Client, clientSize)
+	cryptoAlgo = algo
 	return newClients()
 }
 

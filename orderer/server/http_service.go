@@ -92,7 +92,14 @@ func (hs *Server) AddTxByHTTP(c *gin.Context) {
 	var status pb.TxStatus
 
 	var coreTx core.Tx
-	json.Unmarshal([]byte(j.Tx), &coreTx)
+	if err := json.Unmarshal([]byte(j.Tx), &coreTx); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !coreTx.Verify() {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "tx is not formatted"})
+		return
+	}
 
 	txType, err := core.GetTxType(common.BytesToAddress(coreTx.Data.Recipient).String())
 	if err == nil && txType == core.CONSENSUS {

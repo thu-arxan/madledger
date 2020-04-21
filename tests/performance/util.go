@@ -13,7 +13,6 @@ package performance
 import (
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	client "madledger/client/lib"
 	"madledger/common/abi"
@@ -63,7 +62,6 @@ func getTxStatus(abiPath, funcName string, status *pb.TxStatus) (*txStatus, erro
 	}
 	values, err := abi.Unpack(abiPath, funcName, status.Output)
 	if err != nil {
-		fmt.Println("here>>>", status.Output)
 		return nil, err
 	}
 	var txStatus = &txStatus{

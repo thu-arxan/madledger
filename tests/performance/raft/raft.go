@@ -13,6 +13,7 @@ package raft
 import (
 	"fmt"
 	client "madledger/client/lib"
+	"madledger/common/crypto"
 	"madledger/common/util"
 	"os"
 	"time"
@@ -27,14 +28,16 @@ import (
 var (
 	ordererServers []*orderer.Server
 	peerServers    []*peer.Server
+	cryptoAlgo     = crypto.KeyAlgoSM2
 )
 
 // Init will init environment
-func Init(clientSize, peerNum int) error {
+func Init(clientSize int, algo crypto.Algorithm, peerNum int) error {
 	Clean()
 	os.MkdirAll(getOrdererPath(), os.ModePerm)
 	os.MkdirAll(getPeerPath(), os.ModePerm)
 	os.MkdirAll(getClientsPath(), os.ModePerm)
+	cryptoAlgo = algo
 	clients = make([]*client.Client, clientSize)
 	return newClients(peerNum)
 }
