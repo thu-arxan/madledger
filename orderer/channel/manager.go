@@ -189,7 +189,6 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 			}
 		}
 	}
-	// TODO: Sync too early
 
 	defer func() {
 		log.Infof("AddBlock %d in orderer channel %v success", block.GetNumber(), manager.ID)
@@ -206,7 +205,10 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		}
 		return wb.Sync()
 	case core.GLOBALCHANNELID:
-		wb.Sync()
+		if err := wb.Sync(); err != nil {
+			return err
+		}
+		// Note: add global block would update db
 		return manager.AddGlobalBlock(block)
 	case core.ASSETCHANNELID:
 		if !isGenesisBlock(block) && !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
@@ -217,8 +219,7 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		}
 		return wb.Sync()
 	default:
-		wb.Sync()
-		return nil
+		return wb.Sync()
 	}
 }
 
