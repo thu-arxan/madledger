@@ -35,7 +35,6 @@ type WriteBatch interface {
 }
 
 // DB is the interface of db, and it is the implementation of DB on orderer/.tendermint/.glue
-// TODO: We need reconsider all of these apis.
 type DB interface {
 	// ListChannel list all channels that db knows, include system channel and user channel
 	ListChannel() []string

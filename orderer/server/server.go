@@ -169,25 +169,6 @@ func (s *Server) Start() error {
 
 	err = s.rpcServer.Serve(lis)
 
-	// TODO: TLS support not implemented
-	// haddr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100)
-	// router := gin.Default()
-	// err = s.initServer(router)
-	// if err != nil {
-	// 	log.Error("Init router failed: ", err)
-	// 	return err
-	// }
-	// s.srv = &http.Server{
-	// 	Addr:    haddr,
-	// 	Handler: router,
-	// }
-	// go func() {
-	// 	// service connections
-	// 	if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-	// 		log.Fatalf("listen: %s\n", err)
-	// 	}
-	// }()
-
 	return nil
 }
 
