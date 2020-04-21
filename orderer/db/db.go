@@ -17,15 +17,6 @@ import (
 	"madledger/core"
 )
 
-// TxStatus return the status of tx
-type TxStatus struct {
-	Err             string
-	BlockNumber     uint64
-	BlockIndex      int
-	Output          []byte
-	ContractAddress string
-}
-
 // WriteBatch ...
 type WriteBatch interface {
 	// AddBlock will records all txs in the block to get rid of duplicated txs, cbn block
