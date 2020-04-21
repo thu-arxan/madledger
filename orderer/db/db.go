@@ -53,12 +53,14 @@ type DB interface {
 	HasTx(tx *core.Tx) bool
 	IsMember(channelID string, member *core.Member) bool
 	IsAdmin(channelID string, member *core.Member) bool
-	GetConsensusBlock(id string) uint64
+	IsSystemAdmin(member *core.Member) bool
+	// GetConsensusBlock return the last consensus block num that db knows
+	GetConsensusBlock(channelID string) (num uint64)
 	// WatchChannel provide a way to spy channel change. Now it mainly used to
 	// spy channel create operation.
 	WatchChannel(channelID string)
+	// Close close db
 	Close() error
-	IsSystemAdmin(member *core.Member) bool
 	// if couldBeEmpty set to true and error is ErrNotFound
 	// return no error
 	Get(key []byte, couldBeEmpty bool) ([]byte, error)

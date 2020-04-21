@@ -87,8 +87,8 @@ func (db *LevelDB) GetChannelProfile(id string) (*cc.Profile, error) {
 }
 
 // GetConsensusBlock return the consensus block number of channel
-func (db *LevelDB) GetConsensusBlock(id string) uint64 {
-	key := getConsensusBlockKey(id)
+func (db *LevelDB) GetConsensusBlock(channelID string) uint64 {
+	key := getConsensusBlockKey(channelID)
 	data, err := db.connect.Get(key, nil)
 	if err != nil || len(data) == 0 {
 		return 1

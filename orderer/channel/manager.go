@@ -312,6 +312,7 @@ func (manager *Manager) syncBlock() {
 		}
 		num++
 		manager.cbc <- cb
+		// Note: solo consensus will create block from block 1 if restart, so we would not remember last consensus block
 		if manager.coordinator.Consensus.Info() != "solo" {
 			wb := manager.db.NewWriteBatch()
 			wb.SetConsensusBlock(manager.ID, num)
