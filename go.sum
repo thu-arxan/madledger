@@ -763,3 +763,5 @@ honnef.co/go/tools v0.0.1-2019.2.3/go.mod h1:a3bituU0lyd329TUQxRnasdCoJDkEUEAqEt
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
 sigs.k8s.io/yaml v1.1.0/go.mod h1:UJmg0vDUVViEyp3mgSv9WPwZCDxu4rQW1olrI1uml+o=
 sourcegraph.com/sourcegraph/appdash v0.0.0-20190731080439-ebfcffb1b5c0/go.mod h1:hI742Nqp5OhwiqlzhgfbWU4mW4yO10fP+LoT9WOswdU=
+sourcegraph.com/sqs/goreturns v0.0.0-20181028201513-538ac6014518 h1:hK6WwmQDFDRBBDeN/+3lcp1NoDn0ptGiJhxIpvzpqCw=
+sourcegraph.com/sqs/goreturns v0.0.0-20181028201513-538ac6014518/go.mod h1:Hm3i1Xmrc6guw1/fGxmO0PIGpbmXAQsJ8LhIQncGYwo=

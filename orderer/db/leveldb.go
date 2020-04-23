@@ -223,18 +223,20 @@ func (db *LevelDB) Get(key []byte, couldBeEmpty bool) ([]byte, error) {
 
 // WriteBatchWrapper is a wrapper of level.Batch
 type WriteBatchWrapper struct {
-	batch *leveldb.Batch
-	db    *LevelDB
-	kvs   map[string][]byte
+	batch   *leveldb.Batch
+	db      *LevelDB
+	kvs     map[string][]byte
+	watches map[string]interface{}
 }
 
 // NewWriteBatch implement the interface, WriteBatch is a wrapper of leveldb.Batch
 func (db *LevelDB) NewWriteBatch() WriteBatch {
 	batch := new(leveldb.Batch)
 	return &WriteBatchWrapper{
-		batch: batch,
-		db:    db,
-		kvs:   make(map[string][]byte),
+		batch:   batch,
+		db:      db,
+		kvs:     make(map[string][]byte),
+		watches: make(map[string]interface{}),
 	}
 }
 
@@ -274,7 +276,7 @@ func (wb *WriteBatchWrapper) UpdateChannel(id string, profile *cc.Profile) error
 		return err
 	}
 	wb.batch.Put(key, data)
-	wb.db.hub.Done(id, nil)
+	wb.watches[id] = nil
 	return nil
 }
 
@@ -288,7 +290,13 @@ func (wb *WriteBatchWrapper) Sync() error {
 	for k, v := range wb.kvs {
 		wb.batch.Put([]byte(k), v)
 	}
-	return wb.db.connect.Write(wb.batch, nil)
+	if err := wb.db.connect.Write(wb.batch, nil); err != nil {
+		return err
+	}
+	for id := range wb.watches {
+		wb.db.hub.Done(id, wb.watches[id])
+	}
+	return nil
 }
 
 // UpdateAccounts update asset

@@ -18,6 +18,7 @@ import (
 	cc "madledger/blockchain/config"
 	"madledger/common"
 	"madledger/common/crypto"
+	"madledger/common/event"
 	"madledger/consensus"
 	"madledger/core"
 	"madledger/orderer/db"
@@ -27,7 +28,6 @@ import (
 // AddConfigBlock add a config block
 // The block is formated, so there is no need to verify
 func (manager *Manager) AddConfigBlock(wb db.WriteBatch, block *core.Block) error {
-	nums := make(map[string][]uint64)
 	if block.Header.Number == 0 {
 		return nil
 	}
@@ -69,7 +69,7 @@ func (manager *Manager) AddConfigBlock(wb db.WriteBatch, block *core.Block) erro
 			}()
 			// 更新coordinator.Managers(map类型)
 			manager.coordinator.setChannel(channelID, channel)
-			nums[payload.ChannelID] = []uint64{0}
+			manager.coordinator.Unlock(payload.ChannelID, 0)
 		}
 		// todo: ab update channel may modify blockPrice of user channel
 		// may need authentication check
@@ -78,28 +78,36 @@ func (manager *Manager) AddConfigBlock(wb db.WriteBatch, block *core.Block) erro
 			return err
 		}
 	}
-	manager.coordinator.Unlocks(nums)
 
 	return nil
 }
 
 // AddGlobalBlock add global block
 func (manager *Manager) AddGlobalBlock(block *core.Block) error {
-	nums := make(map[string][]uint64)
+	// nums := make(map[string][]uint64)
+	var subjects = make([]*event.Subject, 0)
 	for _, tx := range block.Transactions {
 		payload, err := tx.GetGlobalTxPayload()
 		if err != nil {
 			return err
 		}
-		switch payload.ChannelID {
-		case core.CONFIGCHANNELID, core.ASSETCHANNELID:
-			var payloadNum = []uint64{payload.Num}
-			manager.coordinator.Unlocks(map[string][]uint64{payload.ChannelID: payloadNum})
+		subjects = append(subjects, event.NewSubject(payload.ChannelID, payload.Num))
+	}
+	for i := range subjects {
+		switch subjects[i].K {
+		case core.ASSETCHANNELID, core.CONFIGCHANNELID:
+			if i != len(subjects)-1 {
+				manager.coordinator.Unlock(subjects[i].K, subjects[i].V, subjects[i+1:]...)
+			} else {
+				manager.coordinator.Unlock(subjects[i].K, subjects[i].V)
+			}
+			// Note: do not use break here
+			return nil
 		default:
-			nums[payload.ChannelID] = append(nums[payload.ChannelID], payload.Num)
+			log.Infof("[GLO]Unlock block %d of channel %s", subjects[i].V, subjects[i].K)
+			manager.coordinator.Unlock(subjects[i].K, subjects[i].V)
 		}
 	}
-	manager.coordinator.Unlocks(nums)
 
 	return nil
 }

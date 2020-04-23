@@ -156,54 +156,34 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		return err
 	}
 
-	if isUserChannel(manager.ID) && !isGenesisBlock(block) {
-		profile, err := manager.db.GetChannelProfile(manager.ID)
-		if err != nil {
-			log.Infof("manager.db cannot get channel profile: %s add block %d, %s",
-				manager.ID, block.Header.Number, err.Error())
-			return err
-		}
-		if profile.BlockPrice != 0 {
-			acc, err := manager.db.GetOrCreateAccount(common.AddressFromChannelID(manager.ID))
-			if err != nil {
-				return err
-			}
-			balance := acc.GetBalance()
-
-			storagePrice := uint64(len(block.Bytes())) * profile.BlockPrice
-			if balance < storagePrice {
-				manager.lock.Lock()
-				manager.insufficientBalance = true
-				manager.lock.Unlock()
-				acc.SubBalance(balance)
-				acc.AddDue(storagePrice - balance)
-				// zhq todo: am i doing it correct?
-			} else {
-				acc.SubBalance(storagePrice)
-			}
-			err = wb.SetAccount(acc)
-			if err != nil {
-				log.Infof("manager.db cannot set account: %s add block %d, %s",
-					manager.ID, block.Header.Number, err.Error())
-				return err
-			}
-		}
-	}
-
-	defer func() {
-		log.Infof("AddBlock %d in orderer channel %v success", block.GetNumber(), manager.ID)
-	}()
-
 	// check is there is any need to update local state of orderer
 	switch manager.ID {
 	case core.CONFIGCHANNELID:
-		if !isGenesisBlock(block) && !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
-			manager.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
+		var subjects []*event.Subject
+		if !isGenesisBlock(block) {
+			subjects = manager.coordinator.Wait(block.Header.ChannelID, block.Header.Number)
 		}
 		if err := manager.AddConfigBlock(wb, block); err != nil {
 			return err
 		}
-		return wb.Sync()
+		if err := wb.Sync(); err != nil {
+			return err
+		}
+		for i := range subjects {
+			switch subjects[i].K {
+			case core.CONFIGCHANNELID, core.ASSETCHANNELID:
+				if i != len(subjects)-1 {
+					manager.coordinator.Unlock(subjects[i].K, subjects[i].V, subjects[i+1:]...)
+				} else {
+					manager.coordinator.Unlock(subjects[i].K, subjects[i].V)
+				}
+				return nil
+			default:
+				log.Infof("[CFG]Unlock block %d of channel %s", subjects[i].V, subjects[i].K)
+				manager.coordinator.Unlock(subjects[i].K, subjects[i].V)
+			}
+		}
+		return nil
 	case core.GLOBALCHANNELID:
 		if err := wb.Sync(); err != nil {
 			return err
@@ -211,14 +191,69 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		// Note: add global block would update db
 		return manager.AddGlobalBlock(block)
 	case core.ASSETCHANNELID:
-		if !isGenesisBlock(block) && !manager.coordinator.CanRun(block.Header.ChannelID, block.Header.Number) {
-			manager.coordinator.Watch(block.Header.ChannelID, block.Header.Number)
+		var subjects []*event.Subject
+		if !isGenesisBlock(block) {
+			subjects = manager.coordinator.Wait(block.Header.ChannelID, block.Header.Number)
 		}
 		if err := manager.AddAssetBlock(wb, block); err != nil {
 			return err
 		}
-		return wb.Sync()
+		if err := wb.Sync(); err != nil {
+			return err
+		}
+		for i := range subjects {
+			switch subjects[i].K {
+			case core.CONFIGCHANNELID, core.ASSETCHANNELID:
+				if i != len(subjects)-1 {
+					manager.coordinator.Unlock(subjects[i].K, subjects[i].V, subjects[i+1:]...)
+				} else {
+					manager.coordinator.Unlock(subjects[i].K, subjects[i].V)
+				}
+				return nil
+			default:
+				log.Infof("[ASS]Unlock block %d of channel %s", subjects[i].V, subjects[i].K)
+				manager.coordinator.Unlock(subjects[i].K, subjects[i].V)
+			}
+		}
+		return nil
 	default:
+		// User channel cost some assets
+		if isUserChannel(manager.ID) && !isGenesisBlock(block) {
+			log.Infof("channel %s wait block %d", block.Header.ChannelID, block.Header.Number)
+			manager.coordinator.Wait(block.Header.ChannelID, block.Header.Number)
+			log.Infof("channel %s wait block %d done", block.Header.ChannelID, block.Header.Number)
+			profile, err := manager.db.GetChannelProfile(manager.ID)
+			if err != nil {
+				log.Infof("manager.db cannot get channel profile: %s add block %d, %s",
+					manager.ID, block.Header.Number, err.Error())
+				return err
+			}
+			if err == nil && profile.BlockPrice != 0 {
+				acc, err := manager.db.GetOrCreateAccount(common.AddressFromChannelID(manager.ID))
+				if err != nil {
+					return err
+				}
+				balance := acc.GetBalance()
+
+				storagePrice := uint64(len(block.Bytes())) * profile.BlockPrice
+				if balance < storagePrice {
+					manager.lock.Lock()
+					manager.insufficientBalance = true
+					manager.lock.Unlock()
+					acc.SubBalance(balance)
+					acc.AddDue(storagePrice - balance)
+					// zhq todo: am i doing it correct?
+				} else {
+					acc.SubBalance(storagePrice)
+				}
+				err = wb.SetAccount(acc)
+				if err != nil {
+					log.Infof("manager.db cannot set account: %s add block %d, %s",
+						manager.ID, block.Header.Number, err.Error())
+					return err
+				}
+			}
+		}
 		return wb.Sync()
 	}
 }

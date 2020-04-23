@@ -53,35 +53,14 @@ type Coordinator struct {
 
 	Consensus consensus.Consensus
 
-	hub       *event.Hub
-	stateLock sync.RWMutex
-	states    map[string]*State
-}
-
-// StateCode represent the code of state
-type StateCode int
-
-// All States
-const (
-	Waitting StateCode = iota
-	Runable
-)
-
-// State represents the state of channel
-type State struct {
-	num  uint64
-	code StateCode
-	// hashes is not working now
-	hashes map[uint64][]byte
+	locker *event.Locker
 }
 
 // NewCoordinator is the constructor of Coordinator
 func NewCoordinator(dbDir string, chainCfg *config.BlockChainConfig, consensusCfg *config.ConsensusConfig) (*Coordinator, error) {
 	var err error
-
 	c := new(Coordinator)
-	c.hub = event.NewHub()
-	c.states = make(map[string]*State)
+	c.locker = event.NewLocker()
 	c.Managers = make(map[string]*Manager)
 	c.chainCfg = chainCfg
 	// set db
@@ -108,51 +87,14 @@ func NewCoordinator(dbDir string, chainCfg *config.BlockChainConfig, consensusCf
 	return c, nil
 }
 
-// CanRun return runable
-func (c *Coordinator) CanRun(channelID string, num uint64) bool {
-	c.stateLock.Lock()
-	defer c.stateLock.Unlock()
-
-	if util.Contain(c.states, channelID) {
-		state := c.states[channelID]
-		if num < state.num {
-			return true
-		}
-		if num > state.num {
-			return false
-		}
-		return state.code == Runable
-	}
-	return false
+// Wait until block can run
+func (c *Coordinator) Wait(channelID string, num uint64) []*event.Subject {
+	return c.locker.Wait(channelID, num)
 }
 
-// Watch watch on the channel event
-func (c *Coordinator) Watch(channelID string, num uint64) {
-	c.hub.Watch(fmt.Sprintf("%s:%d", channelID, num), nil)
-}
-
-// Unlocks will unlock some channels
-func (c *Coordinator) Unlocks(channelNums map[string][]uint64) {
-	c.stateLock.Lock()
-	defer c.stateLock.Unlock()
-
-	for channel, nums := range channelNums {
-		for _, num := range nums {
-			if util.Contain(c.states, channel) {
-				state := c.states[channel]
-				if num >= state.num {
-					state.num = num
-					state.code = Runable
-				}
-			} else {
-				state := new(State)
-				state.num = num
-				state.code = Runable
-				c.states[channel] = state
-			}
-			c.hub.Done(fmt.Sprintf("%s:%d", channel, num), nil)
-		}
-	}
+// Unlock unlock block
+func (c *Coordinator) Unlock(channelID string, num uint64, subjects ...*event.Subject) {
+	c.locker.Unlock(channelID, num, subjects...)
 }
 
 // Start the coordinator

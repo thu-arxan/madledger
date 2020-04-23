@@ -15,6 +15,8 @@ import (
 	"madledger/common/util"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestWatch(t *testing.T) {
@@ -27,9 +29,7 @@ func TestWatch(t *testing.T) {
 	var finish = make(chan bool, 1)
 	go func() {
 		num := hub.Watch(id, nil).(int)
-		if num != 1 {
-			t.Fatal()
-		}
+		require.EqualValues(t, 1, num)
 		finish <- true
 	}()
 	num := hub.Watch(id, nil).(int)
