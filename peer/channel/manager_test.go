@@ -226,6 +226,10 @@ func (o *fakeOrderer) Ping(ctx context.Context, req *empty.Empty) (*pb.PingRespo
 	return nil, nil
 }
 
+func (o *fakeOrderer) GetPeerAddress(ctx context.Context, req *pb.GetPeerAddressRequest) (*pb.PeerAddress, error) {
+	return nil, nil
+}
+
 func generateBlocks() {
 	// first generate test blocks
 	testGenesisBlock := core.NewBlock("test", 0, core.GenesisBlockPrevHash, nil)

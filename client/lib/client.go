@@ -267,14 +267,21 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 			break
 		}
 	}
-
-	peerList, err := c.GetPeerAddress(tx.Data.ChannelID)
-	if err != nil {
-		return nil, err
-	}
-	peerClients, err := c.GenPeerConn(peerList)
-	if err != nil {
-		return nil, err
+	var cID string
+	var peerList []string
+	var peerClients []pb.PeerClient
+	if tx.Data.ChannelID == "_global" || tx.Data.ChannelID == "_config" || tx.Data.ChannelID == "_asset" {
+		peerClients = c.peerClients
+	} else {
+		cID = tx.Data.ChannelID
+		peerList, err = c.GetPeerAddress(cID)
+		if err != nil {
+			return nil, err
+		}
+		peerClients, err = c.GenPeerConn(peerList)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	collector := NewCollector(len(peerClients), 1)
@@ -337,6 +344,17 @@ func (c *Client) GenPeerConn(peerList []string) ([]pb.PeerClient, error) {
 		var opts []grpc.DialOption
 		var conn *grpc.ClientConn
 		var err error
+
+		// if cfg.TLS.Enable {
+		// 	creds := credentials.NewTLS(&tls.Config{
+		// 		Certificates: []tls.Certificate{*(cfg.TLS.Cert)},
+		// 		RootCAs:      cfg.TLS.Pool,
+		// 	})
+		// 	opts = append(opts, grpc.WithTransportCredentials(creds))
+		// } else {
+		opts = append(opts, grpc.WithInsecure())
+		// }
+
 		opts = append(opts, grpc.WithTimeout(2000*time.Millisecond))
 
 		conn, err = grpc.Dial(address, opts...)
@@ -354,7 +372,7 @@ func (c *Client) GenPeerConn(peerList []string) ([]pb.PeerClient, error) {
 // TODO: Support bft
 func (c *Client) GetHistory(address []byte) (*pb.TxHistory, error) {
 	var peerClients []pb.PeerClient
-	var set map[string]bool
+	set := make(map[string]bool)
 	var keys []string
 
 	channelInfos, err := c.ListChannel(false)

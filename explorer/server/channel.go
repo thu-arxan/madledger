@@ -104,7 +104,7 @@ func CreateChannel(c *gin.Context) {
 		return
 	}
 
-	err = Client.CreateChannel(channelID, public, admins, members, gasPrice, ratio, maxGas)
+	err = Client.CreateChannel(channelID, public, admins, members, gasPrice, ratio, maxGas, []string{})
 	if err != nil {
 		c.AbortWithError(500, err)
 		return

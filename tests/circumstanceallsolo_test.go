@@ -82,7 +82,7 @@ func TestAllSoloTxHistory(t *testing.T) {
 func TestAllSoloAsset(t *testing.T) {
 	client, err := getSoloClient()
 	require.NoError(t, err)
-	testAsset(t, client)
+	testAsset(t, client, []string{"localhost:23456"})
 }
 
 func TestAllSoloEnd(t *testing.T) {
