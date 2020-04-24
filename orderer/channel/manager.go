@@ -158,13 +158,25 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 
 	// check is there is any need to update local state of orderer
 	switch manager.ID {
-	case core.CONFIGCHANNELID:
+	case core.GLOBALCHANNELID:
+		if err := wb.Sync(); err != nil {
+			return err
+		}
+		// Note: add global block would update db
+		return manager.AddGlobalBlock(block)
+	case core.CONFIGCHANNELID, core.ASSETCHANNELID:
 		var subjects []*event.Subject
 		if !isGenesisBlock(block) {
 			subjects = manager.coordinator.Wait(block.Header.ChannelID, block.Header.Number)
 		}
-		if err := manager.AddConfigBlock(wb, block); err != nil {
-			return err
+		if manager.ID == core.CONFIGCHANNELID {
+			if err := manager.AddConfigBlock(wb, block); err != nil {
+				return err
+			}
+		} else {
+			if err := manager.AddAssetBlock(wb, block); err != nil {
+				return err
+			}
 		}
 		if err := wb.Sync(); err != nil {
 			return err
@@ -180,38 +192,6 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 				return nil
 			default:
 				log.Infof("[CFG]Unlock block %d of channel %s", subjects[i].V, subjects[i].K)
-				manager.coordinator.Unlock(subjects[i].K, subjects[i].V)
-			}
-		}
-		return nil
-	case core.GLOBALCHANNELID:
-		if err := wb.Sync(); err != nil {
-			return err
-		}
-		// Note: add global block would update db
-		return manager.AddGlobalBlock(block)
-	case core.ASSETCHANNELID:
-		var subjects []*event.Subject
-		if !isGenesisBlock(block) {
-			subjects = manager.coordinator.Wait(block.Header.ChannelID, block.Header.Number)
-		}
-		if err := manager.AddAssetBlock(wb, block); err != nil {
-			return err
-		}
-		if err := wb.Sync(); err != nil {
-			return err
-		}
-		for i := range subjects {
-			switch subjects[i].K {
-			case core.CONFIGCHANNELID, core.ASSETCHANNELID:
-				if i != len(subjects)-1 {
-					manager.coordinator.Unlock(subjects[i].K, subjects[i].V, subjects[i+1:]...)
-				} else {
-					manager.coordinator.Unlock(subjects[i].K, subjects[i].V)
-				}
-				return nil
-			default:
-				log.Infof("[ASS]Unlock block %d of channel %s", subjects[i].V, subjects[i].K)
 				manager.coordinator.Unlock(subjects[i].K, subjects[i].V)
 			}
 		}

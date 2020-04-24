@@ -11,6 +11,7 @@
 package event
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -77,12 +78,12 @@ func (l *Locker) Wait(subject string, num uint64) []*Subject {
 		waits = make([]*waitChan, 0)
 	}
 	waitCh := newWaitChan(num)
-	waits = binaryInsert(waits, waitCh)
+	waits = insert(waits, waitCh)
 	l.waits[subject] = waits
 	l.lock.Unlock()
 	// wait signal
 	subjects := <-waitCh.ch
-	// close(waitCh.ch)
+	close(waitCh.ch)
 	if len(subjects) == 0 {
 		return nil
 	}
@@ -107,6 +108,7 @@ func (l *Locker) Unlock(subject string, num uint64, subjects ...*Subject) {
 		var newWaits = make([]*waitChan, 0)
 		for i := range waits {
 			if waits[i].num <= num {
+				fmt.Println("wait address is", &waits[i], "and chan address is ", &(waits[i].ch))
 				if i == 0 && len(subjects) != 0 {
 					waits[i].ch <- subjects
 				} else {
@@ -122,7 +124,6 @@ func (l *Locker) Unlock(subject string, num uint64, subjects ...*Subject) {
 			l.waits[subject] = newWaits
 			if len(newWaits) == len(waits) { // subjects were not sent
 				// todo: it only works when the user wait increment
-				// todo: we need a better way to do this
 				l.relays[subject] = subjects
 			}
 		}
@@ -133,33 +134,16 @@ func (l *Locker) Unlock(subject string, num uint64, subjects ...*Subject) {
 	l.lock.Unlock()
 }
 
-func binaryInsert(waits []*waitChan, wait *waitChan) []*waitChan {
-	if len(waits) == 0 {
-		waits = append(waits, wait)
-	}
-	var begin = 0
-	var end = len(waits) - 1
-	var idx = begin
-	for begin <= end {
-		if waits[begin].num > wait.num {
-			idx = begin
-			break
-		} else if waits[end].num <= wait.num {
-			idx = end + 1
-			break
+func insert(waits []*waitChan, wait *waitChan) []*waitChan {
+	var newWaits = make([]*waitChan, 0)
+	for i := range waits {
+		if waits[i].num > wait.num { // we should insert
+			newWaits = append(newWaits, wait)
+			newWaits = append(newWaits, waits[i:]...)
+			return newWaits
 		}
-		mid := (begin + end) / 2
-		if waits[mid].num <= wait.num {
-			begin++
-		} else {
-			end--
-		}
-		idx = begin
+		newWaits = append(newWaits, waits[i])
 	}
-	waits = append(waits, nil)
-	for i := len(waits) - 1; i > idx; i-- {
-		waits[i] = waits[i-1]
-	}
-	waits[idx] = wait
-	return waits
+	newWaits = append(newWaits, wait)
+	return newWaits
 }
