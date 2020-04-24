@@ -37,8 +37,8 @@ import (
 
 // Coordinator responsible for coordination of managers
 type Coordinator struct {
-	chainCfg *config.BlockChainConfig
-	db       db.DB
+	cfg *config.Config
+	db  db.DB
 
 	lock sync.RWMutex
 	// Channels manager all user channels
@@ -57,12 +57,12 @@ type Coordinator struct {
 }
 
 // NewCoordinator is the constructor of Coordinator
-func NewCoordinator(dbDir string, chainCfg *config.BlockChainConfig, consensusCfg *config.ConsensusConfig) (*Coordinator, error) {
+func NewCoordinator(dbDir string, cfg *config.Config, consensusCfg *config.ConsensusConfig) (*Coordinator, error) {
 	var err error
 	c := new(Coordinator)
 	c.locker = event.NewLocker()
 	c.Managers = make(map[string]*Manager)
-	c.chainCfg = chainCfg
+	c.cfg = cfg
 	// set db
 	c.db, err = db.NewLevelDB(dbDir)
 	if err != nil {
@@ -436,8 +436,8 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 	// set consensus
 	var channels = make(map[string]consensus.Config, 0)
 	defaultCfg := consensus.Config{
-		Timeout: c.chainCfg.BatchTimeout,
-		MaxSize: c.chainCfg.BatchSize,
+		Timeout: c.cfg.BlockChain.BatchTimeout,
+		MaxSize: c.cfg.BlockChain.BatchSize,
 		Number:  1,
 		Resume:  false,
 	}
@@ -458,7 +458,7 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 		}
 		c.Consensus = consensus
 	case config.RAFT:
-		raftConfig, err := getConfig(cfg.Raft, c.chainCfg)
+		raftConfig, err := getConfig(cfg.Raft, c.cfg)
 		if err != nil {
 			return err
 		}
@@ -489,7 +489,7 @@ func (c *Coordinator) setConsensus(cfg *config.ConsensusConfig) error {
 	return nil
 }
 
-func getConfig(cRaft config.RaftConfig, cChain *config.BlockChainConfig) (*raft.Config, error) {
+func getConfig(cRaft config.RaftConfig, cfg *config.Config) (*raft.Config, error) {
 	tlsCfg := consensus.TLSConfig{
 		Enable:  cRaft.TLS.Enable,
 		CA:      cRaft.TLS.CA,
@@ -499,8 +499,8 @@ func getConfig(cRaft config.RaftConfig, cChain *config.BlockChainConfig) (*raft.
 		Cert:    cRaft.TLS.Cert,
 	}
 	return raft.NewConfig(cRaft.Path, cRaft.ID, cRaft.Nodes, cRaft.Join, consensus.Config{
-		Timeout: cChain.BatchTimeout,
-		MaxSize: cChain.BatchSize,
+		Timeout: cfg.BlockChain.BatchTimeout,
+		MaxSize: cfg.BlockChain.BatchSize,
 		Resume:  false,
 		Number:  1,
 		TLS:     tlsCfg,

@@ -18,56 +18,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetServerConfig(t *testing.T) {
+func TestLoadConfig(t *testing.T) {
 	cfg, err := LoadConfig(getTestConfigFilePath())
 	require.NoError(t, err)
 
-	serverCfg, err := cfg.GetServerConfig()
-	require.NoError(t, err)
-	require.Equal(t, serverCfg.Port, 12345)
-	require.Equal(t, serverCfg.Address, "localhost")
-	require.Equal(t, serverCfg.Debug, true)
-
-	// then change the value of cfg
-	// check address
-	cfg.Address = ""
-	_, err = cfg.GetServerConfig()
-	require.EqualError(t, err, "The address can not be empty")
-
-	// check port
-	cfg.Address = "localhost"
-	cfg.Port = -1
-	_, err = cfg.GetServerConfig()
-	require.EqualError(t, err, "The port can not be -1")
-
-	cfg.Port = 1023
-	_, err = cfg.GetServerConfig()
-	require.EqualError(t, err, "The port can not be 1023")
-
-	cfg.Port = 1024
-	_, err = cfg.GetServerConfig()
-	require.NoError(t, err)
-}
-
-func TestGetBlockChainConfig(t *testing.T) {
-	cfg, err := LoadConfig(getTestConfigFilePath())
-	require.NoError(t, err)
-
-	chainCfg, err := cfg.GetBlockChainConfig()
-	require.NoError(t, err)
-	require.Equal(t, chainCfg.BatchTimeout, 1000)
-	require.Equal(t, chainCfg.BatchSize, 100)
-	require.NotEqual(t, chainCfg.Path, "")
-	// then change the value of cfg
-	// check batch timeout
-	cfg.BlockChain.BatchTimeout = 0
-	_, err = cfg.GetBlockChainConfig()
-	require.EqualError(t, err, "The batch timeout can not be 0")
-	// check batch size
-	cfg.BlockChain.BatchTimeout = 1000
-	cfg.BlockChain.BatchSize = -1
-	_, err = cfg.GetBlockChainConfig()
-	require.EqualError(t, err, "The batch size can not be -1")
+	require.Equal(t, cfg.Port, 12345)
+	require.Equal(t, cfg.Address, "localhost")
+	require.Equal(t, cfg.Debug, true)
 }
 
 func TestGetConsensusConfig(t *testing.T) {

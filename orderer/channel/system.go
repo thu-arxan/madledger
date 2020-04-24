@@ -45,8 +45,8 @@ func (manager *Manager) AddConfigBlock(wb db.WriteBatch, block *core.Block) erro
 		if !manager.db.HasChannel(channelID) {
 			// then start the consensus
 			err := manager.coordinator.Consensus.AddChannel(channelID, consensus.Config{
-				Timeout: manager.coordinator.chainCfg.BatchTimeout,
-				MaxSize: manager.coordinator.chainCfg.BatchSize,
+				Timeout: manager.coordinator.cfg.BlockChain.BatchTimeout,
+				MaxSize: manager.coordinator.cfg.BlockChain.BatchSize,
 				Number:  1,
 				Resume:  false,
 			})

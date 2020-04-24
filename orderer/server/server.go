@@ -51,7 +51,7 @@ const (
 // Server provide the serve of orderer
 type Server struct {
 	sync.RWMutex
-	config    *config.ServerConfig
+	cfg       *config.Config
 	rpcServer *grpc.Server
 	srv       *http.Server
 	cc        *channel.Coordinator
@@ -62,19 +62,9 @@ type Server struct {
 // NewServer is the constructor of server
 func NewServer(cfg *config.Config) (*Server, error) {
 	server := new(Server)
-	// set config of server
-	serverCfg, err := cfg.GetServerConfig()
-	if err != nil {
-		return nil, err
-	}
-	server.config = serverCfg
+	server.cfg = cfg
 	// load db config
 	dbCfg, err := cfg.GetDBConfig()
-	if err != nil {
-		return nil, err
-	}
-	// load chain config
-	chainCfg, err := cfg.GetBlockChainConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +74,7 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 	// get channel coordinator
-	cc, err := channel.NewCoordinator(dbCfg.LevelDB.Path, chainCfg, consensusCfg)
+	cc, err := channel.NewCoordinator(dbCfg.LevelDB.Path, cfg, consensusCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +105,7 @@ func (s *Server) initServer(engine *gin.Engine) error {
 // Start starts the server
 func (s *Server) Start() error {
 	s.Lock()
-	addr := fmt.Sprintf("%s:%d", s.config.Address, s.config.Port)
+	addr := fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port)
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("Failed to start the orderer server because %s", err.Error())
@@ -127,11 +117,11 @@ func (s *Server) Start() error {
 	}
 
 	var opts []grpc.ServerOption
-	if s.config.TLS.Enable {
+	if s.cfg.TLS.Enable {
 		creds := credentials.NewTLS(&tls.Config{
 			ClientAuth:   tls.RequireAndVerifyClientCert,
-			Certificates: []tls.Certificate{*(s.config.TLS.Cert)},
-			ClientCAs:    s.config.TLS.Pool,
+			Certificates: []tls.Certificate{*(s.cfg.TLS.Cert)},
+			ClientCAs:    s.cfg.TLS.Pool,
 		})
 		opts = append(opts, grpc.Creds(creds))
 	}
@@ -141,18 +131,18 @@ func (s *Server) Start() error {
 	s.Unlock()
 
 	var ln net.Listener
-	if s.config.TLS.Enable && s.config.TLS.Cert != nil {
+	if s.cfg.TLS.Enable && s.cfg.TLS.Cert != nil {
 		tlsConfig := &tls.Config{
-			Certificates: []tls.Certificate{*s.config.TLS.Cert},
+			Certificates: []tls.Certificate{*s.cfg.TLS.Cert},
 		}
 
-		ln, err = tls.Listen("tcp", fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100), tlsConfig)
+		ln, err = tls.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100), tlsConfig)
 		if err != nil {
 			log.Errorf("HTTPS listen failed: %v", err)
 			return err
 		}
 	} else {
-		ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100))
+		ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100))
 		if err != nil {
 			log.Errorf("HTTP listen failed: %v", err)
 			return err

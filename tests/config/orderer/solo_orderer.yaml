@@ -29,7 +29,7 @@ BlockChain:
   BatchSize: 1000
   # Path to store the blocks (default: $GOPATH/src/madledger/orderer/data/blocks)
   # But in the production environment, you must provide a path
-  Path: 
+  Path: data/blocks
   # If verify the rightness of blocks (default: false)
   Verify: false
 
@@ -45,4 +45,4 @@ DB:
   LevelDB:
     # default: $GOPATH/src/madledger/orderer/data/leveldb
     # But in the production environment, you must provide a path
-    Dir: 
+    Dir: data/leveldb

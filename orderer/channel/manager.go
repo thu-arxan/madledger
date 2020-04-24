@@ -52,7 +52,7 @@ type Manager struct {
 
 // NewManager is the constructor of Manager
 func NewManager(id string, coordinator *Coordinator) (*Manager, error) {
-	cm, err := blockchain.NewManager(id, fmt.Sprintf("%s/%s", coordinator.chainCfg.Path, id))
+	cm, err := blockchain.NewManager(id, fmt.Sprintf("%s/%s", coordinator.cfg.BlockChain.Path, id))
 	if err != nil {
 		return nil, err
 	}
