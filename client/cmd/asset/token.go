@@ -1,3 +1,13 @@
+// Copyright (c) 2020 THU-Arxan
+// Madledger is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//          http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
 package asset
 
 import (
@@ -25,7 +35,7 @@ func init() {
 	tokenCmd.Flags().StringP("channelID", "n", "", "The name of channel")
 	tokenViper.BindPFlag("channelID", tokenCmd.Flags().Lookup("channelID"))
 
-	tokenCmd.Flags().Int64P("value", "v", 0, "The amount of asset to exchange")
+	tokenCmd.Flags().Uint64P("value", "v", 0, "The amount of asset to exchange")
 	tokenViper.BindPFlag("value", tokenCmd.Flags().Lookup("value"))
 
 	tokenCmd.Flags().StringP("config", "c", "client.yaml", "The config file of client")
@@ -41,7 +51,7 @@ func runToken(cmd *cobra.Command, args []string) error {
 	if channelID == "" {
 		return errors.New("The name of channel should be [a-z0-9]{1,32} such as test, test01 and etc")
 	}
-	value := uint64(tokenViper.GetInt64("value"))
+	value := tokenViper.GetUint64("value")
 	if value <= 0 {
 		return errors.New("the amount can not be less than or equal to 0")
 	}

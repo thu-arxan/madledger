@@ -41,7 +41,7 @@ func init() {
 	createViper.BindPFlag("ratio", createCmd.Flags().Lookup("ratio"))
 	createCmd.Flags().StringP("peers", "p", "", "peer address for the channel")
 	createViper.BindPFlag("peers", createCmd.Flags().Lookup("peers"))
-	createCmd.Flags().StringP("members", "s", "", "config file for private channel")
+	createCmd.Flags().String("members", "", "config file for private channel")
 	createViper.BindPFlag("members", createCmd.Flags().Lookup("members"))
 }
 
