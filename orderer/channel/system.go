@@ -86,16 +86,20 @@ func (manager *Manager) AddConfigBlock(wb db.WriteBatch, block *core.Block) erro
 func (manager *Manager) AddGlobalBlock(block *core.Block) error {
 	// nums := make(map[string][]uint64)
 	var subjects = make([]*event.Subject, 0)
+	fmt.Println(">>>GLOBAL", block.GetNumber(), "txs", len(block.Transactions))
 	for _, tx := range block.Transactions {
 		payload, err := tx.GetGlobalTxPayload()
 		if err != nil {
 			return err
 		}
-		subjects = append(subjects, event.NewSubject(payload.ChannelID, payload.Num))
+		fmt.Println(payload)
+		subjects = append(subjects, event.NewSubject(payload.ChannelID, payload.Number))
 	}
+	fmt.Println(">>>GLOBAL", block.GetNumber(), "subjects", subjects)
 	for i := range subjects {
 		switch subjects[i].K {
 		case core.ASSETCHANNELID, core.CONFIGCHANNELID:
+			log.Infof("[GLO]Unlock block %d of channel %s", subjects[i].V, subjects[i].K)
 			if i != len(subjects)-1 {
 				manager.coordinator.Unlock(subjects[i].K, subjects[i].V, subjects[i+1:]...)
 			} else {

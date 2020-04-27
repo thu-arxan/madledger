@@ -354,12 +354,12 @@ func (c *Coordinator) loadGlobalChannel() error {
 			return err
 		}
 		// ggb: global channel genesis block
-		var payload = &gc.Payload{
+		var payload = &core.GlobalTxPayload{
 			ChannelID: core.CONFIGCHANNELID,
 			Number:    0,
 			Hash:      cgb.Hash(),
 		}
-		ggb, err := gc.CreateGenesisBlock([]*gc.Payload{payload})
+		ggb, err := gc.CreateGenesisBlock([]*core.GlobalTxPayload{payload})
 		if err != nil {
 			return err
 		}

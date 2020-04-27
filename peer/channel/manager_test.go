@@ -283,13 +283,13 @@ func generateBlocks() {
 	configBlock := core.NewBlock(core.CONFIGCHANNELID, 1, genesisConfigBlock.Hash().Bytes(), []*core.Tx{tx})
 	configBlocks[1] = configBlock
 	// then genesis global blocks
-	ggb, _ := gc.CreateGenesisBlock([]*gc.Payload{&gc.Payload{
+	ggb, _ := gc.CreateGenesisBlock([]*core.GlobalTxPayload{&core.GlobalTxPayload{
 		ChannelID: core.CONFIGCHANNELID,
 		Number:    0,
 		Hash:      genesisConfigBlock.Hash(),
 	}})
 	globalBlocks[0] = ggb
-	payloadBytes, _ = json.Marshal(&gc.Payload{
+	payloadBytes, _ = json.Marshal(&core.GlobalTxPayload{
 		ChannelID: core.CONFIGCHANNELID,
 		Number:    1,
 		Hash:      configBlocks[1].Hash(),

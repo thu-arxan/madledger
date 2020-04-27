@@ -16,7 +16,7 @@ import (
 )
 
 // CreateGenesisBlock return the genesis block.
-func CreateGenesisBlock(payloads []*Payload) (*core.Block, error) {
+func CreateGenesisBlock(payloads []*core.GlobalTxPayload) (*core.Block, error) {
 	var txs []*core.Tx
 	for _, payload := range payloads {
 		payloadBytes, err := json.Marshal(payload)

@@ -20,7 +20,7 @@ import (
 // GlobalTxPayload is the payload of global tx
 type GlobalTxPayload struct {
 	ChannelID string
-	Num       uint64
+	Number    uint64
 	Hash      common.Hash
 }
 
@@ -28,7 +28,7 @@ type GlobalTxPayload struct {
 func NewGlobalTx(channelID string, num uint64, hash common.Hash) *Tx {
 	var payload = GlobalTxPayload{
 		ChannelID: channelID,
-		Num:       num,
+		Number:    num,
 		Hash:      hash,
 	}
 	payloadBytes, _ := json.Marshal(payload)
