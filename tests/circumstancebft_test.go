@@ -11,11 +11,14 @@
 package tests
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	bc "madledger/blockchain/config"
 	cc "madledger/client/config"
 	client "madledger/client/lib"
 	"madledger/common"
+	"madledger/common/crypto"
 	"madledger/common/util"
 	"madledger/core"
 	oc "madledger/orderer/config"
@@ -47,6 +50,8 @@ var (
 	bftChannels []string
 )
 
+var peerAddress []string
+
 var (
 	bftClientsSet []*core.Member
 )
@@ -61,11 +66,16 @@ func TestBFTRun(t *testing.T) {
 		bftOrderers[i] = pid
 	}
 	fmt.Println("We need 3sec to ensure Orderers has been run...")
-	time.Sleep(3 * time.Second)// wait until the orderer start
+	time.Sleep(3 * time.Second) // wait until the orderer start
 	fmt.Println("Then continue")
 }
 
 func TestBFTPeersStart(t *testing.T) {
+	peerAddress = make([]string, 4)
+	peerAddress[0] = "localhost:20500"
+	peerAddress[1] = "localhost:20501"
+	peerAddress[2] = "localhost:20502"
+	peerAddress[3] = "localhost:20503"
 	for i := 0; i < 4; i++ {
 		cfgPath := getBFTPeerConfigPath(i)
 		cfg, err := pc.LoadConfig(cfgPath)
@@ -124,13 +134,14 @@ func TestBFTCreateChannels(t *testing.T) {
 				channels = append(channels, channel)
 				lock.Unlock()
 
-				err := client.CreateChannel(channel, true, nil, nil, 0, 1, 10000000)
+				err := client.CreateChannel(channel, true, nil, nil, 0, 1, 10000000, peerAddress)
 				require.NoError(t, err)
 				defer wg.Done()
 			}(t, i)
 		}
 	}
 	wg.Wait()
+	fmt.Printf("create done\n")
 	// then we will check if all channels are create successful
 	time.Sleep(2 * time.Second)
 	for i := range bftClients {
@@ -149,6 +160,7 @@ func TestBFTCreateChannels(t *testing.T) {
 		}(t, i)
 	}
 	wg.Wait()
+	fmt.Printf("check done\n")
 }
 
 func TestBFTOrdererRestart(t *testing.T) {
@@ -167,7 +179,7 @@ func TestBFTReCreateChannels(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		channel := strings.ToLower(util.RandomString(16))
 
-		err := bftClients[i].CreateChannel(channel, true, nil, nil, 0, 1, 10000000)
+		err := bftClients[i].CreateChannel(channel, true, nil, nil, 0, 1, 10000000, peerAddress)
 		require.NoError(t, err)
 	}
 	time.Sleep(2 * time.Second)
@@ -257,7 +269,134 @@ func TestBFTCreateTx(t *testing.T) {
 //}
 
 func TestBFTAsset(t *testing.T) {
-	testAsset(t, bftClients[0])
+	peers := peerAddress
+	client := bftClients[0]
+	algo := crypto.KeyAlgoSecp256k1
+
+	issuerKey, err := crypto.GeneratePrivateKey(algo)
+	require.NoError(t, err)
+	falseIssuerKey, err := crypto.GeneratePrivateKey(algo)
+	require.NoError(t, err)
+	require.NotEqual(t, issuerKey, falseIssuerKey)
+	receiverKey, err := crypto.GeneratePrivateKey(algo)
+	require.NoError(t, err)
+
+	issuer, err := issuerKey.PubKey().Address()
+	require.NoError(t, err)
+	falseIssuer, err := falseIssuerKey.PubKey().Address()
+	require.NoError(t, err)
+	receiver, err := receiverKey.PubKey().Address()
+	require.NoError(t, err)
+
+	err = client.CreateChannel("bftasset", true, nil, nil, 0, 1, 10000000, peers)
+	require.NoError(t, err)
+
+	//issue to issuer itself
+	coreTx := getAssetChannelTx(core.IssueContractAddress, issuer, "", uint64(10), issuerKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+
+	balance, err := client.GetAccountBalance(issuer)
+	require.NoError(t, err)
+	require.Equal(t, uint64(10), balance)
+
+	//falseissuer issue fail
+	coreTx = getAssetChannelTx(core.IssueContractAddress, falseIssuer, "", uint64(10), falseIssuerKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+
+	balance, err = client.GetAccountBalance(falseIssuer)
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), balance)
+
+	//test issue to channel
+	coreTx = getAssetChannelTx(core.IssueContractAddress, common.ZeroAddress, "bftasset", uint64(10), issuerKey)
+	// question, what if test is not created?
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+	balance, err = client.GetAccountBalance(common.AddressFromChannelID("bftasset"))
+	require.NoError(t, err)
+	require.Equal(t, uint64(10), balance)
+
+	//test transfer
+	coreTx = getAssetChannelTx(core.TransferContractrAddress, receiver, "", uint64(5), issuerKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+	balance, err = client.GetAccountBalance(receiver)
+	require.NoError(t, err)
+	require.Equal(t, uint64(5), balance)
+
+	//test transfer fail
+	coreTx = getAssetChannelTx(core.TransferContractrAddress, receiver, "", uint64(5), falseIssuerKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+	balance, err = client.GetAccountBalance(receiver)
+	require.NoError(t, err)
+	require.Equal(t, uint64(5), balance)
+
+	//test transfer to oneself
+	coreTx = getAssetChannelTx(core.TransferContractrAddress, receiver, "", uint64(5), receiverKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+	balance, err = client.GetAccountBalance(receiver)
+	require.NoError(t, err)
+	require.Equal(t, uint64(5), balance)
+
+	//4.test exchangeToken a.k.a transfer to channel in orderer execution
+	coreTx = getAssetChannelTx(core.TokenExchangeAddress, common.ZeroAddress, "bftasset", uint64(5), receiverKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+
+	balance, err = client.GetAccountBalance(common.AddressFromChannelID("bftasset"))
+	require.NoError(t, err)
+	require.Equal(t, uint64(15), balance)
+
+	token, err := client.GetTokenInfo(receiver, []byte("bftasset"))
+	require.NoError(t, err)
+	require.Equal(t, uint64(5), token)
+
+	//test Block Price
+	coreTx, err = core.NewTx("bftasset", common.ZeroAddress, []byte("success"), 0, "", issuerKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+
+	//change BlockPrice of test channel's
+
+	payload, err := json.Marshal(bc.Payload{
+		ChannelID: "bftasset",
+		Profile: &bc.Profile{
+			BlockPrice: 100,
+		},
+	})
+	require.NoError(t, err)
+	coreTx, err = core.NewTx(core.CONFIGCHANNELID, common.ZeroAddress, payload, 0, "", issuerKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+
+	//now add tx that cause due
+	coreTx, err = core.NewTx("bftasset", common.ZeroAddress, []byte("cause due but pass"), 0, "", issuerKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+
+	// now add multiple txs to ensure that orderers have executed prev tx and stopped receiving tx
+	for i := 0; i < 10; i++ {
+		coreTx, err = core.NewTx("bftasset", common.ZeroAddress, []byte("multiple tx"), 0, fmt.Sprintln(i), issuerKey)
+		_, _ = client.AddTx(coreTx)
+	}
+
+	//this one should fail
+	coreTx, err = core.NewTx("bftasset", common.ZeroAddress, []byte("fail"), 0, "", issuerKey)
+	_, err = client.AddTx(coreTx)
+	require.Error(t, err)
+
+	//now issue money to channel account to wake it
+	coreTx = getAssetChannelTx(core.IssueContractAddress, common.ZeroAddress, "bftasset", uint64(1000000), issuerKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
+
+	coreTx, err = core.NewTx("bftasset", common.ZeroAddress, []byte("success again"), 0, "", issuerKey)
+	_, err = client.AddTx(coreTx)
+	require.NoError(t, err)
 }
 
 func TestBFTEnd(t *testing.T) {

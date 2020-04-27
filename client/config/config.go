@@ -13,10 +13,12 @@ package config
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"madledger/common/crypto"
+	"madledger/core"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -118,9 +120,9 @@ type PeerConfig struct {
 
 // loadPeerConfig load the peer config
 func (cfg *Config) loadPeerConfig() error {
-	if len(cfg.Peer.Address) == 0 {
-		return errors.New("The address of peer should not be nil")
-	}
+	// if len(cfg.Peer.Address) == 0 {
+	// 	return errors.New("The address of peer should not be nil")
+	// }
 	return nil
 }
 
@@ -144,4 +146,87 @@ func (cfg *Config) loadKeys() error {
 	}
 	cfg.KeyStore.Privs = keys
 	return nil
+}
+
+// LoadPeerAddress load config from the config file
+func LoadPeerAddress(cfgFile string) (*PeerConfig, error) {
+	cfgBytes, err := ioutil.ReadFile(cfgFile)
+	if err != nil {
+		return nil, err
+	}
+
+	var cfg PeerConfig
+	err = yaml.Unmarshal(cfgBytes, &cfg)
+	if err != nil {
+		return nil, err
+	}
+	if len(cfg.Address) == 0 {
+		return nil, errors.New("The address of peer is nil")
+	}
+	return &cfg, nil
+}
+
+// SavePeerCache .
+func SavePeerCache(name string, peers []string) error {
+	b, err := yaml.Marshal(&PeerConfig{
+		Address:     peers,
+		HTTPAddress: nil,
+	})
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(name+".yaml", b, 0777)
+}
+
+// MemberConfig .
+type MemberConfig struct {
+	Admins  []string `yaml:"Admins"`
+	Members []string `yaml:"Members"`
+}
+
+// GetMembers .
+func GetMembers(file string) ([]*core.Member, []*core.Member, error) {
+	Bytes, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil, nil, err
+	}
+	var cfg MemberConfig
+	err = yaml.Unmarshal(Bytes, &cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	var admins, members []*core.Member
+	for _, adminstr := range cfg.Admins {
+		b, err := hex.DecodeString(adminstr)
+		if err != nil {
+			return nil, nil, err
+		}
+		pk, err := crypto.NewPublicKey(b, crypto.KeyAlgoSM2)
+		if err != nil {
+			return nil, nil, err
+		}
+		admin, err := core.NewMember(pk, "admin")
+		if err != nil {
+			return nil, nil, err
+		}
+		admins = append(admins, admin)
+	}
+
+	for _, memberstr := range cfg.Members {
+		b, err := hex.DecodeString(memberstr)
+		if err != nil {
+			return nil, nil, err
+		}
+		pk, err := crypto.NewPublicKey(b, crypto.KeyAlgoSM2)
+		if err != nil {
+			return nil, nil, err
+		}
+		member, err := core.NewMember(pk, "member")
+		if err != nil {
+			return nil, nil, err
+		}
+		members = append(members, member)
+	}
+
+	return admins, members, nil
 }
