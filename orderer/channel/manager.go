@@ -80,15 +80,6 @@ func (manager *Manager) Start() {
 			// log.Infof("Receive block %s:%d from consensus", manager.ID, cb.GetNumber())
 			// todo: if a tx is duplicated and it was added into consensus block succeed, then it may never receive response
 			txs, _ := manager.getTxsFromConsensusBlock(cb)
-			if manager.ID == core.CONFIGCHANNELID {
-				fmt.Println(">>>>Block _config", cb.GetNumber(), "has ", len(txs), "txs")
-			}
-			if manager.ID == core.GLOBALCHANNELID {
-				fmt.Println(">>>>Block _global", cb.GetNumber(), "has ", len(txs), "txs")
-			}
-			if manager.ID == "test" {
-				fmt.Println("????", cb.GetNumber(), "has txs", len(txs))
-			}
 			if len(txs) != 0 {
 				prevBlock := manager.cm.GetPrevBlock()
 				var block *core.Block
@@ -98,9 +89,6 @@ func (manager *Manager) Start() {
 				} else {
 					block = core.NewBlock(manager.ID, prevBlock.Header.Number+1, prevBlock.Hash().Bytes(), txs)
 					log.Debugf("Channel %s create new block %d, hash is %s", manager.ID, prevBlock.Header.Number+1, util.Hex(block.Hash().Bytes()))
-				}
-				if manager.ID == "test" {
-					fmt.Println("????", cb.GetNumber(), "here")
 				}
 				// If the channel is not the global channel, it should send a tx to the global channel
 				if manager.ID != core.GLOBALCHANNELID {
@@ -115,23 +103,14 @@ func (manager *Manager) Start() {
 						}
 					}
 				}
-				if manager.ID == "test" {
-					fmt.Println("????", cb.GetNumber(), "here1")
-				}
 				if err := manager.AddBlock(block); err != nil {
 					log.Fatalf("Channel %s failed to run because of %s", manager.ID, err)
 					return
-				}
-				if manager.ID == "test" {
-					fmt.Println("????", cb.GetNumber(), "here2")
 				}
 				log.Debugf("Channel %s has %d block now", manager.ID, block.Header.Number)
 				manager.hub.Done(string(block.Header.Number), nil)
 				for _, tx := range block.Transactions {
 					manager.hub.Done(util.Hex(tx.Hash()), nil)
-				}
-				if manager.ID == core.CONFIGCHANNELID {
-					fmt.Println(">>>>Block _config", cb.GetNumber(), "here2")
 				}
 			}
 		case <-manager.stop:
@@ -202,7 +181,6 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		if err := wb.Sync(); err != nil {
 			return err
 		}
-		fmt.Println(">>>", manager.ID, ":", block.GetNumber(), "subjects are", subjects)
 		for i := range subjects {
 			switch subjects[i].K {
 			case core.CONFIGCHANNELID, core.ASSETCHANNELID:
@@ -227,9 +205,8 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 			log.Infof("channel %s wait block %d done", block.Header.ChannelID, block.Header.Number)
 			profile, err := manager.db.GetChannelProfile(manager.ID)
 			if err != nil {
-				log.Infof("manager.db cannot get channel profile: %s add block %d, %s",
+				log.Warnf("manager.db cannot get channel profile: %s add block %d, %s",
 					manager.ID, block.Header.Number, err.Error())
-				panic("profile not founded")
 				return err
 			}
 			if err == nil && profile.BlockPrice != 0 {
@@ -291,7 +268,6 @@ func (manager *Manager) AddTx(tx *core.Tx) error {
 
 	// Note: The reason why we must do this is because we must make sure we return the result after we store the block
 	// However, we may find a better way to do this if we allow there are more interactive between the consensus and orderer.
-	fmt.Println("!!!", util.Hex(hash))
 	result := manager.hub.Watch(util.Hex(hash), nil)
 	if result == nil {
 		return nil
