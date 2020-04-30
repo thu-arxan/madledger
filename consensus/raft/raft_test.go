@@ -66,8 +66,8 @@ func TestStart(t *testing.T) {
 		}, cfg)
 		require.NoError(t, err)
 		nodes[i] = node
+		wg.Add(1)
 		go func() {
-			wg.Add(1)
 			defer wg.Done()
 			require.NoError(t, node.Start())
 		}()

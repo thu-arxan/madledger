@@ -69,11 +69,13 @@ func (manager *Manager) AddConfigBlock(wb db.WriteBatch, block *core.Block) erro
 			}()
 			// 更新coordinator.Managers(map类型)
 			manager.coordinator.setChannel(channelID, channel)
+			log.Infof("[CFG]Unlock block %d of channel %s", 0, payload.ChannelID)
 			manager.coordinator.Unlock(payload.ChannelID, 0)
 		}
 		// todo: ab update channel may modify blockPrice of user channel
 		// may need authentication check
 		err := wb.UpdateChannel(channelID, payload.Profile)
+		log.Infof("[CFG]Upadte profile of channel %s", payload.ChannelID)
 		if err != nil {
 			return err
 		}
@@ -93,6 +95,12 @@ func (manager *Manager) AddGlobalBlock(block *core.Block) error {
 		}
 		subjects = append(subjects, event.NewSubject(payload.ChannelID, payload.Number))
 	}
+	// TODO: Remove this
+	var payloads = make([]string, 0)
+	for i := range subjects {
+		payloads = append(payloads, fmt.Sprintf("%s:%d", subjects[i].K, subjects[i].V))
+	}
+	log.Infof("[GLO]Here is block %d, and it has %v", block.GetNumber(), payloads)
 	for i := range subjects {
 		switch subjects[i].K {
 		case core.ASSETCHANNELID, core.CONFIGCHANNELID:
