@@ -27,10 +27,11 @@ import (
 
 // AddConfigBlock add a config block
 // The block is formated, so there is no need to verify
-func (manager *Manager) AddConfigBlock(wb db.WriteBatch, block *core.Block) error {
+func (manager *Manager) AddConfigBlock(wb db.WriteBatch, block *core.Block) ([]*Manager, error) {
 	if block.Header.Number == 0 {
-		return nil
+		return nil, nil
 	}
+	var managers = make([]*Manager, 0)
 	for _, tx := range block.Transactions {
 		// this kind of tx is about consensus configuration change
 		// will have different kind of payload
@@ -40,8 +41,7 @@ func (manager *Manager) AddConfigBlock(wb db.WriteBatch, block *core.Block) erro
 		var payload cc.Payload
 		json.Unmarshal(tx.Data.Payload, &payload)
 		var channelID = payload.ChannelID
-		// This is a create channel tx,从leveldb中查询是否已经存在channelID
-		// 这里并没有对channelID已经存在做出响应,而是在coordinator的createChannel做出响应
+
 		if !manager.db.HasChannel(channelID) {
 			// then start the consensus
 			err := manager.coordinator.Consensus.AddChannel(channelID, consensus.Config{
@@ -52,22 +52,16 @@ func (manager *Manager) AddConfigBlock(wb db.WriteBatch, block *core.Block) erro
 			})
 			channel, err := NewManager(channelID, manager.coordinator)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			// create genesis block here
 			// Note: the genesis block will contain no tx
 			genesisBlock := core.NewBlock(channelID, 0, core.GenesisBlockPrevHash, []*core.Tx{})
-
 			err = channel.AddBlock(genesisBlock)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			// then start the channel
-			go func() {
-				log.Infof("system/AddConfigBlock: start channel %s", channelID)
-				channel.Start()
-			}()
-			// 更新coordinator.Managers(map类型)
+			managers = append(managers, channel)
 			manager.coordinator.setChannel(channelID, channel)
 			log.Infof("[CFG]Unlock block %d of channel %s", 0, payload.ChannelID)
 			manager.coordinator.Unlock(payload.ChannelID, 0)
@@ -77,11 +71,11 @@ func (manager *Manager) AddConfigBlock(wb db.WriteBatch, block *core.Block) erro
 		err := wb.UpdateChannel(channelID, payload.Profile)
 		log.Infof("[CFG]Upadte profile of channel %s", payload.ChannelID)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return managers, nil
 }
 
 // AddGlobalBlock add global block

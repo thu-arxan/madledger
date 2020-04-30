@@ -141,6 +141,7 @@ func (manager *Manager) GetBlock(num uint64) (*core.Block, error) {
 }
 
 // AddBlock add a block
+// TODO: It should deal with genesis block that created by config channel
 func (manager *Manager) AddBlock(block *core.Block) error {
 	log.Infof("start adding block %d in channel %v", block.GetNumber(), manager.ID)
 	// first update db
@@ -169,8 +170,10 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		if !isGenesisBlock(block) {
 			subjects = manager.coordinator.Wait(block.Header.ChannelID, block.Header.Number)
 		}
+		var managers []*Manager
+		var err error
 		if manager.ID == core.CONFIGCHANNELID {
-			if err := manager.AddConfigBlock(wb, block); err != nil {
+			if managers, err = manager.AddConfigBlock(wb, block); err != nil {
 				return err
 			}
 		} else {
@@ -181,10 +184,17 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 		if err := wb.Sync(); err != nil {
 			return err
 		}
+		// we may need to start some channels
+		for i := range managers {
+			manager := managers[i]
+			go func() {
+				log.Infof("system/AddConfigBlock: start channel %s", manager.ID)
+				manager.Start()
+			}()
+		}
 		for i := range subjects {
 			switch subjects[i].K {
 			case core.CONFIGCHANNELID, core.ASSETCHANNELID:
-				log.Infof("[CFG/ASS]Unlock block %d of channel %s", subjects[i].V, subjects[i].K)
 				if i != len(subjects)-1 {
 					manager.coordinator.Unlock(subjects[i].K, subjects[i].V, subjects[i+1:]...)
 				} else {
@@ -192,7 +202,6 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 				}
 				return nil
 			default:
-				log.Infof("[CFG/ASS]Unlock block %d of channel %s", subjects[i].V, subjects[i].K)
 				manager.coordinator.Unlock(subjects[i].K, subjects[i].V)
 			}
 		}
@@ -200,9 +209,7 @@ func (manager *Manager) AddBlock(block *core.Block) error {
 	default:
 		// User channel cost some assets
 		if isUserChannel(manager.ID) && !isGenesisBlock(block) {
-			log.Infof("channel %s wait block %d", block.Header.ChannelID, block.Header.Number)
 			manager.coordinator.Wait(block.Header.ChannelID, block.Header.Number)
-			log.Infof("channel %s wait block %d done", block.Header.ChannelID, block.Header.Number)
 			profile, err := manager.db.GetChannelProfile(manager.ID)
 			if err != nil {
 				log.Warnf("manager.db cannot get channel profile: %s add block %d, %s",
@@ -326,7 +333,6 @@ func (manager *Manager) FetchBlockAsync(num uint64) (*core.Block, error) {
 func (manager *Manager) syncBlock() {
 	var num = manager.db.GetConsensusBlock(manager.ID)
 	for {
-		log.Infof("Going to get block %d of channel %s from consensus", num, manager.ID)
 		cb, err := manager.coordinator.Consensus.GetBlock(manager.ID, num, true)
 		if err != nil {
 			log.Infof("Get block %d of channel %s from consensus failed, because %s", num, manager.ID, err.Error())
