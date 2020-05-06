@@ -57,11 +57,7 @@ func TestNewServer(t *testing.T) {
 	var err error
 	server, err = NewServer(getTestConfig())
 	require.NoError(t, err)
-
-	go func() {
-		require.NoError(t, server.Start())
-	}()
-	time.Sleep(500 * time.Millisecond)
+	require.NoError(t, server.Start())
 }
 
 func TestListChannelsAtNil(t *testing.T) {
@@ -159,10 +155,7 @@ func TestServerRestart(t *testing.T) {
 	server, err = NewServer(getTestConfig())
 	require.NoError(t, err)
 
-	go func() {
-		require.NoError(t, server.Start())
-	}()
-	time.Sleep(500 * time.Millisecond)
+	require.NoError(t, server.Start())
 	server.Stop()
 }
 
@@ -176,18 +169,15 @@ func TestServerStartAtAnotherPath(t *testing.T) {
 	var err error
 	server, err = NewServer(cfg)
 	require.NoError(t, err)
-
-	go func(t *testing.T) {
-		require.NoError(t, server.Start())
-	}(t)
-	time.Sleep(500 * time.Millisecond)
+	require.NoError(t, server.Start())
 	client, err := getClient()
 	require.NoError(t, err)
 	// compare global genesis block
-	globalGenesisBlock, _ := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
+	globalGenesisBlock, err := client.FetchBlock(context.Background(), &pb.FetchBlockRequest{
 		ChannelID: core.GLOBALCHANNELID,
 		Number:    0,
 	})
+	require.NoError(t, err)
 	typesGlobalGenesisBlock, _ := globalGenesisBlock.ToCore()
 	if !reflect.DeepEqual(typesGlobalGenesisBlock.Hash().Bytes(), genesisBlocksHash[core.GLOBALCHANNELID].Bytes()) {
 		t.Fatal()
@@ -218,10 +208,7 @@ func TestCreateChannel(t *testing.T) {
 	var err error
 	server, err = NewServer(getTestConfig())
 	require.NoError(t, err)
-	go func() {
-		require.NoError(t, server.Start())
-	}()
-	time.Sleep(500 * time.Millisecond)
+	require.NoError(t, server.Start())
 	// then try to create a channel
 	client, err := getClient()
 	require.NoError(t, err)
@@ -240,11 +227,7 @@ func TestServerRestartWithUserChannel(t *testing.T) {
 	var err error
 	server, err = NewServer(getTestConfig())
 	require.NoError(t, err)
-
-	go func() {
-		require.NoError(t, server.Start())
-	}()
-	time.Sleep(500 * time.Millisecond)
+	require.NoError(t, server.Start())
 	client, _ := getClient()
 	// Then try to send a tx to test channel
 	// then add a tx into test channel
@@ -267,11 +250,7 @@ func TestFetchBlockAsync(t *testing.T) {
 	var err error
 	server, err = NewServer(getTestConfig())
 	require.NoError(t, err)
-
-	go func() {
-		require.NoError(t, server.Start())
-	}()
-	time.Sleep(500 * time.Millisecond)
+	require.NoError(t, server.Start())
 	client, _ := getClient()
 	channelInfos, _ := client.ListChannels(context.Background(), &pb.ListChannelsRequest{
 		System: true,
@@ -350,11 +329,7 @@ func TestAddDuplicateTxs(t *testing.T) {
 	var err error
 	server, err = NewServer(getTestConfig())
 	require.NoError(t, err)
-
-	go func() {
-		require.NoError(t, server.Start())
-	}()
-	time.Sleep(500 * time.Millisecond)
+	require.NoError(t, server.Start())
 	client, _ := getClient()
 	// Then try to send a tx to test channel
 	// then add a tx into test channel
@@ -384,11 +359,7 @@ func TestAsset(t *testing.T) {
 	var err error
 	server, err = NewServer(getTestConfig())
 	require.NoError(t, err)
-
-	go func() {
-		require.NoError(t, server.Start())
-	}()
-	time.Sleep(500 * time.Millisecond)
+	require.NoError(t, server.Start())
 
 	client, _ := getClient()
 

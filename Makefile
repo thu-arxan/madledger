@@ -78,6 +78,7 @@ proto:
 
 # test:
 test:
+	make install
 	@$(GO_TEST_UNIT) madledger/common/util
 	@$(GO_TEST_UNIT) madledger/common/event
 	@$(GO_TEST_UNIT) madledger/common/math

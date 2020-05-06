@@ -7,6 +7,7 @@ require (
 	github.com/btcsuite/btcd v0.20.1-beta.0.20200327205923-57d44d022ecb // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/decred/dcrd/dcrec/secp256k1 v1.0.3
+	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/ethereum/go-ethereum v1.9.12 // indirect
 	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c // indirect
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
@@ -20,6 +21,7 @@ require (
 	github.com/golang/snappy v0.0.2-0.20190904063534-ff6b7dc882cf // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/hashicorp/hcl v1.0.1-0.20191016231534-914dc3f8dd7c // indirect
+	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.2-0.20191019074931-a586bb8b7dea // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect

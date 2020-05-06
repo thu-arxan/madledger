@@ -24,4 +24,6 @@ env/raft/clients
 .vscode
 .raft
 samples
+*.swp
 .DS_Store
+logs

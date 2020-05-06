@@ -17,6 +17,7 @@ import (
 	pc "madledger/peer/config"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -55,6 +56,7 @@ func testInitAllSoloCircumstance(t *testing.T) {
 	// then start necessary orderer and peer
 	err = startSoloOrderer()
 	require.NoError(t, err)
+	time.Sleep(1 * time.Second) // wait until the orderer has started.
 	err = startSoloPeer()
 	require.NoError(t, err)
 }
@@ -91,7 +93,7 @@ func testAllSoloTxHistory(t *testing.T) {
 func testAllSoloAsset(t *testing.T) {
 	client, err := getSoloClient()
 	require.NoError(t, err)
-	testAsset(t, client)
+	testAsset(t, client, []string{"localhost:23456"})
 }
 
 func testAllSoloRestart(t *testing.T) {

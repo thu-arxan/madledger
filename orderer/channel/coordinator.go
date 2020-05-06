@@ -30,6 +30,7 @@ import (
 
 	ac "madledger/blockchain/asset"
 	bc "madledger/blockchain/config"
+	cc "madledger/blockchain/config"
 	gc "madledger/blockchain/global"
 	ct "madledger/consensus/tendermint"
 	pb "madledger/protos"
@@ -119,7 +120,7 @@ func (c *Coordinator) Start() error {
 		}
 	}
 
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	return nil
 }
 
@@ -214,6 +215,11 @@ func (c *Coordinator) AddTx(tx *core.Tx) error {
 		return err
 	}
 	return channel.AddTx(tx)
+}
+
+// GetChannelProfile .
+func (c *Coordinator) GetChannelProfile(channelID string) (*cc.Profile, error) {
+	return c.db.GetChannelProfile(channelID)
 }
 
 func (c *Coordinator) setChannel(channelID string, manager *Manager) {

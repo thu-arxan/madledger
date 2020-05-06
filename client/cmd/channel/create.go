@@ -12,7 +12,9 @@ package channel
 
 import (
 	"errors"
+	"madledger/client/config"
 	"madledger/client/lib"
+	"madledger/core"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -37,7 +39,10 @@ func init() {
 	createViper.BindPFlag("maxGas", createCmd.Flags().Lookup("maxGas"))
 	createCmd.Flags().Uint64P("ratio", "r", 1, "Numbers of token exchanged from one asset")
 	createViper.BindPFlag("ratio", createCmd.Flags().Lookup("ratio"))
-
+	createCmd.Flags().StringP("peers", "p", "", "peer address for the channel")
+	createViper.BindPFlag("peers", createCmd.Flags().Lookup("peers"))
+	createCmd.Flags().String("members", "", "config file for private channel")
+	createViper.BindPFlag("members", createCmd.Flags().Lookup("members"))
 }
 
 func runCreate(cmd *cobra.Command, args []string) error {
@@ -56,9 +61,41 @@ func runCreate(cmd *cobra.Command, args []string) error {
 
 	ratio := createViper.GetUint64("ratio")
 
+	peersFile := createViper.GetString("peers")
+	var peers []string
+	if peersFile == "" {
+		peersFile = cfgFile // find the peer address in client config, if not specified in some yaml file
+		cfg, err := config.LoadConfig(peersFile)
+		if err != nil {
+			return err
+		}
+		peers = cfg.Peer.Address
+	} else {
+		cfg, err := config.LoadPeerAddress(peersFile)
+		if err != nil {
+			return err
+		}
+		peers = cfg.Address
+	}
+	config.SavePeerCache(name, peers)
+
 	client, err := lib.NewClient(cfgFile)
 	if err != nil {
 		return err
 	}
-	return client.CreateChannel(name, true, nil, nil, gasPrice, ratio, maxGas)
+
+	var system bool
+	var admins, members []*core.Member
+	membersFile := createViper.GetString("members")
+	if membersFile == "" {
+		system = true
+	} else {
+		system = false
+		admins, members, err = config.GetMembers(membersFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	return client.CreateChannel(name, system, admins, members, gasPrice, ratio, maxGas, peers)
 }

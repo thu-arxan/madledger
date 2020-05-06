@@ -45,7 +45,7 @@ func testCreateChannel(t *testing.T, client *client.Client, peers []*core.Member
 	require.NotContains(t, channels, "public")
 
 	// then add a channel
-	err = client.CreateChannel("public", true, nil, nil, 0, 1, 10000000)
+	err = client.CreateChannel("public", true, nil, nil, 0, 1, 10000000, []string{"localhost:23456"})
 	require.NoError(t, err)
 
 	// then query channels
@@ -60,10 +60,10 @@ func testCreateChannel(t *testing.T, client *client.Client, peers []*core.Member
 	require.Contains(t, channels, core.ASSETCHANNELID)
 	require.Contains(t, channels, "public")
 	// create channel test again
-	err = client.CreateChannel("public", true, nil, nil, 0, 1, 10000000)
+	err = client.CreateChannel("public", true, nil, nil, 0, 1, 10000000, []string{"localhost:23456"})
 	require.Error(t, err)
 	// create private channel
-	err = client.CreateChannel("private", false, nil, peers, 0, 1, 10000000)
+	err = client.CreateChannel("private", false, nil, peers, 0, 1, 10000000, []string{"localhost:23456"})
 	require.NoError(t, err)
 }
 
@@ -328,8 +328,7 @@ func testTxHistoryByHTTP(t *testing.T, client *client.HTTPClient) {
 	require.Contains(t, history.Txs, core.CONFIGCHANNELID)
 	require.Len(t, history.Txs[core.CONFIGCHANNELID].Value, 2)
 }
-
-func testAsset(t *testing.T, client *client.Client) {
+func testAsset(t *testing.T, client *client.Client, peers []string) {
 	algo := crypto.KeyAlgoSecp256k1
 
 	issuerKey, err := crypto.GeneratePrivateKey(algo)
@@ -347,7 +346,7 @@ func testAsset(t *testing.T, client *client.Client) {
 	receiver, err := receiverKey.PubKey().Address()
 	require.NoError(t, err)
 
-	err = client.CreateChannel("test", true, nil, nil, 0, 1, 10000000)
+	err = client.CreateChannel("test", true, nil, nil, 0, 1, 10000000, peers)
 	require.NoError(t, err)
 
 	//issue to issuer itself

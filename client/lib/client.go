@@ -138,11 +138,16 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 	var infos *pb.ChannelInfos
 
 	for i, ordererClient := range c.ordererClients {
-		infos, err = ordererClient.ListChannels(context.Background(), &pb.ListChannelsRequest{
+		req := &pb.ListChannelsRequest{
 			System: system,
 			PK:     pk,
 			Algo:   pubKey.Algo(),
-		})
+		}
+		// buffer := make([]byte, 0)
+		// // TODO: We should not using XXX_Marshal
+		// t, err := req.XXX_Marshal(buffer, false)
+		// fmt.Println("Marshal", t, len(t))
+		infos, err = ordererClient.ListChannels(context.Background(), req)
 		times := i + 1
 		if err != nil {
 			if times == len(c.ordererClients) {
@@ -181,7 +186,7 @@ func (c *Client) ListChannel(system bool) ([]ChannelInfo, error) {
 
 // CreateChannel create a channel
 func (c *Client) CreateChannel(channelID string, public bool, admins, members []*core.Member,
-	gasPrice uint64, ratio uint64, maxGas uint64) error {
+	gasPrice uint64, ratio uint64, maxGas uint64, peers []string) error {
 	// log.Infof("Create channel %s", channelID)
 	self, err := core.NewMember(c.GetPrivKey().PubKey(), "admin")
 	if err != nil {
@@ -203,6 +208,7 @@ func (c *Client) CreateChannel(channelID string, public bool, admins, members []
 			GasPrice:        gasPrice,
 			AssetTokenRatio: ratio,
 			MaxGas:          maxGas,
+			PeerAddresses:   peers,
 		},
 		Version: 1,
 	})
@@ -257,12 +263,28 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 			break
 		}
 	}
+	var cID string
+	var peerList []string
+	var peerClients []pb.PeerClient
+	if tx.Data.ChannelID == "_global" || tx.Data.ChannelID == "_config" || tx.Data.ChannelID == "_asset" {
+		peerClients = c.peerClients
+	} else {
+		cID = tx.Data.ChannelID
+		peerList, err = c.GetPeerAddress(cID)
+		if err != nil {
+			return nil, err
+		}
+		peerClients, err = c.GenPeerConn(peerList)
+		if err != nil {
+			return nil, err
+		}
+	}
 
-	collector := NewCollector(len(c.peerClients), 1)
-	for i := range c.peerClients {
+	collector := NewCollector(len(peerClients), 1)
+	for i := range peerClients {
 
 		go func(i int) {
-			status, err := c.peerClients[i].GetTxStatus(context.Background(), &pb.GetTxStatusRequest{
+			status, err := peerClients[i].GetTxStatus(context.Background(), &pb.GetTxStatusRequest{
 				ChannelID: tx.Data.ChannelID,
 				TxID:      tx.ID,
 				Behavior:  pb.Behavior_RETURN_UNTIL_READY,
@@ -283,13 +305,94 @@ func (c *Client) AddTx(tx *core.Tx) (*pb.TxStatus, error) {
 	return result.(*pb.TxStatus), nil
 }
 
+// GetPeerAddress .
+func (c *Client) GetPeerAddress(channelID string) ([]string, error) {
+	peerClients, err := config.LoadPeerAddress(channelID + ".yaml")
+	var peerList []string
+	if err != nil {
+		log.Infof("Get peer cache failed because %v", err)
+		var pbpeer *pb.PeerAddress
+		var err error
+		for i, ordererClient := range c.ordererClients {
+			pbpeer, err = ordererClient.GetPeerAddress(context.Background(), &pb.GetPeerAddressRequest{
+				ChannelID: channelID,
+			})
+			times := i + 1
+			if err != nil {
+				if times == len(c.ordererClients) {
+					return nil, err
+				}
+			} else {
+				break
+			}
+		}
+		peerList = pbpeer.GetPeerAddresses()
+	} else {
+		peerList = peerClients.Address
+	}
+	return peerList, nil
+}
+
+// GenPeerConn .
+func (c *Client) GenPeerConn(peerList []string) ([]pb.PeerClient, error) {
+	var peerClientsAddress []pb.PeerClient
+	for _, address := range peerList {
+		var opts []grpc.DialOption
+		var conn *grpc.ClientConn
+		var err error
+
+		// if cfg.TLS.Enable {
+		// 	creds := credentials.NewTLS(&tls.Config{
+		// 		Certificates: []tls.Certificate{*(cfg.TLS.Cert)},
+		// 		RootCAs:      cfg.TLS.Pool,
+		// 	})
+		// 	opts = append(opts, grpc.WithTransportCredentials(creds))
+		// } else {
+		opts = append(opts, grpc.WithInsecure())
+		// }
+
+		opts = append(opts, grpc.WithTimeout(2000*time.Millisecond))
+
+		conn, err = grpc.Dial(address, opts...)
+		if err != nil {
+			return nil, err
+		}
+
+		peerClient := pb.NewPeerClient(conn)
+		peerClientsAddress = append(peerClientsAddress, peerClient)
+	}
+	return peerClientsAddress, nil
+}
+
 // GetHistory return the history of address
 // TODO: Support bft
 func (c *Client) GetHistory(address []byte) (*pb.TxHistory, error) {
-	collector := NewCollector(len(c.peerClients), 1)
-	for i := range c.peerClients {
+	var peerClients []pb.PeerClient
+	set := make(map[string]bool)
+	var keys []string
+
+	channelInfos, err := c.ListChannel(false)
+	for _, channelInfo := range channelInfos {
+		peerClientList, err := c.GetPeerAddress(channelInfo.Name)
+		if err != nil {
+			return nil, err
+		}
+		for _, peerClient := range peerClientList {
+			set[peerClient] = true
+		}
+	}
+	for key := range set {
+		keys = append(keys, key)
+	}
+	peerClients, err = c.GenPeerConn(keys)
+	if err != nil {
+		return nil, err
+	}
+
+	collector := NewCollector(len(peerClients), 1)
+	for i := range peerClients {
 		go func(i int) {
-			history, err := c.peerClients[i].ListTxHistory(context.Background(), &pb.ListTxHistoryRequest{
+			history, err := peerClients[i].ListTxHistory(context.Background(), &pb.ListTxHistoryRequest{
 				Address: address,
 			})
 			if err != nil {
@@ -358,10 +461,20 @@ func (c *Client) GetAccountBalance(address common.Address) (uint64, error) {
 // GetTokenInfo return balance of account
 func (c *Client) GetTokenInfo(address common.Address, channelID []byte) (uint64, error) {
 	var err error
-	collector := NewCollector(len(c.peerClients), 1)
-	for i := range c.peerClients {
+
+	peerList, err := c.GetPeerAddress(string(channelID))
+	if err != nil {
+		return 0, err
+	}
+	peerClients, err := c.GenPeerConn(peerList)
+	if err != nil {
+		return 0, err
+	}
+
+	collector := NewCollector(len(peerClients), 1)
+	for i := range peerClients {
 		go func(i int) {
-			token, err := c.peerClients[i].GetTokenInfo(context.Background(), &pb.GetTokenInfoRequest{
+			token, err := peerClients[i].GetTokenInfo(context.Background(), &pb.GetTokenInfoRequest{
 				Address:   address.Bytes(),
 				ChannelID: channelID,
 			})
@@ -377,4 +490,37 @@ func (c *Client) GetTokenInfo(address common.Address, channelID []byte) (uint64,
 		return 0, err
 	}
 	return result.(*pb.TokenInfo).GetBalance(), err
+}
+
+//GetBlock ...
+func (c *Client) GetBlock(num uint64, channelID string) (*core.Block, error) {
+	peerList, err := c.GetPeerAddress(channelID)
+	if err != nil {
+		return nil, err
+	}
+	peerClients, err := c.GenPeerConn(peerList)
+	if err != nil {
+		return nil, err
+	}
+
+	collector := NewCollector(len(peerClients), 1)
+
+	for i := range peerClients {
+		go func(i int) {
+			block, err := peerClients[i].GetBlock(context.Background(), &pb.GetBlockRequest{
+				ChannelID:  []byte(channelID),
+				BlockIndex: num,
+			})
+			if err != nil {
+				collector.AddError(err)
+			} else {
+				collector.Add(block)
+			}
+		}(i)
+	}
+	result, err := collector.Wait()
+	if err != nil {
+		return nil, err
+	}
+	return result.(*pb.Block).ToCore()
 }

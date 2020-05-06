@@ -16,9 +16,7 @@ import (
 
 // AddAssetBlock add an asset block
 func (manager *Manager) AddAssetBlock(block *core.Block) error {
-	if block.Header.Number == 0 {
-		return nil
-	}
+
 	cache := NewCache(manager.db)
 	var err error
 
@@ -104,7 +102,7 @@ func (manager *Manager) issue(cache Cache, senderPKBytes []byte, pkAlgo crypto.A
 
 func (manager *Manager) transfer(cache Cache, sender, receiver common.Address, value uint64) error {
 
-	if value == 0 || reflect.DeepEqual(sender, receiver){
+	if value == 0 || reflect.DeepEqual(sender, receiver) {
 		return nil
 	}
 	senderAccount, err := cache.GetOrCreateAccount(sender)

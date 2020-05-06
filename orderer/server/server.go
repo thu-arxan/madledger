@@ -13,7 +13,7 @@ package server
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
+	"madledger/common/util"
 	"madledger/orderer/channel"
 	"madledger/orderer/config"
 	pb "madledger/protos"
@@ -22,9 +22,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/grpclog"
 
 	"github.com/gin-gonic/gin"
+
+	"fmt"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -51,12 +55,12 @@ const (
 // Server provide the serve of orderer
 type Server struct {
 	sync.RWMutex
-	cfg       *config.Config
-	rpcServer *grpc.Server
-	srv       *http.Server
-	cc        *channel.Coordinator
-	ln        net.Listener
-	engine    *gin.Engine
+	cfg          *config.Config
+	cc           *channel.Coordinator
+	rpcServer    *grpc.Server
+	srv          *http.Server
+	rpcWebServer *grpcweb.WrappedGrpcServer
+	engine       *gin.Engine
 }
 
 // NewServer is the constructor of server
@@ -80,14 +84,15 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	}
 	server.cc = cc
 
-	server.engine = gin.New()
-	server.engine.Use(gin.Recovery())
-	server.initServer(server.engine)
-	server.srv = &http.Server{
-		Handler:      server.engine,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-	}
+	/*
+		server.engine = gin.New()
+		server.engine.Use(gin.Recovery())
+		server.initServer(server.engine)
+		server.srv = &http.Server{
+			Handler:      server.engine,
+			ReadTimeout:  30 * time.Second,
+			WriteTimeout: 30 * time.Second,
+		}*/
 
 	return server, nil
 }
@@ -105,13 +110,10 @@ func (s *Server) initServer(engine *gin.Engine) error {
 // Start starts the server
 func (s *Server) Start() error {
 	s.Lock()
-	addr := fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port)
-	lis, err := net.Listen("tcp", addr)
-	if err != nil {
-		return fmt.Errorf("Failed to start the orderer server because %s", err.Error())
-	}
-	fmt.Printf("Start the orderer at %s\n", addr)
-	err = s.cc.Start()
+	log.Infof("Server start...")
+	util.MountLogger()
+
+	err := s.cc.Start()
 	if err != nil {
 		return err
 	}
@@ -127,60 +129,87 @@ func (s *Server) Start() error {
 	}
 	s.rpcServer = grpc.NewServer(opts...)
 	pb.RegisterOrdererServer(s.rpcServer, s)
+	go func() { // Start Native GRPC Server at Address:Port
+		lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port))
+		if err != nil {
+			log.Fatalf("Failed to start the orderer server because %s", err.Error())
+		}
+		fmt.Printf("Start the orderer at %s:%d\n", s.cfg.Address, s.cfg.Port)
+
+		log.Infof("rpcServer serve at %s:%d", s.cfg.Address, s.cfg.Port)
+		err = s.rpcServer.Serve(lis)
+	}()
+
+	s.rpcWebServer = grpcweb.WrapServer(s.rpcServer)
+	handler := func(resp http.ResponseWriter, req *http.Request) {
+		//These header are intentionally add to solve browsers' CORS problem.
+		resp.Header().Add("Access-Control-Allow-Origin", "*")
+		resp.Header().Add("Access-Control-Allow-Headers", "x-grpc-web, content-type")
+		grpclog.Infof("Handle grpc request : %v", req)
+		s.rpcWebServer.ServeHTTP(resp, req)
+	}
+
+	httpServer := http.Server{
+		Addr:    fmt.Sprintf(":%d", s.cfg.Port+11),
+		Handler: http.HandlerFunc(handler),
+	}
+	s.srv = &httpServer
+
+	go func() { // Start GRPC-WEB Server at Address:(Port+11)
+		if s.cfg.TLS.Enable {
+			httpServer.TLSConfig = &tls.Config{
+				Certificates: []tls.Certificate{*(s.cfg.TLS.Cert)},
+				ClientCAs:    s.cfg.TLS.Pool,
+			}
+			grpclog.Infof("Start tls rpc-web server at %d", s.cfg.Port+11)
+			grpclog.Infof("tls config : ca = %s, key = %s", s.cfg.TLS.RawCert, s.cfg.TLS.Key)
+			if err := httpServer.ListenAndServeTLS(s.cfg.TLS.RawCert, s.cfg.TLS.Key); err != nil {
+				if err.Error() == "http: Server closed" {
+					grpclog.Infof("grpc-web server exit: %v")
+				} else {
+					grpclog.Fatalf("failed starting rpc-web server: %v", err.Error())
+				}
+				grpclog.SetLoggerV2(nil)
+				log.Info("grpcLogger shutdown...")
+			}
+		} else {
+			grpclog.Infof("Start insecure rpc-web server at %d", s.cfg.Port+11)
+			if err := httpServer.ListenAndServe(); err != nil {
+				if err.Error() == "http: Server closed" {
+					grpclog.Infof("grpc-web server exit: %v", err)
+				} else {
+					grpclog.Fatalf("failed starting rpc-web server: %v", err)
+				}
+			}
+		}
+	}()
+	// MHY ADD END
 
 	s.Unlock()
 
-	var ln net.Listener
-	if s.cfg.TLS.Enable && s.cfg.TLS.Cert != nil {
-		tlsConfig := &tls.Config{
-			Certificates: []tls.Certificate{*s.cfg.TLS.Cert},
-		}
-
-		ln, err = tls.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100), tlsConfig)
-		if err != nil {
-			log.Errorf("HTTPS listen failed: %v", err)
-			return err
-		}
-	} else {
-		ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100))
-		if err != nil {
-			log.Errorf("HTTP listen failed: %v", err)
-			return err
-		}
-	}
-	s.ln = ln
-	go func() {
-		err := s.srv.Serve(s.ln)
-		fmt.Println("orderer listen at ", s.ln.Addr().String())
-		if err != nil && err != http.ErrServerClosed {
-			log.Error("Http Serve failed: ", err)
-		}
-	}()
-
-	err = s.rpcServer.Serve(lis)
-
+	time.Sleep(100 * time.Millisecond)
 	return nil
 }
 
 // Stop will stop the rpc service and the consensus service
 func (s *Server) Stop() {
+	log.Info("Stop Server")
 	s.Lock()
 	defer s.Unlock()
-	// if s.rpcServer != nil {
+
 	s.rpcServer.Stop()
-	// }
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+
 	if err := s.srv.Shutdown(ctx); err != nil {
 		log.Fatal("Server Shutdown:", err)
 	}
-	// catching ctx.Done(). timeout of 1 seconds.
+
 	select {
 	case <-ctx.Done():
 		log.Println("timeout of 1 seconds.")
 	}
-	s.ln.Close()
 
 	s.cc.Stop()
 	time.Sleep(500 * time.Millisecond)

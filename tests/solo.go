@@ -36,10 +36,7 @@ func startSoloOrderer() error {
 	if err != nil {
 		return err
 	}
-	go func() {
-		soloOrdererServer.Start()
-	}()
-	time.Sleep(300 * time.Millisecond)
+	soloOrdererServer.Start()
 	return nil
 }
 

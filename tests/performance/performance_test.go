@@ -39,6 +39,8 @@ var (
 	cryptoAlgo  = crypto.KeyAlgoSM2
 )
 
+var peers []string
+
 func init() {
 	go func() {
 		log.Info(http.ListenAndServe("127.0.0.1:6666", nil))
@@ -46,20 +48,24 @@ func init() {
 }
 
 func TestInit(t *testing.T) {
+	peers = make([]string, 1)
 	os.Remove(logPath)
 	switch consensus {
 	case "solo":
 		require.NoError(t, solo.Init(clientSize, cryptoAlgo))
 		require.NoError(t, solo.StartOrderers())
 		require.NoError(t, solo.StartPeers())
+		peers[0] = "localhost:23456"
 	case "raft":
 		require.NoError(t, raft.Init(clientSize, cryptoAlgo, peerNum))
 		require.NoError(t, raft.StartOrderers())
 		require.NoError(t, raft.StartPeers(peerNum))
+		peers[0] = "localhost:23333"
 	case "bft":
 		require.NoError(t, bft.Init(clientSize, peerNum))
 		require.NoError(t, bft.StartOrderers())
 		require.NoError(t, bft.StartPeers(peerNum))
+		peers[0] = "localhost:23333"
 	default:
 		panic("Unsupport consensus")
 	}
@@ -69,7 +75,7 @@ func TestInit(t *testing.T) {
 func TestCreateChannel(t *testing.T) {
 	var clients = getClients(consensus)
 	for i := 0; i < channelSize; i++ {
-		require.NoError(t, clients[0].CreateChannel(fmt.Sprintf("test%d", i), true, nil, nil, 0, 1, 10000000))
+		require.NoError(t, clients[0].CreateChannel(fmt.Sprintf("test%d", i), true, nil, nil, 0, 1, 10000000, peers))
 	}
 }
 
