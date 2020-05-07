@@ -63,13 +63,11 @@ func (manager *Manager) AddConfigBlock(wb db.WriteBatch, block *core.Block) ([]*
 			}
 			managers = append(managers, channel)
 			manager.coordinator.setChannel(channelID, channel)
-			log.Infof("[CFG]Unlock block %d of channel %s", 0, payload.ChannelID)
 			manager.coordinator.Unlock(payload.ChannelID, 0)
 		}
 		// todo: ab update channel may modify blockPrice of user channel
 		// may need authentication check
 		err := wb.UpdateChannel(channelID, payload.Profile)
-		log.Infof("[CFG]Upadte profile of channel %s", payload.ChannelID)
 		if err != nil {
 			return nil, err
 		}
@@ -94,11 +92,9 @@ func (manager *Manager) AddGlobalBlock(block *core.Block) error {
 	for i := range subjects {
 		payloads = append(payloads, fmt.Sprintf("%s:%d", subjects[i].K, subjects[i].V))
 	}
-	log.Infof("[GLO]Here is block %d, and it has %v", block.GetNumber(), payloads)
 	for i := range subjects {
 		switch subjects[i].K {
 		case core.ASSETCHANNELID, core.CONFIGCHANNELID:
-			log.Infof("[GLO]Unlock block %d of channel %s", subjects[i].V, subjects[i].K)
 			if i != len(subjects)-1 {
 				manager.coordinator.Unlock(subjects[i].K, subjects[i].V, subjects[i+1:]...)
 			} else {
@@ -107,7 +103,6 @@ func (manager *Manager) AddGlobalBlock(block *core.Block) error {
 			// Note: do not use break here
 			return nil
 		default:
-			log.Infof("[GLO]Unlock block %d of channel %s", subjects[i].V, subjects[i].K)
 			manager.coordinator.Unlock(subjects[i].K, subjects[i].V)
 		}
 	}
