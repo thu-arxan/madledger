@@ -61,6 +61,8 @@ type Server struct {
 	srv          *http.Server
 	rpcWebServer *grpcweb.WrappedGrpcServer
 	engine       *gin.Engine
+	ln           net.Listener
+	restfulsrv   *http.Server
 }
 
 // NewServer is the constructor of server
@@ -84,15 +86,14 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	}
 	server.cc = cc
 
-	/*
-		server.engine = gin.New()
-		server.engine.Use(gin.Recovery())
-		server.initServer(server.engine)
-		server.srv = &http.Server{
-			Handler:      server.engine,
-			ReadTimeout:  30 * time.Second,
-			WriteTimeout: 30 * time.Second,
-		}*/
+	server.engine = gin.New()
+	server.engine.Use(gin.Recovery())
+	server.initServer(server.engine)
+	server.restfulsrv = &http.Server{
+		Handler:      server.engine,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+	}
 
 	return server, nil
 }
@@ -184,6 +185,32 @@ func (s *Server) Start() error {
 		}
 	}()
 	// MHY ADD END
+	var ln net.Listener
+	if s.cfg.TLS.Enable && s.cfg.TLS.Cert != nil {
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{*s.cfg.TLS.Cert},
+		}
+
+		ln, err = tls.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100), tlsConfig)
+		if err != nil {
+			log.Errorf("HTTPS listen failed: %v", err)
+			return err
+		}
+	} else {
+		ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.Address, s.cfg.Port-100))
+		if err != nil {
+			log.Errorf("HTTP listen failed: %v", err)
+			return err
+		}
+	}
+	s.ln = ln
+	go func() {
+		err := s.restfulsrv.Serve(s.ln)
+		fmt.Println("orderer listen at ", s.ln.Addr().String())
+		if err != nil && err != http.ErrServerClosed {
+			log.Error("Http Serve failed: ", err)
+		}
+	}()
 
 	s.Unlock()
 
@@ -203,6 +230,9 @@ func (s *Server) Stop() {
 	defer cancel()
 
 	if err := s.srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server Shutdown:", err)
+	}
+	if err := s.restfulsrv.Shutdown(ctx); err != nil {
 		log.Fatal("Server Shutdown:", err)
 	}
 

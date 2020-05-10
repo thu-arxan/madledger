@@ -35,7 +35,7 @@ import (
 )
 
 var (
-	log  = logrus.WithFields(logrus.Fields{"app": "peer", "package": "server"})
+	log = logrus.WithFields(logrus.Fields{"app": "peer", "package": "server"})
 )
 
 // Here defines some consts
@@ -59,6 +59,8 @@ type Server struct {
 	cm           *ChannelManager
 	srv          *http.Server
 	engine       *gin.Engine
+	restfulsrv   *http.Server
+	ln           net.Listener
 }
 
 // NewServer is the constructor of server
@@ -75,7 +77,7 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	server.engine = gin.New()
 	server.engine.Use(gin.Recovery())
 	server.initServer(server.engine)
-	server.srv = &http.Server{
+	server.restfulsrv = &http.Server{
 		Handler:      server.engine,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
@@ -141,14 +143,14 @@ func (s *Server) Start() error {
 	s.rpcWebServer = grpcweb.WrapServer(s.rpcServer)
 	handler := func(resp http.ResponseWriter, req *http.Request) {
 		//These header are intentionally add to solve browsers' CORS problem.
-		resp.Header().Add("Access-Control-Allow-Origin","*")
+		resp.Header().Add("Access-Control-Allow-Origin", "*")
 		resp.Header().Add("Access-Control-Allow-Headers", "x-grpc-web, content-type")
 		grpclog.Infof("Handle grpc request : %v", req)
 		s.rpcWebServer.ServeHTTP(resp, req)
 	}
 
 	httpServer := http.Server{
-		Addr:    fmt.Sprintf(":%d", s.config.Port + 11),
+		Addr:    fmt.Sprintf(":%d", s.config.Port+11),
 		Handler: http.HandlerFunc(handler),
 	}
 	s.srv = &httpServer
@@ -159,7 +161,7 @@ func (s *Server) Start() error {
 				Certificates: []tls.Certificate{*(s.config.TLS.Cert)},
 				ClientCAs:    s.config.TLS.Pool,
 			}
-			grpclog.Infof("Start tls rpc-web server at %d", s.config.Port + 11)
+			grpclog.Infof("Start tls rpc-web server at %d", s.config.Port+11)
 			grpclog.Infof("tls config : ca = %s, key = %s", s.config.TLS.RawCert, s.config.TLS.Key)
 			if err := httpServer.ListenAndServeTLS(s.config.TLS.RawCert, s.config.TLS.Key); err != nil {
 				if err.Error() == "http: Server closed" {
@@ -169,7 +171,7 @@ func (s *Server) Start() error {
 				}
 			}
 		} else {
-			grpclog.Infof("Start insecure rpc-web server at %d", s.config.Port + 11)
+			grpclog.Infof("Start insecure rpc-web server at %d", s.config.Port+11)
 			if err := httpServer.ListenAndServe(); err != nil {
 				if err.Error() == "http: Server closed" {
 					grpclog.Infof("grpc-web server exit: %v", err)
@@ -177,6 +179,33 @@ func (s *Server) Start() error {
 					grpclog.Fatalf("failed starting rpc-web server: %v", err)
 				}
 			}
+		}
+	}()
+
+	var ln net.Listener
+	if s.config.TLS.Enable && s.config.TLS.Cert != nil {
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{*s.config.TLS.Cert},
+		}
+
+		ln, err = tls.Listen("tcp", fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100), tlsConfig)
+		if err != nil {
+			log.Errorf("HTTPS listen failed: %v", err)
+			return err
+		}
+	} else {
+		ln, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.config.Address, s.config.Port-100))
+		if err != nil {
+			log.Errorf("HTTP listen failed: %v", err)
+			return err
+		}
+	}
+	s.ln = ln
+	go func() {
+		err := s.restfulsrv.Serve(s.ln)
+		fmt.Println("orderer listen at ", s.ln.Addr().String())
+		if err != nil && err != http.ErrServerClosed {
+			log.Error("Http Serve failed: ", err)
 		}
 	}()
 
@@ -195,6 +224,9 @@ func (s *Server) Stop() {
 	defer cancel()
 
 	if err := s.srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server Shutdown:", err)
+	}
+	if err := s.restfulsrv.Shutdown(ctx); err != nil {
 		log.Fatal("Server Shutdown:", err)
 	}
 
