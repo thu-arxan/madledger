@@ -12,12 +12,13 @@ package server
 
 import (
 	"errors"
-	"github.com/golang/protobuf/ptypes/empty"
 	"madledger/common"
 	"madledger/common/crypto"
 	"madledger/core"
 	pb "madledger/protos"
 	"madledger/version"
+
+	"github.com/golang/protobuf/ptypes/empty"
 
 	"golang.org/x/net/context"
 )
